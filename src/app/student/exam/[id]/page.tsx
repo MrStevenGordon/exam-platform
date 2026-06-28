@@ -55,7 +55,6 @@ export default function ExamFrontPage() {
 
     setQuestionCount(count || 0)
 
-    // Check if this student already has a session for this exam
     const { data: sessionData } = await supabase
       .from('exam_sessions')
       .select('id, status')
@@ -70,7 +69,7 @@ export default function ExamFrontPage() {
 
   async function handleBeginExam() {
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
+    if (!user || !exam) return
 
     if (existingSession) {
       if (existingSession.status === 'completed') {
@@ -88,6 +87,7 @@ export default function ExamFrontPage() {
         student_id: user.id,
         status: 'in_progress',
         started_at: new Date().toISOString(),
+        time_limit_seconds: exam.duration_minutes * 60,
       })
       .select()
       .single()
@@ -122,6 +122,11 @@ export default function ExamFrontPage() {
           <strong>{exam.duration_minutes} min</strong>
           <p style={{ margin: 0, fontSize: 14, color: '#666' }}>Time Limit</p>
         </div>
+      </div>
+
+      <div style={{ marginBottom: 24, padding: 12, background: '#fff3cd', borderRadius: 8, fontSize: 14 }}>
+        <strong>Before you begin:</strong> This exam will open in fullscreen mode. Leaving fullscreen or
+        switching tabs is monitored and logged. Repeated violations will automatically submit your exam.
       </div>
 
       {exam.instructions && (

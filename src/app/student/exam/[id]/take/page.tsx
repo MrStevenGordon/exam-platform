@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef, useCallback } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 
@@ -19,6 +19,14 @@ type Question = {
   order_index: number
 }
 
+type SessionInfo = {
+  id: string
+  status: string
+  started_at: string
+  time_limit_seconds: number
+  tab_switch_count: number
+}
+
 export default function TakeExamPage() {
   const router = useRouter()
   const params = useParams()
@@ -27,10 +35,16 @@ export default function TakeExamPage() {
   const [exam, setExam] = useState<FinalExam | null>(null)
   const [questions, setQuestions] = useState<Question[]>([])
   const [answers, setAnswers] = useState<Record<string, string>>({})
-  const [sessionId, setSessionId] = useState<string>('')
+  const [session, setSession] = useState<SessionInfo | null>(null)
   const [loading, setLoading] = useState(true)
   const [errorMsg, setErrorMsg] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [secondsLeft, setSecondsLeft] = useState(0)
+  const [warning, setWarning] = useState('')
+  const [inFullscreen, setInFullscreen] = useState(false)
+
+  const violationCount = useRef(0)
+  const submittedRef = useRef(false)
 
   useEffect(() => {
     loadData()
@@ -45,7 +59,7 @@ export default function TakeExamPage() {
 
     const { data: sessionData, error: sessionError } = await supabase
       .from('exam_sessions')
-      .select('id, status')
+      .select('id, status, started_at, time_limit_seconds, tab_switch_count')
       .eq('final_exam_id', examId)
       .eq('student_id', user.id)
       .single()
@@ -61,7 +75,12 @@ export default function TakeExamPage() {
       return
     }
 
-    setSessionId(sessionData.id)
+    setSession(sessionData)
+    violationCount.current = sessionData.tab_switch_count || 0
+
+    const startedAt = new Date(sessionData.started_at).getTime()
+    const deadline = startedAt + sessionData.time_limit_seconds * 1000
+    setSecondsLeft(Math.max(0, Math.floor((deadline - Date.now()) / 1000)))
 
     const { data: examData, error: examError } = await supabase
       .from('final_exams')
@@ -91,7 +110,6 @@ export default function TakeExamPage() {
     const qs = (linkData || []).map((l: any) => l.questions).filter(Boolean)
     setQuestions(qs)
 
-    // Load any previously saved answers (in case they're resuming)
     const { data: existingAnswers } = await supabase
       .from('responses')
       .select('question_id, answer')
@@ -106,24 +124,92 @@ export default function TakeExamPage() {
     setLoading(false)
   }
 
+  // Countdown timer, checked every second against the server-recorded deadline
+  useEffect(() => {
+    if (!session) return
+    const interval = setInterval(() => {
+      const startedAt = new Date(session.started_at).getTime()
+      const deadline = startedAt + session.time_limit_seconds * 1000
+      const remaining = Math.max(0, Math.floor((deadline - Date.now()) / 1000))
+      setSecondsLeft(remaining)
+      if (remaining <= 0 && !submittedRef.current) {
+        submittedRef.current = true
+        handleSubmit(true, 'time_expired')
+      }
+    }, 1000)
+    return () => clearInterval(interval)
+  }, [session])
+
+  // Fullscreen enforcement
+  const enterFullscreen = useCallback(() => {
+    const el = document.documentElement
+    if (el.requestFullscreen) el.requestFullscreen().catch(() => {})
+  }, [])
+
+  useEffect(() => {
+    enterFullscreen()
+
+    function handleFullscreenChange() {
+      const isFull = !!document.fullscreenElement
+      setInFullscreen(isFull)
+      if (!isFull && !submittedRef.current && session?.status !== 'completed') {
+        registerViolation('exited fullscreen')
+      }
+    }
+    document.addEventListener('fullscreenchange', handleFullscreenChange)
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange)
+  }, [session])
+
+  // Tab switch / window blur detection
+  useEffect(() => {
+    function handleVisibilityChange() {
+      if (document.hidden && !submittedRef.current) {
+        registerViolation('switched tabs or minimized window')
+      }
+    }
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
+  }, [session])
+
+  async function registerViolation(reason: string) {
+    if (!session) return
+    violationCount.current += 1
+    const count = violationCount.current
+
+    await supabase
+      .from('exam_sessions')
+      .update({ tab_switch_count: count, flagged: true })
+      .eq('id', session.id)
+
+    if (count >= 3) {
+      setWarning(`This is violation ${count} (${reason}). Your exam is being submitted automatically.`)
+      if (!submittedRef.current) {
+        submittedRef.current = true
+        handleSubmit(true, 'violation_limit')
+      }
+    } else {
+      setWarning(`Warning ${count}/3: ${reason}. Reaching 3 violations will auto-submit your exam.`)
+    }
+  }
+
   function updateAnswer(questionId: string, value: string) {
     setAnswers({ ...answers, [questionId]: value })
   }
 
-  async function handleSubmit() {
-    if (!confirm('Submit your exam? You will not be able to change your answers after this.')) return
+  async function handleSubmit(forced = false, reason = '') {
+    if (!session) return
+    if (!forced && !confirm('Submit your exam? You will not be able to change your answers after this.')) return
 
     setSubmitting(true)
     setErrorMsg('')
 
     const rows = questions.map((q) => ({
-      session_id: sessionId,
+      session_id: session.id,
       question_id: q.id,
       answer: answers[q.id] || '',
     }))
 
-    // Clear any existing responses first (in case of resume), then insert fresh
-    await supabase.from('responses').delete().eq('session_id', sessionId)
+    await supabase.from('responses').delete().eq('session_id', session.id)
 
     if (rows.length > 0) {
       const { error: responseError } = await supabase.from('responses').insert(rows)
@@ -134,15 +220,13 @@ export default function TakeExamPage() {
       }
     }
 
-    const { error: sessionError } = await supabase
+    await supabase
       .from('exam_sessions')
       .update({ status: 'completed', completed_at: new Date().toISOString() })
-      .eq('id', sessionId)
+      .eq('id', session.id)
 
-    if (sessionError) {
-      setErrorMsg(sessionError.message)
-      setSubmitting(false)
-      return
+    if (document.fullscreenElement) {
+      document.exitFullscreen().catch(() => {})
     }
 
     router.push(`/student/exam/${examId}/submitted`)
@@ -152,12 +236,40 @@ export default function TakeExamPage() {
   if (errorMsg) return <div style={{ padding: 40, color: 'red' }}>{errorMsg}</div>
   if (!exam) return <div style={{ padding: 40 }}>Exam not found.</div>
 
+  const minutes = Math.floor(secondsLeft / 60)
+  const seconds = secondsLeft % 60
+  const timeLow = secondsLeft < 300
+
   return (
     <div style={{ padding: 40, fontFamily: 'sans-serif', maxWidth: 700, margin: '0 auto' }}>
-      <div style={{ position: 'sticky', top: 0, background: 'white', padding: '12px 0', borderBottom: '2px solid #ddd', marginBottom: 24, zIndex: 10 }}>
-        <h1 style={{ margin: 0 }}>{exam.title}</h1>
-        <p style={{ margin: '4px 0 0', color: '#666' }}>{questions.length} questions</p>
+      <div style={{
+        position: 'sticky', top: 0, background: 'white', padding: '12px 0',
+        borderBottom: '2px solid #ddd', marginBottom: 16, zIndex: 10,
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <h1 style={{ margin: 0 }}>{exam.title}</h1>
+            <p style={{ margin: '4px 0 0', color: '#666' }}>{questions.length} questions</p>
+          </div>
+          <div style={{
+            fontSize: 24, fontWeight: 700,
+            color: timeLow ? '#dc2626' : '#111',
+          }}>
+            {minutes}:{seconds.toString().padStart(2, '0')}
+          </div>
+        </div>
+        {!inFullscreen && (
+          <button onClick={enterFullscreen} style={{ marginTop: 8, padding: '6px 12px', fontSize: 14 }}>
+            Re-enter Fullscreen
+          </button>
+        )}
       </div>
+
+      {warning && (
+        <div style={{ padding: 12, background: '#fee2e2', color: '#991b1b', borderRadius: 8, marginBottom: 16, fontWeight: 600 }}>
+          {warning}
+        </div>
+      )}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
         {questions.map((q, i) => (
@@ -227,7 +339,7 @@ export default function TakeExamPage() {
 
       <div style={{ marginTop: 32, paddingTop: 16, borderTop: '1px solid #ddd' }}>
         <button
-          onClick={handleSubmit}
+          onClick={() => handleSubmit(false)}
           disabled={submitting}
           style={{ padding: '14px 28px', fontSize: 18, background: '#16a34a', color: 'white', border: 'none', borderRadius: 6 }}
         >
