@@ -73,7 +73,6 @@ export default function ExamFrontPage() {
 
     if (existingSession) {
       if (existingSession.status === 'completed') {
-        alert('You have already submitted this exam.')
         return
       }
       router.push(`/student/exam/${examId}/take`)
@@ -137,9 +136,14 @@ export default function ExamFrontPage() {
       )}
 
       {alreadyCompleted ? (
-        <p style={{ padding: 12, background: '#d4edda', borderRadius: 8 }}>
-          You have already completed this exam.
-        </p>
+        <div style={{ padding: 16, background: '#d4edda', borderRadius: 8 }}>
+          <p style={{ margin: '0 0 12px' }}>You have already completed this exam.</p>
+          <Link href={`/student/exam/${examId}/results`}>
+            <button style={{ padding: '10px 20px', fontSize: 16, background: '#2563eb', color: 'white', border: 'none', borderRadius: 6 }}>
+              View Results
+            </button>
+          </Link>
+        </div>
       ) : (
         <button
           onClick={handleBeginExam}

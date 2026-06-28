@@ -13,9 +13,15 @@ type FinalExam = {
   published_at: string
 }
 
+type SessionStatus = {
+  final_exam_id: string
+  status: string
+}
+
 export default function StudentDashboard() {
   const router = useRouter()
   const [exams, setExams] = useState<FinalExam[]>([])
+  const [sessionMap, setSessionMap] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(true)
   const [errorMsg, setErrorMsg] = useState('')
 
@@ -34,9 +40,22 @@ export default function StudentDashboard() {
 
       if (error) {
         setErrorMsg(error.message)
-      } else {
-        setExams(data || [])
+        setLoading(false)
+        return
       }
+      setExams(data || [])
+
+      const { data: sessions } = await supabase
+        .from('exam_sessions')
+        .select('final_exam_id, status')
+        .eq('student_id', user.id)
+
+      const map: Record<string, string> = {}
+      ;(sessions || []).forEach((s) => {
+        map[s.final_exam_id] = s.status
+      })
+      setSessionMap(map)
+
       setLoading(false)
     }
     loadExams()
@@ -55,16 +74,36 @@ export default function StudentDashboard() {
       )}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        {exams.map((exam) => (
-          <Link key={exam.id} href={`/student/exam/${exam.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
-            <div style={{ border: '1px solid #ddd', borderRadius: 8, padding: 16, cursor: 'pointer' }}>
-              <strong>{exam.title}</strong>
-              <p style={{ color: '#666', margin: '4px 0 0' }}>
-                {exam.subject} — {exam.duration_minutes} minutes
-              </p>
+        {exams.map((exam) => {
+          const status = sessionMap[exam.id]
+          const isCompleted = status === 'completed'
+
+          return (
+            <div key={exam.id} style={{ border: '1px solid #ddd', borderRadius: 8, padding: 16 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <strong>{exam.title}</strong>
+                  <p style={{ color: '#666', margin: '4px 0 0' }}>
+                    {exam.subject} — {exam.duration_minutes} minutes
+                  </p>
+                </div>
+                {isCompleted ? (
+                  <Link href={`/student/exam/${exam.id}/results`}>
+                    <button style={{ padding: '8px 16px', fontSize: 14, background: '#2563eb', color: 'white', border: 'none', borderRadius: 6 }}>
+                      View Results
+                    </button>
+                  </Link>
+                ) : (
+                  <Link href={`/student/exam/${exam.id}`}>
+                    <button style={{ padding: '8px 16px', fontSize: 14 }}>
+                      {status === 'in_progress' ? 'Resume' : 'Begin'}
+                    </button>
+                  </Link>
+                )}
+              </div>
             </div>
-          </Link>
-        ))}
+          )
+        })}
       </div>
     </div>
   )
