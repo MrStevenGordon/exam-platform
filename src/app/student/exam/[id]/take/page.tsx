@@ -16,6 +16,7 @@ type Question = {
   question_text: string
   points: number
   options: string[] | null
+  correct_answer: string | null
   order_index: number
 }
 
@@ -42,9 +43,12 @@ export default function TakeExamPage() {
   const [secondsLeft, setSecondsLeft] = useState(0)
   const [warning, setWarning] = useState('')
   const [inFullscreen, setInFullscreen] = useState(false)
+  const [debugMsg, setDebugMsg] = useState('')
+  const [confirmingSubmit, setConfirmingSubmit] = useState(false)
 
   const violationCount = useRef(0)
   const submittedRef = useRef(false)
+  const intentionalExitRef = useRef(false)
 
   useEffect(() => {
     loadData()
@@ -70,7 +74,6 @@ export default function TakeExamPage() {
     }
 
     if (sessionData.status === 'completed') {
-      alert('You have already submitted this exam.')
       router.push('/student')
       return
     }
@@ -97,7 +100,7 @@ export default function TakeExamPage() {
 
     const { data: linkData, error: linkError } = await supabase
       .from('final_exam_questions')
-      .select('order_index, questions(id, question_type, question_text, points, options, order_index)')
+      .select('order_index, questions(id, question_type, question_text, points, options, correct_answer, order_index)')
       .eq('final_exam_id', examId)
       .order('order_index', { ascending: true })
 
@@ -124,7 +127,6 @@ export default function TakeExamPage() {
     setLoading(false)
   }
 
-  // Countdown timer, checked every second against the server-recorded deadline
   useEffect(() => {
     if (!session) return
     const interval = setInterval(() => {
@@ -134,13 +136,13 @@ export default function TakeExamPage() {
       setSecondsLeft(remaining)
       if (remaining <= 0 && !submittedRef.current) {
         submittedRef.current = true
-        handleSubmit(true, 'time_expired')
+        intentionalExitRef.current = true
+        handleSubmit()
       }
     }, 1000)
     return () => clearInterval(interval)
   }, [session])
 
-  // Fullscreen enforcement
   const enterFullscreen = useCallback(() => {
     const el = document.documentElement
     if (el.requestFullscreen) el.requestFullscreen().catch(() => {})
@@ -152,7 +154,7 @@ export default function TakeExamPage() {
     function handleFullscreenChange() {
       const isFull = !!document.fullscreenElement
       setInFullscreen(isFull)
-      if (!isFull && !submittedRef.current && session?.status !== 'completed') {
+      if (!isFull && !submittedRef.current && !intentionalExitRef.current && session?.status !== 'completed') {
         registerViolation('exited fullscreen')
       }
     }
@@ -160,10 +162,9 @@ export default function TakeExamPage() {
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange)
   }, [session])
 
-  // Tab switch / window blur detection
   useEffect(() => {
     function handleVisibilityChange() {
-      if (document.hidden && !submittedRef.current) {
+      if (document.hidden && !submittedRef.current && !intentionalExitRef.current) {
         registerViolation('switched tabs or minimized window')
       }
     }
@@ -185,7 +186,8 @@ export default function TakeExamPage() {
       setWarning(`This is violation ${count} (${reason}). Your exam is being submitted automatically.`)
       if (!submittedRef.current) {
         submittedRef.current = true
-        handleSubmit(true, 'violation_limit')
+        intentionalExitRef.current = true
+        handleSubmit()
       }
     } else {
       setWarning(`Warning ${count}/3: ${reason}. Reaching 3 violations will auto-submit your exam.`)
@@ -196,34 +198,85 @@ export default function TakeExamPage() {
     setAnswers({ ...answers, [questionId]: value })
   }
 
-  async function handleSubmit(forced = false, reason = '') {
+  function gradeAnswer(question: Question, studentAnswer: string): number | null {
+    const autoGradable = ['multiple_choice', 'true_false', 'short_answer', 'fill_blank']
+    if (!autoGradable.includes(question.question_type)) return null
+    if (!question.correct_answer) return 0
+    return studentAnswer.trim() === question.correct_answer.trim() ? question.points : 0
+  }
+
+  function handleFinalSubmitClick() {
+    intentionalExitRef.current = true
+    submittedRef.current = true
+    handleSubmit()
+  }
+
+  async function handleSubmit() {
     if (!session) return
-    if (!forced && !confirm('Submit your exam? You will not be able to change your answers after this.')) return
 
     setSubmitting(true)
     setErrorMsg('')
+    // debug removed
 
-    const rows = questions.map((q) => ({
-      session_id: session.id,
-      question_id: q.id,
-      answer: answers[q.id] || '',
-    }))
+    let autoScore = 0
+    let autoMax = 0
+    let hasEssay = false
 
-    await supabase.from('responses').delete().eq('session_id', session.id)
+    const rows = questions.map((q) => {
+      const studentAnswer = answers[q.id] || ''
+      const awarded = gradeAnswer(q, studentAnswer)
+      if (awarded === null) {
+        hasEssay = true
+      } else {
+        autoScore += awarded
+      }
+      autoMax += q.points
+      return {
+        session_id: session.id,
+        question_id: q.id,
+        answer: studentAnswer,
+        points_awarded: awarded,
+        graded_at: awarded !== null ? new Date().toISOString() : null,
+      }
+    })
+
+    // debug removed
+    const { error: deleteError } = await supabase.from('responses').delete().eq('session_id', session.id)
+    if (deleteError) {
+      setErrorMsg(`Delete failed: ${deleteError.message} (${deleteError.code})`)
+      setSubmitting(false)
+      return
+    }
 
     if (rows.length > 0) {
+      // debug removed
       const { error: responseError } = await supabase.from('responses').insert(rows)
       if (responseError) {
-        setErrorMsg(responseError.message)
+        setErrorMsg(`Insert failed: ${responseError.message} (${responseError.code})`)
         setSubmitting(false)
         return
       }
     }
 
-    await supabase
+    // debug removed
+    const { error: sessionError } = await supabase
       .from('exam_sessions')
-      .update({ status: 'completed', completed_at: new Date().toISOString() })
+      .update({
+        status: 'completed',
+        completed_at: new Date().toISOString(),
+        total_score: autoScore,
+        max_possible_score: autoMax,
+        fully_graded: !hasEssay,
+      })
       .eq('id', session.id)
+
+    if (sessionError) {
+      setErrorMsg(`Session update failed: ${sessionError.message} (${sessionError.code})`)
+      setSubmitting(false)
+      return
+    }
+
+    
 
     if (document.fullscreenElement) {
       document.exitFullscreen().catch(() => {})
@@ -233,7 +286,12 @@ export default function TakeExamPage() {
   }
 
   if (loading) return <div style={{ padding: 40 }}>Loading...</div>
-  if (errorMsg) return <div style={{ padding: 40, color: 'red' }}>{errorMsg}</div>
+  if (errorMsg) return (
+    <div style={{ padding: 40 }}>
+      <p style={{ color: 'red', fontWeight: 600 }}>{errorMsg}</p>
+      <p style={{ color: '#666' }}>{debugMsg}</p>
+    </div>
+  )
   if (!exam) return <div style={{ padding: 40 }}>Exam not found.</div>
 
   const minutes = Math.floor(secondsLeft / 60)
@@ -263,6 +321,7 @@ export default function TakeExamPage() {
             Re-enter Fullscreen
           </button>
         )}
+        {debugMsg && <p style={{ fontSize: 12, color: '#999', margin: '4px 0 0' }}>{debugMsg}</p>}
       </div>
 
       {warning && (
@@ -338,13 +397,37 @@ export default function TakeExamPage() {
       </div>
 
       <div style={{ marginTop: 32, paddingTop: 16, borderTop: '1px solid #ddd' }}>
-        <button
-          onClick={() => handleSubmit(false)}
-          disabled={submitting}
-          style={{ padding: '14px 28px', fontSize: 18, background: '#16a34a', color: 'white', border: 'none', borderRadius: 6 }}
-        >
-          {submitting ? 'Submitting...' : 'Submit Exam'}
-        </button>
+        {!confirmingSubmit ? (
+          <button
+            onClick={() => setConfirmingSubmit(true)}
+            disabled={submitting}
+            style={{ padding: '14px 28px', fontSize: 18, background: '#16a34a', color: 'white', border: 'none', borderRadius: 6 }}
+          >
+            Submit Exam
+          </button>
+        ) : (
+          <div style={{ padding: 16, background: '#fff3cd', borderRadius: 8 }}>
+            <p style={{ margin: '0 0 12px', fontWeight: 600 }}>
+              Are you sure? You won't be able to change your answers after this.
+            </p>
+            <div style={{ display: 'flex', gap: 12 }}>
+              <button
+                onClick={handleFinalSubmitClick}
+                disabled={submitting}
+                style={{ padding: '12px 24px', fontSize: 16, background: '#16a34a', color: 'white', border: 'none', borderRadius: 6 }}
+              >
+                {submitting ? 'Submitting...' : 'Yes, Submit'}
+              </button>
+              <button
+                onClick={() => setConfirmingSubmit(false)}
+                disabled={submitting}
+                style={{ padding: '12px 24px', fontSize: 16, background: '#eee', border: 'none', borderRadius: 6 }}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )
