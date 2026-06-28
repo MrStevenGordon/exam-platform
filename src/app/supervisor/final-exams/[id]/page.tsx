@@ -206,6 +206,7 @@ export default function AssembleFinalExamPage() {
   return (
     <div style={{ padding: 40, fontFamily: 'sans-serif', maxWidth: 900, margin: '0 auto' }}>
       <Link href="/supervisor/final-exams" style={{ color: '#666' }}>&larr; Back to Final Exams</Link>
+        <Link href={`/supervisor/final-exams/${finalExamId}/sessions`}><button style={{ padding: '8px 16px', fontSize: 14 }}>View Student Sessions</button></Link>
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginTop: 16 }}>
         <div>
