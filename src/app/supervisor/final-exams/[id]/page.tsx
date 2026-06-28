@@ -41,6 +41,7 @@ export default function AssembleFinalExamPage() {
   const [loading, setLoading] = useState(true)
   const [errorMsg, setErrorMsg] = useState('')
   const [saving, setSaving] = useState(false)
+  const [publishing, setPublishing] = useState(false)
 
   useEffect(() => {
     loadData()
@@ -66,7 +67,6 @@ export default function AssembleFinalExamPage() {
     }
     setFinalExam(examData)
 
-    // Get all approved draft exams in this department, with their teacher info
     const { data: drafts, error: draftsError } = await supabase
       .from('draft_exams')
       .select('id, created_by, profiles!draft_exams_created_by_fkey(id, full_name)')
@@ -81,7 +81,6 @@ export default function AssembleFinalExamPage() {
 
     const draftIds = (drafts || []).map((d) => d.id)
 
-    // Build unique teacher list
     const teacherMap: Record<string, Teacher> = {}
     ;(drafts || []).forEach((d: any) => {
       if (d.profiles) {
@@ -90,9 +89,8 @@ export default function AssembleFinalExamPage() {
     })
     const teacherList = Object.values(teacherMap)
     setTeachers(teacherList)
-    if (teacherList.length > 0) setActiveTeacherId(teacherList[0].id)
+    if (teacherList.length > 0 && !activeTeacherId) setActiveTeacherId(teacherList[0].id)
 
-    // Get all questions from those approved drafts
     const { data: questionData, error: questionError } = await supabase
       .from('questions')
       .select('id, question_type, question_text, points, created_by, draft_exams(title)')
@@ -114,7 +112,6 @@ export default function AssembleFinalExamPage() {
     setQuestionsByTeacher(grouped)
     setAllQuestionsById(byId)
 
-    // Load already-selected questions for this final exam
     const { data: existingLinks } = await supabase
       .from('final_exam_questions')
       .select('question_id')
@@ -139,7 +136,6 @@ export default function AssembleFinalExamPage() {
     setSaving(true)
     setErrorMsg('')
 
-    // Clear existing links, then re-insert current selection (simplest correct approach)
     const { error: deleteError } = await supabase
       .from('final_exam_questions')
       .delete()
@@ -170,6 +166,34 @@ export default function AssembleFinalExamPage() {
     alert('Selections saved.')
   }
 
+  async function handlePublish() {
+    if (selectedIds.size === 0) {
+      alert('Select at least one question before publishing.')
+      return
+    }
+    if (!confirm('Publish this exam? Students will be able to see and take it once published. This cannot be undone from this screen.')) {
+      return
+    }
+
+    setPublishing(true)
+    setErrorMsg('')
+
+    // Make sure selections are saved first
+    await handleSaveSelections()
+
+    const { error } = await supabase
+      .from('final_exams')
+      .update({ status: 'published', published_at: new Date().toISOString() })
+      .eq('id', finalExamId)
+
+    if (error) {
+      setErrorMsg(error.message)
+    } else {
+      loadData()
+    }
+    setPublishing(false)
+  }
+
   if (loading) return <div style={{ padding: 40 }}>Loading...</div>
   if (errorMsg) return <div style={{ padding: 40, color: 'red' }}>{errorMsg}</div>
   if (!finalExam) return <div style={{ padding: 40 }}>Final exam not found.</div>
@@ -177,13 +201,32 @@ export default function AssembleFinalExamPage() {
   const selectedQuestions = Array.from(selectedIds).map((id) => allQuestionsById[id]).filter(Boolean)
   const totalPoints = selectedQuestions.reduce((sum, q) => sum + q.points, 0)
   const activeQuestions = questionsByTeacher[activeTeacherId] || []
+  const isPublished = finalExam.status === 'published'
 
   return (
     <div style={{ padding: 40, fontFamily: 'sans-serif', maxWidth: 900, margin: '0 auto' }}>
       <Link href="/supervisor/final-exams" style={{ color: '#666' }}>&larr; Back to Final Exams</Link>
 
-      <h1 style={{ marginTop: 16 }}>{finalExam.title}</h1>
-      <p style={{ color: '#666' }}>{finalExam.subject}</p>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginTop: 16 }}>
+        <div>
+          <h1 style={{ margin: 0 }}>{finalExam.title}</h1>
+          <p style={{ color: '#666', margin: '4px 0' }}>{finalExam.subject}</p>
+        </div>
+        <span style={{
+          fontSize: 12,
+          padding: '4px 10px',
+          borderRadius: 12,
+          background: isPublished ? '#d4edda' : '#eee',
+        }}>
+          {finalExam.status}
+        </span>
+      </div>
+
+      {isPublished && (
+        <p style={{ background: '#d4edda', padding: 12, borderRadius: 8 }}>
+          This exam is published and visible to students.
+        </p>
+      )}
 
       <div style={{
         position: 'sticky', top: 0, background: 'white', padding: '12px 0',
@@ -224,14 +267,17 @@ export default function AssembleFinalExamPage() {
                 key={q.id}
                 style={{
                   display: 'flex', gap: 12, alignItems: 'flex-start',
-                  border: '1px solid #ddd', borderRadius: 8, padding: 12, cursor: 'pointer',
+                  border: '1px solid #ddd', borderRadius: 8, padding: 12,
+                  cursor: isPublished ? 'default' : 'pointer',
                   background: selectedIds.has(q.id) ? '#eff6ff' : 'white',
+                  opacity: isPublished ? 0.7 : 1,
                 }}
               >
                 <input
                   type="checkbox"
                   checked={selectedIds.has(q.id)}
                   onChange={() => toggleQuestion(q.id)}
+                  disabled={isPublished}
                   style={{ marginTop: 4 }}
                 />
                 <div>
@@ -248,15 +294,24 @@ export default function AssembleFinalExamPage() {
         </>
       )}
 
-      <div style={{ marginTop: 24, paddingTop: 16, borderTop: '1px solid #ddd' }}>
-        <button
-          onClick={handleSaveSelections}
-          disabled={saving}
-          style={{ padding: '10px 20px', fontSize: 16, background: '#2563eb', color: 'white', border: 'none', borderRadius: 6 }}
-        >
-          {saving ? 'Saving...' : 'Save Selections'}
-        </button>
-      </div>
+      {!isPublished && (
+        <div style={{ marginTop: 24, paddingTop: 16, borderTop: '1px solid #ddd', display: 'flex', gap: 12 }}>
+          <button
+            onClick={handleSaveSelections}
+            disabled={saving || publishing}
+            style={{ padding: '10px 20px', fontSize: 16, background: '#eee', border: 'none', borderRadius: 6 }}
+          >
+            {saving ? 'Saving...' : 'Save Selections'}
+          </button>
+          <button
+            onClick={handlePublish}
+            disabled={saving || publishing}
+            style={{ padding: '10px 20px', fontSize: 16, background: '#16a34a', color: 'white', border: 'none', borderRadius: 6 }}
+          >
+            {publishing ? 'Publishing...' : 'Publish Exam'}
+          </button>
+        </div>
+      )}
     </div>
   )
 }

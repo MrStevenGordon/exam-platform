@@ -19,6 +19,7 @@ type Question = {
   question_text: string
   points: number
   order_index: number
+  supervisor_comment: string | null
 }
 
 export default function ExamEditorPage() {
@@ -58,7 +59,7 @@ export default function ExamEditorPage() {
 
     const { data: questionData, error: questionError } = await supabase
       .from('questions')
-      .select('id, question_type, question_text, points, order_index')
+      .select('id, question_type, question_text, points, order_index, supervisor_comment')
       .eq('draft_exam_id', examId)
       .order('order_index', { ascending: true })
 
@@ -93,6 +94,7 @@ export default function ExamEditorPage() {
   if (!exam) return <div style={{ padding: 40 }}>Exam not found.</div>
 
   const isLocked = exam.status !== 'draft'
+  const hasComments = questions.some((q) => q.supervisor_comment)
 
   return (
     <div style={{ padding: 40, fontFamily: 'sans-serif', maxWidth: 800, margin: '0 auto' }}>
@@ -119,6 +121,12 @@ export default function ExamEditorPage() {
         </p>
       )}
 
+      {!isLocked && hasComments && (
+        <p style={{ background: '#fef3c7', padding: 12, borderRadius: 8 }}>
+          Your supervisor left feedback on one or more questions below. Please review and make changes before resubmitting.
+        </p>
+      )}
+
       <h2 style={{ marginTop: 32 }}>Questions ({questions.length})</h2>
 
       {questions.length === 0 && <p>No questions added yet.</p>}
@@ -133,6 +141,11 @@ export default function ExamEditorPage() {
               <span style={{ fontSize: 12, color: '#888' }}>{q.points} pt{q.points !== 1 ? 's' : ''}</span>
             </div>
             <p style={{ margin: '8px 0 0' }}>{q.question_text}</p>
+            {q.supervisor_comment && (
+              <div style={{ marginTop: 8, padding: 8, background: '#fef3c7', borderRadius: 6, fontSize: 14 }}>
+                <strong>Supervisor feedback:</strong> {q.supervisor_comment}
+              </div>
+            )}
           </div>
         ))}
       </div>

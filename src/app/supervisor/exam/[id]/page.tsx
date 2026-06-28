@@ -23,6 +23,7 @@ type Question = {
   order_index: number
   options: string[] | null
   correct_answer: string | null
+  supervisor_comment: string | null
 }
 
 export default function SupervisorExamReviewPage() {
@@ -32,9 +33,9 @@ export default function SupervisorExamReviewPage() {
 
   const [exam, setExam] = useState<DraftExam | null>(null)
   const [questions, setQuestions] = useState<Question[]>([])
+  const [comments, setComments] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(true)
   const [errorMsg, setErrorMsg] = useState('')
-  const [reviewNotes, setReviewNotes] = useState('')
   const [actioning, setActioning] = useState(false)
 
   useEffect(() => {
@@ -60,11 +61,10 @@ export default function SupervisorExamReviewPage() {
       return
     }
     setExam(examData as any)
-    setReviewNotes(examData.review_notes || '')
 
     const { data: questionData, error: questionError } = await supabase
       .from('questions')
-      .select('id, question_type, question_text, points, order_index, options, correct_answer')
+      .select('id, question_type, question_text, points, order_index, options, correct_answer, supervisor_comment')
       .eq('draft_exam_id', examId)
       .order('order_index', { ascending: true })
 
@@ -72,20 +72,74 @@ export default function SupervisorExamReviewPage() {
       setErrorMsg(questionError.message)
     } else {
       setQuestions(questionData || [])
+      const initialComments: Record<string, string> = {}
+      ;(questionData || []).forEach((q) => {
+        initialComments[q.id] = q.supervisor_comment || ''
+      })
+      setComments(initialComments)
     }
     setLoading(false)
   }
 
-  async function handleDecision(newStatus: 'approved' | 'rejected') {
-    setActioning(true)
-    const { data: { user } } = await supabase.auth.getUser()
+  function updateComment(questionId: string, value: string) {
+    setComments({ ...comments, [questionId]: value })
+  }
 
+  async function saveComments() {
+    const updates = Object.entries(comments).map(([questionId, comment]) =>
+      supabase
+        .from('questions')
+        .update({ supervisor_comment: comment.trim() === '' ? null : comment })
+        .eq('id', questionId)
+    )
+    await Promise.all(updates)
+  }
+
+  async function handleApprove() {
+    setActioning(true)
+    setErrorMsg('')
+
+    await saveComments()
+
+    const { data: { user } } = await supabase.auth.getUser()
     const { error } = await supabase
       .from('draft_exams')
       .update({
-        status: newStatus,
+        status: 'approved',
         reviewed_by: user?.id,
-        review_notes: reviewNotes,
+        reviewed_at: new Date().toISOString(),
+      })
+      .eq('id', examId)
+
+    if (error) {
+      setErrorMsg(error.message)
+    } else {
+      loadData()
+    }
+    setActioning(false)
+  }
+
+  async function handleSendFeedback() {
+    const hasAnyComment = Object.values(comments).some((c) => c.trim() !== '')
+    if (!hasAnyComment) {
+      alert('Add at least one comment before sending feedback.')
+      return
+    }
+    if (!confirm('Send feedback to the teacher? The exam will go back to draft so they can make changes.')) {
+      return
+    }
+
+    setActioning(true)
+    setErrorMsg('')
+
+    await saveComments()
+
+    const { data: { user } } = await supabase.auth.getUser()
+    const { error } = await supabase
+      .from('draft_exams')
+      .update({
+        status: 'draft',
+        reviewed_by: user?.id,
         reviewed_at: new Date().toISOString(),
       })
       .eq('id', examId)
@@ -119,7 +173,7 @@ export default function SupervisorExamReviewPage() {
           fontSize: 12,
           padding: '4px 10px',
           borderRadius: 12,
-          background: exam.status === 'submitted' ? '#fff3cd' : exam.status === 'approved' ? '#d4edda' : '#f8d7da',
+          background: exam.status === 'submitted' ? '#fff3cd' : exam.status === 'approved' ? '#d4edda' : '#eee',
         }}>
           {exam.status}
         </span>
@@ -134,7 +188,7 @@ export default function SupervisorExamReviewPage() {
 
       <h2 style={{ marginTop: 32 }}>Questions ({questions.length})</h2>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         {questions.map((q, i) => (
           <div key={q.id} style={{ border: '1px solid #ddd', borderRadius: 8, padding: 12 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -158,44 +212,43 @@ export default function SupervisorExamReviewPage() {
                 Correct answer: {q.correct_answer}
               </p>
             )}
+
+            <div style={{ marginTop: 10 }}>
+              <label style={{ fontSize: 13, color: '#555' }}>Comment for teacher (optional)</label>
+              <textarea
+                value={comments[q.id] || ''}
+                onChange={(e) => updateComment(q.id, e.target.value)}
+                disabled={!canDecide}
+                rows={2}
+                placeholder="e.g. This option is ambiguous, please clarify"
+                style={{ width: '100%', padding: 8, fontSize: 14, marginTop: 4 }}
+              />
+            </div>
           </div>
         ))}
-      </div>
-
-      <div style={{ marginTop: 24 }}>
-        <label>Review Notes (optional, visible to teacher)</label><br />
-        <textarea
-          value={reviewNotes}
-          onChange={(e) => setReviewNotes(e.target.value)}
-          disabled={!canDecide}
-          rows={3}
-          style={{ width: '100%', padding: 8, fontSize: 16 }}
-        />
       </div>
 
       {canDecide && (
         <div style={{ marginTop: 16, display: 'flex', gap: 12 }}>
           <button
-            onClick={() => handleDecision('approved')}
+            onClick={handleApprove}
             disabled={actioning}
             style={{ padding: '10px 20px', fontSize: 16, background: '#16a34a', color: 'white', border: 'none', borderRadius: 6 }}
           >
             Approve
           </button>
           <button
-            onClick={() => handleDecision('rejected')}
+            onClick={handleSendFeedback}
             disabled={actioning}
-            style={{ padding: '10px 20px', fontSize: 16, background: '#dc2626', color: 'white', border: 'none', borderRadius: 6 }}
+            style={{ padding: '10px 20px', fontSize: 16, background: '#d97706', color: 'white', border: 'none', borderRadius: 6 }}
           >
-            Reject
+            Send Feedback
           </button>
         </div>
       )}
 
-      {!canDecide && exam.status !== 'draft' && (
-        <p style={{ marginTop: 16, color: '#666' }}>
-          This exam has already been {exam.status}.
-        </p>
+      {!canDecide && exam.status === 'approved' && (
+        <p style={{ marginTop: 16, color: '#666' }}>This exam has been approved.</p>
       )}
     </div>
   )
