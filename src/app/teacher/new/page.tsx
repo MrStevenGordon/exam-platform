@@ -23,6 +23,12 @@ export default function NewExamPage() {
       return
     }
 
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('department_id')
+      .eq('id', user.id)
+      .single()
+
     const { data, error } = await supabase
       .from('draft_exams')
       .insert({
@@ -30,6 +36,7 @@ export default function NewExamPage() {
         subject,
         instructions,
         created_by: user.id,
+        department_id: profile?.department_id,
       })
       .select()
       .single()
