@@ -91,7 +91,7 @@ export default function StudentDashboard() {
 
   return (
     <div style={{ padding: 40, fontFamily: 'sans-serif', maxWidth: 800, margin: '0 auto' }}>
-      <h1>My Exams</h1>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}><h1>My Exams</h1><Link href="/student/self-mock"><button style={{ padding: '8px 16px', fontSize: 14 }}>Practice Mock Exam</button></Link></div>
 
       {errorMsg && <p style={{ color: 'red' }}>{errorMsg}</p>}
 
