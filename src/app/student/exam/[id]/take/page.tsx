@@ -3,6 +3,34 @@
 import { useEffect, useState, useRef, useCallback } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+function mulberry32(seed: number) {
+  let a = seed
+  return function () {
+    a |= 0; a = (a + 0x6D2B79F5) | 0
+    let t = Math.imul(a ^ (a >>> 15), 1 | a)
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296
+  }
+}
+
+function seededShuffle<T>(array: T[], seed: number): T[] {
+  const result = [...array]
+  const random = mulberry32(seed)
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(random() * (i + 1))
+    ;[result[i], result[j]] = [result[j], result[i]]
+  }
+  return result
+}
+
+function questionSeed(sessionSeed: number, questionId: string): number {
+  let hash = sessionSeed
+  for (let i = 0; i < questionId.length; i++) {
+    hash = (hash * 31 + questionId.charCodeAt(i)) % 1000000
+  }
+  return hash
+}
+
 
 type FinalExam = {
   id: string
@@ -26,6 +54,7 @@ type SessionInfo = {
   started_at: string
   time_limit_seconds: number
   tab_switch_count: number
+  option_shuffle_seed: number | null
 }
 
 export default function TakeExamPage() {
@@ -63,7 +92,7 @@ export default function TakeExamPage() {
 
     const { data: sessionData, error: sessionError } = await supabase
       .from('exam_sessions')
-      .select('id, status, started_at, time_limit_seconds, tab_switch_count')
+      .select('id, status, started_at, time_limit_seconds, tab_switch_count, option_shuffle_seed')
       .eq('final_exam_id', examId)
       .eq('student_id', user.id)
       .single()
@@ -339,7 +368,7 @@ export default function TakeExamPage() {
 
             {q.question_type === 'multiple_choice' && q.options && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {q.options.map((opt, idx) => (
+                {seededShuffle(q.options, questionSeed(session?.option_shuffle_seed || 1, q.id)).map((opt, idx) => (
                   <label key={idx} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <input
                       type="radio"
