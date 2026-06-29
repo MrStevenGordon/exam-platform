@@ -27,6 +27,9 @@ export default function AddQuestionPage() {
   // Short answer / fill in the blank field
   const [exactAnswer, setExactAnswer] = useState('')
 
+  // Save to personal question bank
+  const [saveToBank, setSaveToBank] = useState(false)
+
   function updateOption(index: number, value: string) {
     const updated = [...options]
     updated[index] = value
@@ -63,6 +66,7 @@ export default function AddQuestionPage() {
       question_text: questionText,
       points,
       order_index: count || 0,
+      is_bank_question: saveToBank,
     }
 
     if (questionType === 'multiple_choice') {
@@ -215,6 +219,13 @@ export default function AddQuestionPage() {
             </p>
           </div>
         )}
+
+        <div style={{ marginBottom: 16 }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <input type="checkbox" checked={saveToBank} onChange={(e) => setSaveToBank(e.target.checked)} />
+            Save this question to my personal question bank for reuse
+          </label>
+        </div>
 
         {errorMsg && <p style={{ color: 'red' }}>{errorMsg}</p>}
 

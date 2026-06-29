@@ -9,6 +9,7 @@ export default function NewExamPage() {
   const [title, setTitle] = useState('')
   const [subject, setSubject] = useState('')
   const [instructions, setInstructions] = useState('')
+  const [examKind, setExamKind] = useState('final_exam_submission')
   const [errorMsg, setErrorMsg] = useState('')
   const [saving, setSaving] = useState(false)
 
@@ -37,6 +38,7 @@ export default function NewExamPage() {
         instructions,
         created_by: user.id,
         department_id: profile?.department_id,
+        exam_kind: examKind,
       })
       .select()
       .single()
@@ -53,6 +55,19 @@ export default function NewExamPage() {
     <div style={{ padding: 40, fontFamily: 'sans-serif', maxWidth: 600, margin: '0 auto' }}>
       <h1>New Exam</h1>
       <form onSubmit={handleSubmit}>
+        <div style={{ marginBottom: 16 }}>
+          <label>Exam Type</label><br />
+          <select
+            value={examKind}
+            onChange={(e) => setExamKind(e.target.value)}
+            style={{ width: '100%', padding: 8, fontSize: 16 }}
+          >
+            <option value="final_exam_submission">Final Exam Submission (sent for supervisor review)</option>
+            <option value="mock">Mock Exam (publish directly to your class)</option>
+            <option value="pop_quiz">Pop Quiz (publish directly to your class)</option>
+            <option value="midterm">Midterm Exam (publish directly to your class)</option>
+          </select>
+        </div>
         <div style={{ marginBottom: 16 }}>
           <label>Title</label><br />
           <input
