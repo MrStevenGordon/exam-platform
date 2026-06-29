@@ -11,8 +11,16 @@ type ExamItem = {
   subject: string
   duration_minutes: number | null
   kind: 'final_exam' | 'direct_exam'
-  exam_kind?: string
+  category: string
 }
+
+const CATEGORY_LABELS: Record<string, string> = {
+  pop_quiz: 'Pop Quizzes',
+  midterm: 'Mid Terms',
+  end_of_year: 'End of Year Exams',
+}
+
+const CATEGORY_ORDER = ['pop_quiz', 'midterm', 'end_of_year']
 
 export default function StudentDashboard() {
   const router = useRouter()
@@ -20,6 +28,7 @@ export default function StudentDashboard() {
   const [sessionMap, setSessionMap] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(true)
   const [errorMsg, setErrorMsg] = useState('')
+  const [openCategories, setOpenCategories] = useState<Record<string, boolean>>({})
 
   useEffect(() => {
     async function loadExams() {
@@ -31,7 +40,7 @@ export default function StudentDashboard() {
 
       const { data: finalExams, error: finalError } = await supabase
         .from('final_exams')
-        .select('id, title, subject, duration_minutes, published_at')
+        .select('id, title, subject, duration_minutes, published_at, exam_category')
         .order('published_at', { ascending: false })
 
       if (finalError) {
@@ -42,7 +51,7 @@ export default function StudentDashboard() {
 
       const { data: directExams, error: directError } = await supabase
         .from('draft_exams')
-        .select('id, title, subject, exam_kind, direct_published_at')
+        .select('id, title, subject, exam_kind, direct_published_at, duration_minutes')
         .eq('direct_published', true)
         .order('direct_published_at', { ascending: false })
 
@@ -56,10 +65,12 @@ export default function StudentDashboard() {
         ...(finalExams || []).map((e) => ({
           id: e.id, title: e.title, subject: e.subject,
           duration_minutes: e.duration_minutes, kind: 'final_exam' as const,
+          category: e.exam_category,
         })),
         ...(directExams || []).map((e) => ({
           id: e.id, title: e.title, subject: e.subject,
-          duration_minutes: null, kind: 'direct_exam' as const, exam_kind: e.exam_kind,
+          duration_minutes: e.duration_minutes, kind: 'direct_exam' as const,
+          category: e.exam_kind,
         })),
       ]
       setExams(combined)
@@ -83,15 +94,18 @@ export default function StudentDashboard() {
 
   if (loading) return <div style={{ padding: 40 }}>Loading...</div>
 
-  const kindLabels: Record<string, string> = {
-    mock: 'Mock Exam',
-    pop_quiz: 'Pop Quiz',
-    midterm: 'Midterm Exam',
-  }
+  const grouped: Record<string, ExamItem[]> = {}
+  exams.forEach((e) => {
+    if (!grouped[e.category]) grouped[e.category] = []
+    grouped[e.category].push(e)
+  })
 
   return (
     <div style={{ padding: 40, fontFamily: 'sans-serif', maxWidth: 800, margin: '0 auto' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}><h1>My Exams</h1><Link href="/student/self-mock"><button style={{ padding: '8px 16px', fontSize: 14 }}>Practice Mock Exam</button></Link></div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <h1>My Exams</h1>
+        <Link href="/student/self-mock"><button style={{ padding: '8px 16px', fontSize: 14 }}>Practice Mock Exam</button></Link>
+      </div>
 
       {errorMsg && <p style={{ color: 'red' }}>{errorMsg}</p>}
 
@@ -99,40 +113,65 @@ export default function StudentDashboard() {
         <p>No exams available right now. Check back later.</p>
       )}
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        {exams.map((exam) => {
-          const status = sessionMap[exam.id]
-          const isCompleted = status === 'completed'
-          const basePath = exam.kind === 'final_exam' ? '/student/exam' : '/student/direct-exam'
+      <div style={{ display: 'flex', gap: 16, marginTop: 32, flexWrap: 'wrap', alignItems: 'flex-start' }}>
+      {CATEGORY_ORDER.map((cat) => {
+        const items = grouped[cat]
+        if (!items || items.length === 0) return null
 
-          return (
-            <div key={exam.id} style={{ border: '1px solid #ddd', borderRadius: 8, padding: 16 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div>
-                  <strong>{exam.title}</strong>
-                  <p style={{ color: '#666', margin: '4px 0 0' }}>
-                    {exam.subject}
-                    {exam.exam_kind && ` — ${kindLabels[exam.exam_kind]}`}
-                    {exam.duration_minutes && ` — ${exam.duration_minutes} minutes`}
-                  </p>
-                </div>
-                {isCompleted ? (
-                  <Link href={`${basePath}/${exam.id}/results`}>
-                    <button style={{ padding: '8px 16px', fontSize: 14, background: '#2563eb', color: 'white', border: 'none', borderRadius: 6 }}>
-                      View Results
-                    </button>
-                  </Link>
-                ) : (
-                  <Link href={`${basePath}/${exam.id}`}>
-                    <button style={{ padding: '8px 16px', fontSize: 14 }}>
-                      {status === 'in_progress' ? 'Resume' : 'Begin'}
-                    </button>
-                  </Link>
-                )}
-              </div>
+        const isOpen = openCategories[cat] === true
+
+        return (
+          <div key={cat} style={{ flex: '1 1 280px', minWidth: 260 }}>
+            <button
+              onClick={() => setOpenCategories({ ...openCategories, [cat]: !isOpen })}
+              style={{
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                width: '100%', background: 'none', border: 'none', borderBottom: '2px solid #ddd',
+                paddingBottom: 8, cursor: 'pointer', textAlign: 'left',
+              }}
+            >
+              <h2 style={{ margin: 0 }}>{CATEGORY_LABELS[cat]} ({items.length})</h2>
+              <span style={{ fontSize: 20, color: '#666' }}>{isOpen ? '▾' : '▸'}</span>
+            </button>
+            {isOpen && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 12 }}>
+              {items.map((exam) => {
+                const status = sessionMap[exam.id]
+                const isCompleted = status === 'completed'
+                const basePath = exam.kind === 'final_exam' ? '/student/exam' : '/student/direct-exam'
+
+                return (
+                  <div key={exam.id} style={{ border: '1px solid #ddd', borderRadius: 8, padding: 16 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div>
+                        <strong>{exam.title}</strong>
+                        <p style={{ color: '#666', margin: '4px 0 0' }}>
+                          {exam.subject}
+                          {exam.duration_minutes && ` — ${exam.duration_minutes} minutes`}
+                        </p>
+                      </div>
+                      {isCompleted ? (
+                        <Link href={`${basePath}/${exam.id}/results`}>
+                          <button style={{ padding: '8px 16px', fontSize: 14, background: '#2563eb', color: 'white', border: 'none', borderRadius: 6 }}>
+                            View Results
+                          </button>
+                        </Link>
+                      ) : (
+                        <Link href={`${basePath}/${exam.id}`}>
+                          <button style={{ padding: '8px 16px', fontSize: 14 }}>
+                            {status === 'in_progress' ? 'Resume' : 'Begin'}
+                          </button>
+                        </Link>
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
             </div>
-          )
-        })}
+            )}
+          </div>
+        )
+      })}
       </div>
     </div>
   )
