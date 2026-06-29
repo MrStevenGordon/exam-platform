@@ -12,6 +12,7 @@ type DirectExam = {
   instructions: string
   exam_kind: string
   duration_minutes: number
+  access_password: string | null
 }
 
 export default function DirectExamFrontPage() {
@@ -23,7 +24,10 @@ export default function DirectExamFrontPage() {
   const [questionCount, setQuestionCount] = useState(0)
   const [loading, setLoading] = useState(true)
   const [errorMsg, setErrorMsg] = useState('')
-  const [existingSession, setExistingSession] = useState<{ id: string; status: string } | null>(null)
+  const [existingSession, setExistingSession] = useState<{ id: string; status: string; password_verified: boolean } | null>(null)
+  const [passwordInput, setPasswordInput] = useState('')
+  const [passwordError, setPasswordError] = useState('')
+  const [unlocked, setUnlocked] = useState(false)
 
   useEffect(() => {
     loadData()
@@ -38,7 +42,7 @@ export default function DirectExamFrontPage() {
 
     const { data: examData, error: examError } = await supabase
       .from('draft_exams')
-      .select('id, title, subject, instructions, exam_kind, duration_minutes')
+      .select('id, title, subject, instructions, exam_kind, duration_minutes, access_password')
       .eq('id', examId)
       .single()
 
@@ -58,14 +62,27 @@ export default function DirectExamFrontPage() {
 
     const { data: sessionData } = await supabase
       .from('exam_sessions')
-      .select('id, status')
+      .select('id, status, password_verified')
       .eq('draft_exam_id', examId)
       .eq('student_id', user.id)
       .maybeSingle()
 
-    if (sessionData) setExistingSession(sessionData)
+    if (sessionData) {
+      setExistingSession(sessionData)
+      if (sessionData.password_verified) setUnlocked(true)
+    }
 
     setLoading(false)
+  }
+
+  function handleVerifyPassword() {
+    if (!exam) return
+    if (passwordInput.trim().toUpperCase() === (exam.access_password || '').toUpperCase()) {
+      setUnlocked(true)
+      setPasswordError('')
+    } else {
+      setPasswordError('Incorrect password. Check with your teacher.')
+    }
   }
 
   async function handleBeginExam() {
@@ -74,6 +91,7 @@ export default function DirectExamFrontPage() {
 
     if (existingSession) {
       if (existingSession.status === 'completed') return
+      await supabase.from('exam_sessions').update({ password_verified: true }).eq('id', existingSession.id)
       router.push(`/student/direct-exam/${examId}/take`)
       return
     }
@@ -86,6 +104,8 @@ export default function DirectExamFrontPage() {
         status: 'in_progress',
         started_at: new Date().toISOString(),
         time_limit_seconds: exam.duration_minutes * 60,
+        password_verified: true,
+        option_shuffle_seed: Math.floor(Math.random() * 1000000),
       })
       .select()
       .single()
@@ -103,7 +123,7 @@ export default function DirectExamFrontPage() {
   if (!exam) return <div style={{ padding: 40 }}>Exam not found.</div>
 
   const alreadyCompleted = existingSession?.status === 'completed'
-  const kindLabels: Record<string, string> = { mock: 'Mock Exam', pop_quiz: 'Pop Quiz', midterm: 'Midterm Exam' }
+  const kindLabels: Record<string, string> = { pop_quiz: 'Pop Quiz', midterm: 'Mid Term', end_of_year: 'End of Year' }
 
   return (
     <div style={{ padding: 40, fontFamily: 'sans-serif', maxWidth: 700, margin: '0 auto' }}>
@@ -139,6 +159,29 @@ export default function DirectExamFrontPage() {
               View Results
             </button>
           </Link>
+        </div>
+      ) : !unlocked ? (
+        <div style={{ padding: 20, background: '#f0f0f0', borderRadius: 8 }}>
+          <p style={{ fontWeight: 600, marginBottom: 8 }}>Enter the exam password to begin</p>
+          <p style={{ fontSize: 14, color: '#666', marginBottom: 12 }}>
+            Your teacher will provide this password on exam day.
+          </p>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <input
+              value={passwordInput}
+              onChange={(e) => setPasswordInput(e.target.value)}
+              placeholder="e.g. 7F3K9P"
+              style={{ padding: 10, fontSize: 18, fontFamily: 'monospace', letterSpacing: 2, textTransform: 'uppercase', width: 160 }}
+              maxLength={6}
+            />
+            <button
+              onClick={handleVerifyPassword}
+              style={{ padding: '10px 20px', fontSize: 16, background: '#2563eb', color: 'white', border: 'none', borderRadius: 6 }}
+            >
+              Unlock
+            </button>
+          </div>
+          {passwordError && <p style={{ color: 'red', marginTop: 8 }}>{passwordError}</p>}
         </div>
       ) : (
         <button

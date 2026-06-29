@@ -11,6 +11,7 @@ type FinalExam = {
   subject: string
   status: string
   department_id: string
+  access_password: string | null
 }
 
 type Teacher = {
@@ -27,6 +28,14 @@ type Question = {
   draft_exams: { title: string } | null
 }
 
+function generatePassword() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+  let result = ''
+  for (let i = 0; i < 6; i++) {
+    result += chars[Math.floor(Math.random() * chars.length)]
+  }
+  return result
+}
 export default function AssembleFinalExamPage() {
   const router = useRouter()
   const params = useParams()
@@ -56,7 +65,7 @@ export default function AssembleFinalExamPage() {
 
     const { data: examData, error: examError } = await supabase
       .from('final_exams')
-      .select('id, title, subject, status, department_id')
+      .select('id, title, subject, status, department_id, access_password')
       .eq('id', finalExamId)
       .single()
 
@@ -183,7 +192,7 @@ export default function AssembleFinalExamPage() {
 
     const { error } = await supabase
       .from('final_exams')
-      .update({ status: 'published', published_at: new Date().toISOString() })
+      .update({ status: 'published', published_at: new Date().toISOString(), access_password: generatePassword() })
       .eq('id', finalExamId)
 
     if (error) {
@@ -224,9 +233,14 @@ export default function AssembleFinalExamPage() {
       </div>
 
       {isPublished && (
-        <p style={{ background: '#d4edda', padding: 12, borderRadius: 8 }}>
-          This exam is published and visible to students.
-        </p>
+        <div style={{ background: '#d4edda', padding: 12, borderRadius: 8 }}>
+          <p style={{ margin: 0 }}>This exam is published and visible to students.</p>
+          {finalExam.access_password && (
+            <p style={{ marginTop: 8, marginBottom: 0, fontSize: 18, fontWeight: 700 }}>
+              Exam Password: <span style={{ fontFamily: 'monospace', background: '#fff', padding: '2px 8px', borderRadius: 4 }}>{finalExam.access_password}</span>
+            </p>
+          )}
+        </div>
       )}
 
       <div style={{

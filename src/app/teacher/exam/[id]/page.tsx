@@ -13,6 +13,7 @@ type DraftExam = {
   status: string
   exam_kind: string
   direct_published: boolean
+  access_password: string | null
 }
 
 type Question = {
@@ -31,6 +32,14 @@ type ClassGroup = {
   year_grade: string
 }
 
+function generatePassword() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+  let result = ''
+  for (let i = 0; i < 6; i++) {
+    result += chars[Math.floor(Math.random() * chars.length)]
+  }
+  return result
+}
 export default function ExamEditorPage() {
   const router = useRouter()
   const params = useParams()
@@ -57,7 +66,7 @@ export default function ExamEditorPage() {
 
     const { data: examData, error: examError } = await supabase
       .from('draft_exams')
-      .select('id, title, subject, instructions, status, exam_kind, direct_published')
+      .select('id, title, subject, instructions, status, exam_kind, direct_published, access_password')
       .eq('id', examId)
       .single()
 
@@ -155,7 +164,7 @@ export default function ExamEditorPage() {
 
     const { error } = await supabase
       .from('draft_exams')
-      .update({ direct_published: true, direct_published_at: new Date().toISOString() })
+      .update({ direct_published: true, direct_published_at: new Date().toISOString(), access_password: generatePassword() })
       .eq('id', examId)
 
     if (error) {
@@ -214,9 +223,14 @@ export default function ExamEditorPage() {
       )}
 
       {!isFinalExamSubmission && exam.direct_published && (
-        <p style={{ background: '#d4edda', padding: 12, borderRadius: 8 }}>
-          This exam is published and visible to students in the selected class(es).
-        </p>
+        <div style={{ background: '#d4edda', padding: 12, borderRadius: 8 }}>
+          <p style={{ margin: 0 }}>This exam is published and visible to students in the selected class(es).</p>
+          {exam.access_password && (
+            <p style={{ marginTop: 8, marginBottom: 0, fontSize: 18, fontWeight: 700 }}>
+              Exam Password: <span style={{ fontFamily: 'monospace', background: '#fff', padding: '2px 8px', borderRadius: 4 }}>{exam.access_password}</span>
+            </p>
+          )}
+        </div>
       )}
 
       {isFinalExamSubmission && !isLocked && hasComments && (
