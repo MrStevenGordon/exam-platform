@@ -83,6 +83,11 @@ export default function ResultsPage() {
           <p style={{ fontSize: 18, color: '#666' }}>
             {result.max_possible_score ? Math.round((result.total_score! / result.max_possible_score) * 100) : 0}%
           </p>
+          <Link href={`/student/exam/${examId}/review`}>
+            <button style={{ marginTop: 16, padding: '10px 20px', fontSize: 16, background: '#2563eb', color: 'white', border: 'none', borderRadius: 6 }}>
+              Review Answers
+            </button>
+          </Link>
         </div>
       )}
     </div>
