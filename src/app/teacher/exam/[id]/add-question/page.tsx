@@ -29,6 +29,45 @@ export default function AddQuestionPage() {
 
   // Save to personal question bank
   const [saveToBank, setSaveToBank] = useState(false)
+  const [polishing, setPolishing] = useState(false)
+  const [polishError, setPolishError] = useState('')
+
+  async function handlePolish() {
+    if (!questionText.trim()) {
+      setPolishError('Write a draft question first.')
+      return
+    }
+    setPolishing(true)
+    setPolishError('')
+
+    try {
+      const res = await fetch('/api/polish-question', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          questionType,
+          questionText,
+          options: questionType === 'multiple_choice' ? options : undefined,
+        }),
+      })
+      const data = await res.json()
+
+      if (!res.ok) {
+        setPolishError(data.error || 'Something went wrong.')
+        setPolishing(false)
+        return
+      }
+
+      if (data.improved_question) setQuestionText(data.improved_question)
+      if (data.improved_options && questionType === 'multiple_choice') {
+        setOptions(data.improved_options)
+      }
+    } catch (err) {
+      setPolishError('Could not reach the AI service. Try again.')
+    }
+
+    setPolishing(false)
+  }
 
   function updateOption(index: number, value: string) {
     const updated = [...options]
@@ -142,6 +181,18 @@ export default function AddQuestionPage() {
             placeholder={questionType === 'fill_blank' ? 'The capital of France is ___.' : ''}
             style={{ width: '100%', marginTop: 6 }}
           />
+          {questionType !== 'essay' && (
+            <button
+              type="button"
+              onClick={handlePolish}
+              disabled={polishing}
+              className="btn btn-secondary"
+              style={{ marginTop: 8, fontSize: 13, padding: '6px 14px' }}
+            >
+              {polishing ? 'Polishing…' : '✨ Polish with AI'}
+            </button>
+          )}
+          {polishError && <p className="banner banner-danger" style={{ marginTop: 8, fontSize: 13 }}>{polishError}</p>}
         </div>
 
         <div style={{ marginBottom: 16 }}>
