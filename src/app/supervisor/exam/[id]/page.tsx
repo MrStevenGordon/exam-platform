@@ -152,15 +152,15 @@ export default function SupervisorExamReviewPage() {
     setActioning(false)
   }
 
-  if (loading) return <div style={{ padding: 40 }}>Loading...</div>
-  if (errorMsg) return <div style={{ padding: 40, color: 'red' }}>{errorMsg}</div>
-  if (!exam) return <div style={{ padding: 40 }}>Exam not found.</div>
+  if (loading) return <div className="page-container">Loading…</div>
+  if (errorMsg) return <div className="page-container"><p className="banner banner-danger">{errorMsg}</p></div>
+  if (!exam) return <div className="page-container">Exam not found.</div>
 
   const canDecide = exam.status === 'submitted'
 
   return (
-    <div style={{ padding: 40, fontFamily: 'sans-serif', maxWidth: 800, margin: '0 auto' }}>
-      <Link href="/supervisor" style={{ color: '#666' }}>&larr; Back to Submissions</Link>
+    <div className="page-container">
+      <Link href="/supervisor" style={{ color: 'var(--text-secondary)', fontSize: 14 }}>&larr; Back to submissions</Link>
 
       <div style={{ marginTop: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
@@ -169,18 +169,13 @@ export default function SupervisorExamReviewPage() {
             {exam.subject} — by {exam.profiles?.full_name || 'Unknown'}
           </p>
         </div>
-        <span style={{
-          fontSize: 12,
-          padding: '4px 10px',
-          borderRadius: 12,
-          background: exam.status === 'submitted' ? '#fff3cd' : exam.status === 'approved' ? '#d4edda' : '#eee',
-        }}>
+        <span className={`badge ${exam.status === 'submitted' ? 'badge-warning' : exam.status === 'approved' ? 'badge-success' : 'badge-default'}`}>
           {exam.status}
         </span>
       </div>
 
       {exam.instructions && (
-        <div style={{ marginTop: 16, padding: 12, background: '#f8f8f8', borderRadius: 8 }}>
+        <div className="card" style={{ marginTop: 16, background: 'var(--page-bg)' }}>
           <strong>Instructions:</strong>
           <p style={{ margin: '4px 0 0' }}>{exam.instructions}</p>
         </div>
@@ -190,38 +185,38 @@ export default function SupervisorExamReviewPage() {
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         {questions.map((q, i) => (
-          <div key={q.id} style={{ border: '1px solid #ddd', borderRadius: 8, padding: 12 }}>
+          <div key={q.id} className="card">
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span style={{ fontSize: 12, color: '#888', textTransform: 'uppercase' }}>
+              <span className="section-label" style={{ fontSize: 11 }}>
                 {i + 1}. {q.question_type.replace('_', ' ')}
               </span>
-              <span style={{ fontSize: 12, color: '#888' }}>{q.points} pt{q.points !== 1 ? 's' : ''}</span>
+              <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{q.points} pt{q.points !== 1 ? 's' : ''}</span>
             </div>
             <p style={{ margin: '8px 0 0' }}>{q.question_text}</p>
             {q.options && (
               <ul style={{ margin: '8px 0 0', paddingLeft: 20 }}>
                 {q.options.map((opt, idx) => (
-                  <li key={idx} style={{ color: opt === q.correct_answer ? '#16a34a' : undefined, fontWeight: opt === q.correct_answer ? 600 : 400 }}>
+                  <li key={idx} style={{ color: opt === q.correct_answer ? 'var(--success)' : undefined, fontWeight: opt === q.correct_answer ? 700 : 400 }}>
                     {opt}
                   </li>
                 ))}
               </ul>
             )}
             {!q.options && q.correct_answer && (
-              <p style={{ margin: '8px 0 0', fontSize: 14, color: '#16a34a' }}>
+              <p style={{ margin: '8px 0 0', fontSize: 14, color: 'var(--success)' }}>
                 Correct answer: {q.correct_answer}
               </p>
             )}
 
             <div style={{ marginTop: 10 }}>
-              <label style={{ fontSize: 13, color: '#555' }}>Comment for teacher (optional)</label>
+              <label style={{ fontSize: 13, color: 'var(--text-secondary)' }}>Comment for teacher (optional)</label>
               <textarea
                 value={comments[q.id] || ''}
                 onChange={(e) => updateComment(q.id, e.target.value)}
                 disabled={!canDecide}
                 rows={2}
                 placeholder="e.g. This option is ambiguous, please clarify"
-                style={{ width: '100%', padding: 8, fontSize: 14, marginTop: 4 }}
+                style={{ width: '100%', marginTop: 4 }}
               />
             </div>
           </div>
@@ -230,25 +225,17 @@ export default function SupervisorExamReviewPage() {
 
       {canDecide && (
         <div style={{ marginTop: 16, display: 'flex', gap: 12 }}>
-          <button
-            onClick={handleApprove}
-            disabled={actioning}
-            style={{ padding: '10px 20px', fontSize: 16, background: '#16a34a', color: 'white', border: 'none', borderRadius: 6 }}
-          >
+          <button onClick={handleApprove} disabled={actioning} className="btn btn-primary">
             Approve
           </button>
-          <button
-            onClick={handleSendFeedback}
-            disabled={actioning}
-            style={{ padding: '10px 20px', fontSize: 16, background: '#d97706', color: 'white', border: 'none', borderRadius: 6 }}
-          >
-            Send Feedback
+          <button onClick={handleSendFeedback} disabled={actioning} className="btn btn-secondary">
+            Send feedback
           </button>
         </div>
       )}
 
       {!canDecide && exam.status === 'approved' && (
-        <p style={{ marginTop: 16, color: '#666' }}>This exam has been approved.</p>
+        <p style={{ marginTop: 16, color: 'var(--text-secondary)' }}>This exam has been approved.</p>
       )}
     </div>
   )

@@ -203,9 +203,9 @@ export default function AssembleFinalExamPage() {
     setPublishing(false)
   }
 
-  if (loading) return <div style={{ padding: 40 }}>Loading...</div>
-  if (errorMsg) return <div style={{ padding: 40, color: 'red' }}>{errorMsg}</div>
-  if (!finalExam) return <div style={{ padding: 40 }}>Final exam not found.</div>
+  if (loading) return <div className="page-container">Loading…</div>
+  if (errorMsg) return <div className="page-container"><p className="banner banner-danger">{errorMsg}</p></div>
+  if (!finalExam) return <div className="page-container">Final exam not found.</div>
 
   const selectedQuestions = Array.from(selectedIds).map((id) => allQuestionsById[id]).filter(Boolean)
   const totalPoints = selectedQuestions.reduce((sum, q) => sum + q.points, 0)
@@ -213,45 +213,42 @@ export default function AssembleFinalExamPage() {
   const isPublished = finalExam.status === 'published'
 
   return (
-    <div style={{ padding: 40, fontFamily: 'sans-serif', maxWidth: 900, margin: '0 auto' }}>
-      <Link href="/supervisor/final-exams" style={{ color: '#666' }}>&larr; Back to Final Exams</Link>
-        <Link href={`/supervisor/final-exams/${finalExamId}/sessions`}><button style={{ padding: '8px 16px', fontSize: 14 }}>View Student Sessions</button></Link>
+    <div className="page-container" style={{ maxWidth: 900 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Link href="/supervisor/final-exams" style={{ color: 'var(--text-secondary)', fontSize: 14 }}>&larr; Back to final exams</Link>
+        <Link href={`/supervisor/final-exams/${finalExamId}/sessions`}><button className="btn btn-secondary">View student sessions</button></Link>
+      </div>
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginTop: 16 }}>
         <div>
           <h1 style={{ margin: 0 }}>{finalExam.title}</h1>
-          <p style={{ color: '#666', margin: '4px 0' }}>{finalExam.subject}</p>
+          <p style={{ color: 'var(--text-secondary)', margin: '4px 0' }}>{finalExam.subject}</p>
         </div>
-        <span style={{
-          fontSize: 12,
-          padding: '4px 10px',
-          borderRadius: 12,
-          background: isPublished ? '#d4edda' : '#eee',
-        }}>
+        <span className={`badge ${isPublished ? 'badge-success' : 'badge-default'}`}>
           {finalExam.status}
         </span>
       </div>
 
       {isPublished && (
-        <div style={{ background: '#d4edda', padding: 12, borderRadius: 8 }}>
+        <div className="banner banner-success" style={{ marginTop: 16 }}>
           <p style={{ margin: 0 }}>This exam is published and visible to students.</p>
           {finalExam.access_password && (
             <p style={{ marginTop: 8, marginBottom: 0, fontSize: 18, fontWeight: 700 }}>
-              Exam Password: <span style={{ fontFamily: 'monospace', background: '#fff', padding: '2px 8px', borderRadius: 4 }}>{finalExam.access_password}</span>
+              Exam password: <span style={{ fontFamily: 'monospace', background: 'white', padding: '2px 10px', borderRadius: 6 }}>{finalExam.access_password}</span>
             </p>
           )}
         </div>
       )}
 
       <div style={{
-        position: 'sticky', top: 0, background: 'white', padding: '12px 0',
-        borderBottom: '2px solid #ddd', marginBottom: 16, zIndex: 10,
+        position: 'sticky', top: 0, background: 'var(--page-bg)', padding: '12px 0',
+        borderBottom: '2px solid var(--border-strong)', marginTop: 16, marginBottom: 16, zIndex: 10,
       }}>
         <strong>{selectedQuestions.length} questions selected — {totalPoints} total points</strong>
       </div>
 
       {teachers.length === 0 && (
-        <p>No approved exams found yet in your department. Approve some teacher submissions first.</p>
+        <div className="card"><p style={{ color: 'var(--text-secondary)' }}>No approved exams found yet in your department. Approve some teacher submissions first.</p></div>
       )}
 
       {teachers.length > 0 && (
@@ -265,10 +262,11 @@ export default function AssembleFinalExamPage() {
                   padding: '8px 16px',
                   border: 'none',
                   background: 'none',
-                  borderBottom: activeTeacherId === t.id ? '3px solid #2563eb' : '3px solid transparent',
-                  fontWeight: activeTeacherId === t.id ? 600 : 400,
+                  borderBottom: activeTeacherId === t.id ? '3px solid var(--accent)' : '3px solid transparent',
+                  fontWeight: activeTeacherId === t.id ? 700 : 400,
                   cursor: 'pointer',
                   fontSize: 15,
+                  color: 'var(--text-primary)',
                 }}
               >
                 {t.full_name} ({(questionsByTeacher[t.id] || []).length})
@@ -280,11 +278,11 @@ export default function AssembleFinalExamPage() {
             {activeQuestions.map((q) => (
               <label
                 key={q.id}
+                className="card"
                 style={{
                   display: 'flex', gap: 12, alignItems: 'flex-start',
-                  border: '1px solid #ddd', borderRadius: 8, padding: 12,
                   cursor: isPublished ? 'default' : 'pointer',
-                  background: selectedIds.has(q.id) ? '#eff6ff' : 'white',
+                  background: selectedIds.has(q.id) ? 'var(--accent-light)' : 'var(--card-bg)',
                   opacity: isPublished ? 0.7 : 1,
                 }}
               >
@@ -296,7 +294,7 @@ export default function AssembleFinalExamPage() {
                   style={{ marginTop: 4 }}
                 />
                 <div>
-                  <div style={{ fontSize: 12, color: '#888', textTransform: 'uppercase' }}>
+                  <div className="section-label" style={{ fontSize: 11 }}>
                     {q.question_type.replace('_', ' ')} — {q.points} pt{q.points !== 1 ? 's' : ''}
                     {q.draft_exams && ` — from "${q.draft_exams.title}"`}
                   </div>
@@ -304,26 +302,18 @@ export default function AssembleFinalExamPage() {
                 </div>
               </label>
             ))}
-            {activeQuestions.length === 0 && <p>No questions from this teacher.</p>}
+            {activeQuestions.length === 0 && <p style={{ color: 'var(--text-secondary)' }}>No questions from this teacher.</p>}
           </div>
         </>
       )}
 
       {!isPublished && (
-        <div style={{ marginTop: 24, paddingTop: 16, borderTop: '1px solid #ddd', display: 'flex', gap: 12 }}>
-          <button
-            onClick={handleSaveSelections}
-            disabled={saving || publishing}
-            style={{ padding: '10px 20px', fontSize: 16, background: '#eee', border: 'none', borderRadius: 6 }}
-          >
-            {saving ? 'Saving...' : 'Save Selections'}
+        <div style={{ marginTop: 24, paddingTop: 16, borderTop: '1px solid var(--border)', display: 'flex', gap: 12 }}>
+          <button onClick={handleSaveSelections} disabled={saving || publishing} className="btn btn-ghost">
+            {saving ? 'Saving…' : 'Save selections'}
           </button>
-          <button
-            onClick={handlePublish}
-            disabled={saving || publishing}
-            style={{ padding: '10px 20px', fontSize: 16, background: '#16a34a', color: 'white', border: 'none', borderRadius: 6 }}
-          >
-            {publishing ? 'Publishing...' : 'Publish Exam'}
+          <button onClick={handlePublish} disabled={saving || publishing} className="btn btn-primary">
+            {publishing ? 'Publishing…' : 'Publish exam'}
           </button>
         </div>
       )}

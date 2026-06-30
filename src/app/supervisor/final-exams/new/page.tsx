@@ -52,51 +52,38 @@ export default function NewFinalExamPage() {
   }
 
   return (
-    <div style={{ padding: 40, fontFamily: 'sans-serif', maxWidth: 600, margin: '0 auto' }}>
-      <h1>New Final Exam</h1>
-      <form onSubmit={handleSubmit}>
-        <div style={{ marginBottom: 16 }}>
-          <label>Title</label><br />
-          <input
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            required
-            style={{ width: '100%', padding: 8, fontSize: 16 }}
-          />
-        </div>
-        <div style={{ marginBottom: 16 }}>
-          <label>Subject</label><br />
-          <input
-            value={subject}
-            onChange={(e) => setSubject(e.target.value)}
-            required
-            style={{ width: '100%', padding: 8, fontSize: 16 }}
-          />
-        </div>
-        <div style={{ marginBottom: 16 }}>
-          <label>Instructions (shown to students on the front page)</label><br />
-          <textarea
-            value={instructions}
-            onChange={(e) => setInstructions(e.target.value)}
-            rows={4}
-            style={{ width: '100%', padding: 8, fontSize: 16 }}
-          />
-        </div>
-        <div style={{ marginBottom: 16 }}>
-          <label>Duration (minutes)</label><br />
-          <input
-            type="number"
-            min={1}
-            value={duration}
-            onChange={(e) => setDuration(parseInt(e.target.value) || 60)}
-            style={{ width: 120, padding: 8, fontSize: 16 }}
-          />
-        </div>
-        {errorMsg && <p style={{ color: 'red' }}>{errorMsg}</p>}
-        <button type="submit" disabled={saving} style={{ padding: '10px 20px', fontSize: 16 }}>
-          {saving ? 'Creating...' : 'Create Final Exam'}
-        </button>
-      </form>
+    <div className="page-container" style={{ maxWidth: 520 }}>
+      <h1>New final exam</h1>
+      <div className="card" style={{ marginTop: 20 }}>
+        <form onSubmit={handleSubmit}>
+          <div style={{ marginBottom: 16 }}>
+            <label style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)' }}>Title</label><br />
+            <input value={title} onChange={(e) => setTitle(e.target.value)} required style={{ width: '100%', marginTop: 6 }} />
+          </div>
+          <div style={{ marginBottom: 16 }}>
+            <label style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)' }}>Subject</label><br />
+            <input value={subject} onChange={(e) => setSubject(e.target.value)} required style={{ width: '100%', marginTop: 6 }} />
+          </div>
+          <div style={{ marginBottom: 16 }}>
+            <label style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)' }}>Instructions (shown to students on the front page)</label><br />
+            <textarea value={instructions} onChange={(e) => setInstructions(e.target.value)} rows={4} style={{ width: '100%', marginTop: 6 }} />
+          </div>
+          <div style={{ marginBottom: 20 }}>
+            <label style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)' }}>Duration (minutes)</label><br />
+            <input
+              type="number"
+              min={1}
+              value={duration}
+              onChange={(e) => setDuration(parseInt(e.target.value) || 60)}
+              style={{ width: 120, marginTop: 6 }}
+            />
+          </div>
+          {errorMsg && <p className="banner banner-danger" style={{ marginBottom: 16 }}>{errorMsg}</p>}
+          <button type="submit" disabled={saving} className="btn btn-primary">
+            {saving ? 'Creating…' : 'Create final exam'}
+          </button>
+        </form>
+      </div>
     </div>
   )
 }

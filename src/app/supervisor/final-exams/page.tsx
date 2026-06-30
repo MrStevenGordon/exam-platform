@@ -43,39 +43,38 @@ export default function FinalExamsListPage() {
     loadExams()
   }, [router])
 
-  if (loading) return <div style={{ padding: 40 }}>Loading...</div>
+  if (loading) return <div className="page-container">Loading…</div>
 
   return (
-    <div style={{ padding: 40, fontFamily: 'sans-serif', maxWidth: 800, margin: '0 auto' }}>
-      <Link href="/supervisor" style={{ color: '#666' }}>&larr; Back to Submissions</Link>
+    <div className="page-container">
+      <Link href="/supervisor" style={{ color: 'var(--text-secondary)', fontSize: 14 }}>&larr; Back to submissions</Link>
 
       <div style={{ marginTop: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h1>Final Exams</h1>
+        <h1>Final exams</h1>
         <Link href="/supervisor/final-exams/new">
-          <button style={{ padding: '10px 20px', fontSize: 16 }}>+ New Final Exam</button>
+          <button className="btn btn-primary">+ New final exam</button>
         </Link>
       </div>
 
-      {errorMsg && <p style={{ color: 'red' }}>{errorMsg}</p>}
+      {errorMsg && <p className="banner banner-danger" style={{ marginTop: 16 }}>{errorMsg}</p>}
 
-      {exams.length === 0 && !errorMsg && <p>No final exams created yet.</p>}
+      {exams.length === 0 && !errorMsg && (
+        <div className="card" style={{ marginTop: 20 }}>
+          <p style={{ color: 'var(--text-secondary)' }}>No final exams created yet.</p>
+        </div>
+      )}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         {exams.map((exam) => (
           <Link key={exam.id} href={`/supervisor/final-exams/${exam.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
-            <div style={{ border: '1px solid #ddd', borderRadius: 8, padding: 16, cursor: 'pointer' }}>
+            <div className="card card-clickable">
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <strong>{exam.title}</strong>
-                <span style={{
-                  fontSize: 12,
-                  padding: '4px 10px',
-                  borderRadius: 12,
-                  background: exam.status === 'draft' ? '#eee' : exam.status === 'published' ? '#d4edda' : '#f8d7da',
-                }}>
+                <span className={`badge ${exam.status === 'draft' ? 'badge-default' : exam.status === 'published' ? 'badge-success' : 'badge-danger'}`}>
                   {exam.status}
                 </span>
               </div>
-              <p style={{ color: '#666', margin: '4px 0 0' }}>
+              <p style={{ color: 'var(--text-secondary)', margin: '4px 0 0', fontSize: 14 }}>
                 {exam.subject} — {exam.duration_minutes} minutes
               </p>
             </div>

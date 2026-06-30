@@ -87,65 +87,56 @@ export default function ExamSessionsPage() {
     setReleasing(false)
   }
 
-  if (loading) return <div style={{ padding: 40 }}>Loading...</div>
+  if (loading) return <div className="page-container">Loading…</div>
 
   const ungradedCount = sessions.filter((s) => s.status === 'completed' && !s.fully_graded).length
 
   return (
-    <div style={{ padding: 40, fontFamily: 'sans-serif', maxWidth: 800, margin: '0 auto' }}>
-      <Link href={`/supervisor/final-exams/${finalExamId}`} style={{ color: '#666' }}>&larr; Back to Exam</Link>
+    <div className="page-container">
+      <Link href={`/supervisor/final-exams/${finalExamId}`} style={{ color: 'var(--text-secondary)', fontSize: 14 }}>&larr; Back to exam</Link>
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginTop: 16 }}>
-        <h1>{examTitle} — Student Sessions</h1>
-        <button
-          onClick={handleReleaseAll}
-          disabled={releasing}
-          style={{ padding: '10px 20px', fontSize: 15, background: '#2563eb', color: 'white', border: 'none', borderRadius: 6, whiteSpace: 'nowrap' }}
-        >
-          {releasing ? 'Releasing...' : 'Release All Results'}
+        <h1>{examTitle} — Student sessions</h1>
+        <button onClick={handleReleaseAll} disabled={releasing} className="btn btn-primary" style={{ whiteSpace: 'nowrap' }}>
+          {releasing ? 'Releasing…' : 'Release all results'}
         </button>
       </div>
 
       {ungradedCount > 0 && (
-        <p style={{ background: '#fff3cd', padding: 12, borderRadius: 8 }}>
+        <div className="banner banner-warning" style={{ marginTop: 16 }}>
           {ungradedCount} session(s) still have ungraded essay responses and won't be included in release.
-        </p>
+        </div>
       )}
 
-      {errorMsg && <p style={{ color: 'red' }}>{errorMsg}</p>}
-      {sessions.length === 0 && !errorMsg && <p>No students have started this exam yet.</p>}
+      {errorMsg && <p className="banner banner-danger" style={{ marginTop: 16 }}>{errorMsg}</p>}
+      {sessions.length === 0 && !errorMsg && (
+        <div className="card" style={{ marginTop: 20 }}>
+          <p style={{ color: 'var(--text-secondary)' }}>No students have started this exam yet.</p>
+        </div>
+      )}
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 16 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 16 }}>
         {sessions.map((s) => (
-          <div
-            key={s.id}
-            style={{
-              border: '1px solid #ddd', borderRadius: 8, padding: 12,
-              background: s.flagged ? '#fee2e2' : 'white',
-            }}
-          >
+          <div key={s.id} className="card" style={{ background: s.flagged ? 'var(--danger-bg)' : 'var(--card-bg)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <strong>{s.profiles?.full_name || 'Unknown student'}</strong>
-              <span style={{
-                fontSize: 12, padding: '4px 10px', borderRadius: 12,
-                background: s.status === 'completed' ? '#d4edda' : '#fff3cd',
-              }}>
+              <span className={`badge ${s.status === 'completed' ? 'badge-success' : 'badge-warning'}`}>
                 {s.status}
               </span>
             </div>
-            <p style={{ margin: '4px 0 0', fontSize: 14, color: '#666' }}>
+            <p style={{ margin: '4px 0 0', fontSize: 14, color: 'var(--text-secondary)' }}>
               Started: {new Date(s.started_at).toLocaleString()}
               {s.completed_at && ` — Completed: ${new Date(s.completed_at).toLocaleString()}`}
             </p>
             {s.status === 'completed' && (
               <p style={{ margin: '4px 0 0', fontSize: 14 }}>
                 Score: {s.fully_graded ? `${s.total_score} / ${s.max_possible_score}` : 'Pending essay grading'}
-                {s.results_released && <span style={{ marginLeft: 8, color: '#16a34a', fontWeight: 600 }}>Released</span>}
+                {s.results_released && <span style={{ marginLeft: 8, color: 'var(--success)', fontWeight: 700 }}>Released</span>}
               </p>
             )}
             {s.flagged && (
-              <p style={{ margin: '8px 0 0', fontWeight: 600, color: '#991b1b' }}>
-                ⚠ Flagged — {s.tab_switch_count} violation{s.tab_switch_count !== 1 ? 's' : ''} detected
+              <p style={{ margin: '8px 0 0', fontWeight: 700, color: 'var(--danger)' }}>
+                Flagged — {s.tab_switch_count} violation{s.tab_switch_count !== 1 ? 's' : ''} detected
                 {s.tab_switch_count >= 3 ? ' (auto-submitted)' : ''}
               </p>
             )}
