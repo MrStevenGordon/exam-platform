@@ -106,52 +106,48 @@ export default function GenerateSelfMockPage() {
     router.push(`/student/self-mock/${mock.id}`)
   }
 
-  if (loading) return <div style={{ padding: 40 }}>Loading...</div>
+  if (loading) return <div className="page-container">Loading…</div>
 
   return (
-    <div style={{ padding: 40, fontFamily: 'sans-serif', maxWidth: 600, margin: '0 auto' }}>
-      <h1>Generate a Practice Mock Exam</h1>
-      <p style={{ color: '#666' }}>
+    <div className="page-container" style={{ maxWidth: 480 }}>
+      <h1>Practice mock exam</h1>
+      <p style={{ color: 'var(--text-secondary)', marginTop: 4 }}>
         Pulls real past questions for self-practice. No proctoring — this is just for you.
       </p>
 
-      {errorMsg && <p style={{ color: 'red' }}>{errorMsg}</p>}
+      {errorMsg && <p className="banner banner-danger" style={{ marginTop: 16 }}>{errorMsg}</p>}
 
-      {subjects.length === 0 && !errorMsg && <p>No practice questions available yet.</p>}
+      {subjects.length === 0 && !errorMsg && <p style={{ marginTop: 16, color: 'var(--text-secondary)' }}>No practice questions available yet.</p>}
 
       {subjects.length > 0 && (
-        <>
+        <div className="card" style={{ marginTop: 20 }}>
           <div style={{ marginBottom: 16 }}>
-            <label>Subject</label><br />
+            <label style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)' }}>Subject</label>
             <select
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
-              style={{ width: '100%', padding: 8, fontSize: 16 }}
+              style={{ width: '100%', marginTop: 6 }}
             >
               {subjects.map((s) => <option key={s} value={s}>{s}</option>)}
             </select>
           </div>
 
-          <div style={{ marginBottom: 16 }}>
-            <label>Number of Questions</label><br />
+          <div style={{ marginBottom: 20 }}>
+            <label style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)' }}>Number of questions</label>
             <input
               type="number"
               min={1}
               max={50}
               value={count}
               onChange={(e) => setCount(parseInt(e.target.value) || 10)}
-              style={{ width: 100, padding: 8, fontSize: 16 }}
+              style={{ width: 100, marginTop: 6 }}
             />
           </div>
 
-          <button
-            onClick={handleGenerate}
-            disabled={generating}
-            style={{ padding: '12px 24px', fontSize: 16, background: '#2563eb', color: 'white', border: 'none', borderRadius: 6 }}
-          >
-            {generating ? 'Generating...' : 'Generate Mock Exam'}
+          <button onClick={handleGenerate} disabled={generating} className="btn btn-primary">
+            {generating ? 'Generating…' : 'Generate mock exam'}
           </button>
-        </>
+        </div>
       )}
     </div>
   )

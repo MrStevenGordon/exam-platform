@@ -13,7 +13,6 @@ export default function Dashboard() {
   const router = useRouter()
   const [profile, setProfile] = useState<Profile | null>(null)
   const [loading, setLoading] = useState(true)
-  const [errorMsg, setErrorMsg] = useState('')
 
   useEffect(() => {
     async function loadProfile() {
@@ -24,52 +23,60 @@ export default function Dashboard() {
         return
       }
 
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from('profiles')
         .select('full_name, role')
         .eq('id', user.id)
         .single()
 
-      if (error) {
-        setErrorMsg(`${error.message} (code: ${error.code})`)
-      } else {
-        setProfile(data)
-      }
+      setProfile(data)
       setLoading(false)
     }
     loadProfile()
   }, [router])
 
-  async function handleLogout() {
-    await supabase.auth.signOut()
-    router.push('/login')
-  }
-
-  if (loading) return <div style={{ padding: 40 }}>Loading...</div>
-
-  if (errorMsg) {
-    return (
-      <div style={{ padding: 40, fontFamily: 'sans-serif' }}>
-        <p style={{ color: 'red' }}>Error loading profile: {errorMsg}</p>
-        <button onClick={handleLogout}>Log Out</button>
-      </div>
-    )
-  }
+  if (loading) return <div className="page-container">Loading…</div>
 
   return (
-    <div style={{ padding: 40, fontFamily: 'sans-serif' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h1>Welcome, {profile?.full_name}</h1>
-        <button onClick={handleLogout} style={{ padding: '8px 16px' }}>
-          Log Out
-        </button>
-      </div>
-      <p>Role: <strong>{profile?.role}</strong></p>
+    <div className="page-container">
+      <h1>Welcome, {profile?.full_name}</h1>
+      <p style={{ color: 'var(--text-secondary)', marginTop: 4 }}>
+        Signed in as <strong style={{ color: 'var(--text-primary)' }}>{profile?.role}</strong>
+      </p>
 
       {profile?.role === 'admin' && (
-        <div style={{ marginTop: 24, padding: 16, background: '#f0f0f0' }}>
-          <h2>Admin Tools</h2>
-          <p>Manage users, exams, and system settings here.</p>
+        <div className="card" style={{ marginTop: 24 }}>
+          <h2>Admin tools</h2>
+          <p style={{ marginTop: 8, color: 'var(--text-secondary)' }}>
+            Manage users, exams, and system settings here.
+          </p>
+        </div>
+      )}
+
+      {profile?.role === 'teacher' && (
+        <div className="card" style={{ marginTop: 24 }}>
+          <h2>Teacher tools</h2>
+          <p style={{ marginTop: 8, color: 'var(--text-secondary)' }}>
+            Create and manage exams here.
+          </p>
+        </div>
+      )}
+
+      {profile?.role === 'supervisor' && (
+        <div className="card" style={{ marginTop: 24 }}>
+          <h2>Supervisor tools</h2>
+          <p style={{ marginTop: 8, color: 'var(--text-secondary)' }}>
+            Review and approve exams here.
+          </p>
+        </div>
+      )}
+
+      {profile?.role === 'student' && (
+        <div className="card" style={{ marginTop: 24 }}>
+          <h2>Your exams</h2>
+          <p style={{ marginTop: 8, color: 'var(--text-secondary)' }}>
+            Available exams will appear here.
+          </p>
         </div>
       )}
     </div>

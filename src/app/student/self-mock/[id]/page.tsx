@@ -136,31 +136,31 @@ export default function SelfMockPage() {
     loadData()
   }
 
-  if (loading) return <div style={{ padding: 40 }}>Loading...</div>
-  if (errorMsg) return <div style={{ padding: 40, color: 'red' }}>{errorMsg}</div>
+  if (loading) return <div className="page-container">Loading…</div>
+  if (errorMsg) return <div className="page-container"><p className="banner banner-danger">{errorMsg}</p></div>
 
   return (
-    <div style={{ padding: 40, fontFamily: 'sans-serif', maxWidth: 700, margin: '0 auto' }}>
-      <Link href="/student/self-mock" style={{ color: '#666' }}>&larr; Generate Another</Link>
+    <div className="page-container" style={{ maxWidth: 640 }}>
+      <Link href="/student/self-mock" style={{ color: 'var(--text-secondary)', fontSize: 14 }}>&larr; Generate another</Link>
 
-      <h1 style={{ marginTop: 16 }}>{subject} — Practice Mock</h1>
+      <h1 style={{ marginTop: 16 }}>{subject} — Practice mock</h1>
 
       {completed && (
-        <div style={{ padding: 16, background: '#f0fdf4', borderRadius: 8, marginBottom: 24 }}>
-          <p style={{ fontSize: 14, color: '#666', margin: 0 }}>Your Score</p>
-          <p style={{ fontSize: 36, fontWeight: 700, margin: '4px 0', color: '#16a34a' }}>{totalScore} / {maxScore}</p>
+        <div className="card" style={{ background: 'var(--success-bg)', marginBottom: 20 }}>
+          <p style={{ fontSize: 13, color: 'var(--success)' }}>Your score</p>
+          <p style={{ fontSize: 32, fontWeight: 700, margin: '4px 0', color: 'var(--success)' }}>{totalScore} / {maxScore}</p>
         </div>
       )}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
         {items.map((item, i) => {
           const isCorrect = completed && item.points_awarded === item.points
-          const borderColor = completed ? (isCorrect ? '#16a34a' : '#dc2626') : '#ddd'
+          const borderColor = completed ? (isCorrect ? 'var(--success)' : 'var(--danger)') : 'var(--border-strong)'
 
           return (
-            <div key={item.id} style={{ border: `2px solid ${borderColor}`, borderRadius: 8, padding: 16 }}>
-              <p style={{ fontWeight: 600, marginBottom: 12 }}>
-                {i + 1}. {item.question_text} <span style={{ fontWeight: 400, color: '#888', fontSize: 14 }}>({item.points} pt{item.points !== 1 ? 's' : ''})</span>
+            <div key={item.id} className="card" style={{ borderLeft: `4px solid ${borderColor}` }}>
+              <p style={{ fontWeight: 700, marginBottom: 12 }}>
+                {i + 1}. {item.question_text} <span style={{ fontWeight: 400, color: 'var(--text-secondary)', fontSize: 14 }}>({item.points} pt{item.points !== 1 ? 's' : ''})</span>
               </p>
 
               {item.question_type === 'multiple_choice' && item.options && (
@@ -198,19 +198,13 @@ export default function SelfMockPage() {
                   value={answers[item.id] || ''}
                   disabled={completed}
                   onChange={(e) => updateAnswer(item.id, e.target.value)}
-                  style={{ width: '100%', padding: 8, fontSize: 16 }}
+                  style={{ width: '100%' }}
                 />
               )}
 
               {completed && (
-                <p style={{ margin: '8px 0 0', fontSize: 14, fontWeight: 600 }}>
-                  {isCorrect ? (
-                    <span style={{ color: '#16a34a' }}>✓ Correct</span>
-                  ) : (
-                    <span style={{ color: '#dc2626' }}>
-                      ✗ Incorrect — Correct answer: {item.correct_answer}
-                    </span>
-                  )}
+                <p style={{ margin: '8px 0 0', fontSize: 14, fontWeight: 700, color: isCorrect ? 'var(--success)' : 'var(--danger)' }}>
+                  {isCorrect ? 'Correct' : `Incorrect — Correct answer: ${item.correct_answer}`}
                 </p>
               )}
             </div>
@@ -219,13 +213,9 @@ export default function SelfMockPage() {
       </div>
 
       {!completed && items.length > 0 && (
-        <div style={{ marginTop: 24 }}>
-          <button
-            onClick={handleSubmit}
-            disabled={submitting}
-            style={{ padding: '14px 28px', fontSize: 18, background: '#16a34a', color: 'white', border: 'none', borderRadius: 6 }}
-          >
-            {submitting ? 'Checking...' : 'Check My Answers'}
+        <div style={{ marginTop: 20 }}>
+          <button onClick={handleSubmit} disabled={submitting} className="btn btn-primary" style={{ fontSize: 16, padding: '14px 28px' }}>
+            {submitting ? 'Checking…' : 'Check my answers'}
           </button>
         </div>
       )}

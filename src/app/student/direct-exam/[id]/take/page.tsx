@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef, useCallback } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+
 function mulberry32(seed: number) {
   let a = seed
   return function () {
@@ -30,7 +31,6 @@ function questionSeed(sessionSeed: number, questionId: string): number {
   }
   return hash
 }
-
 
 type DirectExam = {
   id: string
@@ -301,47 +301,47 @@ export default function TakeDirectExamPage() {
     router.push(`/student/direct-exam/${examId}/submitted`)
   }
 
-  if (loading) return <div style={{ padding: 40 }}>Loading...</div>
-  if (errorMsg) return <div style={{ padding: 40, color: 'red' }}>{errorMsg}</div>
-  if (!exam) return <div style={{ padding: 40 }}>Exam not found.</div>
+  if (loading) return <div className="page-container">Loading…</div>
+  if (errorMsg) return <div className="page-container"><p className="banner banner-danger">{errorMsg}</p></div>
+  if (!exam) return <div className="page-container">Exam not found.</div>
 
   const minutes = Math.floor(secondsLeft / 60)
   const seconds = secondsLeft % 60
   const timeLow = secondsLeft < 300
 
   return (
-    <div style={{ padding: 40, fontFamily: 'sans-serif', maxWidth: 700, margin: '0 auto' }}>
+    <div className="page-container" style={{ maxWidth: 640 }}>
       <div style={{
-        position: 'sticky', top: 0, background: 'white', padding: '12px 0',
-        borderBottom: '2px solid #ddd', marginBottom: 16, zIndex: 10,
+        position: 'sticky', top: 0, background: 'var(--page-bg)', padding: '12px 0',
+        borderBottom: '2px solid var(--border-strong)', marginBottom: 16, zIndex: 10,
       }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
             <h1 style={{ margin: 0 }}>{exam.title}</h1>
-            <p style={{ margin: '4px 0 0', color: '#666' }}>{questions.length} questions</p>
+            <p style={{ margin: '4px 0 0', color: 'var(--text-secondary)' }}>{questions.length} questions</p>
           </div>
-          <div style={{ fontSize: 24, fontWeight: 700, color: timeLow ? '#dc2626' : '#111' }}>
+          <div style={{ fontSize: 24, fontWeight: 700, color: timeLow ? 'var(--danger)' : 'var(--text-primary)' }}>
             {minutes}:{seconds.toString().padStart(2, '0')}
           </div>
         </div>
         {!inFullscreen && (
-          <button onClick={enterFullscreen} style={{ marginTop: 8, padding: '6px 12px', fontSize: 14 }}>
-            Re-enter Fullscreen
+          <button onClick={enterFullscreen} className="btn btn-secondary" style={{ marginTop: 8 }}>
+            Re-enter fullscreen
           </button>
         )}
       </div>
 
       {warning && (
-        <div style={{ padding: 12, background: '#fee2e2', color: '#991b1b', borderRadius: 8, marginBottom: 16, fontWeight: 600 }}>
+        <div className="banner banner-danger" style={{ marginBottom: 16, fontWeight: 700 }}>
           {warning}
         </div>
       )}
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
         {questions.map((q, i) => (
-          <div key={q.id} style={{ border: '1px solid #ddd', borderRadius: 8, padding: 16 }}>
-            <p style={{ fontWeight: 600, marginBottom: 12 }}>
-              {i + 1}. {q.question_text} <span style={{ fontWeight: 400, color: '#888', fontSize: 14 }}>({q.points} pt{q.points !== 1 ? 's' : ''})</span>
+          <div key={q.id} className="card">
+            <p style={{ fontWeight: 700, marginBottom: 12 }}>
+              {i + 1}. {q.question_text} <span style={{ fontWeight: 400, color: 'var(--text-secondary)', fontSize: 14 }}>({q.points} pt{q.points !== 1 ? 's' : ''})</span>
             </p>
 
             {q.question_type === 'multiple_choice' && q.options && (
@@ -372,7 +372,7 @@ export default function TakeDirectExamPage() {
               <input
                 value={answers[q.id] || ''}
                 onChange={(e) => updateAnswer(q.id, e.target.value)}
-                style={{ width: '100%', padding: 8, fontSize: 16 }}
+                style={{ width: '100%' }}
               />
             )}
 
@@ -381,38 +381,31 @@ export default function TakeDirectExamPage() {
                 value={answers[q.id] || ''}
                 onChange={(e) => updateAnswer(q.id, e.target.value)}
                 rows={6}
-                style={{ width: '100%', padding: 8, fontSize: 16 }}
+                style={{ width: '100%' }}
               />
             )}
           </div>
         ))}
       </div>
 
-      <div style={{ marginTop: 32, paddingTop: 16, borderTop: '1px solid #ddd' }}>
+      <div style={{ marginTop: 24, paddingTop: 16, borderTop: '1px solid var(--border)' }}>
         {!confirmingSubmit ? (
           <button
             onClick={() => setConfirmingSubmit(true)}
             disabled={submitting}
-            style={{ padding: '14px 28px', fontSize: 18, background: '#16a34a', color: 'white', border: 'none', borderRadius: 6 }}
+            className="btn btn-primary"
+            style={{ fontSize: 16, padding: '14px 28px' }}
           >
-            Submit Exam
+            Submit exam
           </button>
         ) : (
-          <div style={{ padding: 16, background: '#fff3cd', borderRadius: 8 }}>
-            <p style={{ margin: '0 0 12px', fontWeight: 600 }}>Are you sure? You won't be able to change your answers after this.</p>
+          <div className="banner banner-warning">
+            <p style={{ margin: '0 0 12px', fontWeight: 700 }}>Are you sure? You won't be able to change your answers after this.</p>
             <div style={{ display: 'flex', gap: 12 }}>
-              <button
-                onClick={handleFinalSubmitClick}
-                disabled={submitting}
-                style={{ padding: '12px 24px', fontSize: 16, background: '#16a34a', color: 'white', border: 'none', borderRadius: 6 }}
-              >
-                {submitting ? 'Submitting...' : 'Yes, Submit'}
+              <button onClick={handleFinalSubmitClick} disabled={submitting} className="btn btn-primary">
+                {submitting ? 'Submitting…' : 'Yes, submit'}
               </button>
-              <button
-                onClick={() => setConfirmingSubmit(false)}
-                disabled={submitting}
-                style={{ padding: '12px 24px', fontSize: 16, background: '#eee', border: 'none', borderRadius: 6 }}
-              >
+              <button onClick={() => setConfirmingSubmit(false)} disabled={submitting} className="btn btn-ghost">
                 Cancel
               </button>
             </div>

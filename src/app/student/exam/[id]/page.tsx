@@ -117,80 +117,70 @@ export default function ExamFrontPage() {
     router.push(`/student/exam/${examId}/take`)
   }
 
-  if (loading) return <div style={{ padding: 40 }}>Loading...</div>
-  if (errorMsg) return <div style={{ padding: 40, color: 'red' }}>{errorMsg}</div>
-  if (!exam) return <div style={{ padding: 40 }}>Exam not found.</div>
+  if (loading) return <div className="page-container">Loading…</div>
+  if (errorMsg) return <div className="page-container"><p className="banner banner-danger">{errorMsg}</p></div>
+  if (!exam) return <div className="page-container">Exam not found.</div>
 
   const alreadyCompleted = existingSession?.status === 'completed'
 
   return (
-    <div style={{ padding: 40, fontFamily: 'sans-serif', maxWidth: 700, margin: '0 auto' }}>
-      <Link href="/student" style={{ color: '#666' }}>&larr; Back to My Exams</Link>
+    <div className="page-container" style={{ maxWidth: 640 }}>
+      <Link href="/student" style={{ color: 'var(--text-secondary)', fontSize: 14 }}>&larr; Back to my exams</Link>
 
       <h1 style={{ marginTop: 16 }}>{exam.title}</h1>
-      <p style={{ color: '#666' }}>{exam.subject}</p>
+      <p style={{ color: 'var(--text-secondary)', marginTop: 4 }}>{exam.subject}</p>
 
-      <div style={{ display: 'flex', gap: 24, margin: '24px 0', padding: 16, background: '#f8f8f8', borderRadius: 8 }}>
+      <div className="card" style={{ display: 'flex', gap: 32, margin: '20px 0' }}>
         <div>
-          <strong>{questionCount}</strong>
-          <p style={{ margin: 0, fontSize: 14, color: '#666' }}>Questions</p>
+          <div style={{ fontSize: 22, fontWeight: 700 }}>{questionCount}</div>
+          <div style={{ fontSize: 13, color: 'var(--text-secondary)' }}>Questions</div>
         </div>
         <div>
-          <strong>{exam.duration_minutes} min</strong>
-          <p style={{ margin: 0, fontSize: 14, color: '#666' }}>Time Limit</p>
+          <div style={{ fontSize: 22, fontWeight: 700 }}>{exam.duration_minutes} min</div>
+          <div style={{ fontSize: 13, color: 'var(--text-secondary)' }}>Time limit</div>
         </div>
       </div>
 
-      <div style={{ marginBottom: 24, padding: 12, background: '#fff3cd', borderRadius: 8, fontSize: 14 }}>
-        <strong>Before you begin:</strong> This exam will open in fullscreen mode. Leaving fullscreen or
-        switching tabs is monitored and logged. Repeated violations will automatically submit your exam.
+      <div className="banner banner-warning" style={{ marginBottom: 20 }}>
+        <strong>Before you begin:</strong> this exam opens in fullscreen. Leaving fullscreen or switching tabs
+        is monitored and logged. Repeated violations submit your exam automatically.
       </div>
 
       {exam.instructions && (
-        <div style={{ marginBottom: 24 }}>
+        <div style={{ marginBottom: 20 }}>
           <h2>Instructions</h2>
-          <p style={{ whiteSpace: 'pre-wrap' }}>{exam.instructions}</p>
+          <p style={{ whiteSpace: 'pre-wrap', marginTop: 8, color: 'var(--text-secondary)' }}>{exam.instructions}</p>
         </div>
       )}
 
       {alreadyCompleted ? (
-        <div style={{ padding: 16, background: '#d4edda', borderRadius: 8 }}>
-          <p style={{ margin: '0 0 12px' }}>You have already completed this exam.</p>
+        <div className="card" style={{ background: 'var(--success-bg)' }}>
+          <p style={{ marginBottom: 12, color: 'var(--success)', fontWeight: 600 }}>You've already completed this exam.</p>
           <Link href={`/student/exam/${examId}/results`}>
-            <button style={{ padding: '10px 20px', fontSize: 16, background: '#2563eb', color: 'white', border: 'none', borderRadius: 6 }}>
-              View Results
-            </button>
+            <button className="btn btn-primary">View results</button>
           </Link>
         </div>
       ) : !unlocked ? (
-        <div style={{ padding: 20, background: '#f0f0f0', borderRadius: 8 }}>
-          <p style={{ fontWeight: 600, marginBottom: 8 }}>Enter the exam password to begin</p>
-          <p style={{ fontSize: 14, color: '#666', marginBottom: 12 }}>
-            Your teacher or supervisor will provide this password on exam day.
+        <div className="card">
+          <p style={{ fontWeight: 700, marginBottom: 6 }}>Enter the exam password to begin</p>
+          <p style={{ fontSize: 14, color: 'var(--text-secondary)', marginBottom: 14 }}>
+            Your teacher or supervisor provides this password on exam day.
           </p>
           <div style={{ display: 'flex', gap: 8 }}>
             <input
               value={passwordInput}
               onChange={(e) => setPasswordInput(e.target.value)}
-              placeholder="e.g. 7F3K9P"
-              style={{ padding: 10, fontSize: 18, fontFamily: 'monospace', letterSpacing: 2, textTransform: 'uppercase', width: 160 }}
+              placeholder="7F3K9P"
+              style={{ fontSize: 18, fontFamily: 'monospace', letterSpacing: 2, textTransform: 'uppercase', width: 160 }}
               maxLength={6}
             />
-            <button
-              onClick={handleVerifyPassword}
-              style={{ padding: '10px 20px', fontSize: 16, background: '#2563eb', color: 'white', border: 'none', borderRadius: 6 }}
-            >
-              Unlock
-            </button>
+            <button onClick={handleVerifyPassword} className="btn btn-primary">Unlock</button>
           </div>
-          {passwordError && <p style={{ color: 'red', marginTop: 8 }}>{passwordError}</p>}
+          {passwordError && <p className="banner banner-danger" style={{ marginTop: 10 }}>{passwordError}</p>}
         </div>
       ) : (
-        <button
-          onClick={handleBeginExam}
-          style={{ padding: '14px 28px', fontSize: 18, background: '#2563eb', color: 'white', border: 'none', borderRadius: 6 }}
-        >
-          {existingSession ? 'Resume Exam' : 'Begin Exam'}
+        <button onClick={handleBeginExam} className="btn btn-primary" style={{ fontSize: 16, padding: '14px 28px' }}>
+          {existingSession ? 'Resume exam' : 'Begin exam'}
         </button>
       )}
     </div>

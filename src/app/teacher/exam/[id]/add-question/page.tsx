@@ -105,19 +105,20 @@ export default function AddQuestionPage() {
   }
 
   return (
-    <div style={{ padding: 40, fontFamily: 'sans-serif', maxWidth: 600, margin: '0 auto' }}>
-      <h1>Add Question</h1>
+    <div className="page-container" style={{ maxWidth: 520 }}>
+      <h1>Add question</h1>
 
+      <div className="card" style={{ marginTop: 20 }}>
       <form onSubmit={handleSubmit}>
         <div style={{ marginBottom: 16 }}>
-          <label>Question Type</label><br />
+          <label style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)' }}>Question type</label><br />
           <select
             value={questionType}
             onChange={(e) => {
               setQuestionType(e.target.value as QuestionType)
               resetTypeSpecificFields()
             }}
-            style={{ width: '100%', padding: 8, fontSize: 16 }}
+            style={{ width: '100%', marginTop: 6 }}
           >
             <option value="multiple_choice">Multiple Choice</option>
             <option value="true_false">True / False</option>
@@ -128,7 +129,7 @@ export default function AddQuestionPage() {
         </div>
 
         <div style={{ marginBottom: 16 }}>
-          <label>
+          <label style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)' }}>
             {questionType === 'fill_blank'
               ? 'Question (use ___ to mark the blank)'
               : 'Question'}
@@ -139,24 +140,24 @@ export default function AddQuestionPage() {
             required
             rows={3}
             placeholder={questionType === 'fill_blank' ? 'The capital of France is ___.' : ''}
-            style={{ width: '100%', padding: 8, fontSize: 16 }}
+            style={{ width: '100%', marginTop: 6 }}
           />
         </div>
 
         <div style={{ marginBottom: 16 }}>
-          <label>Points</label><br />
+          <label style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)' }}>Points</label><br />
           <input
             type="number"
             min={1}
             value={points}
             onChange={(e) => setPoints(parseInt(e.target.value) || 1)}
-            style={{ width: 100, padding: 8, fontSize: 16 }}
+            style={{ width: 100, marginTop: 6 }}
           />
         </div>
 
         {questionType === 'multiple_choice' && (
           <div style={{ marginBottom: 16 }}>
-            <label>Options (select the correct one)</label>
+            <label style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)' }}>Options (select the correct one)</label>
             {options.map((opt, i) => (
               <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
                 <input
@@ -169,7 +170,7 @@ export default function AddQuestionPage() {
                   onChange={(e) => updateOption(i, e.target.value)}
                   placeholder={`Option ${i + 1}`}
                   required
-                  style={{ flex: 1, padding: 8, fontSize: 16 }}
+                  style={{ flex: 1 }}
                 />
               </div>
             ))}
@@ -178,7 +179,7 @@ export default function AddQuestionPage() {
 
         {questionType === 'true_false' && (
           <div style={{ marginBottom: 16 }}>
-            <label>Correct Answer</label><br />
+            <label style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)' }}>Correct answer</label><br />
             <div style={{ display: 'flex', gap: 16, marginTop: 8 }}>
               <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                 <input
@@ -202,21 +203,19 @@ export default function AddQuestionPage() {
 
         {(questionType === 'short_answer' || questionType === 'fill_blank') && (
           <div style={{ marginBottom: 16 }}>
-            <label>Correct Answer (must match exactly, case-sensitive)</label><br />
+            <label style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)' }}>Correct answer (must match exactly, case-sensitive)</label><br />
             <input
               value={exactAnswer}
               onChange={(e) => setExactAnswer(e.target.value)}
               required
-              style={{ width: '100%', padding: 8, fontSize: 16 }}
+              style={{ width: '100%', marginTop: 6 }}
             />
           </div>
         )}
 
         {questionType === 'essay' && (
-          <div style={{ marginBottom: 16, padding: 12, background: '#f0f0f0', borderRadius: 8 }}>
-            <p style={{ margin: 0, fontSize: 14, color: '#555' }}>
-              Essay questions are graded manually by a teacher after the exam — no correct answer needed here.
-            </p>
+          <div className="banner" style={{ marginBottom: 16, background: 'var(--border)', color: 'var(--text-secondary)' }}>
+            Essay questions are graded manually by a teacher after the exam — no correct answer needed here.
           </div>
         )}
 
@@ -227,12 +226,13 @@ export default function AddQuestionPage() {
           </label>
         </div>
 
-        {errorMsg && <p style={{ color: 'red' }}>{errorMsg}</p>}
+        {errorMsg && <p className="banner banner-danger" style={{ marginBottom: 16 }}>{errorMsg}</p>}
 
-        <button type="submit" disabled={saving} style={{ padding: '10px 20px', fontSize: 16 }}>
-          {saving ? 'Saving...' : 'Save Question'}
+        <button type="submit" disabled={saving} className="btn btn-primary">
+          {saving ? 'Saving…' : 'Save question'}
         </button>
       </form>
+      </div>
     </div>
   )
 }

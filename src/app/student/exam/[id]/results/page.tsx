@@ -54,39 +54,41 @@ export default function ResultsPage() {
     loadData()
   }, [examId, router])
 
-  if (loading) return <div style={{ padding: 40 }}>Loading...</div>
-  if (errorMsg) return <div style={{ padding: 40, color: 'red' }}>{errorMsg}</div>
-  if (!result) return <div style={{ padding: 40 }}>No result found.</div>
+  if (loading) return <div className="page-container">Loading…</div>
+  if (errorMsg) return <div className="page-container"><p className="banner banner-danger">{errorMsg}</p></div>
+  if (!result) return <div className="page-container">No result found.</div>
+
+  const percent = result.max_possible_score ? Math.round((result.total_score! / result.max_possible_score) * 100) : 0
 
   return (
-    <div style={{ padding: 40, fontFamily: 'sans-serif', maxWidth: 600, margin: '0 auto', textAlign: 'center' }}>
-      <Link href="/student" style={{ color: '#666', display: 'block', textAlign: 'left', marginBottom: 16 }}>&larr; Back to My Exams</Link>
+    <div className="page-container" style={{ maxWidth: 480, textAlign: 'center' }}>
+      <Link href="/student" style={{ color: 'var(--text-secondary)', fontSize: 14, display: 'block', textAlign: 'left', marginBottom: 16 }}>
+        &larr; Back to my exams
+      </Link>
 
       <h1>{examTitle}</h1>
 
       {result.status !== 'completed' && (
-        <p>You haven't completed this exam yet.</p>
+        <div className="card" style={{ marginTop: 20 }}>
+          <p style={{ color: 'var(--text-secondary)' }}>You haven't completed this exam yet.</p>
+        </div>
       )}
 
       {result.status === 'completed' && !result.results_released && (
-        <p style={{ padding: 16, background: '#fff3cd', borderRadius: 8 }}>
+        <div className="banner banner-warning" style={{ marginTop: 20 }}>
           Your exam has been submitted. Results haven't been released yet — check back later.
-        </p>
+        </div>
       )}
 
       {result.status === 'completed' && result.results_released && (
-        <div style={{ padding: 24, background: '#f0fdf4', borderRadius: 8, marginTop: 16 }}>
-          <p style={{ fontSize: 14, color: '#666', margin: 0 }}>Your Score</p>
-          <p style={{ fontSize: 48, fontWeight: 700, margin: '8px 0', color: '#16a34a' }}>
+        <div className="card" style={{ background: 'var(--success-bg)', marginTop: 20 }}>
+          <p style={{ fontSize: 13, color: 'var(--success)', fontWeight: 600 }}>Your score</p>
+          <p style={{ fontSize: 44, fontWeight: 700, margin: '6px 0', color: 'var(--success)' }}>
             {result.total_score} / {result.max_possible_score}
           </p>
-          <p style={{ fontSize: 18, color: '#666' }}>
-            {result.max_possible_score ? Math.round((result.total_score! / result.max_possible_score) * 100) : 0}%
-          </p>
+          <p style={{ fontSize: 16, color: 'var(--text-secondary)' }}>{percent}%</p>
           <Link href={`/student/exam/${examId}/review`}>
-            <button style={{ marginTop: 16, padding: '10px 20px', fontSize: 16, background: '#2563eb', color: 'white', border: 'none', borderRadius: 6 }}>
-              Review Answers
-            </button>
+            <button className="btn btn-primary" style={{ marginTop: 12 }}>Review answers</button>
           </Link>
         </div>
       )}

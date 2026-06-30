@@ -116,21 +116,25 @@ export default function GradeEssaysPage() {
   if (loading) return <div style={{ padding: 40 }}>Loading...</div>
 
   return (
-    <div style={{ padding: 40, fontFamily: 'sans-serif', maxWidth: 800, margin: '0 auto' }}>
-      <h1>Grade Essay Responses</h1>
+    <div className="page-container">
+      <h1>Grade essay responses</h1>
 
-      {errorMsg && <p style={{ color: 'red' }}>{errorMsg}</p>}
-      {items.length === 0 && !errorMsg && <p>No essay responses awaiting grading.</p>}
+      {errorMsg && <p className="banner banner-danger" style={{ marginTop: 16 }}>{errorMsg}</p>}
+      {items.length === 0 && !errorMsg && (
+        <div className="card" style={{ marginTop: 20 }}>
+          <p style={{ color: 'var(--text-secondary)' }}>No essay responses awaiting grading.</p>
+        </div>
+      )}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
         {items.map((item) => (
-          <div key={item.response_id} style={{ border: '1px solid #ddd', borderRadius: 8, padding: 16 }}>
-            <p style={{ fontSize: 13, color: '#888', margin: 0 }}>
+          <div key={item.response_id} className="card">
+            <p className="section-label" style={{ fontSize: 11, margin: 0 }}>
               {item.exam_title} — {item.student_name}
             </p>
-            <p style={{ fontWeight: 600, margin: '8px 0' }}>{item.question_text}</p>
-            <div style={{ padding: 12, background: '#f8f8f8', borderRadius: 6, marginBottom: 12 }}>
-              {item.answer || <em>No answer provided</em>}
+            <p style={{ fontWeight: 700, margin: '8px 0' }}>{item.question_text}</p>
+            <div style={{ padding: 12, background: 'var(--page-bg)', borderRadius: 8, marginBottom: 12, border: '1px solid var(--border)' }}>
+              {item.answer || <em style={{ color: 'var(--text-secondary)' }}>No answer provided</em>}
             </div>
             <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
               <input
@@ -141,15 +145,11 @@ export default function GradeEssaysPage() {
                 placeholder={`0 - ${item.points}`}
                 value={scores[item.response_id] || ''}
                 onChange={(e) => updateScore(item.response_id, e.target.value)}
-                style={{ width: 100, padding: 8, fontSize: 16 }}
+                style={{ width: 100 }}
               />
-              <span style={{ color: '#888' }}>/ {item.points} pts</span>
-              <button
-                onClick={() => handleSaveGrade(item)}
-                disabled={savingId === item.response_id}
-                style={{ padding: '8px 16px', fontSize: 14, background: '#2563eb', color: 'white', border: 'none', borderRadius: 6 }}
-              >
-                {savingId === item.response_id ? 'Saving...' : 'Save Grade'}
+              <span style={{ color: 'var(--text-secondary)' }}>/ {item.points} pts</span>
+              <button onClick={() => handleSaveGrade(item)} disabled={savingId === item.response_id} className="btn btn-primary">
+                {savingId === item.response_id ? 'Saving…' : 'Save grade'}
               </button>
             </div>
           </div>

@@ -175,9 +175,9 @@ export default function ExamEditorPage() {
     setSubmitting(false)
   }
 
-  if (loading) return <div style={{ padding: 40 }}>Loading...</div>
-  if (errorMsg) return <div style={{ padding: 40, color: 'red' }}>{errorMsg}</div>
-  if (!exam) return <div style={{ padding: 40 }}>Exam not found.</div>
+  if (loading) return <div className="page-container">Loading…</div>
+  if (errorMsg) return <div className="page-container"><p className="banner banner-danger">{errorMsg}</p></div>
+  if (!exam) return <div className="page-container">Exam not found.</div>
 
   const isFinalExamSubmission = exam.exam_kind === 'final_exam_submission'
   const isLocked = isFinalExamSubmission ? exam.status !== 'draft' : exam.direct_published
@@ -191,8 +191,8 @@ export default function ExamEditorPage() {
   }
 
   return (
-    <div style={{ padding: 40, fontFamily: 'sans-serif', maxWidth: 800, margin: '0 auto' }}>
-      <Link href="/teacher" style={{ color: '#666' }}>&larr; Back to My Exams</Link>
+    <div className="page-container">
+      <Link href="/teacher" style={{ color: 'var(--text-secondary)', fontSize: 14 }}>&larr; Back to my exams</Link>
 
       <div style={{ marginTop: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
@@ -200,43 +200,37 @@ export default function ExamEditorPage() {
           <p style={{ color: '#666', margin: '4px 0' }}>{exam.subject} — {kindLabels[exam.exam_kind]}</p>
         </div>
         {isFinalExamSubmission ? (
-          <span style={{
-            fontSize: 12, padding: '4px 10px', borderRadius: 12,
-            background: exam.status === 'draft' ? '#eee' : exam.status === 'submitted' ? '#fff3cd' : '#d4edda',
-          }}>
+          <span className={`badge ${exam.status === 'draft' ? 'badge-default' : exam.status === 'submitted' ? 'badge-warning' : 'badge-success'}`}>
             {exam.status}
           </span>
         ) : (
-          <span style={{
-            fontSize: 12, padding: '4px 10px', borderRadius: 12,
-            background: exam.direct_published ? '#d4edda' : '#eee',
-          }}>
+          <span className={`badge ${exam.direct_published ? 'badge-success' : 'badge-default'}`}>
             {exam.direct_published ? 'published' : 'draft'}
           </span>
         )}
       </div>
 
       {isFinalExamSubmission && isLocked && (
-        <p style={{ background: '#fff3cd', padding: 12, borderRadius: 8 }}>
+        <div className="banner banner-warning" style={{ marginTop: 16 }}>
           This exam has been submitted and is now locked for editing.
-        </p>
+        </div>
       )}
 
       {!isFinalExamSubmission && exam.direct_published && (
-        <div style={{ background: '#d4edda', padding: 12, borderRadius: 8 }}>
+        <div className="banner banner-success" style={{ marginTop: 16 }}>
           <p style={{ margin: 0 }}>This exam is published and visible to students in the selected class(es).</p>
           {exam.access_password && (
             <p style={{ marginTop: 8, marginBottom: 0, fontSize: 18, fontWeight: 700 }}>
-              Exam Password: <span style={{ fontFamily: 'monospace', background: '#fff', padding: '2px 8px', borderRadius: 4 }}>{exam.access_password}</span>
+              Exam password: <span style={{ fontFamily: 'monospace', background: 'white', padding: '2px 10px', borderRadius: 6 }}>{exam.access_password}</span>
             </p>
           )}
         </div>
       )}
 
       {isFinalExamSubmission && !isLocked && hasComments && (
-        <p style={{ background: '#fef3c7', padding: 12, borderRadius: 8 }}>
+        <div className="banner banner-warning" style={{ marginTop: 16 }}>
           Your supervisor left feedback on one or more questions below. Please review and make changes before resubmitting.
-        </p>
+        </div>
       )}
 
       <h2 style={{ marginTop: 32 }}>Questions ({questions.length})</h2>
@@ -245,7 +239,7 @@ export default function ExamEditorPage() {
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {questions.map((q, i) => (
-          <div key={q.id} style={{ border: '1px solid #ddd', borderRadius: 8, padding: 12 }}>
+          <div key={q.id} className="card">
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <span style={{ fontSize: 12, color: '#888', textTransform: 'uppercase' }}>
                 {i + 1}. {q.question_type.replace('_', ' ')} {q.is_bank_question && '• from bank'}
@@ -254,7 +248,7 @@ export default function ExamEditorPage() {
             </div>
             <p style={{ margin: '8px 0 0' }}>{q.question_text}</p>
             {q.supervisor_comment && (
-              <div style={{ marginTop: 8, padding: 8, background: '#fef3c7', borderRadius: 6, fontSize: 14 }}>
+              <div className="banner banner-warning" style={{ marginTop: 8, fontSize: 14 }}>
                 <strong>Supervisor feedback:</strong> {q.supervisor_comment}
               </div>
             )}
@@ -265,11 +259,11 @@ export default function ExamEditorPage() {
       {!isLocked && (
         <div style={{ marginTop: 24, display: 'flex', gap: 12, flexWrap: 'wrap' }}>
           <Link href={`/teacher/exam/${examId}/add-question`}>
-            <button style={{ padding: '10px 20px', fontSize: 16 }}>+ Add Question</button>
+            <button className="btn btn-secondary">+ Add question</button>
           </Link>
           {!isFinalExamSubmission && (
             <Link href={`/teacher/exam/${examId}/add-from-bank`}>
-              <button style={{ padding: '10px 20px', fontSize: 16 }}>+ Add from Question Bank</button>
+              <button className="btn btn-secondary">+ Add from question bank</button>
             </Link>
           )}
         </div>
@@ -277,12 +271,8 @@ export default function ExamEditorPage() {
 
       {isFinalExamSubmission && !isLocked && questions.length > 0 && (
         <div style={{ marginTop: 16 }}>
-          <button
-            onClick={handleSubmitForReview}
-            disabled={submitting}
-            style={{ padding: '10px 20px', fontSize: 16, background: '#2563eb', color: 'white', border: 'none', borderRadius: 6 }}
-          >
-            {submitting ? 'Submitting...' : 'Submit for Review'}
+          <button onClick={handleSubmitForReview} disabled={submitting} className="btn btn-primary">
+            {submitting ? 'Submitting…' : 'Submit for review'}
           </button>
         </div>
       )}
@@ -290,7 +280,7 @@ export default function ExamEditorPage() {
       {!isFinalExamSubmission && !isLocked && (
         <div style={{ marginTop: 24, paddingTop: 16, borderTop: '1px solid #ddd' }}>
           <h3>Publish to Class(es)</h3>
-          {classGroups.length === 0 && <p>No class groups found for your department.</p>}
+          {classGroups.length === 0 && <p style={{ color: 'var(--text-secondary)' }}>No class groups found for your department.</p>}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
             {classGroups.map((cg) => (
               <label key={cg.id} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -304,12 +294,8 @@ export default function ExamEditorPage() {
             ))}
           </div>
           {questions.length > 0 && (
-            <button
-              onClick={handlePublishDirect}
-              disabled={submitting}
-              style={{ padding: '10px 20px', fontSize: 16, background: '#16a34a', color: 'white', border: 'none', borderRadius: 6 }}
-            >
-              {submitting ? 'Publishing...' : 'Publish Directly'}
+            <button onClick={handlePublishDirect} disabled={submitting} className="btn btn-primary">
+              {submitting ? 'Publishing…' : 'Publish directly'}
             </button>
           )}
         </div>

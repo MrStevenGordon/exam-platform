@@ -15,9 +15,9 @@ type ExamItem = {
 }
 
 const CATEGORY_LABELS: Record<string, string> = {
-  pop_quiz: 'Pop Quizzes',
-  midterm: 'Mid Terms',
-  end_of_year: 'End of Year Exams',
+  pop_quiz: 'Pop quizzes',
+  midterm: 'Mid terms',
+  end_of_year: 'End of year exams',
 }
 
 const CATEGORY_ORDER = ['pop_quiz', 'midterm', 'end_of_year']
@@ -92,7 +92,7 @@ export default function StudentDashboard() {
     loadExams()
   }, [router])
 
-  if (loading) return <div style={{ padding: 40 }}>Loading...</div>
+  if (loading) return <div className="page-container">Loading…</div>
 
   const grouped: Record<string, ExamItem[]> = {}
   exams.forEach((e) => {
@@ -101,16 +101,18 @@ export default function StudentDashboard() {
   })
 
   return (
-    <div style={{ padding: 40, fontFamily: 'sans-serif', maxWidth: 800, margin: '0 auto' }}>
+    <div className="page-container">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h1>My Exams</h1>
-        <Link href="/student/self-mock"><button style={{ padding: '8px 16px', fontSize: 14 }}>Practice Mock Exam</button></Link>
+        <h1>My exams</h1>
+        <Link href="/student/self-mock"><button className="btn btn-secondary">Practice mock exam</button></Link>
       </div>
 
-      {errorMsg && <p style={{ color: 'red' }}>{errorMsg}</p>}
+      {errorMsg && <p className="banner banner-danger" style={{ marginTop: 16 }}>{errorMsg}</p>}
 
       {exams.length === 0 && !errorMsg && (
-        <p>No exams available right now. Check back later.</p>
+        <div className="card" style={{ marginTop: 24, textAlign: 'center' }}>
+          <p style={{ color: 'var(--text-secondary)' }}>No exams available right now. Check back later.</p>
+        </div>
       )}
 
       <div style={{ display: 'flex', gap: 16, marginTop: 32, flexWrap: 'wrap', alignItems: 'flex-start' }}>
@@ -126,39 +128,38 @@ export default function StudentDashboard() {
               onClick={() => setOpenCategories({ ...openCategories, [cat]: !isOpen })}
               style={{
                 display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                width: '100%', background: 'none', border: 'none', borderBottom: '2px solid #ddd',
-                paddingBottom: 8, cursor: 'pointer', textAlign: 'left',
+                width: '100%', background: 'var(--card-bg)', border: '1px solid var(--border)',
+                borderRadius: 'var(--radius)', padding: '14px 16px', cursor: 'pointer', textAlign: 'left',
+                boxShadow: 'var(--shadow-card)',
               }}
             >
-              <h2 style={{ margin: 0 }}>{CATEGORY_LABELS[cat]} ({items.length})</h2>
-              <span style={{ fontSize: 20, color: '#666' }}>{isOpen ? '▾' : '▸'}</span>
+              <span className="section-label" style={{ fontSize: 13 }}>{CATEGORY_LABELS[cat]} ({items.length})</span>
+              <span style={{ fontSize: 16, color: 'var(--accent)' }}>{isOpen ? '−' : '+'}</span>
             </button>
             {isOpen && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 12 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 10 }}>
               {items.map((exam) => {
                 const status = sessionMap[exam.id]
                 const isCompleted = status === 'completed'
                 const basePath = exam.kind === 'final_exam' ? '/student/exam' : '/student/direct-exam'
 
                 return (
-                  <div key={exam.id} style={{ border: '1px solid #ddd', borderRadius: 8, padding: 16 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div key={exam.id} className="card">
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
                       <div>
-                        <strong>{exam.title}</strong>
-                        <p style={{ color: '#666', margin: '4px 0 0' }}>
+                        <div style={{ fontWeight: 700 }}>{exam.title}</div>
+                        <div style={{ color: 'var(--text-secondary)', fontSize: 13, marginTop: 2 }}>
                           {exam.subject}
-                          {exam.duration_minutes && ` — ${exam.duration_minutes} minutes`}
-                        </p>
+                          {exam.duration_minutes && ` — ${exam.duration_minutes} min`}
+                        </div>
                       </div>
                       {isCompleted ? (
                         <Link href={`${basePath}/${exam.id}/results`}>
-                          <button style={{ padding: '8px 16px', fontSize: 14, background: '#2563eb', color: 'white', border: 'none', borderRadius: 6 }}>
-                            View Results
-                          </button>
+                          <button className="btn btn-secondary" style={{ whiteSpace: 'nowrap' }}>Results</button>
                         </Link>
                       ) : (
                         <Link href={`${basePath}/${exam.id}`}>
-                          <button style={{ padding: '8px 16px', fontSize: 14 }}>
+                          <button className="btn btn-primary" style={{ whiteSpace: 'nowrap' }}>
                             {status === 'in_progress' ? 'Resume' : 'Begin'}
                           </button>
                         </Link>

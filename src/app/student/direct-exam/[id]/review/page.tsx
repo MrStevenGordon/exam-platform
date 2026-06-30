@@ -112,52 +112,52 @@ export default function ReviewDirectExamPage() {
     loadData()
   }, [examId, router])
 
-  if (loading) return <div style={{ padding: 40 }}>Loading...</div>
-  if (errorMsg) return <div style={{ padding: 40, color: 'red' }}>{errorMsg}</div>
-  if (!session) return <div style={{ padding: 40 }}>No session found.</div>
+  if (loading) return <div className="page-container">Loading…</div>
+  if (errorMsg) return <div className="page-container"><p className="banner banner-danger">{errorMsg}</p></div>
+  if (!session) return <div className="page-container">No session found.</div>
 
   if (!session.results_released) {
     return (
-      <div style={{ padding: 40, fontFamily: 'sans-serif', maxWidth: 700, margin: '0 auto' }}>
-        <Link href="/student" style={{ color: '#666' }}>&larr; Back to My Exams</Link>
-        <p style={{ marginTop: 24, padding: 16, background: '#fff3cd', borderRadius: 8 }}>
+      <div className="page-container" style={{ maxWidth: 640 }}>
+        <Link href="/student" style={{ color: 'var(--text-secondary)', fontSize: 14 }}>&larr; Back to my exams</Link>
+        <div className="banner banner-warning" style={{ marginTop: 24 }}>
           Results haven't been released yet. Check back later.
-        </p>
+        </div>
       </div>
     )
   }
 
   return (
-    <div style={{ padding: 40, fontFamily: 'sans-serif', maxWidth: 700, margin: '0 auto' }}>
-      <Link href="/student" style={{ color: '#666' }}>&larr; Back to My Exams</Link>
+    <div className="page-container" style={{ maxWidth: 640 }}>
+      <Link href="/student" style={{ color: 'var(--text-secondary)', fontSize: 14 }}>&larr; Back to my exams</Link>
 
       <h1 style={{ marginTop: 16 }}>{examTitle} — Review</h1>
-      <p style={{ color: '#666' }}>Score: {session.total_score} / {session.max_possible_score}</p>
+      <p style={{ color: 'var(--text-secondary)', marginTop: 4 }}>Score: {session.total_score} / {session.max_possible_score}</p>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginTop: 24 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginTop: 20 }}>
         {items.map((item, i) => {
           const isEssay = item.question_type === 'essay'
           const isCorrect = !isEssay && item.points_awarded === item.points
-          let borderColor = '#ddd'
-          if (!isEssay) borderColor = isCorrect ? '#16a34a' : (item.points_awarded === 0 ? '#dc2626' : '#d97706')
+          let borderColor = 'var(--border-strong)'
+          if (!isEssay) borderColor = isCorrect ? 'var(--success)' : (item.points_awarded === 0 ? 'var(--danger)' : 'var(--warning)')
 
           return (
-            <div key={item.id} style={{ border: `2px solid ${borderColor}`, borderRadius: 8, padding: 16 }}>
-              <p style={{ fontWeight: 600, margin: '0 0 8px' }}>{i + 1}. {item.question_text}</p>
+            <div key={item.id} className="card" style={{ borderLeft: `4px solid ${borderColor}` }}>
+              <p style={{ fontWeight: 700, margin: '0 0 8px' }}>{i + 1}. {item.question_text}</p>
               <p style={{ margin: '4px 0', fontSize: 14 }}>
                 <strong>Your answer:</strong> {item.answer || <em>No answer provided</em>}
               </p>
               {!isEssay && item.correct_answer && item.answer !== item.correct_answer && (
-                <p style={{ margin: '4px 0', fontSize: 14, color: '#16a34a' }}>
+                <p style={{ margin: '4px 0', fontSize: 14, color: 'var(--success)' }}>
                   <strong>Correct answer:</strong> {item.correct_answer}
                 </p>
               )}
-              <p style={{ margin: '8px 0 0', fontSize: 14, fontWeight: 600 }}>
+              <p style={{ margin: '8px 0 0', fontSize: 14, fontWeight: 700 }}>
                 {isEssay ? (
                   item.points_awarded !== null ? `Score: ${item.points_awarded} / ${item.points}` : 'Not yet graded'
                 ) : (
-                  <span style={{ color: isCorrect ? '#16a34a' : '#dc2626' }}>
-                    {isCorrect ? '✓ Correct' : '✗ Incorrect'} — {item.points_awarded ?? 0} / {item.points} pts
+                  <span style={{ color: isCorrect ? 'var(--success)' : 'var(--danger)' }}>
+                    {isCorrect ? 'Correct' : 'Incorrect'} — {item.points_awarded ?? 0} / {item.points} pts
                   </span>
                 )}
               </p>

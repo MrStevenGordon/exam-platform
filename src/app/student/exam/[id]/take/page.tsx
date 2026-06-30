@@ -328,10 +328,10 @@ export default function TakeExamPage() {
   const timeLow = secondsLeft < 300
 
   return (
-    <div style={{ padding: 40, fontFamily: 'sans-serif', maxWidth: 700, margin: '0 auto' }}>
+    <div className="page-container" style={{ maxWidth: 640 }}>
       <div style={{
-        position: 'sticky', top: 0, background: 'white', padding: '12px 0',
-        borderBottom: '2px solid #ddd', marginBottom: 16, zIndex: 10,
+        position: 'sticky', top: 0, background: 'var(--page-bg)', padding: '12px 0',
+        borderBottom: '2px solid var(--border-strong)', marginBottom: 16, zIndex: 10,
       }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
@@ -340,28 +340,28 @@ export default function TakeExamPage() {
           </div>
           <div style={{
             fontSize: 24, fontWeight: 700,
-            color: timeLow ? '#dc2626' : '#111',
+            color: timeLow ? 'var(--danger)' : 'var(--text-primary)',
           }}>
             {minutes}:{seconds.toString().padStart(2, '0')}
           </div>
         </div>
         {!inFullscreen && (
-          <button onClick={enterFullscreen} style={{ marginTop: 8, padding: '6px 12px', fontSize: 14 }}>
-            Re-enter Fullscreen
+          <button onClick={enterFullscreen} className="btn btn-secondary" style={{ marginTop: 8 }}>
+            Re-enter fullscreen
           </button>
         )}
         {debugMsg && <p style={{ fontSize: 12, color: '#999', margin: '4px 0 0' }}>{debugMsg}</p>}
       </div>
 
       {warning && (
-        <div style={{ padding: 12, background: '#fee2e2', color: '#991b1b', borderRadius: 8, marginBottom: 16, fontWeight: 600 }}>
+        <div className="banner banner-danger" style={{ marginBottom: 16, fontWeight: 700 }}>
           {warning}
         </div>
       )}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
         {questions.map((q, i) => (
-          <div key={q.id} style={{ border: '1px solid #ddd', borderRadius: 8, padding: 16 }}>
+          <div key={q.id} className="card">
             <p style={{ fontWeight: 600, marginBottom: 12 }}>
               {i + 1}. {q.question_text} <span style={{ fontWeight: 400, color: '#888', fontSize: 14 }}>({q.points} pt{q.points !== 1 ? 's' : ''})</span>
             </p>
@@ -409,7 +409,7 @@ export default function TakeExamPage() {
               <input
                 value={answers[q.id] || ''}
                 onChange={(e) => updateAnswer(q.id, e.target.value)}
-                style={{ width: '100%', padding: 8, fontSize: 16 }}
+                style={{ width: '100%' }}
               />
             )}
 
@@ -418,7 +418,7 @@ export default function TakeExamPage() {
                 value={answers[q.id] || ''}
                 onChange={(e) => updateAnswer(q.id, e.target.value)}
                 rows={6}
-                style={{ width: '100%', padding: 8, fontSize: 16 }}
+                style={{ width: '100%' }}
               />
             )}
           </div>
@@ -430,9 +430,10 @@ export default function TakeExamPage() {
           <button
             onClick={() => setConfirmingSubmit(true)}
             disabled={submitting}
-            style={{ padding: '14px 28px', fontSize: 18, background: '#16a34a', color: 'white', border: 'none', borderRadius: 6 }}
+            className="btn btn-primary"
+            style={{ fontSize: 16, padding: '14px 28px' }}
           >
-            Submit Exam
+            Submit exam
           </button>
         ) : (
           <div style={{ padding: 16, background: '#fff3cd', borderRadius: 8 }}>

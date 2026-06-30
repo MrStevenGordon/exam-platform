@@ -52,54 +52,41 @@ export default function NewExamPage() {
   }
 
   return (
-    <div style={{ padding: 40, fontFamily: 'sans-serif', maxWidth: 600, margin: '0 auto' }}>
-      <h1>New Exam</h1>
-      <form onSubmit={handleSubmit}>
-        <div style={{ marginBottom: 16 }}>
-          <label>Exam Type</label><br />
-          <select
-            value={examKind}
-            onChange={(e) => setExamKind(e.target.value)}
-            style={{ width: '100%', padding: 8, fontSize: 16 }}
-          >
-            <option value="final_exam_submission">Final Exam Submission (sent for supervisor review)</option>
-            <option value="mock">Mock Exam (publish directly to your class)</option>
-            <option value="pop_quiz">Pop Quiz (publish directly to your class)</option>
-            <option value="midterm">Midterm Exam (publish directly to your class)</option>
-          </select>
-        </div>
-        <div style={{ marginBottom: 16 }}>
-          <label>Title</label><br />
-          <input
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            required
-            style={{ width: '100%', padding: 8, fontSize: 16 }}
-          />
-        </div>
-        <div style={{ marginBottom: 16 }}>
-          <label>Subject</label><br />
-          <input
-            value={subject}
-            onChange={(e) => setSubject(e.target.value)}
-            required
-            style={{ width: '100%', padding: 8, fontSize: 16 }}
-          />
-        </div>
-        <div style={{ marginBottom: 16 }}>
-          <label>Instructions (shown to students on the front page)</label><br />
-          <textarea
-            value={instructions}
-            onChange={(e) => setInstructions(e.target.value)}
-            rows={4}
-            style={{ width: '100%', padding: 8, fontSize: 16 }}
-          />
-        </div>
-        {errorMsg && <p style={{ color: 'red' }}>{errorMsg}</p>}
-        <button type="submit" disabled={saving} style={{ padding: '10px 20px', fontSize: 16 }}>
-          {saving ? 'Creating...' : 'Create Exam'}
-        </button>
-      </form>
+    <div className="page-container" style={{ maxWidth: 520 }}>
+      <h1>New exam</h1>
+      <div className="card" style={{ marginTop: 20 }}>
+        <form onSubmit={handleSubmit}>
+          <div style={{ marginBottom: 16 }}>
+            <label style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)' }}>Exam type</label>
+            <select
+              value={examKind}
+              onChange={(e) => setExamKind(e.target.value)}
+              style={{ width: '100%', marginTop: 6 }}
+            >
+              <option value="final_exam_submission">Final exam submission (sent for supervisor review)</option>
+              <option value="pop_quiz">Pop quiz (publish directly to your class)</option>
+              <option value="midterm">Midterm exam (publish directly to your class)</option>
+              <option value="end_of_year">End of year exam (publish directly to your class)</option>
+            </select>
+          </div>
+          <div style={{ marginBottom: 16 }}>
+            <label style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)' }}>Title</label>
+            <input value={title} onChange={(e) => setTitle(e.target.value)} required style={{ width: '100%', marginTop: 6 }} />
+          </div>
+          <div style={{ marginBottom: 16 }}>
+            <label style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)' }}>Subject</label>
+            <input value={subject} onChange={(e) => setSubject(e.target.value)} required style={{ width: '100%', marginTop: 6 }} />
+          </div>
+          <div style={{ marginBottom: 20 }}>
+            <label style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)' }}>Instructions (shown to students on the front page)</label>
+            <textarea value={instructions} onChange={(e) => setInstructions(e.target.value)} rows={4} style={{ width: '100%', marginTop: 6 }} />
+          </div>
+          {errorMsg && <p className="banner banner-danger" style={{ marginBottom: 16 }}>{errorMsg}</p>}
+          <button type="submit" disabled={saving} className="btn btn-primary">
+            {saving ? 'Creating…' : 'Create exam'}
+          </button>
+        </form>
+      </div>
     </div>
   )
 }

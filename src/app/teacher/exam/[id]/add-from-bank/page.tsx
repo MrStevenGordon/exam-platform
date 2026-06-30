@@ -99,24 +99,26 @@ export default function AddFromBankPage() {
   if (loading) return <div style={{ padding: 40 }}>Loading...</div>
 
   return (
-    <div style={{ padding: 40, fontFamily: 'sans-serif', maxWidth: 700, margin: '0 auto' }}>
-      <Link href={`/teacher/exam/${examId}`} style={{ color: '#666' }}>&larr; Back to Exam</Link>
+    <div className="page-container" style={{ maxWidth: 640 }}>
+      <Link href={`/teacher/exam/${examId}`} style={{ color: 'var(--text-secondary)', fontSize: 14 }}>&larr; Back to exam</Link>
 
-      <h1 style={{ marginTop: 16 }}>Add from Question Bank</h1>
+      <h1 style={{ marginTop: 16 }}>Add from question bank</h1>
 
-      {errorMsg && <p style={{ color: 'red' }}>{errorMsg}</p>}
+      {errorMsg && <p className="banner banner-danger" style={{ marginTop: 16 }}>{errorMsg}</p>}
       {bankQuestions.length === 0 && !errorMsg && (
-        <p>No saved questions in your bank yet. Check "Save to bank" when creating a question to build one up.</p>
+        <div className="card" style={{ marginTop: 20 }}>
+          <p style={{ color: 'var(--text-secondary)' }}>No saved questions in your bank yet. Check "Save to bank" when creating a question to build one up.</p>
+        </div>
       )}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {bankQuestions.map((q) => (
           <label
             key={q.id}
+            className="card"
             style={{
-              display: 'flex', gap: 12, alignItems: 'flex-start',
-              border: '1px solid #ddd', borderRadius: 8, padding: 12, cursor: 'pointer',
-              background: selectedIds.has(q.id) ? '#eff6ff' : 'white',
+              display: 'flex', gap: 12, alignItems: 'flex-start', cursor: 'pointer',
+              background: selectedIds.has(q.id) ? 'var(--accent-light)' : 'var(--card-bg)',
             }}
           >
             <input
@@ -126,7 +128,7 @@ export default function AddFromBankPage() {
               style={{ marginTop: 4 }}
             />
             <div>
-              <div style={{ fontSize: 12, color: '#888', textTransform: 'uppercase' }}>
+              <div className="section-label" style={{ fontSize: 11 }}>
                 {q.question_type.replace('_', ' ')} — {q.points} pt{q.points !== 1 ? 's' : ''}
               </div>
               <p style={{ margin: '4px 0 0' }}>{q.question_text}</p>
@@ -137,12 +139,8 @@ export default function AddFromBankPage() {
 
       {bankQuestions.length > 0 && (
         <div style={{ marginTop: 24 }}>
-          <button
-            onClick={handleAddSelected}
-            disabled={saving}
-            style={{ padding: '10px 20px', fontSize: 16, background: '#2563eb', color: 'white', border: 'none', borderRadius: 6 }}
-          >
-            {saving ? 'Adding...' : `Add ${selectedIds.size} Question(s)`}
+          <button onClick={handleAddSelected} disabled={saving} className="btn btn-primary">
+            {saving ? 'Adding…' : `Add ${selectedIds.size} question(s)`}
           </button>
         </div>
       )}
