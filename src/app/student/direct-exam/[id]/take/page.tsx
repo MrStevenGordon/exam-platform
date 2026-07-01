@@ -32,11 +32,6 @@ function questionSeed(sessionSeed: number, questionId: string): number {
   return hash
 }
 
-type DirectExam = {
-  id: string
-  title: string
-}
-
 type Question = {
   id: string
   question_type: string
@@ -56,15 +51,22 @@ type SessionInfo = {
   option_shuffle_seed: number | null
 }
 
+type ExamInfo = {
+  id: string
+  title: string
+  questions_per_page: number
+}
+
 export default function TakeDirectExamPage() {
   const router = useRouter()
   const params = useParams()
   const examId = params.id as string
 
-  const [exam, setExam] = useState<DirectExam | null>(null)
+  const [exam, setExam] = useState<ExamInfo | null>(null)
   const [questions, setQuestions] = useState<Question[]>([])
   const [answers, setAnswers] = useState<Record<string, string>>({})
   const [session, setSession] = useState<SessionInfo | null>(null)
+  const [currentPage, setCurrentPage] = useState(0)
   const [loading, setLoading] = useState(true)
   const [errorMsg, setErrorMsg] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -77,16 +79,11 @@ export default function TakeDirectExamPage() {
   const submittedRef = useRef(false)
   const intentionalExitRef = useRef(false)
 
-  useEffect(() => {
-    loadData()
-  }, [examId])
+  useEffect(() => { loadData() }, [examId])
 
   async function loadData() {
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
-      router.push('/login')
-      return
-    }
+    if (!user) { router.push('/login'); return }
 
     const { data: sessionData, error: sessionError } = await supabase
       .from('exam_sessions')
@@ -95,15 +92,8 @@ export default function TakeDirectExamPage() {
       .eq('student_id', user.id)
       .single()
 
-    if (sessionError || !sessionData) {
-      router.push(`/student/direct-exam/${examId}`)
-      return
-    }
-
-    if (sessionData.status === 'completed') {
-      router.push('/student')
-      return
-    }
+    if (sessionError || !sessionData) { router.push(`/student/direct-exam/${examId}`); return }
+    if (sessionData.status === 'completed') { router.push('/student'); return }
 
     setSession(sessionData)
     violationCount.current = sessionData.tab_switch_count || 0
@@ -114,15 +104,11 @@ export default function TakeDirectExamPage() {
 
     const { data: examData, error: examError } = await supabase
       .from('draft_exams')
-      .select('id, title')
+      .select('id, title, questions_per_page')
       .eq('id', examId)
       .single()
 
-    if (examError) {
-      setErrorMsg(examError.message)
-      setLoading(false)
-      return
-    }
+    if (examError) { setErrorMsg(examError.message); setLoading(false); return }
     setExam(examData)
 
     const { data: questionData, error: questionError } = await supabase
@@ -131,11 +117,7 @@ export default function TakeDirectExamPage() {
       .eq('draft_exam_id', examId)
       .order('order_index', { ascending: true })
 
-    if (questionError) {
-      setErrorMsg(questionError.message)
-      setLoading(false)
-      return
-    }
+    if (questionError) { setErrorMsg(questionError.message); setLoading(false); return }
     setQuestions(questionData || [])
 
     const { data: existingAnswers } = await supabase
@@ -144,9 +126,7 @@ export default function TakeDirectExamPage() {
       .eq('session_id', sessionData.id)
 
     const answerMap: Record<string, string> = {}
-    ;(existingAnswers || []).forEach((a) => {
-      answerMap[a.question_id] = a.answer
-    })
+    ;(existingAnswers || []).forEach((a) => { answerMap[a.question_id] = a.answer })
     setAnswers(answerMap)
 
     setLoading(false)
@@ -175,13 +155,10 @@ export default function TakeDirectExamPage() {
 
   useEffect(() => {
     enterFullscreen()
-
     function handleFullscreenChange() {
       const isFull = !!document.fullscreenElement
       setInFullscreen(isFull)
-      if (!isFull && !submittedRef.current && !intentionalExitRef.current && session?.status !== 'completed') {
-        registerViolation('exited fullscreen')
-      }
+      if (!isFull && !submittedRef.current && !intentionalExitRef.current) registerViolation('exited fullscreen')
     }
     document.addEventListener('fullscreenchange', handleFullscreenChange)
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange)
@@ -189,9 +166,7 @@ export default function TakeDirectExamPage() {
 
   useEffect(() => {
     function handleVisibilityChange() {
-      if (document.hidden && !submittedRef.current && !intentionalExitRef.current) {
-        registerViolation('switched tabs or minimized window')
-      }
+      if (document.hidden && !submittedRef.current && !intentionalExitRef.current) registerViolation('switched tabs or minimized window')
     }
     document.addEventListener('visibilitychange', handleVisibilityChange)
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
@@ -201,26 +176,17 @@ export default function TakeDirectExamPage() {
     if (!session) return
     violationCount.current += 1
     const count = violationCount.current
-
-    await supabase
-      .from('exam_sessions')
-      .update({ tab_switch_count: count, flagged: true })
-      .eq('id', session.id)
-
+    await supabase.from('exam_sessions').update({ tab_switch_count: count, flagged: true }).eq('id', session.id)
     if (count >= 3) {
       setWarning(`This is violation ${count} (${reason}). Your exam is being submitted automatically.`)
-      if (!submittedRef.current) {
-        submittedRef.current = true
-        intentionalExitRef.current = true
-        handleSubmit()
-      }
+      if (!submittedRef.current) { submittedRef.current = true; intentionalExitRef.current = true; handleSubmit() }
     } else {
       setWarning(`Warning ${count}/3: ${reason}. Reaching 3 violations will auto-submit your exam.`)
     }
   }
 
   function updateAnswer(questionId: string, value: string) {
-    setAnswers({ ...answers, [questionId]: value })
+    setAnswers((prev) => ({ ...prev, [questionId]: value }))
   }
 
   function gradeAnswer(question: Question, studentAnswer: string): number | null {
@@ -230,15 +196,8 @@ export default function TakeDirectExamPage() {
     return studentAnswer.trim() === question.correct_answer.trim() ? question.points : 0
   }
 
-  function handleFinalSubmitClick() {
-    intentionalExitRef.current = true
-    submittedRef.current = true
-    handleSubmit()
-  }
-
   async function handleSubmit() {
     if (!session) return
-
     setSubmitting(true)
     setErrorMsg('')
 
@@ -252,75 +211,49 @@ export default function TakeDirectExamPage() {
       if (awarded === null) hasEssay = true
       else autoScore += awarded
       autoMax += q.points
-      return {
-        session_id: session.id,
-        question_id: q.id,
-        answer: studentAnswer,
-        points_awarded: awarded,
-        graded_at: awarded !== null ? new Date().toISOString() : null,
-      }
+      return { session_id: session.id, question_id: q.id, answer: studentAnswer, points_awarded: awarded, graded_at: awarded !== null ? new Date().toISOString() : null }
     })
 
-    const { error: deleteError } = await supabase.from('responses').delete().eq('session_id', session.id)
-    if (deleteError) {
-      setErrorMsg(deleteError.message)
-      setSubmitting(false)
-      return
-    }
-
+    await supabase.from('responses').delete().eq('session_id', session.id)
     if (rows.length > 0) {
-      const { error: responseError } = await supabase.from('responses').insert(rows)
-      if (responseError) {
-        setErrorMsg(responseError.message)
-        setSubmitting(false)
-        return
-      }
+      const { error } = await supabase.from('responses').insert(rows)
+      if (error) { setErrorMsg(error.message); setSubmitting(false); return }
     }
 
     const { error: sessionError } = await supabase
       .from('exam_sessions')
-      .update({
-        status: 'completed',
-        completed_at: new Date().toISOString(),
-        total_score: autoScore,
-        max_possible_score: autoMax,
-        fully_graded: !hasEssay,
-      })
+      .update({ status: 'completed', completed_at: new Date().toISOString(), total_score: autoScore, max_possible_score: autoMax, fully_graded: !hasEssay })
       .eq('id', session.id)
 
-    if (sessionError) {
-      setErrorMsg(sessionError.message)
-      setSubmitting(false)
-      return
-    }
-
-    if (document.fullscreenElement) {
-      document.exitFullscreen().catch(() => {})
-    }
-
+    if (sessionError) { setErrorMsg(sessionError.message); setSubmitting(false); return }
+    if (document.fullscreenElement) document.exitFullscreen().catch(() => {})
     router.push(`/student/direct-exam/${examId}/submitted`)
   }
 
   if (loading) return <div className="page-container">Loading…</div>
   if (errorMsg) return <div className="page-container"><p className="banner banner-danger">{errorMsg}</p></div>
-  if (!exam) return <div className="page-container">Exam not found.</div>
+  if (!exam || !session) return <div className="page-container">Exam not found.</div>
 
+  const qpp = exam.questions_per_page || 10
+  const totalPages = Math.ceil(questions.length / qpp)
+  const pageQuestions = questions.slice(currentPage * qpp, (currentPage + 1) * qpp)
+  const isLastPage = currentPage === totalPages - 1
   const minutes = Math.floor(secondsLeft / 60)
   const seconds = secondsLeft % 60
   const timeLow = secondsLeft < 300
+  const answeredCount = questions.filter((q) => answers[q.id]).length
 
   return (
     <div className="page-container" style={{ maxWidth: 640 }}>
-      <div style={{
-        position: 'sticky', top: 0, background: 'var(--page-bg)', padding: '12px 0',
-        borderBottom: '2px solid var(--border-strong)', marginBottom: 16, zIndex: 10,
-      }}>
+      <div style={{ position: 'sticky', top: 0, background: 'var(--page-bg)', padding: '12px 0', borderBottom: '2px solid var(--border-strong)', marginBottom: 20, zIndex: 10 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
             <h1 style={{ margin: 0 }}>{exam.title}</h1>
-            <p style={{ margin: '4px 0 0', color: 'var(--text-secondary)' }}>{questions.length} questions</p>
+            <p style={{ margin: '4px 0 0', color: 'var(--text-secondary)', fontSize: 13 }}>
+              {answeredCount} of {questions.length} answered · Page {currentPage + 1} of {totalPages}
+            </p>
           </div>
-          <div style={{ fontSize: 24, fontWeight: 700, color: timeLow ? 'var(--danger)' : 'var(--text-primary)' }}>
+          <div style={{ fontSize: 24, fontWeight: 700, color: timeLow ? 'var(--danger)' : 'var(--text-primary)', fontVariantNumeric: 'tabular-nums' }}>
             {minutes}:{seconds.toString().padStart(2, '0')}
           </div>
         </div>
@@ -331,85 +264,88 @@ export default function TakeDirectExamPage() {
         )}
       </div>
 
-      {warning && (
-        <div className="banner banner-danger" style={{ marginBottom: 16, fontWeight: 700 }}>
-          {warning}
-        </div>
-      )}
+      {warning && <div className="banner banner-danger" style={{ marginBottom: 16, fontWeight: 700 }}>{warning}</div>}
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-        {questions.map((q, i) => (
-          <div key={q.id} className="card">
-            <p style={{ fontWeight: 700, marginBottom: 12 }}>
-              {i + 1}. {q.question_text} <span style={{ fontWeight: 400, color: 'var(--text-secondary)', fontSize: 14 }}>({q.points} pt{q.points !== 1 ? 's' : ''})</span>
-            </p>
+      <div className="exam-content" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+        {pageQuestions.map((q, i) => {
+          const globalIndex = currentPage * qpp + i
+          return (
+            <div key={q.id} className="card">
+              <p style={{ fontWeight: 700, marginBottom: 12, fontSize: 15 }}>
+                {globalIndex + 1}. {q.question_text}
+                <span style={{ fontWeight: 400, color: 'var(--text-secondary)', fontSize: 13, marginLeft: 8 }}>({q.points} pt{q.points !== 1 ? 's' : ''})</span>
+              </p>
 
-            {q.question_type === 'multiple_choice' && q.options && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {seededShuffle(q.options, questionSeed(session?.option_shuffle_seed || 1, q.id)).map((opt, idx) => (
-                  <label key={idx} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <input type="radio" name={q.id} checked={answers[q.id] === opt} onChange={() => updateAnswer(q.id, opt)} />
-                    {opt}
-                  </label>
-                ))}
-              </div>
-            )}
+              {q.question_type === 'multiple_choice' && q.options && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {seededShuffle(q.options, questionSeed(session.option_shuffle_seed || 1, q.id)).map((opt, idx) => (
+                    <label key={idx} style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', padding: '8px 12px', borderRadius: 8, background: answers[q.id] === opt ? 'var(--accent-light)' : 'var(--page-bg)', border: `1px solid ${answers[q.id] === opt ? 'var(--accent)' : 'var(--border)'}` }}>
+                      <input type="radio" name={q.id} checked={answers[q.id] === opt} onChange={() => updateAnswer(q.id, opt)} style={{ accentColor: 'var(--accent)' }} />
+                      {opt}
+                    </label>
+                  ))}
+                </div>
+              )}
 
-            {q.question_type === 'true_false' && (
-              <div style={{ display: 'flex', gap: 16 }}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <input type="radio" name={q.id} checked={answers[q.id] === 'true'} onChange={() => updateAnswer(q.id, 'true')} />
-                  True
-                </label>
-                <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <input type="radio" name={q.id} checked={answers[q.id] === 'false'} onChange={() => updateAnswer(q.id, 'false')} />
-                  False
-                </label>
-              </div>
-            )}
+              {q.question_type === 'true_false' && (
+                <div style={{ display: 'flex', gap: 12 }}>
+                  {['true', 'false'].map((val) => (
+                    <label key={val} style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', padding: '8px 16px', borderRadius: 8, background: answers[q.id] === val ? 'var(--accent-light)' : 'var(--page-bg)', border: `1px solid ${answers[q.id] === val ? 'var(--accent)' : 'var(--border)'}` }}>
+                      <input type="radio" name={q.id} checked={answers[q.id] === val} onChange={() => updateAnswer(q.id, val)} style={{ accentColor: 'var(--accent)' }} />
+                      {val.charAt(0).toUpperCase() + val.slice(1)}
+                    </label>
+                  ))}
+                </div>
+              )}
 
-            {(q.question_type === 'short_answer' || q.question_type === 'fill_blank') && (
-              <input
-                value={answers[q.id] || ''}
-                onChange={(e) => updateAnswer(q.id, e.target.value)}
-                style={{ width: '100%' }}
-              />
-            )}
+              {(q.question_type === 'short_answer' || q.question_type === 'fill_blank') && (
+                <input value={answers[q.id] || ''} onChange={(e) => updateAnswer(q.id, e.target.value)} style={{ width: '100%' }} placeholder="Your answer…" />
+              )}
 
-            {q.question_type === 'essay' && (
-              <textarea
-                value={answers[q.id] || ''}
-                onChange={(e) => updateAnswer(q.id, e.target.value)}
-                rows={6}
-                style={{ width: '100%' }}
-              />
-            )}
-          </div>
-        ))}
+              {q.question_type === 'essay' && (
+                <textarea value={answers[q.id] || ''} onChange={(e) => updateAnswer(q.id, e.target.value)} rows={6} style={{ width: '100%' }} placeholder="Write your response here…" />
+              )}
+            </div>
+          )
+        })}
       </div>
 
-      <div style={{ marginTop: 24, paddingTop: 16, borderTop: '1px solid var(--border)' }}>
-        {!confirmingSubmit ? (
-          <button
-            onClick={() => setConfirmingSubmit(true)}
-            disabled={submitting}
-            className="btn btn-primary"
-            style={{ fontSize: 16, padding: '14px 28px' }}
-          >
-            Submit exam
-          </button>
-        ) : (
-          <div className="banner banner-warning">
-            <p style={{ margin: '0 0 12px', fontWeight: 700 }}>Are you sure? You won't be able to change your answers after this.</p>
-            <div style={{ display: 'flex', gap: 12 }}>
-              <button onClick={handleFinalSubmitClick} disabled={submitting} className="btn btn-primary">
-                {submitting ? 'Submitting…' : 'Yes, submit'}
-              </button>
-              <button onClick={() => setConfirmingSubmit(false)} disabled={submitting} className="btn btn-ghost">
-                Cancel
-              </button>
+      <div style={{ marginTop: 24, paddingTop: 16, borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <button
+          onClick={() => { setCurrentPage((p) => Math.max(0, p - 1)); window.scrollTo(0, 0) }}
+          disabled={currentPage === 0}
+          className="btn btn-ghost"
+        >
+          ← Previous
+        </button>
+
+        <span style={{ fontSize: 13, color: 'var(--text-secondary)', fontWeight: 600 }}>
+          Page {currentPage + 1} of {totalPages}
+        </span>
+
+        {isLastPage ? (
+          !confirmingSubmit ? (
+            <button onClick={() => setConfirmingSubmit(true)} disabled={submitting} className="btn btn-primary">
+              Submit exam
+            </button>
+          ) : (
+            <div style={{ textAlign: 'right' }}>
+              <p style={{ fontSize: 13, fontWeight: 700, marginBottom: 8 }}>Submit now? You can't change answers after this.</p>
+              <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                <button onClick={() => setConfirmingSubmit(false)} className="btn btn-ghost">Cancel</button>
+                <button onClick={() => { intentionalExitRef.current = true; submittedRef.current = true; handleSubmit() }} disabled={submitting} className="btn btn-primary">
+                  {submitting ? 'Submitting…' : 'Yes, submit'}
+                </button>
+              </div>
             </div>
-          </div>
+          )
+        ) : (
+          <button
+            onClick={() => { setCurrentPage((p) => Math.min(totalPages - 1, p + 1)); window.scrollTo(0, 0) }}
+            className="btn btn-primary"
+          >
+            Next →
+          </button>
         )}
       </div>
     </div>
