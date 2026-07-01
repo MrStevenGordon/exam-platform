@@ -11,6 +11,7 @@ export default function NewExamPage() {
   const [instructions, setInstructions] = useState('')
   const [examKind, setExamKind] = useState('final_exam_submission')
   const [errorMsg, setErrorMsg] = useState('')
+  const [questionsPerPage, setQuestionsPerPage] = useState(10)
   const [saving, setSaving] = useState(false)
 
   async function handleSubmit(e: React.FormEvent) {
@@ -39,6 +40,7 @@ export default function NewExamPage() {
         created_by: user.id,
         department_id: profile?.department_id,
         exam_kind: examKind,
+        questions_per_page: questionsPerPage,
       })
       .select()
       .single()
@@ -80,6 +82,18 @@ export default function NewExamPage() {
           <div style={{ marginBottom: 20 }}>
             <label style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)' }}>Instructions (shown to students on the front page)</label>
             <textarea value={instructions} onChange={(e) => setInstructions(e.target.value)} rows={4} style={{ width: '100%', marginTop: 6 }} />
+          </div>
+          <div style={{ marginBottom: 16 }}>
+            <label style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)' }}>Questions per page</label>
+            <select
+              value={questionsPerPage}
+              onChange={(e) => setQuestionsPerPage(parseInt(e.target.value))}
+              style={{ width: '100%', marginTop: 6 }}
+            >
+              <option value={5}>5 questions per page</option>
+              <option value={10}>10 questions per page</option>
+              <option value={20}>20 questions per page</option>
+            </select>
           </div>
           {errorMsg && <p className="banner banner-danger" style={{ marginBottom: 16 }}>{errorMsg}</p>}
           <button type="submit" disabled={saving} className="btn btn-primary">
