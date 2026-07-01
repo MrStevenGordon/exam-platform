@@ -23,6 +23,7 @@ export default function AddFromBankPage() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [loading, setLoading] = useState(true)
   const [errorMsg, setErrorMsg] = useState('')
+  const [search, setSearch] = useState('')
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
@@ -111,8 +112,16 @@ export default function AddFromBankPage() {
         </div>
       )}
 
+      <input
+        type="text"
+        placeholder="Search questions…"
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        style={{ width: '100%', marginBottom: 12 }}
+      />
+
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-        {bankQuestions.map((q) => (
+        {bankQuestions.filter((q) => !search || q.question_text.toLowerCase().includes(search.toLowerCase())).map((q) => (
           <label
             key={q.id}
             className="card"

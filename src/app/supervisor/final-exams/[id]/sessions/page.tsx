@@ -29,6 +29,7 @@ export default function ExamSessionsPage() {
   const [loading, setLoading] = useState(true)
   const [errorMsg, setErrorMsg] = useState('')
   const [releasing, setReleasing] = useState(false)
+  const [search, setSearch] = useState('')
 
   useEffect(() => {
     loadData()
@@ -97,9 +98,14 @@ export default function ExamSessionsPage() {
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginTop: 16 }}>
         <h1>{examTitle} — Student sessions</h1>
-        <button onClick={handleReleaseAll} disabled={releasing} className="btn btn-primary" style={{ whiteSpace: 'nowrap' }}>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <Link href={`/supervisor/final-exams/${finalExamId}/analytics`}>
+            <button className="btn btn-secondary">View analytics</button>
+          </Link>
+          <button onClick={handleReleaseAll} disabled={releasing} className="btn btn-primary" style={{ whiteSpace: 'nowrap' }}>
           {releasing ? 'Releasing…' : 'Release all results'}
         </button>
+          </div>
       </div>
 
       {ungradedCount > 0 && (
@@ -115,8 +121,16 @@ export default function ExamSessionsPage() {
         </div>
       )}
 
+      <input
+        type="text"
+        placeholder="Search by student name…"
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        style={{ width: '100%', marginBottom: 12 }}
+      />
+
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 16 }}>
-        {sessions.map((s) => (
+        {sessions.filter((s) => !search || s.profiles?.full_name?.toLowerCase().includes(search.toLowerCase())).map((s) => (
           <div key={s.id} className="card" style={{ background: s.flagged ? 'var(--danger-bg)' : 'var(--card-bg)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <strong>{s.profiles?.full_name || 'Unknown student'}</strong>

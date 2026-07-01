@@ -19,6 +19,7 @@ export default function SupervisorDashboard() {
   const [exams, setExams] = useState<DraftExam[]>([])
   const [loading, setLoading] = useState(true)
   const [errorMsg, setErrorMsg] = useState('')
+  const [search, setSearch] = useState('')
 
   useEffect(() => {
     async function loadExams() {
@@ -55,8 +56,19 @@ export default function SupervisorDashboard() {
         <p>No exams submitted yet from your department's teachers.</p>
       )}
 
+      <input
+        type="text"
+        placeholder="Search by title, subject or teacher…"
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        style={{ width: '100%', marginBottom: 16 }}
+      />
+
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        {exams.map((exam) => (
+        {exams.filter((e) => {
+          const q = search.toLowerCase()
+          return !q || e.title?.toLowerCase().includes(q) || e.subject?.toLowerCase().includes(q) || (e.profiles as any)?.full_name?.toLowerCase().includes(q)
+        }).map((exam) => (
           <Link key={exam.id} href={`/supervisor/exam/${exam.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
             <div style={{ border: '1px solid #ddd', borderRadius: 8, padding: 16, cursor: 'pointer' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>

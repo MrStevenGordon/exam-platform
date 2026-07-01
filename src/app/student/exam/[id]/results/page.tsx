@@ -19,6 +19,8 @@ export default function ResultsPage() {
 
   const [result, setResult] = useState<ResultData | null>(null)
   const [examTitle, setExamTitle] = useState('')
+  const [classAvg, setClassAvg] = useState<number | null>(null)
+  const [classAvg, setClassAvg] = useState<number | null>(null)
   const [loading, setLoading] = useState(true)
   const [errorMsg, setErrorMsg] = useState('')
 
@@ -48,6 +50,21 @@ export default function ResultsPage() {
         setErrorMsg(error.message)
       } else {
         setResult(data)
+        if (data?.results_released) {
+          const { data: allSessions } = await supabase
+            .from('exam_sessions')
+            .select('total_score, max_possible_score')
+            .eq('final_exam_id', examId)
+            .eq('status', 'completed')
+            .eq('results_released', true)
+          if (allSessions && allSessions.length > 0) {
+            const valid = allSessions.filter((s) => s.max_possible_score > 0)
+            const avg = valid.length
+              ? Math.round(valid.reduce((sum, s) => sum + Math.round((s.total_score / s.max_possible_score) * 100), 0) / valid.length)
+              : null
+            setClassAvg(avg)
+          }
+        }
       }
       setLoading(false)
     }
@@ -87,6 +104,16 @@ export default function ResultsPage() {
             {result.total_score} / {result.max_possible_score}
           </p>
           <p style={{ fontSize: 16, color: 'var(--text-secondary)' }}>{percent}%</p>
+          {classAvg !== null && (
+            <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 8 }}>
+              Class average: <strong>{classAvg}%</strong>
+              {percent > classAvg
+                ? <span style={{ color: 'var(--success)', marginLeft: 6 }}>↑ above average</span>
+                : percent < classAvg
+                ? <span style={{ color: 'var(--danger)', marginLeft: 6 }}>↓ below average</span>
+                : <span style={{ marginLeft: 6 }}>= at average</span>}
+            </p>
+          )}
           <Link href={`/student/exam/${examId}/review`}>
             <button className="btn btn-primary" style={{ marginTop: 12 }}>Review answers</button>
           </Link>

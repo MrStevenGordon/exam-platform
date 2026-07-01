@@ -104,7 +104,10 @@ export default function StudentDashboard() {
     <div className="page-container">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <h1>My exams</h1>
-        <Link href="/student/self-mock"><button className="btn btn-secondary">Practice mock exam</button></Link>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <Link href="/student/self-mock"><button className="btn btn-secondary">Practice mock exam</button></Link>
+          <Link href="/student/history"><button className="btn btn-ghost">My score history</button></Link>
+        </div>
       </div>
 
       {errorMsg && <p className="banner banner-danger" style={{ marginTop: 16 }}>{errorMsg}</p>}
