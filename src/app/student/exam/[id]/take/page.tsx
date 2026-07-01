@@ -74,6 +74,7 @@ export default function TakeExamPage() {
   const [warning, setWarning] = useState('')
   const [inFullscreen, setInFullscreen] = useState(false)
   const [confirmingSubmit, setConfirmingSubmit] = useState(false)
+  const [studentProfile, setStudentProfile] = useState<{ full_name: string; student_id: string | null } | null>(null)
 
   const violationCount = useRef(0)
   const submittedRef = useRef(false)
@@ -84,6 +85,13 @@ export default function TakeExamPage() {
   async function loadData() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { router.push('/login'); return }
+
+    const { data: profileData } = await supabase
+      .from('profiles')
+      .select('full_name, student_id')
+      .eq('id', user.id)
+      .single()
+    if (profileData) setStudentProfile(profileData)
 
     const { data: sessionData, error: sessionError } = await supabase
       .from('exam_sessions')

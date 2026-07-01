@@ -74,6 +74,7 @@ export default function TakeDirectExamPage() {
   const [warning, setWarning] = useState('')
   const [inFullscreen, setInFullscreen] = useState(false)
   const [confirmingSubmit, setConfirmingSubmit] = useState(false)
+  const [studentProfile, setStudentProfile] = useState<{ full_name: string; student_id: string | null } | null>(null)
 
   const violationCount = useRef(0)
   const submittedRef = useRef(false)
@@ -84,6 +85,13 @@ export default function TakeDirectExamPage() {
   async function loadData() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { router.push('/login'); return }
+
+    const { data: profileData } = await supabase
+      .from('profiles')
+      .select('full_name, student_id')
+      .eq('id', user.id)
+      .single()
+    if (profileData) setStudentProfile(profileData)
 
     const { data: sessionData, error: sessionError } = await supabase
       .from('exam_sessions')
@@ -245,6 +253,24 @@ export default function TakeDirectExamPage() {
 
   return (
     <div className="page-container" style={{ maxWidth: 640 }}>
+      {studentProfile && (
+        <div style={{
+          background: 'var(--border)',
+          borderRadius: 6,
+          padding: '6px 12px',
+          marginBottom: 12,
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          fontSize: 12,
+          fontWeight: 700,
+          color: 'var(--text-secondary)',
+          letterSpacing: 0.3,
+        }}>
+          <span>{studentProfile.full_name}</span>
+          {studentProfile.student_id && <span>ID: {studentProfile.student_id}</span>}
+        </div>
+      )}
       <div style={{ position: 'sticky', top: 0, background: 'var(--page-bg)', padding: '12px 0', borderBottom: '2px solid var(--border-strong)', marginBottom: 20, zIndex: 10 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>

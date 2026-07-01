@@ -28,6 +28,7 @@ export default function StudentDashboard() {
   const [sessionMap, setSessionMap] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(true)
   const [errorMsg, setErrorMsg] = useState('')
+  const [studentProfile, setStudentProfile] = useState<{ full_name: string; student_id: string | null; grade_level: number | null } | null>(null)
   const [openCategories, setOpenCategories] = useState<Record<string, boolean>>({})
 
   useEffect(() => {
@@ -37,6 +38,13 @@ export default function StudentDashboard() {
         router.push('/login')
         return
       }
+
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('full_name, student_id, grade_level')
+        .eq('id', user.id)
+        .single()
+      if (profileData) setStudentProfile(profileData)
 
       const { data: finalExams, error: finalError } = await supabase
         .from('final_exams')
@@ -102,6 +110,18 @@ export default function StudentDashboard() {
 
   return (
     <div className="page-container">
+      {studentProfile && (
+        <div className="card" style={{ marginBottom: 20, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <div style={{ fontWeight: 700, fontSize: 16 }}>{studentProfile.full_name}</div>
+            {studentProfile.student_id && (
+              <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 2 }}>
+                Student ID: {studentProfile.student_id} · Grade {studentProfile.grade_level}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <h1>My exams</h1>
         <div style={{ display: 'flex', gap: 8 }}>

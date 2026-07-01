@@ -1,0 +1,3 @@
+first_name,middle_name,last_name,student_id,class_id,birth_date,gender,birth_year
+John,Anthony,Brown,12345,1-1,2012-05-14,M,2012
+Jane,,Smith,12346,1-1,2012-08-22,F,2012
