@@ -4,199 +4,232 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts'
 
-type ExamItem = {
+type StudentProfile = {
+  full_name: string
+  student_id: string | null
+  grade_level: number | null
+}
+
+type RecentResult = {
+  title: string
+  pct: number
+  kind: string
+  date: string
+  examId: string
+  examType: string
+}
+
+type UpcomingExam = {
   id: string
   title: string
   subject: string
-  duration_minutes: number | null
-  kind: 'final_exam' | 'direct_exam'
-  category: string
+  kind: string
+  examType: string
 }
 
-const CATEGORY_LABELS: Record<string, string> = {
-  pop_quiz: 'Pop quizzes',
-  midterm: 'Mid terms',
-  end_of_year: 'End of year exams',
-}
-
-const CATEGORY_ORDER = ['pop_quiz', 'midterm', 'end_of_year']
-
-export default function StudentDashboard() {
+export default function StudentHome() {
   const router = useRouter()
-  const [exams, setExams] = useState<ExamItem[]>([])
-  const [sessionMap, setSessionMap] = useState<Record<string, string>>({})
+  const [profile, setProfile] = useState<StudentProfile | null>(null)
+  const [recentResults, setRecentResults] = useState<RecentResult[]>([])
+  const [upcomingExams, setUpcomingExams] = useState<UpcomingExam[]>([])
+  const [classRank, setClassRank] = useState<number | null>(null)
+  const [totalStudents, setTotalStudents] = useState<number | null>(null)
   const [loading, setLoading] = useState(true)
-  const [errorMsg, setErrorMsg] = useState('')
-  const [studentProfile, setStudentProfile] = useState<{ full_name: string; student_id: string | null; grade_level: number | null } | null>(null)
-  const [openCategories, setOpenCategories] = useState<Record<string, boolean>>({})
 
   useEffect(() => {
-    async function loadExams() {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) {
-        router.push('/login')
-        return
-      }
+    loadData()
+  }, [])
 
-      const { data: profileData } = await supabase
-        .from('profiles')
-        .select('full_name, student_id, grade_level')
-        .eq('id', user.id)
-        .single()
-      if (profileData) setStudentProfile(profileData)
+  async function loadData() {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) { router.push('/login'); return }
 
-      const { data: finalExams, error: finalError } = await supabase
-        .from('final_exams')
-        .select('id, title, subject, duration_minutes, published_at, exam_category')
-        .order('published_at', { ascending: false })
+    const { data: profileData } = await supabase
+      .from('profiles')
+      .select('full_name, student_id, grade_level')
+      .eq('id', user.id)
+      .single()
+    setProfile(profileData)
 
-      if (finalError) {
-        setErrorMsg(finalError.message)
-        setLoading(false)
-        return
-      }
+    const { data: finalSessions } = await supabase
+      .from('exam_sessions')
+      .select('total_score, max_possible_score, completed_at, results_released, final_exam_id, final_exams(title, exam_category)')
+      .eq('student_id', user.id)
+      .eq('status', 'completed')
+      .eq('results_released', true)
+      .not('final_exam_id', 'is', null)
+      .order('completed_at', { ascending: false })
+      .limit(5)
 
-      const { data: directExams, error: directError } = await supabase
-        .from('draft_exams')
-        .select('id, title, subject, exam_kind, direct_published_at, duration_minutes')
-        .eq('direct_published', true)
-        .order('direct_published_at', { ascending: false })
+    const { data: directSessions } = await supabase
+      .from('exam_sessions')
+      .select('total_score, max_possible_score, completed_at, results_released, draft_exam_id, draft_exams(title, exam_kind)')
+      .eq('student_id', user.id)
+      .eq('status', 'completed')
+      .eq('results_released', true)
+      .not('draft_exam_id', 'is', null)
+      .order('completed_at', { ascending: false })
+      .limit(5)
 
-      if (directError) {
-        setErrorMsg(directError.message)
-        setLoading(false)
-        return
-      }
-
-      const combined: ExamItem[] = [
-        ...(finalExams || []).map((e) => ({
-          id: e.id, title: e.title, subject: e.subject,
-          duration_minutes: e.duration_minutes, kind: 'final_exam' as const,
-          category: e.exam_category,
-        })),
-        ...(directExams || []).map((e) => ({
-          id: e.id, title: e.title, subject: e.subject,
-          duration_minutes: e.duration_minutes, kind: 'direct_exam' as const,
-          category: e.exam_kind,
-        })),
-      ]
-      setExams(combined)
-
-      const { data: sessions } = await supabase
-        .from('exam_sessions')
-        .select('final_exam_id, draft_exam_id, status')
-        .eq('student_id', user.id)
-
-      const map: Record<string, string> = {}
-      ;(sessions || []).forEach((s: any) => {
-        const key = s.final_exam_id || s.draft_exam_id
-        if (key) map[key] = s.status
-      })
-      setSessionMap(map)
-
-      setLoading(false)
+    const kindLabels: Record<string, string> = {
+      pop_quiz: 'Pop Quiz', midterm: 'Mid Term',
+      end_of_year: 'End of Year', final_exam_submission: 'End of Year',
     }
-    loadExams()
-  }, [router])
 
-  if (loading) return <div className="page-container">Loading…</div>
+    const results: RecentResult[] = [
+      ...((finalSessions as any) || []).filter((s: any) => s.max_possible_score > 0).map((s: any) => ({
+        title: s.final_exams?.title || 'Exam',
+        pct: Math.round((s.total_score / s.max_possible_score) * 100),
+        kind: kindLabels[s.final_exams?.exam_category] || 'Exam',
+        date: s.completed_at,
+        examId: s.final_exam_id,
+        examType: 'final',
+      })),
+      ...((directSessions as any) || []).filter((s: any) => s.max_possible_score > 0).map((s: any) => ({
+        title: s.draft_exams?.title || 'Exam',
+        pct: Math.round((s.total_score / s.max_possible_score) * 100),
+        kind: kindLabels[s.draft_exams?.exam_kind] || 'Exam',
+        date: s.completed_at,
+        examId: s.draft_exam_id,
+        examType: 'direct',
+      })),
+    ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 4)
 
-  const grouped: Record<string, ExamItem[]> = {}
-  exams.forEach((e) => {
-    if (!grouped[e.category]) grouped[e.category] = []
-    grouped[e.category].push(e)
-  })
+    setRecentResults(results)
+
+    const { data: finalExams } = await supabase
+      .from('final_exams')
+      .select('id, title, subject, exam_category')
+      .order('published_at', { ascending: false })
+      .limit(3)
+
+    const { data: directExams } = await supabase
+      .from('draft_exams')
+      .select('id, title, subject, exam_kind')
+      .eq('direct_published', true)
+      .order('direct_published_at', { ascending: false })
+      .limit(3)
+
+    const { data: takenSessions } = await supabase
+      .from('exam_sessions')
+      .select('final_exam_id, draft_exam_id')
+      .eq('student_id', user.id)
+
+    const takenFinalIds = new Set((takenSessions || []).filter((s: any) => s.final_exam_id).map((s: any) => s.final_exam_id))
+    const takenDirectIds = new Set((takenSessions || []).filter((s: any) => s.draft_exam_id).map((s: any) => s.draft_exam_id))
+
+    const upcoming: UpcomingExam[] = [
+      ...((finalExams || []).filter((e) => !takenFinalIds.has(e.id)).map((e) => ({
+        id: e.id, title: e.title, subject: e.subject,
+        kind: kindLabels[e.exam_category] || 'Exam', examType: 'final',
+      }))),
+      ...((directExams || []).filter((e) => !takenDirectIds.has(e.id)).map((e) => ({
+        id: e.id, title: e.title, subject: e.subject,
+        kind: kindLabels[e.exam_kind] || 'Exam', examType: 'direct',
+      }))),
+    ].slice(0, 3)
+
+    setUpcomingExams(upcoming)
+    setLoading(false)
+  }
+
+  if (loading) return <div>Loading…</div>
+
+  const avg = recentResults.length
+    ? Math.round(recentResults.reduce((a, b) => a + b.pct, 0) / recentResults.length)
+    : null
+
+  const chartData = recentResults.slice().reverse().map((r, i) => ({ name: `#${i + 1}`, pct: r.pct, title: r.title }))
+
+  const firstName = profile?.full_name?.split(' ')[0] || 'there'
+  const hour = new Date().getHours()
+  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
 
   return (
-    <div className="page-container">
-      {studentProfile && (
-        <div className="card" style={{ marginBottom: 20, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div>
-            <div style={{ fontWeight: 700, fontSize: 16 }}>{studentProfile.full_name}</div>
-            {studentProfile.student_id && (
-              <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 2 }}>
-                Student ID: {studentProfile.student_id} · Grade {studentProfile.grade_level}
+    <div>
+      <p className="portal-page-title">{greeting}, {firstName}</p>
+      <p className="portal-page-sub">Academic year 2026–2027 · Manchester High School</p>
+
+      {/* Stats */}
+      <div className="stat-grid">
+        <div className={`stat-card ${avg !== null && avg >= 50 ? 'stat-card-success' : avg !== null ? 'stat-card-danger' : ''}`}>
+          <div className="stat-card-value">{avg !== null ? `${avg}%` : '—'}</div>
+          <div className="stat-card-label">Overall avg</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-card-value">{recentResults.length}</div>
+          <div className="stat-card-label">Results released</div>
+        </div>
+        <div className="stat-card stat-card-success">
+          <div className="stat-card-value">{recentResults.filter((r) => r.pct >= 50).length}</div>
+          <div className="stat-card-label">Passed</div>
+        </div>
+        <div className="stat-card stat-card-accent">
+          <div className="stat-card-value">{upcomingExams.length}</div>
+          <div className="stat-card-label">Upcoming</div>
+        </div>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+        {/* Recent results */}
+        <div>
+          <div className="section-label" style={{ marginBottom: 10 }}>Recent results</div>
+          {recentResults.length === 0 && (
+            <div className="card"><p style={{ color: 'var(--text-secondary)', fontSize: 13 }}>No released results yet.</p></div>
+          )}
+          {recentResults.map((r, i) => (
+            <Link key={i} href={`/student/${r.examType === 'final' ? 'exam' : 'direct-exam'}/${r.examId}/results`} style={{ textDecoration: 'none', color: 'inherit' }}>
+              <div className="card card-clickable" style={{ marginBottom: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: 13 }}>{r.title}</div>
+                  <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 2 }}>{r.kind} · {new Date(r.date).toLocaleDateString()}</div>
+                </div>
+                <span className={`badge ${r.pct >= 50 ? 'badge-success' : 'badge-danger'}`}>{r.pct}%</span>
               </div>
-            )}
-          </div>
+            </Link>
+          ))}
+          {recentResults.length > 0 && (
+            <Link href="/student/history" style={{ fontSize: 12, color: 'var(--accent-dark)' }}>View all results →</Link>
+          )}
         </div>
-      )}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h1>My exams</h1>
-        <div style={{ display: 'flex', gap: 8 }}>
-          <Link href="/student/self-mock"><button className="btn btn-secondary">Practice mock exam</button></Link>
-          <Link href="/student/history"><button className="btn btn-ghost">My score history</button></Link>
+
+        {/* Upcoming exams */}
+        <div>
+          <div className="section-label" style={{ marginBottom: 10 }}>Upcoming exams</div>
+          {upcomingExams.length === 0 && (
+            <div className="card"><p style={{ color: 'var(--text-secondary)', fontSize: 13 }}>No upcoming exams right now.</p></div>
+          )}
+          {upcomingExams.map((e) => (
+            <Link key={e.id} href={`/student/${e.examType === 'final' ? 'exam' : 'direct-exam'}/${e.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+              <div className="card card-clickable" style={{ marginBottom: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: 13 }}>{e.title}</div>
+                  <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 2 }}>{e.subject} · {e.kind}</div>
+                </div>
+                <span className="badge badge-warning">Begin</span>
+              </div>
+            </Link>
+          ))}
         </div>
       </div>
 
-      {errorMsg && <p className="banner banner-danger" style={{ marginTop: 16 }}>{errorMsg}</p>}
-
-      {exams.length === 0 && !errorMsg && (
-        <div className="card" style={{ marginTop: 24, textAlign: 'center' }}>
-          <p style={{ color: 'var(--text-secondary)' }}>No exams available right now. Check back later.</p>
+      {/* Score trend */}
+      {chartData.length > 1 && (
+        <div className="card" style={{ marginTop: 16 }}>
+          <div className="section-label" style={{ marginBottom: 12 }}>Score trend</div>
+          <ResponsiveContainer width="100%" height={160}>
+            <LineChart data={chartData} margin={{ top: 0, right: 0, left: -24, bottom: 0 }}>
+              <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+              <YAxis domain={[0, 100]} tick={{ fontSize: 11 }} />
+              <Tooltip formatter={(v: any, _: any, p: any) => [`${v}%`, p.payload.title]} />
+              <ReferenceLine y={50} stroke="var(--danger)" strokeDasharray="4 4" />
+              <Line type="monotone" dataKey="pct" stroke="var(--accent)" strokeWidth={2} dot={{ fill: 'var(--accent)', r: 4 }} />
+            </LineChart>
+          </ResponsiveContainer>
         </div>
       )}
-
-      <div style={{ display: 'flex', gap: 16, marginTop: 32, flexWrap: 'wrap', alignItems: 'flex-start' }}>
-      {CATEGORY_ORDER.map((cat) => {
-        const items = grouped[cat]
-        if (!items || items.length === 0) return null
-
-        const isOpen = openCategories[cat] === true
-
-        return (
-          <div key={cat} style={{ flex: '1 1 280px', minWidth: 260 }}>
-            <button
-              onClick={() => setOpenCategories({ ...openCategories, [cat]: !isOpen })}
-              style={{
-                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                width: '100%', background: 'var(--card-bg)', border: '1px solid var(--border)',
-                borderRadius: 'var(--radius)', padding: '14px 16px', cursor: 'pointer', textAlign: 'left',
-                boxShadow: 'var(--shadow-card)',
-              }}
-            >
-              <span className="section-label" style={{ fontSize: 13 }}>{CATEGORY_LABELS[cat]} ({items.length})</span>
-              <span style={{ fontSize: 16, color: 'var(--accent)' }}>{isOpen ? '−' : '+'}</span>
-            </button>
-            {isOpen && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 10 }}>
-              {items.map((exam) => {
-                const status = sessionMap[exam.id]
-                const isCompleted = status === 'completed'
-                const basePath = exam.kind === 'final_exam' ? '/student/exam' : '/student/direct-exam'
-
-                return (
-                  <div key={exam.id} className="card">
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
-                      <div>
-                        <div style={{ fontWeight: 700 }}>{exam.title}</div>
-                        <div style={{ color: 'var(--text-secondary)', fontSize: 13, marginTop: 2 }}>
-                          {exam.subject}
-                          {exam.duration_minutes && ` — ${exam.duration_minutes} min`}
-                        </div>
-                      </div>
-                      {isCompleted ? (
-                        <Link href={`${basePath}/${exam.id}/results`}>
-                          <button className="btn btn-secondary" style={{ whiteSpace: 'nowrap' }}>Results</button>
-                        </Link>
-                      ) : (
-                        <Link href={`${basePath}/${exam.id}`}>
-                          <button className="btn btn-primary" style={{ whiteSpace: 'nowrap' }}>
-                            {status === 'in_progress' ? 'Resume' : 'Begin'}
-                          </button>
-                        </Link>
-                      )}
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-            )}
-          </div>
-        )
-      })}
-      </div>
     </div>
   )
 }

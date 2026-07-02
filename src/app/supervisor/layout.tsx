@@ -1,38 +1,19 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
+import Sidebar from '@/components/Sidebar'
+
+const SUPERVISOR_NAV = [
+  { label: 'Home', icon: 'ti-home', href: '/supervisor' },
+  { label: 'Submissions', icon: 'ti-inbox', href: '/supervisor/submissions' },
+  { label: 'Final Exams', icon: 'ti-file-check', href: '/supervisor/final-exams' },
+  { label: 'Analytics', icon: 'ti-chart-bar', href: '/supervisor/analytics' },
+]
 
 export default function SupervisorLayout({ children }: { children: React.ReactNode }) {
-  const router = useRouter()
-  const [checked, setChecked] = useState(false)
-
-  useEffect(() => {
-    async function checkAccess() {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) {
-        router.push('/login')
-        return
-      }
-
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', user.id)
-        .single()
-
-      if (profile?.role !== 'supervisor' && profile?.role !== 'admin') {
-        router.push('/dashboard')
-        return
-      }
-
-      setChecked(true)
-    }
-    checkAccess()
-  }, [router])
-
-  if (!checked) return <div style={{ padding: 40 }}>Checking access...</div>
-
-  return <>{children}</>
+  return (
+    <div className="portal-layout">
+      <Sidebar navItems={SUPERVISOR_NAV} portalLabel="Supervisor Portal" />
+      <main className="portal-content">{children}</main>
+    </div>
+  )
 }

@@ -222,3 +222,64 @@ input:focus, textarea:focus, select:focus {
   text-transform: none !important;
   letter-spacing: normal !important;
 }
+
+/* Portal layout */
+.portal-layout {
+  display: flex;
+  min-height: 100vh;
+}
+
+.portal-content {
+  flex: 1;
+  min-width: 0;
+  background: var(--page-bg);
+  padding: 32px;
+  overflow-y: auto;
+}
+
+.portal-page-title {
+  font-size: 20px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  margin: 0 0 4px;
+  color: var(--text-primary);
+}
+
+.portal-page-sub {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 0 0 24px;
+}
+
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.stat-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+}
+
+.stat-card-value {
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.stat-card-label {
+  font-size: 11px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  margin-top: 2px;
+}
+
+.stat-card-success .stat-card-value { color: var(--success); }
+.stat-card-danger .stat-card-value { color: var(--danger); }
+.stat-card-accent .stat-card-value { color: var(--accent); }

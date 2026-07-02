@@ -10,8 +10,9 @@ export default function NavBar() {
   const pathname = usePathname()
   const [name, setName] = useState('')
   const [role, setRole] = useState('')
-  const hideOn = ['/login', '/']
-  const shouldHide = hideOn.includes(pathname)
+  const portalPrefixes = ['/student', '/teacher', '/supervisor', '/dashboard']
+  const shouldHideForPortal = portalPrefixes.some((p) => pathname.startsWith(p))
+  const shouldHide = ['/login', '/'].includes(pathname) || shouldHideForPortal
 
   useEffect(() => {
     async function loadUser() {
