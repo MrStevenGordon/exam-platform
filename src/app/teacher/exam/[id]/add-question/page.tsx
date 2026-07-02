@@ -27,10 +27,27 @@ export default function AddQuestionPage() {
   // Short answer / fill in the blank field
   const [exactAnswer, setExactAnswer] = useState('')
 
+  // Marking points for multi-point short answer
+  const [markingPoints, setMarkingPoints] = useState([{ text: '', keywords: '', marks: 1 }])
+
   // Save to personal question bank
   const [saveToBank, setSaveToBank] = useState(false)
   const [polishing, setPolishing] = useState(false)
   const [polishError, setPolishError] = useState('')
+
+  function addMarkingPoint() {
+    setMarkingPoints([...markingPoints, { text: '', keywords: '', marks: 1 }])
+  }
+
+  function updateMarkingPoint(index: number, field: string, value: any) {
+    const updated = [...markingPoints]
+    updated[index] = { ...updated[index], [field]: value }
+    setMarkingPoints(updated)
+  }
+
+  function removeMarkingPoint(index: number) {
+    setMarkingPoints(markingPoints.filter((_, i) => i !== index))
+  }
 
   async function handlePolish() {
     if (!questionText.trim()) {
@@ -106,6 +123,12 @@ export default function AddQuestionPage() {
       points,
       order_index: count || 0,
       is_bank_question: saveToBank,
+      marking_points: (questionType === 'short_answer' || questionType === 'fill_blank') && markingPoints.some(p => p.text)
+        ? markingPoints.map(p => ({ text: p.text, keywords: p.keywords.split(',').map((k: string) => k.trim().toLowerCase()).filter(Boolean), marks: Number(p.marks) }))
+        : null,
+      total_marks: (questionType === 'short_answer' || questionType === 'fill_blank') && markingPoints.some(p => p.text)
+        ? markingPoints.reduce((sum, p) => sum + Number(p.marks), 0)
+        : null,
     }
 
     if (questionType === 'multiple_choice') {
@@ -254,13 +277,65 @@ export default function AddQuestionPage() {
 
         {(questionType === 'short_answer' || questionType === 'fill_blank') && (
           <div style={{ marginBottom: 16 }}>
-            <label style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)' }}>Correct answer (must match exactly, case-sensitive)</label><br />
+            <label style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)' }}>Single correct answer (for exact match grading)</label><br />
             <input
               value={exactAnswer}
               onChange={(e) => setExactAnswer(e.target.value)}
-              required
               style={{ width: '100%', marginTop: 6 }}
+              placeholder="Leave blank if using marking points below"
             />
+          </div>
+        )}
+
+        {(questionType === 'short_answer' || questionType === 'fill_blank') && (
+          <div style={{ marginBottom: 16, padding: 14, background: 'var(--page-bg)', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+              <label style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)' }}>Marking points (for multi-part answers)</label>
+              <button type="button" onClick={addMarkingPoint} className="btn btn-secondary" style={{ fontSize: 11, padding: '4px 10px' }}>
+                + Add point
+              </button>
+            </div>
+            <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: '0 0 10px' }}>
+              Each marking point has its own mark value and keywords. Auto-grading checks if the student's answer contains any keyword — teacher can override.
+            </p>
+            {markingPoints.map((point, i) => (
+              <div key={i} style={{ marginBottom: 12, padding: 10, background: 'var(--card-bg)', borderRadius: 8, border: '1px solid var(--border)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)' }}>Point {i + 1}</span>
+                  {markingPoints.length > 1 && (
+                    <button type="button" onClick={() => removeMarkingPoint(i)} style={{ background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer', fontSize: 12 }}>Remove</button>
+                  )}
+                </div>
+                <div style={{ marginBottom: 6 }}>
+                  <label style={{ fontSize: 12, color: 'var(--text-secondary)' }}>Expected answer / marking guide</label>
+                  <input
+                    value={point.text}
+                    onChange={(e) => updateMarkingPoint(i, 'text', e.target.value)}
+                    placeholder="e.g. double coincidence of wants"
+                    style={{ width: '100%', marginTop: 4 }}
+                  />
+                </div>
+                <div style={{ marginBottom: 6 }}>
+                  <label style={{ fontSize: 12, color: 'var(--text-secondary)' }}>Keywords for auto-grading (comma separated)</label>
+                  <input
+                    value={point.keywords}
+                    onChange={(e) => updateMarkingPoint(i, 'keywords', e.target.value)}
+                    placeholder="e.g. coincidence, wants, barter, trade"
+                    style={{ width: '100%', marginTop: 4 }}
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: 12, color: 'var(--text-secondary)' }}>Marks for this point</label>
+                  <input
+                    type="number"
+                    min={1}
+                    value={point.marks}
+                    onChange={(e) => updateMarkingPoint(i, 'marks', e.target.value)}
+                    style={{ width: 80, marginTop: 4 }}
+                  />
+                </div>
+              </div>
+            ))}
           </div>
         )}
 

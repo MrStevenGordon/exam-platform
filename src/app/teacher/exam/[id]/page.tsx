@@ -49,6 +49,10 @@ export default function ExamEditorPage() {
   const [questions, setQuestions] = useState<Question[]>([])
   const [classGroups, setClassGroups] = useState<ClassGroup[]>([])
   const [selectedGroups, setSelectedGroups] = useState<Set<string>>(new Set())
+  const [sections, setSections] = useState<{ id?: string; name: string; instructions: string; order_index: number }[]>([])
+  const [showSectionForm, setShowSectionForm] = useState(false)
+  const [newSectionName, setNewSectionName] = useState('')
+  const [newSectionInstructions, setNewSectionInstructions] = useState('')
   const [loading, setLoading] = useState(true)
   const [errorMsg, setErrorMsg] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -111,7 +115,40 @@ export default function ExamEditorPage() {
       setSelectedGroups(new Set((existingLinks || []).map((l) => l.class_group_id)))
     }
 
+    // Load sections
+    const { data: sectionData } = await supabase
+      .from('exam_sections')
+      .select('id, name, instructions, order_index')
+      .eq('draft_exam_id', examId)
+      .order('order_index', { ascending: true })
+    setSections(sectionData || [])
+
     setLoading(false)
+  }
+
+  async function handleAddSection() {
+    if (!newSectionName.trim()) return
+    const { data, error } = await supabase
+      .from('exam_sections')
+      .insert({
+        draft_exam_id: examId,
+        name: newSectionName.trim(),
+        instructions: newSectionInstructions.trim(),
+        order_index: sections.length,
+      })
+      .select()
+      .single()
+    if (!error && data) {
+      setSections([...sections, data])
+      setNewSectionName('')
+      setNewSectionInstructions('')
+      setShowSectionForm(false)
+    }
+  }
+
+  async function handleDeleteSection(sectionId: string) {
+    await supabase.from('exam_sections').delete().eq('id', sectionId)
+    setSections(sections.filter((s) => s.id !== sectionId))
   }
 
   async function handleSubmitForReview() {
@@ -230,6 +267,55 @@ export default function ExamEditorPage() {
       {isFinalExamSubmission && !isLocked && hasComments && (
         <div className="banner banner-warning" style={{ marginTop: 16 }}>
           Your supervisor left feedback on one or more questions below. Please review and make changes before resubmitting.
+        </div>
+      )}
+
+      {/* Sections management */}
+      {!isLocked && (
+        <div style={{ marginTop: 24, padding: 16, background: 'var(--page-bg)', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: sections.length > 0 ? 12 : 0 }}>
+            <h2 style={{ margin: 0 }}>Exam sections</h2>
+            <button className="btn btn-secondary" style={{ fontSize: 12 }} onClick={() => setShowSectionForm(!showSectionForm)}>
+              + Add section
+            </button>
+          </div>
+
+          {sections.length > 0 && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 8 }}>
+              {sections.map((s, i) => (
+                <div key={s.id || i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', background: 'var(--card-bg)', borderRadius: 8, border: '1px solid var(--border)' }}>
+                  <div>
+                    <div style={{ fontWeight: 700, fontSize: 14 }}>Section {String.fromCharCode(65 + i)}: {s.name}</div>
+                    {s.instructions && <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 2 }}>{s.instructions.slice(0, 80)}{s.instructions.length > 80 ? '…' : ''}</div>}
+                  </div>
+                  {s.id && (
+                    <button onClick={() => handleDeleteSection(s.id!)} style={{ background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer', fontSize: 12, fontWeight: 700 }}>Remove</button>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {showSectionForm && (
+            <div style={{ marginTop: 12, padding: 12, background: 'var(--card-bg)', borderRadius: 8, border: '1px solid var(--border)' }}>
+              <div style={{ marginBottom: 10 }}>
+                <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)' }}>Section name</label>
+                <input value={newSectionName} onChange={(e) => setNewSectionName(e.target.value)} placeholder="e.g. Section A — Multiple Choice" style={{ width: '100%', marginTop: 4 }} />
+              </div>
+              <div style={{ marginBottom: 10 }}>
+                <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)' }}>Section instructions (shown to students)</label>
+                <textarea value={newSectionInstructions} onChange={(e) => setNewSectionInstructions(e.target.value)} rows={2} placeholder="e.g. Read each question carefully and circle the best answer." style={{ width: '100%', marginTop: 4 }} />
+              </div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button onClick={handleAddSection} className="btn btn-primary" style={{ fontSize: 12 }}>Save section</button>
+                <button onClick={() => setShowSectionForm(false)} className="btn btn-ghost" style={{ fontSize: 12 }}>Cancel</button>
+              </div>
+            </div>
+          )}
+
+          {sections.length === 0 && !showSectionForm && (
+            <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '8px 0 0' }}>No sections yet — add sections to divide your exam into parts (e.g. Section A and Section B).</p>
+          )}
         </div>
       )}
 
