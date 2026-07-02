@@ -40,6 +40,8 @@ type Question = {
   options: string[] | null
   correct_answer: string | null
   order_index: number
+  marking_points: { text: string; keywords: string[]; marks: number }[] | null
+  total_marks: number | null
 }
 
 type SessionInfo = {
@@ -121,7 +123,7 @@ export default function TakeDirectExamPage() {
 
     const { data: questionData, error: questionError } = await supabase
       .from('questions')
-      .select('id, question_type, question_text, points, options, correct_answer, order_index')
+      .select('id, question_type, question_text, points, options, correct_answer, order_index, marking_points, total_marks')
       .eq('draft_exam_id', examId)
       .order('order_index', { ascending: true })
 
@@ -197,11 +199,34 @@ export default function TakeDirectExamPage() {
     setAnswers((prev) => ({ ...prev, [questionId]: value }))
   }
 
+  function gradeMultiPoint(question: Question, answers: string[]): number {
+    if (!question.marking_points || question.marking_points.length === 0) return 0
+    let totalAwarded = 0
+    const maxMarks = question.points
+    for (const point of question.marking_points) {
+      if (!point.keywords || point.keywords.length === 0) continue
+      const matched = answers.some((ans) => {
+        const ansLower = ans.toLowerCase().trim()
+        return point.keywords.some((kw: string) => ansLower.includes(kw.toLowerCase()))
+      })
+      if (matched) totalAwarded += point.marks
+    }
+    return Math.min(totalAwarded, maxMarks)
+  }
+
   function gradeAnswer(question: Question, studentAnswer: string): number | null {
     const autoGradable = ['multiple_choice', 'true_false', 'short_answer', 'fill_blank']
     if (!autoGradable.includes(question.question_type)) return null
+
+    if (question.marking_points && question.marking_points.length > 0) {
+      const answers = studentAnswer.split('\n').map(a => a.trim()).filter(Boolean)
+      if (answers.length === 0) answers.push(studentAnswer)
+      return gradeMultiPoint(question, answers)
+    }
+
     if (!question.correct_answer) return 0
-    return studentAnswer.trim() === question.correct_answer.trim() ? question.points : 0
+    return studentAnswer.trim().toLowerCase() === question.correct_answer.trim().toLowerCase()
+      ? question.points : 0
   }
 
   async function handleSubmit() {
@@ -325,7 +350,32 @@ export default function TakeDirectExamPage() {
               )}
 
               {(q.question_type === 'short_answer' || q.question_type === 'fill_blank') && (
-                <input value={answers[q.id] || ''} onChange={(e) => updateAnswer(q.id, e.target.value)} style={{ width: '100%' }} placeholder="Your answer…" />
+                <div>
+                  {q.marking_points && q.marking_points.length > 0 ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      {Array.from({ length: q.points }).map((_, boxIndex) => {
+                        const currentAnswers = (answers[q.id] || '').split('\n')
+                        return (
+                          <div key={boxIndex} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-secondary)', minWidth: 20 }}>{boxIndex + 1}.</span>
+                            <input
+                              value={currentAnswers[boxIndex] || ''}
+                              onChange={(e) => {
+                                const updated = (answers[q.id] || '').split('\n')
+                                updated[boxIndex] = e.target.value
+                                updateAnswer(q.id, updated.join('\n'))
+                              }}
+                              style={{ flex: 1 }}
+                              placeholder={`Answer ${boxIndex + 1}…`}
+                            />
+                          </div>
+                        )
+                      })}
+                    </div>
+                  ) : (
+                    <input value={answers[q.id] || ''} onChange={(e) => updateAnswer(q.id, e.target.value)} style={{ width: '100%' }} placeholder="Your answer…" />
+                  )}
+                </div>
               )}
 
               {q.question_type === 'essay' && (

@@ -37,7 +37,7 @@ export default function GradeEssaysPage() {
       .from('responses')
       .select(`
         id, answer, session_id, points_awarded,
-        questions(question_text, points, question_type),
+        questions(question_text, points, question_type, marking_points),
         exam_sessions(profiles!exam_sessions_student_id_fkey(full_name), final_exams(title))
       `)
       .is('points_awarded', null)
@@ -53,6 +53,7 @@ export default function GradeEssaysPage() {
       .map((r: any) => ({
         response_id: r.id,
         session_id: r.session_id,
+        marking_points: r.questions?.marking_points || null,
         answer: r.answer,
         question_text: r.questions.question_text,
         points: r.questions.points,
@@ -136,22 +137,72 @@ export default function GradeEssaysPage() {
             <div style={{ padding: 12, background: 'var(--page-bg)', borderRadius: 8, marginBottom: 12, border: '1px solid var(--border)' }}>
               {item.answer || <em style={{ color: 'var(--text-secondary)' }}>No answer provided</em>}
             </div>
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-              <input
-                type="number"
-                min={0}
-                max={item.points}
-                step={0.5}
-                placeholder={`0 - ${item.points}`}
-                value={scores[item.response_id] || ''}
-                onChange={(e) => updateScore(item.response_id, e.target.value)}
-                style={{ width: 100 }}
-              />
-              <span style={{ color: 'var(--text-secondary)' }}>/ {item.points} pts</span>
-              <button onClick={() => handleSaveGrade(item)} disabled={savingId === item.response_id} className="btn btn-primary">
-                {savingId === item.response_id ? 'Saving…' : 'Save grade'}
-              </button>
-            </div>
+
+            {item.marking_points && item.marking_points.length > 0 ? (
+              <div style={{ marginBottom: 12 }}>
+                <div className="section-label" style={{ marginBottom: 8 }}>Marking points — award marks per point</div>
+                {item.marking_points.map((point: any, pi: number) => {
+                  const answerLower = (item.answer || '').toLowerCase()
+                  const autoMatched = point.keywords?.some((kw: string) => answerLower.includes(kw.toLowerCase()))
+                  const pointKey = `${item.response_id}_${pi}`
+                  return (
+                    <div key={pi} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8, padding: '8px 12px', background: autoMatched ? 'var(--success-bg)' : 'var(--card-bg)', borderRadius: 8, border: `1px solid ${autoMatched ? 'var(--success)' : 'var(--border)'}` }}>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: 13, fontWeight: 600 }}>Point {pi + 1}: {point.text}</div>
+                        <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 2 }}>
+                          Matched on: {point.keywords?.slice(0, 6).join(', ')}{point.keywords?.length > 6 ? '…' : ''} · {autoMatched ? '✓ Auto-matched' : '✗ Not matched'}
+                        </div>
+                      </div>
+                      <input
+                        type="number"
+                        min={0}
+                        max={point.marks}
+                        step={0.5}
+                        placeholder={`0-${point.marks}`}
+                        value={scores[pointKey] ?? (autoMatched ? point.marks : 0)}
+                        onChange={(e) => updateScore(pointKey, e.target.value)}
+                        style={{ width: 70 }}
+                      />
+                      <span style={{ fontSize: 12, color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>/ {point.marks} pt{point.marks !== 1 ? 's' : ''}</span>
+                    </div>
+                  )
+                })}
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 8 }}>
+                  <button
+                    onClick={() => {
+                      const total = item.marking_points.reduce((sum: number, _: any, pi: number) => {
+                        const pointKey = `${item.response_id}_${pi}`
+                        return sum + Number(scores[pointKey] ?? 0)
+                      }, 0)
+                      updateScore(item.response_id, String(total))
+                      handleSaveGrade({ ...item, overrideScore: total })
+                    }}
+                    disabled={savingId === item.response_id}
+                    className="btn btn-primary"
+                  >
+                    {savingId === item.response_id ? 'Saving…' : 'Save all points'}
+                  </button>
+                  <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>Total: {item.marking_points.reduce((s: number, p: any) => s + p.marks, 0)} pts</span>
+                </div>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                <input
+                  type="number"
+                  min={0}
+                  max={item.points}
+                  step={0.5}
+                  placeholder={`0 - ${item.points}`}
+                  value={scores[item.response_id] || ''}
+                  onChange={(e) => updateScore(item.response_id, e.target.value)}
+                  style={{ width: 100 }}
+                />
+                <span style={{ color: 'var(--text-secondary)' }}>/ {item.points} pts</span>
+                <button onClick={() => handleSaveGrade(item)} disabled={savingId === item.response_id} className="btn btn-primary">
+                  {savingId === item.response_id ? 'Saving…' : 'Save grade'}
+                </button>
+              </div>
+            )}
           </div>
         ))}
       </div>

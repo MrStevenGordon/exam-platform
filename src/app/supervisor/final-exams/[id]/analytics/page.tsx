@@ -48,7 +48,7 @@ export default function ExamAnalyticsPage() {
 
       const { data: sessionData, error: sessionError } = await supabase
         .from('exam_sessions')
-        .select('total_score, max_possible_score, profiles(full_name)')
+        .select('total_score, max_possible_score, profiles!exam_sessions_student_id_fkey(full_name)')
         .eq('final_exam_id', examId)
         .eq('status', 'completed')
         .eq('fully_graded', true)
@@ -182,35 +182,7 @@ export default function ExamAnalyticsPage() {
             </p>
           </div>
 
-          {questionStats.length > 0 && (
-            <div className="card" style={{ marginTop: 20 }}>
-              <h2 style={{ marginBottom: 16 }}>Question difficulty (most missed first)</h2>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                {questionStats.map((q, i) => (
-                  <div key={i}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14, marginBottom: 6 }}>
-                      <span style={{ flex: 1, marginRight: 12, color: 'var(--text-primary)' }}>
-                        {i + 1}. {q.question_text.length > 90 ? q.question_text.slice(0, 90) + '…' : q.question_text}
-                      </span>
-                      <span style={{ fontWeight: 700, color: q.wrong_pct >= 50 ? 'var(--danger)' : 'var(--success)', whiteSpace: 'nowrap' }}>
-                        {q.wrong_pct}% wrong
-                      </span>
-                    </div>
-                    <div style={{ background: 'var(--border)', borderRadius: 4, height: 8 }}>
-                      <div style={{
-                        background: q.wrong_pct >= 50 ? 'var(--danger)' : 'var(--success)',
-                        width: `${q.wrong_pct}%`,
-                        height: '100%',
-                        borderRadius: 4,
-                        opacity: 0.7,
-                        transition: 'width 0.3s ease',
-                      }} />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+
 
           <div className="card" style={{ marginTop: 20 }}>
             <h2 style={{ marginBottom: 16 }}>Student scores</h2>

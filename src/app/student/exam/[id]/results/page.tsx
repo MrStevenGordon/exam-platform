@@ -20,8 +20,7 @@ export default function ResultsPage() {
   const [result, setResult] = useState<ResultData | null>(null)
   const [examTitle, setExamTitle] = useState('')
   const [classAvg, setClassAvg] = useState<number | null>(null)
-  const [classAvg, setClassAvg] = useState<number | null>(null)
-  const [loading, setLoading] = useState(true)
+    const [loading, setLoading] = useState(true)
   const [errorMsg, setErrorMsg] = useState('')
 
   useEffect(() => {

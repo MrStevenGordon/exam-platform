@@ -63,6 +63,7 @@ export default function TakeExamPage() {
   const examId = params.id as string
 
   const [exam, setExam] = useState<ExamInfo | null>(null)
+  const [sections, setSections] = useState<{ id: string; name: string; instructions: string; order_index: number }[]>([])
   const [questions, setQuestions] = useState<Question[]>([])
   const [answers, setAnswers] = useState<Record<string, string>>({})
   const [session, setSession] = useState<SessionInfo | null>(null)
@@ -119,9 +120,16 @@ export default function TakeExamPage() {
     if (examError) { setErrorMsg(examError.message); setLoading(false); return }
     setExam(examData)
 
+    const { data: sectionData } = await supabase
+      .from('exam_sections')
+      .select('id, name, instructions, order_index')
+      .eq('final_exam_id', examId)
+      .order('order_index', { ascending: true })
+    setSections(sectionData || [])
+
     const { data: linkData, error: linkError } = await supabase
       .from('final_exam_questions')
-      .select('order_index, questions(id, question_type, question_text, points, options, correct_answer)')
+      .select('order_index, questions(id, question_type, question_text, points, options, correct_answer, marking_points, total_marks)')
       .eq('final_exam_id', examId)
       .order('order_index', { ascending: true })
 
@@ -199,11 +207,40 @@ export default function TakeExamPage() {
     setAnswers((prev) => ({ ...prev, [questionId]: value }))
   }
 
+  function gradeMultiPoint(question: Question, answers: string[]): number {
+    if (!question.marking_points || question.marking_points.length === 0) return 0
+    let totalAwarded = 0
+    const maxMarks = question.points
+
+    for (const point of question.marking_points) {
+      if (!point.keywords || point.keywords.length === 0) continue
+      // Check each answer box against this marking point
+      const matched = answers.some((ans) => {
+        const ansLower = ans.toLowerCase().trim()
+        return point.keywords.some((kw: string) => ansLower.includes(kw.toLowerCase()))
+      })
+      if (matched) totalAwarded += point.marks
+    }
+    // Cap at question maximum marks
+    return Math.min(totalAwarded, maxMarks)
+  }
+
   function gradeAnswer(question: Question, studentAnswer: string): number | null {
     const autoGradable = ['multiple_choice', 'true_false', 'short_answer', 'fill_blank']
     if (!autoGradable.includes(question.question_type)) return null
+
+    // Multi-point marking uses separate gradeMultiPoint function
+    if (question.marking_points && question.marking_points.length > 0) {
+      // For single answer box, split by newline or comma to check multiple answers
+      const answers = studentAnswer.split(/\n|,/).map(a => a.trim()).filter(Boolean)
+      if (answers.length === 0) answers.push(studentAnswer)
+      return gradeMultiPoint(question, answers)
+    }
+
+    // Single exact match — case insensitive
     if (!question.correct_answer) return 0
-    return studentAnswer.trim() === question.correct_answer.trim() ? question.points : 0
+    return studentAnswer.trim().toLowerCase() === question.correct_answer.trim().toLowerCase()
+      ? question.points : 0
   }
 
   async function handleSubmit() {
@@ -217,7 +254,14 @@ export default function TakeExamPage() {
 
     const rows = questions.map((q) => {
       const studentAnswer = answers[q.id] || ''
-      const awarded = gradeAnswer(q, studentAnswer)
+      // For multi-point questions, grade using all answer boxes
+      let awarded: number | null
+      if (q.marking_points && q.marking_points.length > 0) {
+        const answerBoxes = studentAnswer.split('\n').map((a: string) => a.trim()).filter(Boolean)
+        awarded = gradeMultiPoint(q, answerBoxes.length > 0 ? answerBoxes : [studentAnswer])
+      } else {
+        awarded = gradeAnswer(q, studentAnswer)
+      }
       if (awarded === null) hasEssay = true
       else autoScore += awarded
       autoMax += q.points
@@ -278,6 +322,17 @@ export default function TakeExamPage() {
       {warning && <div className="banner banner-danger" style={{ marginBottom: 16, fontWeight: 700 }}>{warning}</div>}
 
       {/* Questions for current page */}
+      {sections.length > 0 && currentPage === 0 && (
+        <div style={{ marginBottom: 20 }}>
+          <div className="section-label" style={{ marginBottom: 10 }}>Exam sections</div>
+          {sections.map((s, i) => (
+            <div key={s.id} style={{ marginBottom: 10, padding: '14px 16px', background: 'var(--card-bg)', borderRadius: 'var(--radius)', border: '1px solid var(--border)', borderLeft: '4px solid var(--accent)' }}>
+              <div style={{ fontWeight: 700, fontSize: 15 }}>Section {String.fromCharCode(65 + i)}: {s.name}</div>
+              {s.instructions && <p style={{ margin: '6px 0 0', fontSize: 13, color: 'var(--text-secondary)' }}>{s.instructions}</p>}
+            </div>
+          ))}
+        </div>
+      )}
       <div className="exam-content" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
         {pageQuestions.map((q, i) => {
           const globalIndex = currentPage * qpp + i
@@ -311,7 +366,33 @@ export default function TakeExamPage() {
               )}
 
               {(q.question_type === 'short_answer' || q.question_type === 'fill_blank') && (
-                <input value={answers[q.id] || ''} onChange={(e) => updateAnswer(q.id, e.target.value)} style={{ width: '100%' }} placeholder="Your answer…" />
+                <div>
+                  {q.marking_points && q.marking_points.length > 0 ? (
+                    // Multiple answer boxes — one per required answer (based on question points)
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      {Array.from({ length: q.points }).map((_, boxIndex) => {
+                        const currentAnswers = (answers[q.id] || '').split('\n')
+                        return (
+                          <div key={boxIndex} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-secondary)', minWidth: 20 }}>{boxIndex + 1}.</span>
+                            <input
+                              value={currentAnswers[boxIndex] || ''}
+                              onChange={(e) => {
+                                const updated = (answers[q.id] || '').split('\n')
+                                updated[boxIndex] = e.target.value
+                                updateAnswer(q.id, updated.join('\n'))
+                              }}
+                              style={{ flex: 1 }}
+                              placeholder={`Answer ${boxIndex + 1}…`}
+                            />
+                          </div>
+                        )
+                      })}
+                    </div>
+                  ) : (
+                    <input value={answers[q.id] || ''} onChange={(e) => updateAnswer(q.id, e.target.value)} style={{ width: '100%' }} placeholder="Your answer…" />
+                  )}
+                </div>
               )}
 
               {q.question_type === 'essay' && (

@@ -180,6 +180,15 @@ export default function AssembleFinalExamPage() {
       alert('Select at least one question before publishing.')
       return
     }
+    // Check class groups are assigned
+    const { data: existingLinks } = await supabase
+      .from('final_exam_class_groups')
+      .select('id')
+      .eq('final_exam_id', finalExamId)
+    if (!existingLinks || existingLinks.length === 0) {
+      alert('Please assign this exam to at least one class group before publishing. Go to the sessions page to assign class groups.')
+      return
+    }
     if (!confirm('Publish this exam? Students will be able to see and take it once published. This cannot be undone from this screen.')) {
       return
     }

@@ -28,7 +28,7 @@ export default function AddQuestionPage() {
   const [exactAnswer, setExactAnswer] = useState('')
 
   // Marking points for multi-point short answer
-  const [markingPoints, setMarkingPoints] = useState([{ text: '', keywords: '', marks: 1 }])
+  const [markingPoints, setMarkingPoints] = useState([{ text: '', marks: 1 }])
 
   // Save to personal question bank
   const [saveToBank, setSaveToBank] = useState(false)
@@ -36,7 +36,7 @@ export default function AddQuestionPage() {
   const [polishError, setPolishError] = useState('')
 
   function addMarkingPoint() {
-    setMarkingPoints([...markingPoints, { text: '', keywords: '', marks: 1 }])
+    setMarkingPoints([...markingPoints, { text: '', marks: 1 }])
   }
 
   function updateMarkingPoint(index: number, field: string, value: any) {
@@ -124,7 +124,14 @@ export default function AddQuestionPage() {
       order_index: count || 0,
       is_bank_question: saveToBank,
       marking_points: (questionType === 'short_answer' || questionType === 'fill_blank') && markingPoints.some(p => p.text)
-        ? markingPoints.map(p => ({ text: p.text, keywords: p.keywords.split(',').map((k: string) => k.trim().toLowerCase()).filter(Boolean), marks: Number(p.marks) }))
+        ? markingPoints.map(p => {
+            const stopWords = new Set(['a','an','the','is','are','was','were','be','been','being','have','has','had','do','does','did','will','would','could','should','may','might','shall','can','need','dare','ought','used','to','of','in','for','on','with','at','by','from','up','about','into','through','during','before','after','above','below','between','each','both','few','more','most','other','some','such','no','nor','not','only','same','so','than','too','very','just','because','as','until','while','although','and','but','or','nor','so','yet','if','when','where','why','how','all','any','both','each','every','either','neither','one','two','three','four','five','six','seven','eight','nine','ten','that','this','these','those','it','its','their','they','them','he','she','his','her','we','our','you','your','i','my','me','us','who','which','what','meaning','making','requires','require','cannot','can','also','must','want','other','offer'])
+            const keywords = p.text.toLowerCase()
+              .replace(/[^a-z0-9\s]/g, ' ')
+              .split(/\s+/)
+              .filter((w: string) => w.length > 2 && !stopWords.has(w))
+            return { text: p.text, keywords, marks: Number(p.marks) }
+          })
         : null,
       total_marks: (questionType === 'short_answer' || questionType === 'fill_blank') && markingPoints.some(p => p.text)
         ? markingPoints.reduce((sum, p) => sum + Number(p.marks), 0)
@@ -146,12 +153,13 @@ export default function AddQuestionPage() {
     }
 
     if (questionType === 'short_answer' || questionType === 'fill_blank') {
-      if (exactAnswer.trim() === '') {
-        setErrorMsg('Please provide the correct answer.')
+      const hasMarkingPoints = markingPoints.some((p) => p.text.trim() !== '')
+      if (!hasMarkingPoints && exactAnswer.trim() === '') {
+        setErrorMsg('Please provide either a correct answer or at least one marking point.')
         setSaving(false)
         return
       }
-      payload.correct_answer = exactAnswer.trim()
+      if (exactAnswer.trim()) payload.correct_answer = exactAnswer.trim()
     }
 
     // essay: no correct_answer needed, manually graded later
@@ -315,15 +323,7 @@ export default function AddQuestionPage() {
                     style={{ width: '100%', marginTop: 4 }}
                   />
                 </div>
-                <div style={{ marginBottom: 6 }}>
-                  <label style={{ fontSize: 12, color: 'var(--text-secondary)' }}>Keywords for auto-grading (comma separated)</label>
-                  <input
-                    value={point.keywords}
-                    onChange={(e) => updateMarkingPoint(i, 'keywords', e.target.value)}
-                    placeholder="e.g. coincidence, wants, barter, trade"
-                    style={{ width: '100%', marginTop: 4 }}
-                  />
-                </div>
+
                 <div>
                   <label style={{ fontSize: 12, color: 'var(--text-secondary)' }}>Marks for this point</label>
                   <input
