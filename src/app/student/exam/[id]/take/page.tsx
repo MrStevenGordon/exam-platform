@@ -135,7 +135,21 @@ export default function TakeExamPage() {
 
     if (linkError) { setErrorMsg(linkError.message); setLoading(false); return }
 
-    const qs = (linkData || []).map((l: any) => ({ ...l.questions, order_index: l.order_index })).filter(Boolean)
+    const qs = (linkData || []).map((l: any) => {
+      const q = Array.isArray(l.questions) ? l.questions[0] : l.questions
+      if (!q) return null
+      return {
+        id: q.id,
+        question_type: q.question_type,
+        question_text: q.question_text,
+        points: q.points,
+        options: q.options,
+        correct_answer: q.correct_answer,
+        marking_points: q.marking_points,
+        total_marks: q.total_marks,
+        order_index: l.order_index,
+      }
+    }).filter((q: any) => q && q.id)
     setQuestions(qs)
 
     const { data: existingAnswers } = await supabase
@@ -396,7 +410,31 @@ export default function TakeExamPage() {
               )}
 
               {q.question_type === 'essay' && (
-                <textarea value={answers[q.id] || ''} onChange={(e) => updateAnswer(q.id, e.target.value)} rows={6} style={{ width: '100%' }} placeholder="Write your response here…" />
+                <div style={{ marginTop: 8 }}>
+                  <textarea
+                    value={answers[q.id] || ''}
+                    onChange={(e) => updateAnswer(q.id, e.target.value)}
+                    rows={8}
+                    style={{
+                      width: '100%',
+                      minHeight: 200,
+                      resize: 'vertical',
+                      display: 'block',
+                      padding: '10px 12px',
+                      fontSize: 15,
+                      fontFamily: 'inherit',
+                      border: '1px solid var(--border-strong)',
+                      borderRadius: 'var(--radius)',
+                      background: 'white',
+                      color: 'var(--text-primary)',
+                      lineHeight: 1.6,
+                    }}
+                    placeholder="Write your response here…"
+                  />
+                  <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 6 }}>
+                    {(answers[q.id] || '').length} characters · Essay questions are manually graded by your teacher
+                  </div>
+                </div>
               )}
             </div>
           )

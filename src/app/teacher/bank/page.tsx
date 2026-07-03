@@ -83,9 +83,20 @@ export default function TeacherBankPage() {
           </button>
         )}
       </div>
-      {filtered.length === 0 && <div className="card"><p style={{ color: 'var(--text-secondary)' }}>No saved questions yet. Check "Save to bank" when creating questions.</p></div>}
+      {!search && !filterSubject && !filterType && (
+        <div className="card" style={{ textAlign: 'center', padding: 32 }}>
+          <div style={{ fontSize: 32, marginBottom: 12 }}>🔍</div>
+          <p style={{ fontWeight: 700, margin: '0 0 6px' }}>Search or filter to view questions</p>
+          <p style={{ color: 'var(--text-secondary)', fontSize: 13, margin: 0 }}>
+            Use the search box or dropdowns above to find questions in your bank.
+          </p>
+        </div>
+      )}
+      {(search || filterSubject || filterType) && filtered.length === 0 && (
+        <div className="card"><p style={{ color: 'var(--text-secondary)' }}>No questions match your search.</p></div>
+      )}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-        {filtered.map((q) => (
+        {(search || filterSubject || filterType) && filtered.map((q) => (
           <div key={q.id} className="card">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
               <p style={{ margin: 0, fontSize: 14, fontWeight: 600, flex: 1 }}>{q.question_text}</p>

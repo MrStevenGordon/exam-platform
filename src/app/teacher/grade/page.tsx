@@ -122,8 +122,15 @@ export default function GradeEssaysPage() {
 
       {errorMsg && <p className="banner banner-danger" style={{ marginTop: 16 }}>{errorMsg}</p>}
       {items.length === 0 && !errorMsg && (
-        <div className="card" style={{ marginTop: 20 }}>
-          <p style={{ color: 'var(--text-secondary)' }}>No essay responses awaiting grading.</p>
+        <div className="card" style={{ marginTop: 20, textAlign: 'center', padding: 32 }}>
+          <div style={{ fontSize: 32, marginBottom: 12 }}>✓</div>
+          <p style={{ fontWeight: 700, margin: '0 0 6px' }}>No ungraded responses</p>
+          <p style={{ color: 'var(--text-secondary)', fontSize: 13, margin: '0 0 16px' }}>
+            All caught up — or you may not have any classes assigned yet.
+          </p>
+          <a href="/teacher/profile" style={{ color: 'var(--accent-dark)', fontSize: 13, fontWeight: 700 }}>
+            Set up my classes →
+          </a>
         </div>
       )}
 

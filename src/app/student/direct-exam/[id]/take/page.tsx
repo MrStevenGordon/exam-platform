@@ -379,7 +379,18 @@ export default function TakeDirectExamPage() {
               )}
 
               {q.question_type === 'essay' && (
-                <textarea value={answers[q.id] || ''} onChange={(e) => updateAnswer(q.id, e.target.value)} rows={6} style={{ width: '100%' }} placeholder="Write your response here…" />
+                <div>
+                  <textarea
+                    value={answers[q.id] || ''}
+                    onChange={(e) => updateAnswer(q.id, e.target.value)}
+                    rows={8}
+                    style={{ width: '100%', resize: 'vertical', minHeight: 160 }}
+                    placeholder="Write your response here…"
+                  />
+                  <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 4 }}>
+                    {(answers[q.id] || '').length} characters
+                  </div>
+                </div>
               )}
             </div>
           )

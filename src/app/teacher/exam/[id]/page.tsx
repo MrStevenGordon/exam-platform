@@ -14,6 +14,7 @@ type DraftExam = {
   exam_kind: string
   direct_published: boolean
   access_password: string | null
+  target_grade: number | null
 }
 
 type Question = {
@@ -70,7 +71,7 @@ export default function ExamEditorPage() {
 
     const { data: examData, error: examError } = await supabase
       .from('draft_exams')
-      .select('id, title, subject, instructions, status, exam_kind, direct_published, access_password')
+      .select('id, title, subject, instructions, status, exam_kind, direct_published, access_password, target_grade')
       .eq('id', examId)
       .single()
 
@@ -177,7 +178,12 @@ export default function ExamEditorPage() {
   }
 
   async function handlePublishDirect() {
-    if (selectedGroups.size === 0) {
+    // Auto-assign all classes in target grade if set
+    let groupsToPublish = new Set(selectedGroups)
+    if (exam?.target_grade && classGroups.length > 0) {
+      classGroups.forEach((cg) => groupsToPublish.add(cg.id))
+    }
+    if (groupsToPublish.size === 0) {
       alert('Select at least one class to publish to.')
       return
     }

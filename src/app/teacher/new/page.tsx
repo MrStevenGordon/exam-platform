@@ -11,6 +11,7 @@ export default function NewExamPage() {
   const [instructions, setInstructions] = useState('')
   const [examKind, setExamKind] = useState('final_exam_submission')
   const [errorMsg, setErrorMsg] = useState('')
+  const [targetGrade, setTargetGrade] = useState<number | ''>('')
   const [questionsPerPage, setQuestionsPerPage] = useState(10)
   const [saving, setSaving] = useState(false)
 
@@ -41,6 +42,7 @@ export default function NewExamPage() {
         department_id: profile?.department_id,
         exam_kind: examKind,
         questions_per_page: questionsPerPage,
+        target_grade: targetGrade || null,
       })
       .select()
       .single()
@@ -82,6 +84,21 @@ export default function NewExamPage() {
           <div style={{ marginBottom: 20 }}>
             <label style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)' }}>Instructions (shown to students on the front page)</label>
             <textarea value={instructions} onChange={(e) => setInstructions(e.target.value)} rows={4} style={{ width: '100%', marginTop: 6 }} />
+          </div>
+          <div style={{ marginBottom: 16 }}>
+            <label style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)' }}>Year group (which grade is this exam for?)</label>
+            <select
+              value={targetGrade}
+              onChange={(e) => setTargetGrade(e.target.value ? parseInt(e.target.value) : '')}
+              style={{ width: '100%', marginTop: 6 }}
+            >
+              <option value="">Select year group…</option>
+              <option value={7}>Grade 7</option>
+              <option value={8}>Grade 8</option>
+              <option value={9}>Grade 9</option>
+              <option value={10}>Grade 10</option>
+              <option value={11}>Grade 11</option>
+            </select>
           </div>
           <div style={{ marginBottom: 16 }}>
             <label style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)' }}>Questions per page</label>

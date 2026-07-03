@@ -160,9 +160,20 @@ export default function ReviewExamPage() {
                 {i + 1}. {item.question_text}
               </p>
 
-              <p style={{ margin: '4px 0', fontSize: 14 }}>
-                <strong>Your answer:</strong> {item.answer || <em>No answer provided</em>}
-              </p>
+              <div style={{ margin: '4px 0', fontSize: 14 }}>
+                <strong>Your answer:</strong>
+                {!item.answer ? (
+                  <em style={{ color: 'var(--text-secondary)', marginLeft: 6 }}>No answer provided</em>
+                ) : item.answer.includes('\n') ? (
+                  <ol style={{ margin: '6px 0 0', paddingLeft: 20 }}>
+                    {item.answer.split('\n').filter((a: string) => a.trim()).map((a: string, i: number) => (
+                      <li key={i} style={{ marginBottom: 4 }}>{a.trim()}</li>
+                    ))}
+                  </ol>
+                ) : (
+                  <span style={{ marginLeft: 6 }}>{item.answer}</span>
+                )}
+              </div>
 
               {!isEssay && item.correct_answer && item.answer !== item.correct_answer && (
                 <p style={{ margin: '4px 0', fontSize: 14, color: 'var(--success)' }}>

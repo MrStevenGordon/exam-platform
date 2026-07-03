@@ -12,6 +12,7 @@ type FinalExam = {
   status: string
   department_id: string
   access_password: string | null
+  target_grade: number | null
 }
 
 type Teacher = {
@@ -50,6 +51,10 @@ export default function AssembleFinalExamPage() {
   const [loading, setLoading] = useState(true)
   const [errorMsg, setErrorMsg] = useState('')
   const [saving, setSaving] = useState(false)
+  const [allClassGroups, setAllClassGroups] = useState<{ id: string; name: string; year_grade: string }[]>([])
+  const [selectedClassGroups, setSelectedClassGroups] = useState<Set<string>>(new Set())
+  const [showPublishModal, setShowPublishModal] = useState(false)
+  const [modalGrade, setModalGrade] = useState<string>('')
   const [publishing, setPublishing] = useState(false)
 
   useEffect(() => {
@@ -65,7 +70,7 @@ export default function AssembleFinalExamPage() {
 
     const { data: examData, error: examError } = await supabase
       .from('final_exams')
-      .select('id, title, subject, status, department_id, access_password')
+      .select('id, title, subject, status, department_id, access_password, target_grade')
       .eq('id', finalExamId)
       .single()
 
@@ -128,6 +133,20 @@ export default function AssembleFinalExamPage() {
 
     setSelectedIds(new Set((existingLinks || []).map((l) => l.question_id)))
 
+    // Load all class groups for manual assignment
+    const { data: cgData } = await supabase
+      .from('class_groups')
+      .select('id, name, year_grade')
+      .order('year_grade', { ascending: true })
+    setAllClassGroups(cgData || [])
+
+    // Load existing class group assignments
+    const { data: existingClassLinks } = await supabase
+      .from('final_exam_class_groups')
+      .select('class_group_id')
+      .eq('final_exam_id', finalExamId)
+    setSelectedClassGroups(new Set((existingClassLinks || []).map((l) => l.class_group_id)))
+
     setLoading(false)
   }
 
@@ -180,15 +199,27 @@ export default function AssembleFinalExamPage() {
       alert('Select at least one question before publishing.')
       return
     }
-    // Check class groups are assigned
-    const { data: existingLinks } = await supabase
-      .from('final_exam_class_groups')
-      .select('id')
-      .eq('final_exam_id', finalExamId)
-    if (!existingLinks || existingLinks.length === 0) {
-      alert('Please assign this exam to at least one class group before publishing. Go to the sessions page to assign class groups.')
+    // Auto-assign by target_grade if set, otherwise use manual selection
+    let classGroupsToAssign = Array.from(selectedClassGroups)
+
+    if (finalExam?.target_grade) {
+      const gradeLabel = `Grade ${finalExam.target_grade}`
+      const gradeGroups = allClassGroups.filter((cg) => cg.year_grade === gradeLabel)
+      if (gradeGroups.length > 0) {
+        classGroupsToAssign = gradeGroups.map((cg) => cg.id)
+      }
+    }
+
+    if (classGroupsToAssign.length === 0) {
+      alert('Please assign this exam to at least one class group before publishing.')
       return
     }
+
+    // Insert class group links
+    await supabase.from('final_exam_class_groups').delete().eq('final_exam_id', finalExamId)
+    await supabase.from('final_exam_class_groups').insert(
+      classGroupsToAssign.map((cgId) => ({ final_exam_id: finalExamId, class_group_id: cgId }))
+    )
     if (!confirm('Publish this exam? Students will be able to see and take it once published. This cannot be undone from this screen.')) {
       return
     }
@@ -321,9 +352,81 @@ export default function AssembleFinalExamPage() {
           <button onClick={handleSaveSelections} disabled={saving || publishing} className="btn btn-ghost">
             {saving ? 'Saving…' : 'Save selections'}
           </button>
-          <button onClick={handlePublish} disabled={saving || publishing} className="btn btn-primary">
-            {publishing ? 'Publishing…' : 'Publish exam'}
+          <button onClick={() => {
+            setModalGrade(finalExam?.target_grade ? `Grade ${finalExam.target_grade}` : '')
+            setShowPublishModal(true)
+          }} disabled={saving || publishing} className="btn btn-primary">
+            Publish exam
           </button>
+        </div>
+      )}
+
+      {/* Publish modal */}
+      {showPublishModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+          <div className="card" style={{ maxWidth: 500, width: '100%', padding: 28 }}>
+            <h2 style={{ marginBottom: 6 }}>Publish exam</h2>
+            <p style={{ color: 'var(--text-secondary)', fontSize: 13, marginBottom: 20 }}>
+              Select the year group and classes this exam will be published to.
+            </p>
+
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-secondary)' }}>Year group</label>
+              <select
+                value={modalGrade}
+                onChange={(e) => {
+                  setModalGrade(e.target.value)
+                  // Auto-select all classes in this grade
+                  const gradeGroups = allClassGroups.filter(cg => cg.year_grade === e.target.value)
+                  setSelectedClassGroups(new Set(gradeGroups.map(cg => cg.id)))
+                }}
+                style={{ width: '100%', marginTop: 6 }}
+              >
+                <option value="">Select year group…</option>
+                {['Grade 7', 'Grade 8', 'Grade 9', 'Grade 10', 'Grade 11'].map(g => (
+                  <option key={g} value={g}>{g}</option>
+                ))}
+              </select>
+            </div>
+
+            {modalGrade && (
+              <div style={{ marginBottom: 20 }}>
+                <label style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-secondary)' }}>Classes (deselect any to exclude)</label>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 8 }}>
+                  {allClassGroups.filter(cg => cg.year_grade === modalGrade).map(cg => (
+                    <label key={cg.id} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 14px', borderRadius: 20, border: `1.5px solid ${selectedClassGroups.has(cg.id) ? 'var(--accent)' : 'var(--border-strong)'}`, background: selectedClassGroups.has(cg.id) ? 'var(--accent-light)' : 'var(--card-bg)', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>
+                      <input
+                        type="checkbox"
+                        checked={selectedClassGroups.has(cg.id)}
+                        onChange={() => {
+                          const updated = new Set(selectedClassGroups)
+                          if (updated.has(cg.id)) updated.delete(cg.id)
+                          else updated.add(cg.id)
+                          setSelectedClassGroups(updated)
+                        }}
+                        style={{ accentColor: 'var(--accent)' }}
+                      />
+                      {cg.name}
+                    </label>
+                  ))}
+                </div>
+                <p style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 8 }}>
+                  {selectedClassGroups.size} class{selectedClassGroups.size !== 1 ? 'es' : ''} selected
+                </p>
+              </div>
+            )}
+
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+              <button onClick={() => setShowPublishModal(false)} className="btn btn-ghost">Cancel</button>
+              <button
+                onClick={() => { setShowPublishModal(false); handlePublish() }}
+                disabled={selectedClassGroups.size === 0 || publishing}
+                className="btn btn-primary"
+              >
+                {publishing ? 'Publishing…' : `Publish to ${selectedClassGroups.size} class${selectedClassGroups.size !== 1 ? 'es' : ''}`}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

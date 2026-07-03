@@ -7,6 +7,7 @@ const TEACHER_NAV = [
   { label: 'My Exams', icon: 'ti-file-text', href: '/teacher/exams' },
   { label: 'Grade Essays', icon: 'ti-edit', href: '/teacher/grade' },
   { label: 'Question Bank', icon: 'ti-database', href: '/teacher/bank' },
+  { label: 'My Profile', icon: 'ti-user', href: '/teacher/profile' },
 ]
 
 export default function TeacherLayout({ children }: { children: React.ReactNode }) {
