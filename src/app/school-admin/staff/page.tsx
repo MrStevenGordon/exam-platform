@@ -1,0 +1,218 @@
+'use client'
+
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { supabase } from '@/lib/supabase'
+
+type StaffMember = {
+  id: string
+  full_name: string
+  role: string
+  department_id: string | null
+  is_system_admin: boolean
+  departments?: { name: string } | null
+}
+
+export default function StaffPage() {
+  const router = useRouter()
+  const [staff, setStaff] = useState<StaffMember[]>([])
+  const [loading, setLoading] = useState(true)
+  const [search, setSearch] = useState('')
+  const [showAddForm, setShowAddForm] = useState(false)
+  const [departments, setDepartments] = useState<{ id: string; name: string }[]>([])
+  const [saving, setSaving] = useState(false)
+  const [errorMsg, setErrorMsg] = useState('')
+  const [successMsg, setSuccessMsg] = useState('')
+
+  // New staff form
+  const [newFirstName, setNewFirstName] = useState('')
+  const [newLastName, setNewLastName] = useState('')
+  const [newEmail, setNewEmail] = useState('')
+  const [newRole, setNewRole] = useState('teacher')
+  const [newDept, setNewDept] = useState('')
+
+  useEffect(() => { loadData() }, [])
+
+  async function loadData() {
+    const { data } = await supabase
+      .from('profiles')
+      .select('id, full_name, role, department_id, is_system_admin, departments(name)')
+      .in('role', ['teacher', 'supervisor', 'admin'])
+      .order('full_name')
+    setStaff((data as any) || [])
+
+    const { data: deptData } = await supabase.from('departments').select('id, name').order('name')
+    setDepartments(deptData || [])
+
+    setLoading(false)
+  }
+
+  async function handleAddStaff() {
+    setSaving(true)
+    setErrorMsg('')
+    setSuccessMsg('')
+
+    const email = newEmail.trim().toLowerCase()
+    const fullName = `${newFirstName.trim()} ${newLastName.trim()}`
+    const password = 'Staff.Default1'
+
+    const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: true,
+    })
+
+    if (authError) {
+      setErrorMsg(authError.message)
+      setSaving(false)
+      return
+    }
+
+    const { error: profileError } = await supabase.from('profiles').insert({
+      id: authData.user.id,
+      full_name: fullName,
+      first_name: newFirstName.trim(),
+      last_name: newLastName.trim(),
+      role: newRole,
+      department_id: newDept || null,
+    })
+
+    if (profileError) {
+      setErrorMsg(profileError.message)
+      setSaving(false)
+      return
+    }
+
+    setSuccessMsg(`${fullName} added successfully. Temporary password: Staff.Default1`)
+    setNewFirstName('')
+    setNewLastName('')
+    setNewEmail('')
+    setNewRole('teacher')
+    setNewDept('')
+    setShowAddForm(false)
+    setSaving(false)
+    loadData()
+  }
+
+  async function handleDeactivate(staffId: string, name: string) {
+    if (!confirm(`Deactivate ${name}? They will no longer be able to log in.`)) return
+    await supabase.auth.admin.updateUserById(staffId, { ban_duration: 'none' })
+    await supabase.from('profiles').update({ role: 'deactivated' }).eq('id', staffId)
+    loadData()
+  }
+
+  if (loading) return <div>Loading…</div>
+
+  const filtered = staff.filter((s) =>
+    !search || s.full_name?.toLowerCase().includes(search.toLowerCase()) ||
+    (s.departments as any)?.name?.toLowerCase().includes(search.toLowerCase()) ||
+    s.role?.toLowerCase().includes(search.toLowerCase())
+  )
+
+  const roleLabel: Record<string, string> = {
+    teacher: 'Teacher', supervisor: 'Supervisor / HOD', admin: 'Platform Admin'
+  }
+
+  return (
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+        <div>
+          <p className="portal-page-title" style={{ margin: 0 }}>Staff</p>
+          <p className="portal-page-sub" style={{ margin: '4px 0 0' }}>{staff.length} staff accounts</p>
+        </div>
+        <button className="btn btn-primary" onClick={() => setShowAddForm(!showAddForm)}>
+          + Add staff member
+        </button>
+      </div>
+
+      {showAddForm && (
+        <div className="card" style={{ marginBottom: 20 }}>
+          <h2 style={{ marginBottom: 16 }}>New staff member</h2>
+          {errorMsg && <div className="banner banner-danger" style={{ marginBottom: 12 }}>{errorMsg}</div>}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
+            <div>
+              <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>First name</label>
+              <input value={newFirstName} onChange={(e) => setNewFirstName(e.target.value)} style={{ width: '100%', marginTop: 4 }} />
+            </div>
+            <div>
+              <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Last name</label>
+              <input value={newLastName} onChange={(e) => setNewLastName(e.target.value)} style={{ width: '100%', marginTop: 4 }} />
+            </div>
+          </div>
+          <div style={{ marginBottom: 12 }}>
+            <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Email address</label>
+            <input type="email" value={newEmail} onChange={(e) => setNewEmail(e.target.value)} style={{ width: '100%', marginTop: 4 }} placeholder="firstname.lastname@mhs.smartassess" />
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
+            <div>
+              <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Role</label>
+              <select value={newRole} onChange={(e) => setNewRole(e.target.value)} style={{ width: '100%', marginTop: 4 }}>
+                <option value="teacher">Teacher</option>
+                <option value="supervisor">Supervisor / HOD</option>
+              </select>
+            </div>
+            <div>
+              <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Department</label>
+              <select value={newDept} onChange={(e) => setNewDept(e.target.value)} style={{ width: '100%', marginTop: 4 }}>
+                <option value="">Select department…</option>
+                {departments.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
+              </select>
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button onClick={handleAddStaff} disabled={saving || !newFirstName || !newLastName || !newEmail} className="btn btn-primary">
+              {saving ? 'Adding…' : 'Add staff member'}
+            </button>
+            <button onClick={() => setShowAddForm(false)} className="btn btn-ghost">Cancel</button>
+          </div>
+          <p style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 10 }}>
+            Default password: <strong>Staff.Default1</strong> — staff should change this on first login.
+          </p>
+        </div>
+      )}
+
+      {successMsg && (
+        <div className="banner banner-success" style={{ marginBottom: 16 }}>{successMsg}</div>
+      )}
+
+      <input
+        type="text"
+        placeholder="Search by name, role or department…"
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        style={{ width: '100%', marginBottom: 16 }}
+      />
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {filtered.map((s) => (
+          <div key={s.id} className="card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div style={{ width: 38, height: 38, borderRadius: '50%', background: 'var(--accent-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 13, color: 'var(--accent-dark)', flexShrink: 0 }}>
+                {s.full_name?.split(' ').map((n) => n[0]).slice(0, 2).join('')}
+              </div>
+              <div>
+                <div style={{ fontWeight: 700, fontSize: 14 }}>{s.full_name}</div>
+                <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 2 }}>
+                  {roleLabel[s.role] || s.role}
+                  {(s.departments as any)?.name && ` · ${(s.departments as any).name}`}
+                  {s.is_system_admin && <span style={{ marginLeft: 6, color: 'var(--accent-dark)', fontWeight: 700 }}>· System Admin</span>}
+                </div>
+              </div>
+            </div>
+            <button
+              onClick={() => handleDeactivate(s.id, s.full_name)}
+              className="btn btn-ghost"
+              style={{ fontSize: 11, color: 'var(--danger)' }}
+            >
+              Deactivate
+            </button>
+          </div>
+        ))}
+      </div>
+
+      {filtered.length === 0 && (
+        <div className="card"><p style={{ color: 'var(--text-secondary)' }}>No staff found.</p></div>
+      )}
+    </div>
+  )
+}

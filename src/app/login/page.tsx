@@ -9,6 +9,7 @@ const ROLE_OPTIONS = [
   { value: 'student', label: 'Student' },
   { value: 'teacher', label: 'Teacher' },
   { value: 'supervisor', label: 'Supervisor / HOD' },
+  { value: 'system_admin', label: 'System Admin' },
   { value: 'admin', label: 'Administrator' },
 ]
 
@@ -43,7 +44,7 @@ export default function LoginPage() {
     // Verify their actual role matches what they selected
     const { data: profile } = await supabase
       .from('profiles')
-      .select('role')
+      .select('role, is_system_admin')
       .eq('id', data.user.id)
       .single()
 
@@ -54,13 +55,38 @@ export default function LoginPage() {
       return
     }
 
-    if (profile.role !== selectedRole) {
-      setError(`Incorrect role selected. Please select "${profile.role === 'supervisor' ? 'Supervisor / HOD' : profile.role.charAt(0).toUpperCase() + profile.role.slice(1)}" and try again.`)
+    // System admin check — is_system_admin flag overrides role for login
+    const isSystemAdmin = profile.is_system_admin === true
+    const selectedSystemAdmin = selectedRole === 'system_admin'
+
+    if (isSystemAdmin && !selectedSystemAdmin) {
+      setError('Please select "System Admin" and try again.')
       await supabase.auth.signOut()
       setLoading(false)
       return
     }
 
+    if (!isSystemAdmin && selectedSystemAdmin) {
+      setError('This account is not a system administrator.')
+      await supabase.auth.signOut()
+      setLoading(false)
+      return
+    }
+
+    if (!isSystemAdmin && profile.role !== selectedRole) {
+      const correctLabel = profile.role === 'supervisor' ? 'Supervisor / HOD' :
+        profile.role.charAt(0).toUpperCase() + profile.role.slice(1)
+      setError(`Incorrect role selected. Please select "${correctLabel}" and try again.`)
+      await supabase.auth.signOut()
+      setLoading(false)
+      return
+    }
+
+    // System admin goes to school-admin portal
+    if (profile.is_system_admin) {
+      router.push('/school-admin')
+      return
+    }
     router.push(ROLE_REDIRECTS[profile.role] || '/dashboard')
   }
 
