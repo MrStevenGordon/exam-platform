@@ -39,8 +39,9 @@ export default function StaffPage() {
   async function loadData() {
     const { data } = await supabase
       .from('profiles')
-      .select('id, full_name, role, department_id, is_system_admin, departments(name)')
-      .in('role', ['teacher', 'supervisor', 'admin'])
+      .select('id, full_name, role, department_id, is_system_admin, departments!profiles_department_id_fkey(name)')
+      .in('role', ['teacher', 'supervisor'])
+      .neq('is_system_admin', true)
       .order('full_name')
     setStaff((data as any) || [])
 
