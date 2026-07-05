@@ -23,6 +23,9 @@ export default function StaffPage() {
   const [saving, setSaving] = useState(false)
   const [errorMsg, setErrorMsg] = useState('')
   const [successMsg, setSuccessMsg] = useState('')
+  const [showCsvImport, setShowCsvImport] = useState(false)
+  const [csvImporting, setCsvImporting] = useState(false)
+  const [csvResults, setCsvResults] = useState<{name: string; email: string; status: string; reason?: string}[]>([])
 
   // New staff form
   const [newFirstName, setNewFirstName] = useState('')
@@ -89,6 +92,57 @@ export default function StaffPage() {
     loadData()
   }
 
+  async function handleCsvImport(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setCsvImporting(true)
+    setCsvResults([])
+
+    const text = await file.text()
+    const lines = text.trim().split('\n')
+    const headers = lines[0].split(',').map((h) => h.trim().toLowerCase())
+    const rows = lines.slice(1).map((line) => {
+      const values = line.split(',').map((v) => v.trim())
+      const row: any = {}
+      headers.forEach((h, i) => { row[h] = values[i] || '' })
+      return row
+    }).filter((r) => r.email)
+
+    const results = []
+    for (const row of rows) {
+      const deptMatch = departments.find((d) => d.name.toLowerCase() === row.department?.toLowerCase())
+      try {
+        const res = await fetch('/api/create-user', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'staff',
+            data: {
+              first_name: row.first_name,
+              last_name: row.last_name,
+              email: row.email,
+              role: row.role || 'teacher',
+              department_id: deptMatch?.id || null,
+            }
+          }),
+        })
+        const result = await res.json()
+        results.push({
+          name: `${row.first_name} ${row.last_name}`,
+          email: row.email,
+          status: result.error ? 'failed' : 'success',
+          reason: result.error,
+        })
+      } catch (err: any) {
+        results.push({ name: `${row.first_name} ${row.last_name}`, email: row.email, status: 'failed', reason: err.message })
+      }
+    }
+
+    setCsvResults(results)
+    setCsvImporting(false)
+    loadData()
+  }
+
   async function handleDeactivate(staffId: string, name: string) {
     if (!confirm(`Deactivate ${name}? They will no longer be able to log in.`)) return
     await supabase.auth.admin.updateUserById(staffId, { ban_duration: 'none' })
@@ -115,9 +169,14 @@ export default function StaffPage() {
           <p className="portal-page-title" style={{ margin: 0 }}>Staff</p>
           <p className="portal-page-sub" style={{ margin: '4px 0 0' }}>{staff.length} staff accounts</p>
         </div>
-        <button className="btn btn-primary" onClick={() => setShowAddForm(!showAddForm)}>
-          + Add staff member
-        </button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button className="btn btn-primary" onClick={() => setShowAddForm(!showAddForm)}>
+            + Add staff member
+          </button>
+          <button className="btn btn-secondary" onClick={() => setShowCsvImport(!showCsvImport)}>
+            ↑ Import CSV
+          </button>
+        </div>
       </div>
 
       {showAddForm && (
@@ -163,6 +222,37 @@ export default function StaffPage() {
           <p style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 10 }}>
             Default password: <strong>Staff.Default1</strong> — staff should change this on first login.
           </p>
+        </div>
+      )}
+
+      {showCsvImport && (
+        <div className="card" style={{ marginBottom: 20 }}>
+          <h2 style={{ marginBottom: 8 }}>Import staff from CSV</h2>
+          <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 12 }}>
+            CSV format: <code>first_name, last_name, email, role, department</code>
+          </p>
+          <p style={{ fontSize: 12, color: 'var(--text-secondary)', marginBottom: 12 }}>
+            Role values: <code>teacher</code> or <code>supervisor</code> · Department must match exactly
+          </p>
+          <input
+            type="file"
+            accept=".csv"
+            onChange={handleCsvImport}
+            disabled={csvImporting}
+            style={{ marginBottom: 12 }}
+          />
+          {csvImporting && <p style={{ color: 'var(--text-secondary)', fontSize: 13 }}>Importing…</p>}
+          {csvResults.length > 0 && (
+            <div style={{ marginTop: 12 }}>
+              <div style={{ display: 'flex', gap: 16, marginBottom: 8 }}>
+                <span style={{ color: 'var(--success)', fontWeight: 700 }}>✓ {csvResults.filter(r => r.status === 'success').length} imported</span>
+                <span style={{ color: 'var(--danger)', fontWeight: 700 }}>✗ {csvResults.filter(r => r.status === 'failed').length} failed</span>
+              </div>
+              {csvResults.filter(r => r.status === 'failed').map((r, i) => (
+                <div key={i} style={{ fontSize: 12, color: 'var(--danger)', marginBottom: 4 }}>✗ {r.name} — {r.reason}</div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
