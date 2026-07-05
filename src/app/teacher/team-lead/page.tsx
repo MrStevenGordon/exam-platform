@@ -20,6 +20,7 @@ type DraftExam = {
   target_grade: number | null
   status: string
   created_at: string
+  profiles?: { full_name: string } | null
 }
 
 const EXAM_KINDS = [
@@ -71,13 +72,27 @@ export default function TeamLeadPage() {
       .eq('teacher_id', user.id)
     setAppointments(apptData || [])
 
-    const { data: examData } = await supabase
+    // Show all team lead exams for this teacher's appointed year groups and subjects
+    // not just exams they created — shared access for all team leads in same group
+    const subjectFilters = (apptData || []).map((a) => a.subject)
+    const gradeFilters = (apptData || []).map((a) => a.year_grade)
+
+    let examQuery = supabase
       .from('draft_exams')
-      .select('id, title, subject, exam_kind, term, target_grade, status, created_at')
-      .eq('created_by', user.id)
+      .select('id, title, subject, exam_kind, term, target_grade, status, created_at, profiles!draft_exams_created_by_fkey(full_name)')
       .in('exam_kind', ['monthly', 'midterm', 'end_of_term', 'end_of_year'])
       .order('created_at', { ascending: false })
-    setExams(examData || [])
+
+    if (gradeFilters.length > 0) {
+      examQuery = examQuery.in('target_grade', gradeFilters)
+    }
+
+    const { data: examData } = await examQuery
+    // Filter to only show exams matching this teacher's appointments
+    const filteredExams = (examData || []).filter((e: any) =>
+      (apptData || []).some((a) => a.year_grade === e.target_grade && a.subject === e.subject)
+    )
+    setExams(filteredExams as any)
 
     setLoading(false)
   }
@@ -258,7 +273,7 @@ export default function TeamLeadPage() {
                         <div>
                           <div style={{ fontWeight: 700, fontSize: 14 }}>{exam.title}</div>
                           <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 2 }}>
-                            Grade {exam.target_grade} · {exam.subject}
+                            Grade {exam.target_grade} · {exam.subject} · by {(exam.profiles as any)?.full_name || 'You'}
                           </div>
                         </div>
                         <span className={`badge ${exam.status === 'submitted' ? 'badge-warning' : exam.status === 'approved' ? 'badge-success' : 'badge-default'}`}>

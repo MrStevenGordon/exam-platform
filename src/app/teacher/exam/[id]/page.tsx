@@ -153,7 +153,7 @@ export default function ExamEditorPage() {
   }
 
   async function handleSubmitForReview() {
-    if (!confirm('Submit this exam for review? You won\'t be able to edit it after this.')) return
+    if (!confirm('Submit this exam for senior team lead vetting? You can still edit it after submission.')) return
 
     setSubmitting(true)
     const { error } = await supabase
@@ -223,7 +223,8 @@ export default function ExamEditorPage() {
   if (!exam) return <div className="page-container">Exam not found.</div>
 
   const isFinalExamSubmission = exam.exam_kind === 'final_exam_submission'
-  const isLocked = isFinalExamSubmission ? exam.status !== 'draft' : exam.direct_published
+  const isTeamLeadExam = ['monthly', 'midterm', 'end_of_term', 'end_of_year'].includes(exam.exam_kind)
+  const isLocked = exam.direct_published === true
   const hasComments = questions.some((q) => q.supervisor_comment)
 
   const kindLabels: Record<string, string> = {
@@ -370,25 +371,94 @@ export default function ExamEditorPage() {
       )}
 
       {!isFinalExamSubmission && !isLocked && (
-        <div style={{ marginTop: 24, paddingTop: 16, borderTop: '1px solid #ddd' }}>
-          <h3>Publish to Class(es)</h3>
-          {classGroups.length === 0 && <p style={{ color: 'var(--text-secondary)' }}>No class groups found for your department.</p>}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
-            {classGroups.map((cg) => (
-              <label key={cg.id} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <input
-                  type="checkbox"
-                  checked={selectedGroups.has(cg.id)}
-                  onChange={() => toggleGroup(cg.id)}
-                />
-                {cg.year_grade} — {cg.name}
-              </label>
-            ))}
-          </div>
-          {questions.length > 0 && (
-            <button onClick={handlePublishDirect} disabled={submitting} className="btn btn-primary">
-              {submitting ? 'Publishing…' : 'Publish directly'}
-            </button>
+        <div style={{ marginTop: 24, paddingTop: 16, borderTop: '1px solid var(--border)' }}>
+
+          {isTeamLeadExam ? (
+            /* Team lead exams — save for team review, no direct publish */
+            <div>
+              <h3 style={{ marginBottom: 6 }}>Team lead exam</h3>
+              <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 16 }}>
+                This exam is saved to the team lead panel where all team leads in your year group and subject can view and contribute. Once ready, submit it for senior team lead vetting.
+              </p>
+              {questions.length > 0 && exam.status === 'draft' && (
+                <button onClick={handleSubmitForReview} disabled={submitting} className="btn btn-primary">
+                  {submitting ? 'Submitting…' : 'Submit for vetting'}
+                </button>
+              )}
+              {exam.status === 'submitted' && (
+                <div className="banner banner-warning">Submitted for senior team lead vetting.</div>
+              )}
+              {exam.status === 'approved' && (
+                <div className="banner banner-success">Approved — awaiting supervisor to publish.</div>
+              )}
+            </div>
+          ) : (
+            /* Regular teacher exams — publish directly to classes */
+            <div>
+              <h3 style={{ marginBottom: 6 }}>Publish to class(es)</h3>
+              {classGroups.length === 0 && (
+                <p style={{ color: 'var(--text-secondary)', fontSize: 13 }}>No class groups found.</p>
+              )}
+
+              {/* Grouped by year grade */}
+              {['Grade 7', 'Grade 8', 'Grade 9', 'Grade 10', 'Grade 11'].map((grade) => {
+                const gradeClasses = classGroups.filter((cg) => cg.year_grade === grade)
+                if (gradeClasses.length === 0) return null
+                const allSelected = gradeClasses.every((cg) => selectedGroups.has(cg.id))
+                const someSelected = gradeClasses.some((cg) => selectedGroups.has(cg.id))
+                return (
+                  <div key={grade} style={{ marginBottom: 12 }}>
+                    {/* Year group header with select-all */}
+                    <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', padding: '8px 10px', background: 'var(--page-bg)', borderRadius: 8, border: '1px solid var(--border)', fontWeight: 700, fontSize: 13 }}>
+                      <input
+                        type="checkbox"
+                        checked={allSelected}
+                        ref={(el) => { if (el) el.indeterminate = someSelected && !allSelected }}
+                        onChange={() => {
+                          const updated = new Set(selectedGroups)
+                          if (allSelected) gradeClasses.forEach((cg) => updated.delete(cg.id))
+                          else gradeClasses.forEach((cg) => updated.add(cg.id))
+                          setSelectedGroups(updated)
+                        }}
+                        style={{ accentColor: 'var(--accent)' }}
+                      />
+                      {grade}
+                      <span style={{ fontSize: 11, fontWeight: 400, color: 'var(--text-secondary)', marginLeft: 4 }}>
+                        ({gradeClasses.length} classes)
+                      </span>
+                    </label>
+
+                    {/* Individual classes */}
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 8, paddingLeft: 16 }}>
+                      {gradeClasses.map((cg) => (
+                        <label key={cg.id} style={{
+                          display: 'flex', alignItems: 'center', gap: 6,
+                          padding: '5px 12px', borderRadius: 20, cursor: 'pointer',
+                          border: `1.5px solid ${selectedGroups.has(cg.id) ? 'var(--accent)' : 'var(--border-strong)'}`,
+                          background: selectedGroups.has(cg.id) ? 'var(--accent-light)' : 'var(--card-bg)',
+                          fontSize: 13, fontWeight: 600,
+                          color: selectedGroups.has(cg.id) ? 'var(--accent-dark)' : 'var(--text-secondary)',
+                        }}>
+                          <input
+                            type="checkbox"
+                            checked={selectedGroups.has(cg.id)}
+                            onChange={() => toggleGroup(cg.id)}
+                            style={{ accentColor: 'var(--accent)', display: 'none' }}
+                          />
+                          {cg.name}
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                )
+              })}
+
+              {questions.length > 0 && selectedGroups.size > 0 && (
+                <button onClick={handlePublishDirect} disabled={submitting} className="btn btn-primary" style={{ marginTop: 8 }}>
+                  {submitting ? 'Publishing…' : `Publish to ${selectedGroups.size} class${selectedGroups.size !== 1 ? 'es' : ''}`}
+                </button>
+              )}
+            </div>
           )}
         </div>
       )}

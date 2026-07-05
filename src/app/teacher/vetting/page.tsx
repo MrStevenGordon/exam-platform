@@ -30,13 +30,12 @@ export default function VettingPage() {
       // Check if this teacher is a senior team lead
       const { data: stlData } = await supabase
         .from('senior_team_lead_appointments')
-        .select('department_id')
+        .select('department_id, subject, year_grade')
         .eq('teacher_id', user.id)
-        .single()
 
-      if (!stlData) { router.push('/teacher'); return }
+      if (!stlData || stlData.length === 0) { router.push('/teacher'); return }
 
-      // Load exams sent for senior vetting (status = 'submitted')
+      // Load exams matching this senior team lead's subject and year grade appointments
       const { data } = await supabase
         .from('draft_exams')
         .select('id, title, subject, exam_kind, term, target_grade, status, created_at, profiles!draft_exams_created_by_fkey(full_name)')
@@ -44,7 +43,15 @@ export default function VettingPage() {
         .in('exam_kind', ['monthly', 'midterm', 'end_of_term', 'end_of_year'])
         .order('created_at', { ascending: false })
 
-      setExams((data as any) || [])
+      // Filter to only show exams matching appointments
+      const filteredData = (data || []).filter((exam: any) =>
+        stlData.some((appt) =>
+          appt.subject === exam.subject &&
+          (!appt.year_grade || appt.year_grade === exam.target_grade)
+        )
+      )
+
+      setExams((filteredData as any) || [])
       setLoading(false)
     }
     load()

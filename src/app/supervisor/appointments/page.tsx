@@ -49,7 +49,10 @@ export default function AppointmentsPage() {
 
   // New senior team lead form
   const [stlTeacher, setStlTeacher] = useState('')
+  const [stlSubject, setStlSubject] = useState('')
+  const [stlGrade, setStlGrade] = useState('')
   const [showSTLForm, setShowSTLForm] = useState(false)
+  const [deptSubjects, setDeptSubjects] = useState<string[]>([])
 
   useEffect(() => { loadData() }, [])
 
@@ -81,8 +84,16 @@ export default function AppointmentsPage() {
     // Load existing senior team lead appointments
     const { data: stlData } = await supabase
       .from('senior_team_lead_appointments')
-      .select('id, teacher_id')
+      .select('id, teacher_id, subject, year_grade')
     setSeniorTeamLeads(stlData || [])
+
+    // Load department subjects
+    const { data: subjData } = await supabase
+      .from('department_subjects')
+      .select('subject')
+      .eq('department_id', profile?.department_id)
+      .order('subject')
+    setDeptSubjects((subjData || []).map((s) => s.subject))
 
     setLoading(false)
   }
@@ -120,12 +131,16 @@ export default function AppointmentsPage() {
     const { error } = await supabase.from('senior_team_lead_appointments').insert({
       teacher_id: stlTeacher,
       department_id: profile?.department_id,
+      subject: stlSubject,
+      year_grade: stlGrade ? parseInt(stlGrade) : null,
       appointed_by: user!.id,
     })
 
     if (!error) {
       setSuccessMsg('Senior team lead appointed successfully')
       setStlTeacher('')
+      setStlSubject('')
+      setStlGrade('')
       setShowSTLForm(false)
       loadData()
     }
@@ -189,7 +204,10 @@ export default function AppointmentsPage() {
                 <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Subject</label>
                 <select value={tlSubject} onChange={(e) => setTlSubject(e.target.value)} style={{ width: '100%', marginTop: 4 }}>
                   <option value="">Select subject…</option>
-                  {SUBJECTS.map((s) => <option key={s} value={s}>{s}</option>)}
+                  {deptSubjects.length > 0
+                    ? deptSubjects.map((s) => <option key={s} value={s}>{s}</option>)
+                    : <option disabled>No subjects added — go to Subjects page first</option>
+                  }
                 </select>
               </div>
             </div>
@@ -239,15 +257,34 @@ export default function AppointmentsPage() {
 
         {showSTLForm && (
           <div style={{ padding: 16, background: 'var(--page-bg)', borderRadius: 8, marginBottom: 16, border: '1px solid var(--border)' }}>
-            <div style={{ marginBottom: 12 }}>
-              <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Teacher</label>
-              <select value={stlTeacher} onChange={(e) => setStlTeacher(e.target.value)} style={{ width: '100%', marginTop: 4 }}>
-                <option value="">Select teacher…</option>
-                {teachers.map((t) => <option key={t.id} value={t.id}>{t.full_name}</option>)}
-              </select>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginBottom: 12 }}>
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Teacher</label>
+                <select value={stlTeacher} onChange={(e) => setStlTeacher(e.target.value)} style={{ width: '100%', marginTop: 4 }}>
+                  <option value="">Select teacher…</option>
+                  {teachers.map((t) => <option key={t.id} value={t.id}>{t.full_name}</option>)}
+                </select>
+              </div>
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Subject</label>
+                <select value={stlSubject} onChange={(e) => setStlSubject(e.target.value)} style={{ width: '100%', marginTop: 4 }}>
+                  <option value="">Select subject…</option>
+                  {deptSubjects.length > 0
+                    ? deptSubjects.map((s) => <option key={s} value={s}>{s}</option>)
+                    : <option disabled>No subjects added — go to Subjects page first</option>
+                  }
+                </select>
+              </div>
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Year group</label>
+                <select value={stlGrade} onChange={(e) => setStlGrade(e.target.value)} style={{ width: '100%', marginTop: 4 }}>
+                  <option value="">Select grade…</option>
+                  {[7, 8, 9, 10, 11].map((g) => <option key={g} value={g}>Grade {g}</option>)}
+                </select>
+              </div>
             </div>
             <div style={{ display: 'flex', gap: 8 }}>
-              <button onClick={handleAppointSeniorTeamLead} disabled={saving || !stlTeacher} className="btn btn-primary" style={{ fontSize: 12 }}>
+              <button onClick={handleAppointSeniorTeamLead} disabled={saving || !stlTeacher || !stlSubject} className="btn btn-primary" style={{ fontSize: 12 }}>
                 {saving ? 'Saving…' : 'Appoint senior team lead'}
               </button>
               <button onClick={() => setShowSTLForm(false)} className="btn btn-ghost" style={{ fontSize: 12 }}>Cancel</button>
@@ -262,7 +299,12 @@ export default function AppointmentsPage() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {seniorTeamLeads.map((stl) => (
             <div key={stl.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px', background: 'var(--page-bg)', borderRadius: 8, border: '1px solid var(--border)' }}>
-              <div style={{ fontWeight: 700, fontSize: 14 }}>{getTeacherName(stl.teacher_id)}</div>
+              <div>
+                <div style={{ fontWeight: 700, fontSize: 14 }}>{getTeacherName(stl.teacher_id)}</div>
+                <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 2 }}>
+                  {(stl as any).subject || 'All subjects'}{(stl as any).year_grade ? ` · Grade ${(stl as any).year_grade}` : ''}
+                </div>
+              </div>
               <button onClick={() => handleRemoveSeniorTeamLead(stl.id)} className="btn btn-ghost" style={{ fontSize: 11, color: 'var(--danger)' }}>
                 Remove
               </button>
