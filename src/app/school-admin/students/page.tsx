@@ -96,48 +96,25 @@ export default function StudentsPage() {
     ;(classGroups || []).forEach((cg) => { classGroupMap[cg.name] = cg.id })
 
     for (const row of rows) {
-      const email = `${row.student_id}@${SCHOOL_DOMAIN}`
       const fullName = [row.first_name, row.middle_name, row.last_name].filter(Boolean).join(' ')
-      const classGroupId = classGroupMap[row.class_id]
-      const gradePrefix = row.class_id?.split('-')[0]
-      const gradeLevel = CLASS_TO_GRADE[gradePrefix] || null
+      const email = `${row.student_id}@${SCHOOL_DOMAIN}`
 
-      if (!classGroupId) {
-        results.push({ name: fullName, email, status: 'failed', reason: `Class ${row.class_id} not found` })
-        continue
+      try {
+        const res = await fetch('/api/create-user', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ type: 'student', data: row }),
+        })
+        const result = await res.json()
+        console.log('Create user result:', res.status, JSON.stringify(result))
+        if (!res.ok || result.error) {
+          results.push({ name: fullName, email, status: 'failed', reason: result.error })
+        } else {
+          results.push({ name: fullName, email, status: 'success' })
+        }
+      } catch (err: any) {
+        results.push({ name: fullName, email, status: 'failed', reason: err.message })
       }
-
-      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-        email, password: DEFAULT_PASSWORD, email_confirm: true,
-      })
-
-      if (authError) {
-        results.push({ name: fullName, email, status: 'failed', reason: authError.message })
-        continue
-      }
-
-      const { error: profileError } = await supabase.from('profiles').insert({
-        id: authData.user.id,
-        full_name: fullName,
-        first_name: row.first_name,
-        middle_name: row.middle_name || null,
-        last_name: row.last_name,
-        student_id: row.student_id,
-        role: 'student',
-        birth_date: row.birth_date || null,
-        gender: row.gender || null,
-        birth_year: row.birth_year ? parseInt(row.birth_year) : null,
-        grade_level: gradeLevel,
-      })
-
-      if (profileError) {
-        await supabase.auth.admin.deleteUser(authData.user.id)
-        results.push({ name: fullName, email, status: 'failed', reason: profileError.message })
-        continue
-      }
-
-      await supabase.from('enrollments').insert({ student_id: authData.user.id, class_group_id: classGroupId })
-      results.push({ name: fullName, email, status: 'success' })
     }
 
     setImportResults(results)

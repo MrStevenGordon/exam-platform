@@ -16,6 +16,8 @@ export default function AddQuestionPage() {
   const [points, setPoints] = useState(1)
   const [errorMsg, setErrorMsg] = useState('')
   const [saving, setSaving] = useState(false)
+  const [aiUsage, setAiUsage] = useState<{ used: number; limit: number; remaining: number } | null>(null)
+  const [userId, setUserId] = useState<string | null>(null)
 
   // Multiple choice fields
   const [options, setOptions] = useState(['', '', '', ''])

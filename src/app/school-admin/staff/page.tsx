@@ -56,29 +56,24 @@ export default function StaffPage() {
     const fullName = `${newFirstName.trim()} ${newLastName.trim()}`
     const password = 'Staff.Default1'
 
-    const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-      email,
-      password,
-      email_confirm: true,
+    const res = await fetch('/api/create-user', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        type: 'staff',
+        data: {
+          first_name: newFirstName.trim(),
+          last_name: newLastName.trim(),
+          email,
+          role: newRole,
+          department_id: newDept || null,
+        }
+      }),
     })
 
-    if (authError) {
-      setErrorMsg(authError.message)
-      setSaving(false)
-      return
-    }
-
-    const { error: profileError } = await supabase.from('profiles').insert({
-      id: authData.user.id,
-      full_name: fullName,
-      first_name: newFirstName.trim(),
-      last_name: newLastName.trim(),
-      role: newRole,
-      department_id: newDept || null,
-    })
-
-    if (profileError) {
-      setErrorMsg(profileError.message)
+    const result = await res.json()
+    if (!res.ok || result.error) {
+      setErrorMsg(result.error || 'Failed to create account')
       setSaving(false)
       return
     }

@@ -359,6 +359,9 @@ export default function ExamEditorPage() {
               <button className="btn btn-secondary">+ Add from question bank</button>
             </Link>
           )}
+          <Link href={`/teacher/exam/${examId}/import-pdf`}>
+            <button className="btn btn-ghost">📄 Import from PDF</button>
+          </Link>
         </div>
       )}
 
