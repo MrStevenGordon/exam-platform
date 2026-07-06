@@ -14,6 +14,7 @@ type Department = {
 type Supervisor = {
   id: string
   full_name: string
+  role: string
 }
 
 export default function DepartmentsPage() {
@@ -38,8 +39,9 @@ export default function DepartmentsPage() {
 
     const { data: supData } = await supabase
       .from('profiles')
-      .select('id, full_name')
-      .eq('role', 'supervisor')
+      .select('id, full_name, role')
+      .in('role', ['teacher', 'supervisor'])
+      .neq('is_system_admin', true)
       .order('full_name')
 
     setSupervisors(supData || [])
@@ -72,9 +74,12 @@ export default function DepartmentsPage() {
       return
     }
 
-    // Update HOD's profile to link to this department
+    // Update HOD's profile to link to this department and promote to supervisor
     if (newDeptHOD) {
-      await supabase.from('profiles').update({ department_id: data.id }).eq('id', newDeptHOD)
+      await supabase.from('profiles').update({ 
+        department_id: data.id,
+        role: 'supervisor'
+      }).eq('id', newDeptHOD)
     }
 
     setSuccessMsg(`${newDeptName} department created successfully`)
@@ -87,9 +92,20 @@ export default function DepartmentsPage() {
   }
 
   async function handleAssignHOD(deptId: string, hodId: string) {
+    // Get previous HOD to demote them back to teacher
+    const { data: prevDept } = await supabase.from('departments').select('head_id').eq('id', deptId).single()
+    if (prevDept?.head_id && prevDept.head_id !== hodId) {
+      await supabase.from('profiles').update({ role: 'teacher' }).eq('id', prevDept.head_id)
+    }
+
     await supabase.from('departments').update({ head_id: hodId || null }).eq('id', deptId)
+    
     if (hodId) {
-      await supabase.from('profiles').update({ department_id: deptId }).eq('id', hodId)
+      // Promote new HOD to supervisor role
+      await supabase.from('profiles').update({ 
+        department_id: deptId,
+        role: 'supervisor'
+      }).eq('id', hodId)
     }
     loadData()
   }
@@ -134,7 +150,7 @@ export default function DepartmentsPage() {
               <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Head of Department (HOD)</label>
               <select value={newDeptHOD} onChange={(e) => setNewDeptHOD(e.target.value)} style={{ width: '100%', marginTop: 4 }}>
                 <option value="">Assign HOD later…</option>
-                {supervisors.map((s) => <option key={s.id} value={s.id}>{s.full_name}</option>)}
+                {supervisors.map((s) => <option key={s.id} value={s.id}>{s.full_name} ({s.role})</option>)}
               </select>
             </div>
           </div>

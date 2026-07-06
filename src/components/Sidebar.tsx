@@ -19,7 +19,7 @@ type SidebarProps = {
 export default function Sidebar({ navItems, portalLabel }: SidebarProps) {
   const router = useRouter()
   const pathname = usePathname()
-  const [profile, setProfile] = useState<{ full_name: string; role: string; student_id?: string | null; grade_level?: number | null } | null>(null)
+  const [profile, setProfile] = useState<{ full_name: string; role: string; student_id?: string | null; grade_level?: number | null; departments?: { name: string } | null } | null>(null)
 
   useEffect(() => {
     async function loadProfile() {
@@ -27,7 +27,7 @@ export default function Sidebar({ navItems, portalLabel }: SidebarProps) {
       if (!user) return
       const { data } = await supabase
         .from('profiles')
-        .select('full_name, role, student_id, grade_level')
+        .select('full_name, role, student_id, grade_level, departments!profiles_department_id_fkey(name)')
         .eq('id', user.id)
         .single()
       if (data) setProfile(data)
@@ -112,8 +112,13 @@ export default function Sidebar({ navItems, portalLabel }: SidebarProps) {
               {profile?.full_name || '…'}
             </div>
             <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: 0.4 }}>
-              {profile?.student_id ? `ID: ${profile.student_id}` : profile?.role || ''}
+              {profile?.student_id 
+                ? `ID: ${profile.student_id}` 
+                : profile?.role || ''}
               {profile?.grade_level ? ` · Grade ${profile.grade_level}` : ''}
+              {!profile?.student_id && (profile?.departments as any)?.name 
+                ? ` · ${(profile.departments as any).name}` 
+                : ''}
             </div>
           </div>
         </div>

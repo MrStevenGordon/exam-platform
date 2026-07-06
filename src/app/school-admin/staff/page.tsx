@@ -109,9 +109,13 @@ export default function StaffPage() {
       return row
     }).filter((r) => r.email)
 
+    // Always reload departments fresh before processing
+    const { data: freshDepts } = await supabase.from('departments').select('id, name')
+    const deptList = freshDepts || departments
+
     const results = []
     for (const row of rows) {
-      const deptMatch = departments.find((d) => d.name.toLowerCase() === row.department?.toLowerCase())
+      const deptMatch = deptList.find((d: any) => d.name.toLowerCase() === row.department?.toLowerCase())
       try {
         const res = await fetch('/api/create-user', {
           method: 'POST',

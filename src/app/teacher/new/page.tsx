@@ -11,6 +11,7 @@ export default function NewExamPage() {
   const [instructions, setInstructions] = useState('')
   const [examKind, setExamKind] = useState('final_exam_submission')
   const [errorMsg, setErrorMsg] = useState('')
+  const [isTeamLead, setIsTeamLead] = useState(false)
   const [targetGrade, setTargetGrade] = useState<number | ''>('')
   const [questionsPerPage, setQuestionsPerPage] = useState(10)
   const [saving, setSaving] = useState(false)
@@ -67,10 +68,14 @@ export default function NewExamPage() {
               onChange={(e) => setExamKind(e.target.value)}
               style={{ width: '100%', marginTop: 6 }}
             >
-              <option value="final_exam_submission">Final exam submission (sent for supervisor review)</option>
               <option value="pop_quiz">Pop quiz (publish directly to your class)</option>
-              <option value="midterm">Midterm exam (publish directly to your class)</option>
-              <option value="end_of_year">End of year exam (publish directly to your class)</option>
+              {isTeamLead && (
+                <>
+                  <option value="final_exam_submission">Final exam submission (sent for supervisor review)</option>
+                  <option value="midterm">Midterm exam (publish directly to your class)</option>
+                  <option value="end_of_year">End of year exam (publish directly to your class)</option>
+                </>
+              )}
             </select>
           </div>
           <div style={{ marginBottom: 16 }}>
