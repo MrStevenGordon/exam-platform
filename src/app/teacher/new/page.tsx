@@ -9,7 +9,7 @@ export default function NewExamPage() {
   const [title, setTitle] = useState('')
   const [subject, setSubject] = useState('')
   const [instructions, setInstructions] = useState('')
-  const [examKind, setExamKind] = useState('final_exam_submission')
+  const [examKind, setExamKind] = useState('pop_quiz')
   const [errorMsg, setErrorMsg] = useState('')
   const [isTeamLead, setIsTeamLead] = useState(false)
   const [targetGrade, setTargetGrade] = useState<number | ''>('')
@@ -69,13 +69,7 @@ export default function NewExamPage() {
               style={{ width: '100%', marginTop: 6 }}
             >
               <option value="pop_quiz">Pop quiz (publish directly to your class)</option>
-              {isTeamLead && (
-                <>
-                  <option value="final_exam_submission">Final exam submission (sent for supervisor review)</option>
-                  <option value="midterm">Midterm exam (publish directly to your class)</option>
-                  <option value="end_of_year">End of year exam (publish directly to your class)</option>
-                </>
-              )}
+
             </select>
           </div>
           <div style={{ marginBottom: 16 }}>

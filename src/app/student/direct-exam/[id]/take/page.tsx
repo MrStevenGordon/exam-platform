@@ -186,6 +186,8 @@ export default function TakeDirectExamPage() {
     if (!session) return
     violationCount.current += 1
     const count = violationCount.current
+    const logEntry = { reason, timestamp: new Date().toISOString(), count }
+    await supabase.rpc('append_violation_log', { session_id: session.id, entry: logEntry })
     await supabase.from('exam_sessions').update({ tab_switch_count: count, flagged: true }).eq('id', session.id)
     if (count >= 3) {
       setWarning(`This is violation ${count} (${reason}). Your exam is being submitted automatically.`)

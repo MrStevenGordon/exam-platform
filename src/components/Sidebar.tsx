@@ -58,14 +58,17 @@ export default function Sidebar({ navItems, portalLabel }: SidebarProps) {
     }}>
       {/* Brand */}
       <div style={{ padding: '20px 20px 16px', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-        <Link href="/" style={{ textDecoration: 'none' }}>
+        <div
+          onClick={() => { if (typeof window !== 'undefined') window.location.reload() }}
+          style={{ textDecoration: 'none', cursor: 'pointer' }}
+        >
           <div style={{ fontSize: 10, letterSpacing: 1.5, color: 'rgba(255,255,255,0.4)', fontWeight: 700, textTransform: 'uppercase' }}>
             Smart Assess Ja
           </div>
           <div style={{ fontSize: 15, fontWeight: 700, color: 'white', marginTop: 2 }}>
             {portalLabel}
           </div>
-        </Link>
+        </div>
       </div>
 
       {/* Nav items */}

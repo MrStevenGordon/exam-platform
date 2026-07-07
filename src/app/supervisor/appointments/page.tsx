@@ -35,6 +35,7 @@ const SUBJECTS = [
 export default function AppointmentsPage() {
   const router = useRouter()
   const [teachers, setTeachers] = useState<Teacher[]>([])
+  const [allTeachers, setAllTeachers] = useState<Teacher[]>([])
   const [teamLeads, setTeamLeads] = useState<TeamLeadAppointment[]>([])
   const [seniorTeamLeads, setSeniorTeamLeads] = useState<SeniorTeamLeadAppointment[]>([])
   const [loading, setLoading] = useState(true)
@@ -66,7 +67,7 @@ export default function AppointmentsPage() {
       .eq('id', user.id)
       .single()
 
-    // Load teachers in this department
+    // Load teachers in this department (for team lead appointments)
     const { data: teacherData } = await supabase
       .from('profiles')
       .select('id, full_name, department_id')
@@ -74,6 +75,14 @@ export default function AppointmentsPage() {
       .eq('department_id', profile?.department_id)
       .order('full_name')
     setTeachers(teacherData || [])
+
+    // Load ALL teachers school-wide (for senior team lead appointments)
+    const { data: allTeacherData } = await supabase
+      .from('profiles')
+      .select('id, full_name, department_id, departments!profiles_department_id_fkey(name)')
+      .eq('role', 'teacher')
+      .order('full_name')
+    setAllTeachers((allTeacherData as any) || [])
 
     // Load existing team lead appointments
     const { data: tlData } = await supabase
@@ -259,10 +268,14 @@ export default function AppointmentsPage() {
           <div style={{ padding: 16, background: 'var(--page-bg)', borderRadius: 8, marginBottom: 16, border: '1px solid var(--border)' }}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginBottom: 12 }}>
               <div>
-                <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Teacher</label>
+                <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Teacher (any department)</label>
                 <select value={stlTeacher} onChange={(e) => setStlTeacher(e.target.value)} style={{ width: '100%', marginTop: 4 }}>
                   <option value="">Select teacher…</option>
-                  {teachers.map((t) => <option key={t.id} value={t.id}>{t.full_name}</option>)}
+                  {allTeachers.map((t: any) => (
+                    <option key={t.id} value={t.id}>
+                      {t.full_name}{t.departments?.name ? ` (${t.departments.name})` : ''}
+                    </option>
+                  ))}
                 </select>
               </div>
               <div>

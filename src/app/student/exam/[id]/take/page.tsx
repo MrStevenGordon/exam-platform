@@ -122,14 +122,14 @@ export default function TakeExamPage() {
 
     const { data: sectionData } = await supabase
       .from('exam_sections')
-      .select('id, name, instructions, order_index')
+      .select('id, name, instructions, order_index, question_type')
       .eq('final_exam_id', examId)
       .order('order_index', { ascending: true })
     setSections(sectionData || [])
 
     const { data: linkData, error: linkError } = await supabase
       .from('final_exam_questions')
-      .select('order_index, questions(id, question_type, question_text, points, options, correct_answer, marking_points, total_marks)')
+      .select('order_index, questions(id, question_type, question_text, points, options, correct_answer, marking_points, total_marks, section_id)')
       .eq('final_exam_id', examId)
       .order('order_index', { ascending: true })
 
@@ -147,6 +147,7 @@ export default function TakeExamPage() {
         correct_answer: q.correct_answer,
         marking_points: q.marking_points,
         total_marks: q.total_marks,
+        section_id: q.section_id,
         order_index: l.order_index,
       }
     }).filter((q: any) => q && q.id)
@@ -208,6 +209,8 @@ export default function TakeExamPage() {
     if (!session) return
     violationCount.current += 1
     const count = violationCount.current
+    const logEntry = { reason, timestamp: new Date().toISOString(), count }
+    await supabase.rpc('append_violation_log', { session_id: session.id, entry: logEntry })
     await supabase.from('exam_sessions').update({ tab_switch_count: count, flagged: true }).eq('id', session.id)
     if (count >= 3) {
       setWarning(`This is violation ${count} (${reason}). Your exam is being submitted automatically.`)
@@ -350,8 +353,36 @@ export default function TakeExamPage() {
       <div className="exam-content" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
         {pageQuestions.map((q, i) => {
           const globalIndex = currentPage * qpp + i
+          // Determine section for this question based on equal distribution
+          // Determine section for this question
+          // If section has question_type, match by type; otherwise use position
+          const getSectionForQuestion = (qItem: typeof q, idx: number) => {
+            for (let si = 0; si < sections.length; si++) {
+              const s = sections[si] as any
+              if (s.question_type && qItem.question_type === s.question_type) return { section: s, sectionIndex: si }
+            }
+            // Fallback: equal distribution
+            const qpp2 = Math.ceil(questions.length / Math.max(sections.length, 1))
+            const si = Math.floor(idx / qpp2)
+            return si < sections.length ? { section: sections[si], sectionIndex: si } : { section: null, sectionIndex: -1 }
+          }
+          const { section, sectionIndex } = getSectionForQuestion(q, globalIndex)
+          const prevQ2 = questions[globalIndex - 1]
+          const { sectionIndex: prevSectionIndex } = prevQ2 ? getSectionForQuestion(prevQ2, globalIndex - 1) : { sectionIndex: -1 }
+          const showSectionHeader = section && sectionIndex !== prevSectionIndex
           return (
-            <div key={q.id} className="card">
+            <div key={q.id}>
+              {showSectionHeader && section && (
+                <div style={{ marginBottom: 16, paddingBottom: 12, borderBottom: '2px solid var(--accent)' }}>
+                  <div style={{ fontWeight: 800, fontSize: 17, color: 'var(--accent-dark)' }}>
+                    Section {String.fromCharCode(65 + sectionIndex)}: {section.name}
+                  </div>
+                  {section.instructions && (
+                    <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 4 }}>{section.instructions}</div>
+                  )}
+                </div>
+              )}
+            <div className="card">
               <p style={{ fontWeight: 700, marginBottom: 12, fontSize: 15 }}>
                 {globalIndex + 1}. {q.question_text}
                 <span style={{ fontWeight: 400, color: 'var(--text-secondary)', fontSize: 13, marginLeft: 8 }}>({q.points} pt{q.points !== 1 ? 's' : ''})</span>
@@ -436,6 +467,7 @@ export default function TakeExamPage() {
                   </div>
                 </div>
               )}
+            </div>
             </div>
           )
         })}

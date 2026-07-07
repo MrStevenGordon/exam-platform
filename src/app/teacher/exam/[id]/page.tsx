@@ -50,13 +50,21 @@ export default function ExamEditorPage() {
   const [questions, setQuestions] = useState<Question[]>([])
   const [classGroups, setClassGroups] = useState<ClassGroup[]>([])
   const [selectedGroups, setSelectedGroups] = useState<Set<string>>(new Set())
-  const [sections, setSections] = useState<{ id?: string; name: string; instructions: string; order_index: number }[]>([])
+  const [sections, setSections] = useState<{ id?: string; name: string; instructions: string; order_index: number; question_type?: string | null }[]>([])
   const [showSectionForm, setShowSectionForm] = useState(false)
   const [newSectionName, setNewSectionName] = useState('')
   const [newSectionInstructions, setNewSectionInstructions] = useState('')
+  const [newSectionType, setNewSectionType] = useState('')
+  const [newSectionLetter, setNewSectionLetter] = useState('')
+  const [editingSectionId, setEditingSectionId] = useState<string | null>(null)
+  const [editSectionName, setEditSectionName] = useState('')
+  const [editSectionType, setEditSectionType] = useState('')
+  const [editSectionInstructions, setEditSectionInstructions] = useState('')
   const [loading, setLoading] = useState(true)
   const [errorMsg, setErrorMsg] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [savingDraft, setSavingDraft] = useState(false)
+  const [savedMsg, setSavedMsg] = useState('')
 
   useEffect(() => {
     loadData()
@@ -101,10 +109,15 @@ export default function ExamEditorPage() {
         .eq('id', user.id)
         .single()
 
-      const { data: groups } = await supabase
-        .from('class_groups')
-        .select('id, name, year_grade')
-        .eq('department_id', profile?.department_id)
+      // Load teacher's assigned classes from teacher_class_groups
+      const { data: teacherClasses } = await supabase
+        .from('teacher_class_groups')
+        .select('class_group_id, class_groups(id, name, year_grade)')
+        .eq('teacher_id', user.id)
+
+      const groups = (teacherClasses || [])
+        .map((tc: any) => tc.class_groups)
+        .filter(Boolean)
 
       setClassGroups(groups || [])
 
@@ -119,7 +132,7 @@ export default function ExamEditorPage() {
     // Load sections
     const { data: sectionData } = await supabase
       .from('exam_sections')
-      .select('id, name, instructions, order_index')
+      .select('id, name, instructions, order_index, question_type')
       .eq('draft_exam_id', examId)
       .order('order_index', { ascending: true })
     setSections(sectionData || [])
@@ -136,6 +149,7 @@ export default function ExamEditorPage() {
         name: newSectionName.trim(),
         instructions: newSectionInstructions.trim(),
         order_index: sections.length,
+        question_type: newSectionType || null,
       })
       .select()
       .single()
@@ -143,13 +157,38 @@ export default function ExamEditorPage() {
       setSections([...sections, data])
       setNewSectionName('')
       setNewSectionInstructions('')
+      setNewSectionType('')
+      setNewSectionLetter('')
       setShowSectionForm(false)
     }
+  }
+
+  async function handleSaveEditSection(sectionId: string) {
+    await supabase.from('exam_sections').update({
+      name: editSectionName.trim(),
+      question_type: editSectionType || null,
+      instructions: editSectionInstructions.trim(),
+    }).eq('id', sectionId)
+    setEditingSectionId(null)
+    loadData()
   }
 
   async function handleDeleteSection(sectionId: string) {
     await supabase.from('exam_sections').delete().eq('id', sectionId)
     setSections(sections.filter((s) => s.id !== sectionId))
+  }
+
+  async function handleSaveDraft() {
+    setSavingDraft(true)
+    const { error } = await supabase
+      .from('draft_exams')
+      .update({ title: exam.title, instructions: exam.instructions })
+      .eq('id', examId)
+    setSavingDraft(false)
+    if (!error) {
+      setSavedMsg('Saved')
+      setTimeout(() => setSavedMsg(''), 2000)
+    }
   }
 
   async function handleSubmitForReview() {
@@ -248,9 +287,16 @@ export default function ExamEditorPage() {
             {exam.status}
           </span>
         ) : (
-          <span className={`badge ${exam.direct_published ? 'badge-success' : 'badge-default'}`}>
-            {exam.direct_published ? 'published' : 'draft'}
-          </span>
+          <>
+            <span className={`badge ${exam.direct_published ? 'badge-success' : 'badge-default'}`}>
+              {exam.direct_published ? 'published' : 'draft'}
+            </span>
+            {!isLocked && (
+              <button onClick={handleSaveDraft} disabled={savingDraft} className="btn btn-ghost" style={{ fontSize: 12 }}>
+                {savingDraft ? 'Saving…' : savedMsg || '💾 Save'}
+              </button>
+            )}
+          </>
         )}
       </div>
 
@@ -289,14 +335,58 @@ export default function ExamEditorPage() {
 
           {sections.length > 0 && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 8 }}>
-              {sections.map((s, i) => (
+              {[...sections].sort((a, b) => {
+              const aM = a.name.match(/^Section ([A-F])/)
+              const bM = b.name.match(/^Section ([A-F])/)
+              return (aM?.[1] || 'Z').localeCompare(bM?.[1] || 'Z')
+            }).map((s, i) => (
                 <div key={s.id || i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', background: 'var(--card-bg)', borderRadius: 8, border: '1px solid var(--border)' }}>
                   <div>
                     <div style={{ fontWeight: 700, fontSize: 14 }}>Section {String.fromCharCode(65 + i)}: {s.name}</div>
                     {s.instructions && <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 2 }}>{s.instructions.slice(0, 80)}{s.instructions.length > 80 ? '…' : ''}</div>}
                   </div>
                   {s.id && (
-                    <button onClick={() => handleDeleteSection(s.id!)} style={{ background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer', fontSize: 12, fontWeight: 700 }}>Remove</button>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <button
+                        onClick={() => {
+                          setEditingSectionId(s.id!)
+                          setEditSectionName(s.name)
+                          setEditSectionType(s.question_type || '')
+                          setEditSectionInstructions(s.instructions || '')
+                        }}
+                        style={{ background: 'none', border: 'none', color: 'var(--accent-dark)', cursor: 'pointer', fontSize: 12, fontWeight: 700 }}
+                      >
+                        Edit
+                      </button>
+                      <button onClick={() => handleDeleteSection(s.id!)} style={{ background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer', fontSize: 12, fontWeight: 700 }}>Remove</button>
+                    </div>
+                  )}
+                  {editingSectionId === s.id && (
+                    <div style={{ marginTop: 12, padding: 12, background: 'var(--page-bg)', borderRadius: 8, border: '1px solid var(--border)' }}>
+                      <div style={{ marginBottom: 10 }}>
+                        <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Question type</label>
+                        <select value={editSectionType} onChange={(e) => setEditSectionType(e.target.value)} style={{ width: '100%', marginTop: 4 }}>
+                          <option value="">All types / Mixed</option>
+                          <option value="multiple_choice">Multiple Choice</option>
+                          <option value="true_false">True / False</option>
+                          <option value="short_answer">Short Answer</option>
+                          <option value="essay">Essay</option>
+                          <option value="fill_blank">Fill in the Blank</option>
+                        </select>
+                      </div>
+                      <div style={{ marginBottom: 10 }}>
+                        <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Section name</label>
+                        <input value={editSectionName} onChange={(e) => setEditSectionName(e.target.value)} style={{ width: '100%', marginTop: 4 }} />
+                      </div>
+                      <div style={{ marginBottom: 12 }}>
+                        <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Instructions</label>
+                        <textarea value={editSectionInstructions} onChange={(e) => setEditSectionInstructions(e.target.value)} rows={2} style={{ width: '100%', marginTop: 4 }} />
+                      </div>
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        <button onClick={() => handleSaveEditSection(s.id!)} className="btn btn-primary" style={{ fontSize: 12 }}>Save</button>
+                        <button onClick={() => setEditingSectionId(null)} className="btn btn-ghost" style={{ fontSize: 12 }}>Cancel</button>
+                      </div>
+                    </div>
                   )}
                 </div>
               ))}
@@ -305,6 +395,66 @@ export default function ExamEditorPage() {
 
           {showSectionForm && (
             <div style={{ marginTop: 12, padding: 12, background: 'var(--card-bg)', borderRadius: 8, border: '1px solid var(--border)' }}>
+              <div style={{ marginBottom: 10 }}>
+                <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)' }}>Section letter</label>
+                <div style={{ display: 'flex', gap: 8, marginTop: 6, flexWrap: 'wrap' }}>
+                  {['A','B','C','D','E','F'].map((letter) => {
+                    const usedLetters = sections.map((s, sIdx) => {
+                      const match = s.name.match(/^Section ([A-F])(?::|\s)/)
+                      return match ? match[1] : null
+                    }).filter(Boolean)
+                    const isUsed = usedLetters.includes(letter)
+                    const isSelected = newSectionLetter === letter
+                    return (
+                      <button
+                        key={letter}
+                        type="button"
+                        disabled={isUsed}
+                        onClick={() => setNewSectionLetter(isSelected ? '' : letter)}
+                        style={{
+                          width: 36, height: 36, borderRadius: '50%', fontWeight: 800, fontSize: 14,
+                          border: `2px solid ${isUsed ? 'var(--border)' : isSelected ? 'var(--accent)' : 'var(--border-strong)'}`,
+                          background: isUsed ? 'var(--page-bg)' : isSelected ? 'var(--accent)' : 'var(--card-bg)',
+                          color: isUsed ? 'var(--text-muted)' : isSelected ? 'white' : 'var(--text-secondary)',
+                          cursor: isUsed ? 'not-allowed' : 'pointer',
+                          position: 'relative',
+                        }}
+                        title={isUsed ? 'Section already used' : `Section ${letter}`}
+                      >
+                        {letter}
+                        {isUsed && <span style={{ position: 'absolute', top: -2, right: -2, width: 8, height: 8, borderRadius: '50%', background: 'var(--danger)' }} />}
+                      </button>
+                    )
+                  })}
+                </div>
+                {newSectionLetter && <p style={{ fontSize: 12, color: 'var(--accent-dark)', marginTop: 6 }}>Section {newSectionLetter} selected</p>}
+              </div>
+              <div style={{ marginBottom: 10 }}>
+                <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)' }}>Question type for this section</label>
+                <select
+                  value={newSectionType}
+                  onChange={(e) => {
+                    setNewSectionType(e.target.value)
+                    // Auto-fill section name based on type
+                    const typeLabels: Record<string, string> = {
+                      multiple_choice: 'Multiple Choice',
+                      true_false: 'True / False',
+                      short_answer: 'Short Answer',
+                      essay: 'Essay',
+                      fill_blank: 'Fill in the Blank',
+                    }
+                    setNewSectionName(typeLabels[e.target.value] || '')
+                  }}
+                  style={{ width: '100%', marginTop: 4 }}
+                >
+                  <option value="">All types / Mixed</option>
+                  <option value="multiple_choice">Multiple Choice</option>
+                  <option value="true_false">True / False</option>
+                  <option value="short_answer">Short Answer</option>
+                  <option value="essay">Essay</option>
+                  <option value="fill_blank">Fill in the Blank</option>
+                </select>
+              </div>
               <div style={{ marginBottom: 10 }}>
                 <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)' }}>Section name</label>
                 <input value={newSectionName} onChange={(e) => setNewSectionName(e.target.value)} placeholder="e.g. Section A — Multiple Choice" style={{ width: '100%', marginTop: 4 }} />
@@ -328,12 +478,101 @@ export default function ExamEditorPage() {
 
       <h2 style={{ marginTop: 32 }}>Questions ({questions.length})</h2>
 
-      {questions.length === 0 && <p>No questions added yet.</p>}
+      {questions.length === 0 && sections.length === 0 && <p>No questions added yet.</p>}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-        {questions.map((q, i) => (
+        {sections.length > 0 ? (() => {
+          // Divide questions equally among sections
+          // Questions not claimed by any typed section
+          const typedSectionTypes = new Set(sections.filter(s => s.question_type).map(s => s.question_type))
+          const untypedQuestions = questions.filter(q => !typedSectionTypes.has(q.question_type))
+          const untypedSections = sections.filter(s => !s.question_type)
+          const totalQ = untypedQuestions.length
+          const totalS = Math.max(untypedSections.length, 1)
+          const baseCount = Math.floor(totalQ / totalS)
+          const remainder = totalQ % totalS
+          const items: JSX.Element[] = []
+          let qStart = 0
+          const sortedSections = [...sections].sort((a, b) => {
+          const aMatch = a.name.match(/^Section ([A-F])/)
+          const bMatch = b.name.match(/^Section ([A-F])/)
+          const aLetter = aMatch ? aMatch[1] : 'Z'
+          const bLetter = bMatch ? bMatch[1] : 'Z'
+          return aLetter.localeCompare(bLetter)
+        })
+        sortedSections.forEach((s, si) => {
+            // If section has a question_type, group matching questions
+            // Otherwise use equal distribution
+            const untypedSectionIndex = untypedSections.indexOf(s as any) !== -1 ? untypedSections.indexOf(s as any) : si
+            const sectionQuestions = s.question_type
+              ? questions.filter(q => q.question_type === s.question_type)
+              : (() => {
+                  const count = baseCount + (untypedSectionIndex < remainder ? 1 : 0)
+                  const slice = untypedQuestions.slice(qStart, qStart + count)
+                  qStart += count
+                  return slice
+                })()
+
+            items.push(
+              <div key={`section-${s.id}`} style={{ padding: '12px 16px', background: 'var(--accent-light)', borderRadius: 'var(--radius)', borderLeft: '4px solid var(--accent)', marginTop: si > 0 ? 16 : 0, display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 800, fontSize: 14, flexShrink: 0 }}>
+                  {String.fromCharCode(65 + si)}
+                </div>
+                <div>
+                  <div style={{ fontWeight: 800, fontSize: 15, color: 'var(--accent-dark)' }}>
+                    Section {String.fromCharCode(65 + si)}: {s.name}
+                  </div>
+                  <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 2 }}>
+                    {sectionQuestions.length} question{sectionQuestions.length !== 1 ? 's' : ''}
+                    {s.question_type && ` · ${s.question_type.replace('_', ' ')}`}
+                    {s.instructions && ` · ${s.instructions}`}
+                  </div>
+                </div>
+              </div>
+            )
+            sectionQuestions.forEach((q, qi) => {
+              const globalI = questions.indexOf(q)
+              items.push(
+                <div key={q.id} className="card">
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <span style={{ fontSize: 12, color: '#888', textTransform: 'uppercase' }}>
+                      {globalI + 1}. {q.question_type.replace('_', ' ')} {q.is_bank_question && '• from bank'}
+                    </span>
+                    <span style={{ fontSize: 12, color: '#888' }}>{q.points} pt{q.points !== 1 ? 's' : ''}</span>
+                  </div>
+                  <p style={{ margin: '8px 0 0' }}>{q.question_text}</p>
+                  {q.supervisor_comment && (
+                    <div className="banner banner-warning" style={{ marginTop: 8, fontSize: 14 }}>
+                      <strong>Supervisor feedback:</strong> {q.supervisor_comment}
+                    </div>
+                  )}
+                </div>
+              )
+            })
+          })
+          // Remaining questions not matched to any typed section
+          const assignedIds = new Set(items
+            .filter((item: any) => item?.key && !item.key.startsWith('section-'))
+            .map((item: any) => item?.key))
+          questions.forEach((q, i) => {
+            if (!assignedIds.has(q.id)) {
+              items.push(
+                <div key={q.id} className="card">
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <span style={{ fontSize: 12, color: '#888', textTransform: 'uppercase' }}>
+                      {i + 1}. {q.question_type.replace('_', ' ')} {q.is_bank_question && '• from bank'}
+                    </span>
+                    <span style={{ fontSize: 12, color: '#888' }}>{q.points} pt{q.points !== 1 ? 's' : ''}</span>
+                  </div>
+                  <p style={{ margin: '8px 0 0' }}>{q.question_text}</p>
+                </div>
+              )
+            }
+          })
+          return items
+        })() : questions.map((q, i) => (
           <div key={q.id} className="card">
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
               <span style={{ fontSize: 12, color: '#888', textTransform: 'uppercase' }}>
                 {i + 1}. {q.question_type.replace('_', ' ')} {q.is_bank_question && '• from bank'}
               </span>
@@ -345,6 +584,7 @@ export default function ExamEditorPage() {
                 <strong>Supervisor feedback:</strong> {q.supervisor_comment}
               </div>
             )}
+
           </div>
         ))}
       </div>

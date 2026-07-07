@@ -18,6 +18,8 @@ export default function StaffPage() {
   const [staff, setStaff] = useState<StaffMember[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
+  const [filterDept, setFilterDept] = useState('')
+  const [expandedDepts, setExpandedDepts] = useState<Set<string>>(new Set())
   const [showAddForm, setShowAddForm] = useState(false)
   const [departments, setDepartments] = useState<{ id: string; name: string }[]>([])
   const [saving, setSaving] = useState(false)
@@ -157,11 +159,15 @@ export default function StaffPage() {
 
   if (loading) return <div>Loading…</div>
 
-  const filtered = staff.filter((s) =>
-    !search || s.full_name?.toLowerCase().includes(search.toLowerCase()) ||
-    (s.departments as any)?.name?.toLowerCase().includes(search.toLowerCase()) ||
-    s.role?.toLowerCase().includes(search.toLowerCase())
-  )
+  const filtered = staff.filter((s) => {
+    const matchSearch = !search || s.full_name?.toLowerCase().includes(search.toLowerCase()) ||
+      (s.departments as any)?.name?.toLowerCase().includes(search.toLowerCase()) ||
+      s.role?.toLowerCase().includes(search.toLowerCase())
+    const matchDept = !filterDept || s.department_id === filterDept
+    return matchSearch && matchDept
+  })
+
+  const deptNames = departments.map((d) => d.name)
 
   const roleLabel: Record<string, string> = {
     teacher: 'Teacher', supervisor: 'Supervisor / HOD', admin: 'Platform Admin'
@@ -265,44 +271,77 @@ export default function StaffPage() {
         <div className="banner banner-success" style={{ marginBottom: 16 }}>{successMsg}</div>
       )}
 
-      <input
-        type="text"
-        placeholder="Search by name, role or department…"
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        style={{ width: '100%', marginBottom: 16 }}
-      />
-
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-        {filtered.map((s) => (
-          <div key={s.id} className="card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <div style={{ width: 38, height: 38, borderRadius: '50%', background: 'var(--accent-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 13, color: 'var(--accent-dark)', flexShrink: 0 }}>
-                {s.full_name?.split(' ').map((n) => n[0]).slice(0, 2).join('')}
-              </div>
-              <div>
-                <div style={{ fontWeight: 700, fontSize: 14 }}>{s.full_name}</div>
-                <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 2 }}>
-                  {roleLabel[s.role] || s.role}
-                  {(s.departments as any)?.name && ` · ${(s.departments as any).name}`}
-                  {s.is_system_admin && <span style={{ marginLeft: 6, color: 'var(--accent-dark)', fontWeight: 700 }}>· System Admin</span>}
-                </div>
-              </div>
-            </div>
-            <button
-              onClick={() => handleDeactivate(s.id, s.full_name)}
-              className="btn btn-ghost"
-              style={{ fontSize: 11, color: 'var(--danger)' }}
-            >
-              Deactivate
-            </button>
-          </div>
-        ))}
+      <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
+        <input
+          type="text"
+          placeholder="Search by name or role…"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          style={{ flex: 2 }}
+        />
+        <select value={filterDept} onChange={(e) => setFilterDept(e.target.value)} style={{ flex: 1 }}>
+          <option value="">All departments</option>
+          {departments.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
+        </select>
       </div>
 
       {filtered.length === 0 && (
         <div className="card"><p style={{ color: 'var(--text-secondary)' }}>No staff found.</p></div>
       )}
+
+      {(() => {
+        // Group by department
+        const grouped: Record<string, typeof filtered> = {}
+        filtered.forEach((s) => {
+          const dept = (s.departments as any)?.name || 'Unassigned'
+          if (!grouped[dept]) grouped[dept] = []
+          grouped[dept].push(s)
+        })
+
+        return Object.entries(grouped).sort(([a], [b]) => a.localeCompare(b)).map(([deptName, deptStaff]) => (
+          <div key={deptName} style={{ marginBottom: 12 }}>
+            <div
+              onClick={() => setExpandedDepts((prev) => {
+                const next = new Set(prev)
+                if (next.has(deptName)) next.delete(deptName)
+                else next.add(deptName)
+                return next
+              })}
+              style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', background: 'var(--card-bg)', borderRadius: 'var(--radius)', border: '1px solid var(--border)', cursor: 'pointer', marginBottom: 6 }}
+            >
+              <div style={{ fontWeight: 700, fontSize: 15 }}>{deptName}</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>{deptStaff.length} staff</span>
+                <span style={{ color: 'var(--text-secondary)' }}>{expandedDepts.has(deptName) ? '▲' : '▼'}</span>
+              </div>
+            </div>
+
+            {expandedDepts.has(deptName) && (
+              <div style={{ paddingLeft: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {deptStaff.map((s) => (
+                  <div key={s.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px', background: 'var(--card-bg)', borderRadius: 8, border: '1px solid var(--border)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <div style={{ width: 34, height: 34, borderRadius: '50%', background: s.role === 'supervisor' ? 'var(--success-bg)' : 'var(--accent-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 12, color: s.role === 'supervisor' ? 'var(--success)' : 'var(--accent-dark)', flexShrink: 0 }}>
+                        {s.full_name?.split(' ').map((n: string) => n[0]).slice(0, 2).join('')}
+                      </div>
+                      <div>
+                        <div style={{ fontWeight: 700, fontSize: 14 }}>{s.full_name}</div>
+                        <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 2 }}>
+                          {roleLabel[s.role] || s.role}
+                          {s.is_system_admin && <span style={{ marginLeft: 6, color: 'var(--accent-dark)', fontWeight: 700 }}>· System Admin</span>}
+                        </div>
+                      </div>
+                    </div>
+                    <button onClick={() => handleDeactivate(s.id, s.full_name)} className="btn btn-ghost" style={{ fontSize: 11, color: 'var(--danger)' }}>
+                      Deactivate
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        ))
+      })()}
     </div>
   )
 }
