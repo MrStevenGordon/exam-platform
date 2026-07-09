@@ -78,6 +78,7 @@ export default function TakeExamPage() {
   const [studentProfile, setStudentProfile] = useState<{ full_name: string; student_id: string | null } | null>(null)
 
   const violationCount = useRef(0)
+  const hasBeenFullscreenRef = useRef(false)
   const submittedRef = useRef(false)
   const intentionalExitRef = useRef(false)
 
@@ -188,11 +189,15 @@ export default function TakeExamPage() {
   }, [])
 
   useEffect(() => {
-    enterFullscreen()
     function handleFullscreenChange() {
       const isFull = !!document.fullscreenElement
       setInFullscreen(isFull)
-      if (!isFull && !submittedRef.current && !intentionalExitRef.current) registerViolation('exited fullscreen')
+      if (isFull) hasBeenFullscreenRef.current = true
+      if (!isFull && !submittedRef.current && !intentionalExitRef.current && hasBeenFullscreenRef.current) {
+        setWarningReason('You exited fullscreen mode.')
+        setShowWarningOverlay(true)
+        registerViolation('exited fullscreen')
+      }
     }
     document.addEventListener('fullscreenchange', handleFullscreenChange)
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange)

@@ -107,6 +107,7 @@ export default function TeacherBankPage() {
               {(q.draft_exams as any)?.subject && (
                 <span className="badge badge-warning" style={{ fontSize: 10 }}>{(q.draft_exams as any).subject}</span>
               )}
+              <a href={`/teacher/bank/edit/${q.id}`} style={{ fontSize: 12, fontWeight: 700, color: 'var(--accent-dark)', marginLeft: 'auto' }}>Edit</a>
             </div>
           </div>
         ))}

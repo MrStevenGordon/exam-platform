@@ -184,7 +184,13 @@ export default function DirectExamFrontPage() {
           {passwordError && <p className="banner banner-danger" style={{ marginTop: 10 }}>{passwordError}</p>}
         </div>
       ) : (
-        <button onClick={handleBeginExam} className="btn btn-primary" style={{ fontSize: 16, padding: '14px 28px' }}>
+        <button onClick={async () => {
+          // Request fullscreen first (must be from user gesture)
+          try {
+            await document.documentElement.requestFullscreen()
+          } catch {}
+          handleBeginExam()
+        }} className="btn btn-primary" style={{ fontSize: 16, padding: '14px 28px' }}>
           {existingSession ? 'Resume exam' : 'Begin exam'}
         </button>
       )}
