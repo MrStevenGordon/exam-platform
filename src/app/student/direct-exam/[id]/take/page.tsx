@@ -75,6 +75,8 @@ export default function TakeDirectExamPage() {
   const [secondsLeft, setSecondsLeft] = useState(0)
   const [warning, setWarning] = useState('')
   const [inFullscreen, setInFullscreen] = useState(false)
+  const [showWarningOverlay, setShowWarningOverlay] = useState(false)
+  const [warningReason, setWarningReason] = useState('')
   const [confirmingSubmit, setConfirmingSubmit] = useState(false)
   const [studentProfile, setStudentProfile] = useState<{ full_name: string; student_id: string | null } | null>(null)
 
@@ -123,7 +125,7 @@ export default function TakeDirectExamPage() {
 
     const { data: questionData, error: questionError } = await supabase
       .from('questions')
-      .select('id, question_type, question_text, points, options, correct_answer, order_index, marking_points, total_marks')
+      .select('id, question_type, question_text, points, options, correct_answer, order_index, marking_points, total_marks, image_url')
       .eq('draft_exam_id', examId)
       .order('order_index', { ascending: true })
 
@@ -283,7 +285,26 @@ export default function TakeDirectExamPage() {
   const answeredCount = questions.filter((q) => answers[q.id]).length
 
   return (
-    <div className="page-container" style={{ maxWidth: 640 }}>
+    <div onCopy={(e) => e.preventDefault()} onCut={(e) => e.preventDefault()}>
+      {showWarningOverlay && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+          <div style={{ background: 'white', borderRadius: 16, padding: 32, maxWidth: 440, width: '100%', textAlign: 'center' }}>
+            <div style={{ fontSize: 48, marginBottom: 16 }}>⚠️</div>
+            <h2 style={{ margin: '0 0 10px', color: '#c0392b' }}>Security Warning</h2>
+            <p style={{ fontSize: 15, margin: '0 0 8px' }}>{warningReason}</p>
+            <p style={{ fontSize: 13, color: '#666', margin: '0 0 20px' }}>
+              This is a monitored exam. Exiting the exam window is not permitted.
+            </p>
+            <button
+              onClick={() => { setShowWarningOverlay(false); if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen() }}
+              style={{ background: '#c0392b', color: 'white', border: 'none', borderRadius: 8, padding: '12px 28px', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}
+            >
+              Return to exam
+            </button>
+          </div>
+        </div>
+      )}
+      <div className="page-container" style={{ maxWidth: 640, userSelect: 'none' }}>
       {studentProfile && (
         <div style={{
           background: 'var(--border)',
@@ -332,6 +353,12 @@ export default function TakeDirectExamPage() {
                 {globalIndex + 1}. {q.question_text}
                 <span style={{ fontWeight: 400, color: 'var(--text-secondary)', fontSize: 13, marginLeft: 8 }}>({q.points} pt{q.points !== 1 ? 's' : ''})</span>
               </p>
+
+              {(q as any).image_url && (
+                <div style={{ marginBottom: 12 }}>
+                  <img src={(q as any).image_url} alt="Question diagram" style={{ maxWidth: '100%', maxHeight: 350, borderRadius: 8, border: '1px solid var(--border)' }} />
+                </div>
+              )}
 
               {q.question_type === 'multiple_choice' && q.options && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -442,5 +469,6 @@ export default function TakeDirectExamPage() {
         )}
       </div>
     </div>
+      </div>
   )
 }

@@ -146,8 +146,15 @@ export default function DirectExamFrontPage() {
 
       {exam.instructions && (
         <div style={{ marginBottom: 20 }}>
-          <h2>Instructions</h2>
-          <p style={{ whiteSpace: 'pre-wrap', marginTop: 8, color: 'var(--text-secondary)' }}>{exam.instructions}</p>
+          <div style={{ background: 'var(--card-bg)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '16px 20px' }}>
+            <h2 style={{ margin: '0 0 12px', fontSize: 15, textAlign: 'center', textTransform: 'uppercase', letterSpacing: 0.5 }}>Read the following instructions carefully</h2>
+            <ol style={{ margin: 0, paddingLeft: 20, color: 'var(--text-secondary)', fontSize: 14, lineHeight: 1.8 }}>
+              {exam.instructions.split('\n').filter((line: string) => line.trim()).map((line: string, i: number) => {
+                const cleaned = line.replace(/^\d+[\.)\s]+/, '').trim()
+                return cleaned ? <li key={i}>{cleaned}</li> : null
+              })}
+            </ol>
+          </div>
         </div>
       )}
 
