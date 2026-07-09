@@ -3,6 +3,9 @@
 import { useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import MathToolbar from '@/components/MathToolbar'
+import MathSymbolPicker from '@/components/MathSymbolPicker'
+import MathRenderer from '@/components/MathRenderer'
 
 type QuestionType = 'multiple_choice' | 'true_false' | 'short_answer' | 'fill_blank' | 'essay'
 
@@ -16,6 +19,8 @@ export default function AddQuestionPage() {
   const [points, setPoints] = useState(1)
   const [errorMsg, setErrorMsg] = useState('')
   const [saving, setSaving] = useState(false)
+  const [imageUrl, setImageUrl] = useState<string | null>(null)
+  const [uploadingImage, setUploadingImage] = useState(false)
   const [aiUsage, setAiUsage] = useState<{ used: number; limit: number; remaining: number } | null>(null)
   const [userId, setUserId] = useState<string | null>(null)
 
@@ -101,7 +106,22 @@ export default function AddQuestionPage() {
     setExactAnswer('')
   }
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploadingImage(true)
+    const { data: { user } } = await supabase.auth.getUser()
+    const fileName = `${user?.id}/${Date.now()}-${file.name.replace(/\s/g, '_')}`
+    const { error } = await supabase.storage.from('question-images').upload(fileName, file, { upsert: true })
+    if (error) { alert('Upload failed: ' + error.message); setUploadingImage(false); return }
+    const { data: urlData } = supabase.storage.from('question-images').getPublicUrl(fileName)
+    setImageUrl(urlData.publicUrl)
+    setUploadingImage(false)
+  }
+
+  function handleImageRemove() { setImageUrl(null) }
+
+    async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setSaving(true)
     setErrorMsg('')
@@ -122,6 +142,7 @@ export default function AddQuestionPage() {
       created_by: user.id,
       question_type: questionType,
       question_text: questionText,
+      image_url: imageUrl || null,
       points,
       order_index: count || 0,
       is_bank_question: saveToBank,
@@ -206,7 +227,9 @@ export default function AddQuestionPage() {
               ? 'Question (use ___ to mark the blank)'
               : 'Question'}
           </label><br />
+          <MathToolbar textareaId="question-text" value={questionText} onChange={setQuestionText} />
           <textarea
+            id="question-text"
             value={questionText}
             onChange={(e) => setQuestionText(e.target.value)}
             required
@@ -214,6 +237,21 @@ export default function AddQuestionPage() {
             placeholder={questionType === 'fill_blank' ? 'The capital of France is ___.' : ''}
             style={{ width: '100%', marginTop: 6 }}
           />
+
+          <div style={{ marginTop: 10 }}>
+            <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Question image (optional)</label>
+            {imageUrl ? (
+              <div style={{ marginTop: 6, position: 'relative', display: 'inline-block' }}>
+                <img src={imageUrl} alt="Question" style={{ maxWidth: '100%', maxHeight: 300, borderRadius: 8, border: '1px solid var(--border)' }} />
+                <button type="button" onClick={handleImageRemove} style={{ position: 'absolute', top: 6, right: 6, background: 'rgba(0,0,0,0.6)', color: 'white', border: 'none', borderRadius: '50%', width: 24, height: 24, cursor: 'pointer', fontSize: 12 }}>x</button>
+              </div>
+            ) : (
+              <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '8px 14px', marginTop: 6, borderRadius: 8, border: '1.5px dashed var(--border-strong)', cursor: 'pointer', fontSize: 13, color: 'var(--text-secondary)' }}>
+                {uploadingImage ? 'Uploading...' : 'Upload image (diagram, graph, chart)'}
+                <input type="file" accept="image/*" onChange={handleImageUpload} style={{ display: 'none' }} disabled={uploadingImage} />
+              </label>
+            )}
+          </div>
           {questionType !== 'essay' && (
             <button
               type="button"
@@ -250,11 +288,17 @@ export default function AddQuestionPage() {
                   onChange={() => setCorrectOptionIndex(i)}
                 />
                 <input
+                  id={`option-input-${i}`}
                   value={opt}
                   onChange={(e) => updateOption(i, e.target.value)}
                   placeholder={`Option ${i + 1}`}
                   required
                   style={{ flex: 1 }}
+                />
+                <MathSymbolPicker
+                  inputId={`option-input-${i}`}
+                  value={opt}
+                  onChange={(val) => updateOption(i, val)}
                 />
               </div>
             ))}
@@ -322,7 +366,7 @@ export default function AddQuestionPage() {
                     value={point.text}
                     onChange={(e) => updateMarkingPoint(i, 'text', e.target.value)}
                     placeholder="e.g. double coincidence of wants"
-                    style={{ width: '100%', marginTop: 4 }}
+                    style={{ width: '100%', marginTop: 6 }}
                   />
                 </div>
 

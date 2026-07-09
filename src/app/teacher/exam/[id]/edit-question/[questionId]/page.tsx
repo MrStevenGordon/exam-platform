@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
+import MathToolbar from '@/components/MathToolbar'
+import MathSymbolPicker from '@/components/MathSymbolPicker'
 
 export default function EditQuestionPage() {
   const router = useRouter()
@@ -91,7 +93,8 @@ export default function EditQuestionPage() {
 
         <div style={{ marginBottom: 14 }}>
           <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Question text</label>
-          <textarea value={questionText} onChange={(e) => setQuestionText(e.target.value)} rows={4} style={{ width: '100%', marginTop: 4 }} />
+          <MathToolbar textareaId="edit-question-text" value={questionText} onChange={setQuestionText} />
+          <textarea id="edit-question-text" value={questionText} onChange={(e) => setQuestionText(e.target.value)} rows={4} style={{ width: '100%', borderRadius: '0 0 8px 8px', marginTop: 0 }} />
         </div>
 
         <div style={{ marginBottom: 14 }}>
@@ -105,7 +108,8 @@ export default function EditQuestionPage() {
             {options.map((opt, i) => (
               <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 6 }}>
                 <span style={{ fontWeight: 700, fontSize: 13, minWidth: 20 }}>{String.fromCharCode(65 + i)}.</span>
-                <input value={opt} onChange={(e) => { const updated = [...options]; updated[i] = e.target.value; setOptions(updated) }} style={{ flex: 1 }} placeholder={`Option ${String.fromCharCode(65 + i)}`} />
+                <input id={`edit-option-${i}`} value={opt} onChange={(e) => { const updated = [...options]; updated[i] = e.target.value; setOptions(updated) }} style={{ flex: 1 }} placeholder={`Option ${String.fromCharCode(65 + i)}`} />
+                <MathSymbolPicker inputId={`edit-option-${i}`} value={opt} onChange={(val) => { const updated = [...options]; updated[i] = val; setOptions(updated) }} />
               </div>
             ))}
             <div style={{ marginTop: 10 }}>

@@ -8,6 +8,7 @@ const BASE_NAV = [
   { label: 'Home', icon: 'ti-home', href: '/teacher' },
   { label: 'My Exams', icon: 'ti-file-text', href: '/teacher/exams' },
   { label: 'Question Bank', icon: 'ti-database', href: '/teacher/bank' },
+  { label: 'My Classes', icon: 'ti-users', href: '/teacher/classes' },
   { label: 'My Profile', icon: 'ti-user', href: '/teacher/profile' },
 ]
 

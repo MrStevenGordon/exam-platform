@@ -129,7 +129,7 @@ export default function TakeExamPage() {
 
     const { data: linkData, error: linkError } = await supabase
       .from('final_exam_questions')
-      .select('order_index, questions(id, question_type, question_text, points, options, correct_answer, marking_points, total_marks, section_id)')
+      .select('order_index, questions(id, question_type, question_text, points, options, correct_answer, marking_points, total_marks, section_id, image_url)')
       .eq('final_exam_id', examId)
       .order('order_index', { ascending: true })
 
@@ -148,6 +148,7 @@ export default function TakeExamPage() {
         marking_points: q.marking_points,
         total_marks: q.total_marks,
         section_id: q.section_id,
+        image_url: q.image_url,
         order_index: l.order_index,
       }
     }).filter((q: any) => q && q.id)
@@ -440,10 +441,19 @@ export default function TakeExamPage() {
                 </div>
               )}
             <div className="card">
-              <p style={{ fontWeight: 700, marginBottom: 12, fontSize: 15 }}>
+              <p style={{ fontWeight: 700, marginBottom: q.image_url ? 8 : 12, fontSize: 15 }}>
                 {globalIndex + 1}. {q.question_text}
-                <span style={{ fontWeight: 400, color: 'var(--text-secondary)', fontSize: 13, marginLeft: 8 }}>({q.points} pt{q.points !== 1 ? 's' : ''})</span>
               </p>
+
+              {(q as any).image_url && (
+                <div style={{ marginBottom: 12 }}>
+                  <img
+                    src={(q as any).image_url}
+                    alt="Question diagram"
+                    style={{ maxWidth: '100%', maxHeight: 350, borderRadius: 8, border: '1px solid var(--border)' }}
+                  />
+                </div>
+              )}
 
               {q.question_type === 'multiple_choice' && q.options && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
