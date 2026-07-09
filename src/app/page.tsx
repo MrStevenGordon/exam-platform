@@ -41,13 +41,13 @@ export default function HomePage() {
       {/* Hero */}
       <section style={{ padding: '6rem 3rem 5rem', textAlign: 'center', background: 'var(--page-bg)' }}>
         <div style={{ display: 'inline-block', background: 'var(--accent-light)', color: 'var(--accent-dark)', fontSize: 11, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', padding: '4px 14px', borderRadius: 20, marginBottom: '1.5rem' }}>
-          Built for Jamaican Secondary Schools
+          Smart Exams for Modern Education
         </div>
         <h1 style={{ fontSize: 52, fontWeight: 800, lineHeight: 1.15, margin: '0 auto 1.25rem', maxWidth: 600, color: 'var(--text-primary)', textTransform: 'none', letterSpacing: -0.5 }}>
           The smarter way to run exams at your school
         </h1>
         <p style={{ fontSize: 20, color: 'var(--text-secondary)', maxWidth: 540, margin: '0 auto 2.5rem', lineHeight: 1.6 }}>
-          Create, administer, and analyse assessments — from pop quizzes to end-of-year exams — all in one secure platform.
+          Built for Jamaican schools — from pop quizzes to end-of-year exams, all in one platform — all in one secure platform.
         </p>
         <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
           <a href="#contact">
@@ -57,7 +57,7 @@ export default function HomePage() {
             <button className="btn btn-secondary" style={{ fontSize: 15, padding: '14px 32px' }}>Log in</button>
           </Link>
         </div>
-        <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: '1rem' }}>Currently serving Manchester High School · Jamaica</p>
+        <p style={{ fontSize: 15, fontWeight: 700, color: 'var(--accent-dark)', marginTop: '1rem', letterSpacing: 0.3 }}>Currently serving Manchester High School · Jamaica</p>
       </section>
 
       {/* Stats bar */}

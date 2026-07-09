@@ -122,30 +122,15 @@ export default function LoginPage() {
             <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: 0.5, textTransform: 'uppercase' }}>
               I am a
             </label>
-            <div style={{ display: 'flex', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
+            <select
+              value={selectedRole}
+              onChange={(e) => setSelectedRole(e.target.value)}
+              style={{ width: '100%', marginTop: 8 }}
+            >
               {ROLE_OPTIONS.map((r) => (
-                <button
-                  key={r.value}
-                  type="button"
-                  onClick={() => setSelectedRole(r.value)}
-                  style={{
-                    padding: '6px 14px',
-                    borderRadius: 20,
-                    border: `1.5px solid ${selectedRole === r.value ? 'var(--accent)' : 'var(--border-strong)'}`,
-                    background: selectedRole === r.value ? 'var(--accent-light)' : 'white',
-                    color: selectedRole === r.value ? 'var(--accent-dark)' : 'var(--text-secondary)',
-                    fontSize: 12,
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                    letterSpacing: 0.3,
-                    textTransform: 'uppercase',
-                    transition: 'all 0.15s ease',
-                  }}
-                >
-                  {r.label}
-                </button>
+                <option key={r.value} value={r.value}>{r.label}</option>
               ))}
-            </div>
+            </select>
           </div>
 
           {/* Email */}
