@@ -4,6 +4,7 @@ import Sidebar from '@/components/Sidebar'
 
 const SUPERVISOR_NAV = [
   { label: 'Home', icon: 'ti-home', href: '/supervisor' },
+  { label: 'My Exams', icon: 'ti-file-text', href: '/supervisor/exams' },
   { label: 'Submissions', icon: 'ti-inbox', href: '/supervisor/submissions' },
   { label: 'Final Exams', icon: 'ti-file-check', href: '/supervisor/final-exams' },
   { label: 'Appointments', icon: 'ti-award', href: '/supervisor/appointments' },

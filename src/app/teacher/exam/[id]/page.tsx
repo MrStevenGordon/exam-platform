@@ -300,11 +300,7 @@ export default function ExamEditorPage() {
         )}
       </div>
 
-      {isFinalExamSubmission && isLocked && (
-        <div className="banner banner-warning" style={{ marginTop: 16 }}>
-          This exam has been submitted and is now locked for editing.
-        </div>
-      )}
+
 
       {!isFinalExamSubmission && exam.direct_published && (
         <div className="banner banner-success" style={{ marginTop: 16 }}>
@@ -538,7 +534,15 @@ export default function ExamEditorPage() {
                     <span style={{ fontSize: 12, color: '#888', textTransform: 'uppercase' }}>
                       {globalI + 1}. {q.question_type.replace('_', ' ')} {q.is_bank_question && '• from bank'}
                     </span>
-                    <span style={{ fontSize: 12, color: '#888' }}>{q.points} pt{q.points !== 1 ? 's' : ''}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                      <span style={{ fontSize: 12, color: '#888' }}>{q.points} pt{q.points !== 1 ? 's' : ''}</span>
+                      {!isLocked && (
+                        <>
+                          <Link href={`/teacher/exam/${examId}/edit-question/${q.id}`} style={{ fontSize: 12, fontWeight: 700, color: 'var(--accent-dark)', textDecoration: 'none' }}>Edit</Link>
+                          <button onClick={async () => { if (confirm('Remove this question?')) { await supabase.from('questions').delete().eq('id', q.id); loadData() } }} style={{ background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer', fontSize: 12, fontWeight: 700 }}>Remove</button>
+                        </>
+                      )}
+                    </div>
                   </div>
                   <p style={{ margin: '8px 0 0' }}>{q.question_text}</p>
                   {q.supervisor_comment && (
@@ -576,7 +580,15 @@ export default function ExamEditorPage() {
               <span style={{ fontSize: 12, color: '#888', textTransform: 'uppercase' }}>
                 {i + 1}. {q.question_type.replace('_', ' ')} {q.is_bank_question && '• from bank'}
               </span>
-              <span style={{ fontSize: 12, color: '#888' }}>{q.points} pt{q.points !== 1 ? 's' : ''}</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <span style={{ fontSize: 12, color: '#888' }}>{q.points} pt{q.points !== 1 ? 's' : ''}</span>
+                {!isLocked && (
+                  <>
+                    <Link href={`/teacher/exam/${examId}/edit-question/${q.id}`} style={{ fontSize: 12, fontWeight: 700, color: 'var(--accent-dark)', textDecoration: 'none' }}>Edit</Link>
+                    <button onClick={async () => { if (confirm('Remove this question?')) { await supabase.from('questions').delete().eq('id', q.id); loadData() } }} style={{ background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer', fontSize: 12, fontWeight: 700 }}>Remove</button>
+                  </>
+                )}
+              </div>
             </div>
             <p style={{ margin: '8px 0 0' }}>{q.question_text}</p>
             {q.supervisor_comment && (

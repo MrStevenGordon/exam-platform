@@ -25,7 +25,7 @@ export default function DepartmentSubjectsPage() {
 
     const { data: profile } = await supabase
       .from('profiles')
-      .select('department_id, departments(name)')
+      .select('department_id, departments!profiles_department_id_fkey(name)')
       .eq('id', user.id)
       .single()
 

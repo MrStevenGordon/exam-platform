@@ -5,19 +5,19 @@ import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 
-type FinalExam = {
+type DraftExam = {
   id: string
   title: string
   subject: string
-  status: string
-  department_id: string
-  access_password: string | null
+  exam_kind: string
+  term: string | null
   target_grade: number | null
-}
-
-type Teacher = {
-  id: string
-  full_name: string
+  status: string
+  instructions: string | null
+  duration_minutes: number | null
+  access_password: string | null
+  questions_per_page: number
+  department_id: string | null
 }
 
 type Question = {
@@ -25,340 +25,190 @@ type Question = {
   question_type: string
   question_text: string
   points: number
-  created_by: string
-  draft_exams: { title: string } | null
+  options: string[] | null
+}
+
+type ClassGroup = {
+  id: string
+  name: string
+  year_grade: string
+}
+
+const KIND_LABELS: Record<string, string> = {
+  monthly: 'Monthly Exam',
+  midterm: 'Midterm Exam',
+  end_of_term: 'End of Term',
+  end_of_year: 'End of Year',
 }
 
 function generatePassword() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
   let result = ''
-  for (let i = 0; i < 6; i++) {
-    result += chars[Math.floor(Math.random() * chars.length)]
-  }
+  for (let i = 0; i < 6; i++) result += chars[Math.floor(Math.random() * chars.length)]
   return result
 }
-export default function AssembleFinalExamPage() {
+
+export default function SupervisorExamPublishPage() {
   const router = useRouter()
   const params = useParams()
-  const finalExamId = params.id as string
+  const examId = params.id as string
 
-  const [finalExam, setFinalExam] = useState<FinalExam | null>(null)
-  const [teachers, setTeachers] = useState<Teacher[]>([])
-  const [activeTeacherId, setActiveTeacherId] = useState<string>('')
-  const [questionsByTeacher, setQuestionsByTeacher] = useState<Record<string, Question[]>>({})
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
-  const [allQuestionsById, setAllQuestionsById] = useState<Record<string, Question>>({})
+  const [exam, setExam] = useState<DraftExam | null>(null)
+  const [questions, setQuestions] = useState<Question[]>([])
+  const [classGroups, setClassGroups] = useState<ClassGroup[]>([])
+  const [selectedGroups, setSelectedGroups] = useState<Set<string>>(new Set())
   const [loading, setLoading] = useState(true)
-  const [errorMsg, setErrorMsg] = useState('')
-  const [saving, setSaving] = useState(false)
-  const [allClassGroups, setAllClassGroups] = useState<{ id: string; name: string; year_grade: string }[]>([])
-  const [selectedClassGroups, setSelectedClassGroups] = useState<Set<string>>(new Set())
-  const [showPublishModal, setShowPublishModal] = useState(false)
-  const [modalGrade, setModalGrade] = useState<string>('')
   const [publishing, setPublishing] = useState(false)
+  const [showPublishModal, setShowPublishModal] = useState(false)
+  const [modalGrade, setModalGrade] = useState('')
+  const [errorMsg, setErrorMsg] = useState('')
 
-  useEffect(() => {
-    loadData()
-  }, [finalExamId])
+  useEffect(() => { loadData() }, [])
 
   async function loadData() {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
-      router.push('/login')
-      return
-    }
-
-    const { data: examData, error: examError } = await supabase
-      .from('final_exams')
-      .select('id, title, subject, status, department_id, access_password, target_grade')
-      .eq('id', finalExamId)
-      .single()
-
-    if (examError) {
-      setErrorMsg(examError.message)
-      setLoading(false)
-      return
-    }
-    setFinalExam(examData)
-
-    const { data: drafts, error: draftsError } = await supabase
+    const { data: examData } = await supabase
       .from('draft_exams')
-      .select('id, created_by, profiles!draft_exams_created_by_fkey(id, full_name)')
-      .eq('department_id', examData.department_id)
-      .eq('status', 'approved')
+      .select('id, title, subject, exam_kind, term, target_grade, status, instructions, duration_minutes, access_password, questions_per_page, department_id')
+      .eq('id', examId)
+      .single()
+    setExam(examData)
 
-    if (draftsError) {
-      setErrorMsg(draftsError.message)
-      setLoading(false)
-      return
-    }
-
-    const draftIds = (drafts || []).map((d) => d.id)
-
-    const teacherMap: Record<string, Teacher> = {}
-    ;(drafts || []).forEach((d: any) => {
-      if (d.profiles) {
-        teacherMap[d.profiles.id] = { id: d.profiles.id, full_name: d.profiles.full_name }
-      }
-    })
-    const teacherList = Object.values(teacherMap)
-    setTeachers(teacherList)
-    if (teacherList.length > 0 && !activeTeacherId) setActiveTeacherId(teacherList[0].id)
-
-    const { data: questionData, error: questionError } = await supabase
+    const { data: qData } = await supabase
       .from('questions')
-      .select('id, question_type, question_text, points, created_by, draft_exams(title)')
-      .in('draft_exam_id', draftIds.length > 0 ? draftIds : ['00000000-0000-0000-0000-000000000000'])
+      .select('id, question_type, question_text, points, options')
+      .eq('draft_exam_id', examId)
+      .order('order_index')
+    setQuestions(qData || [])
 
-    if (questionError) {
-      setErrorMsg(questionError.message)
-      setLoading(false)
-      return
-    }
-
-    const grouped: Record<string, Question[]> = {}
-    const byId: Record<string, Question> = {}
-    ;(questionData || []).forEach((q: any) => {
-      if (!grouped[q.created_by]) grouped[q.created_by] = []
-      grouped[q.created_by].push(q)
-      byId[q.id] = q
-    })
-    setQuestionsByTeacher(grouped)
-    setAllQuestionsById(byId)
-
-    const { data: existingLinks } = await supabase
-      .from('final_exam_questions')
-      .select('question_id')
-      .eq('final_exam_id', finalExamId)
-
-    setSelectedIds(new Set((existingLinks || []).map((l) => l.question_id)))
-
-    // Load all class groups for manual assignment
     const { data: cgData } = await supabase
       .from('class_groups')
       .select('id, name, year_grade')
-      .order('year_grade', { ascending: true })
-    setAllClassGroups(cgData || [])
-
-    // Load existing class group assignments
-    const { data: existingClassLinks } = await supabase
-      .from('final_exam_class_groups')
-      .select('class_group_id')
-      .eq('final_exam_id', finalExamId)
-    setSelectedClassGroups(new Set((existingClassLinks || []).map((l) => l.class_group_id)))
+      .order('year_grade')
+    setClassGroups(cgData || [])
 
     setLoading(false)
   }
 
-  function toggleQuestion(id: string) {
-    const updated = new Set(selectedIds)
-    if (updated.has(id)) {
-      updated.delete(id)
-    } else {
-      updated.add(id)
-    }
-    setSelectedIds(updated)
-  }
-
-  async function handleSaveSelections() {
-    setSaving(true)
-    setErrorMsg('')
-
-    const { error: deleteError } = await supabase
-      .from('final_exam_questions')
-      .delete()
-      .eq('final_exam_id', finalExamId)
-
-    if (deleteError) {
-      setErrorMsg(deleteError.message)
-      setSaving(false)
-      return
-    }
-
-    const rows = Array.from(selectedIds).map((qid, index) => ({
-      final_exam_id: finalExamId,
-      question_id: qid,
-      order_index: index,
-    }))
-
-    if (rows.length > 0) {
-      const { error: insertError } = await supabase.from('final_exam_questions').insert(rows)
-      if (insertError) {
-        setErrorMsg(insertError.message)
-        setSaving(false)
-        return
-      }
-    }
-
-    setSaving(false)
-    alert('Selections saved.')
-  }
-
   async function handlePublish() {
-    if (selectedIds.size === 0) {
-      alert('Select at least one question before publishing.')
-      return
-    }
-    // Auto-assign by target_grade if set, otherwise use manual selection
-    let classGroupsToAssign = Array.from(selectedClassGroups)
-
-    if (finalExam?.target_grade) {
-      const gradeLabel = `Grade ${finalExam.target_grade}`
-      const gradeGroups = allClassGroups.filter((cg) => cg.year_grade === gradeLabel)
-      if (gradeGroups.length > 0) {
-        classGroupsToAssign = gradeGroups.map((cg) => cg.id)
-      }
-    }
-
-    if (classGroupsToAssign.length === 0) {
-      alert('Please assign this exam to at least one class group before publishing.')
-      return
-    }
-
-    // Insert class group links
-    await supabase.from('final_exam_class_groups').delete().eq('final_exam_id', finalExamId)
-    await supabase.from('final_exam_class_groups').insert(
-      classGroupsToAssign.map((cgId) => ({ final_exam_id: finalExamId, class_group_id: cgId }))
-    )
-    if (!confirm('Publish this exam? Students will be able to see and take it once published. This cannot be undone from this screen.')) {
-      return
-    }
-
+    if (selectedGroups.size === 0) return
     setPublishing(true)
-    setErrorMsg('')
 
-    // Make sure selections are saved first
-    await handleSaveSelections()
+    const password = generatePassword()
 
-    const { error } = await supabase
+    // Create final exam from this draft
+    const { data: finalExam, error: feError } = await supabase
       .from('final_exams')
-      .update({ status: 'published', published_at: new Date().toISOString(), access_password: generatePassword() })
-      .eq('id', finalExamId)
+      .insert({
+        title: exam!.title,
+        subject: exam!.subject,
+        instructions: exam!.instructions,
+        duration_minutes: exam!.duration_minutes,
+        status: 'published',
+        department_id: exam!.department_id,
+        exam_category: exam!.exam_kind,
+        access_password: password,
+        published_at: new Date().toISOString(),
+        questions_per_page: exam!.questions_per_page,
+        target_grade: exam!.target_grade,
+      })
+      .select()
+      .single()
 
-    if (error) {
-      setErrorMsg(error.message)
-    } else {
-      loadData()
+    if (feError) { setErrorMsg(feError.message); setPublishing(false); return }
+
+    // Copy questions to final_exam_questions
+    for (const q of questions) {
+      await supabase.from('final_exam_questions').insert({
+        final_exam_id: finalExam.id,
+        question_id: q.id,
+        order_index: questions.indexOf(q),
+      })
     }
+
+    // Link class groups
+    await supabase.from('final_exam_class_groups').insert(
+      Array.from(selectedGroups).map((cgId) => ({
+        final_exam_id: finalExam.id,
+        class_group_id: cgId,
+      }))
+    )
+
+    // Mark draft as published
+    await supabase.from('draft_exams').update({ status: 'published' }).eq('id', examId)
+
+    setShowPublishModal(false)
     setPublishing(false)
+    router.push('/supervisor/final-exams')
   }
 
-  if (loading) return <div className="page-container">Loading…</div>
-  if (errorMsg) return <div className="page-container"><p className="banner banner-danger">{errorMsg}</p></div>
-  if (!finalExam) return <div className="page-container">Final exam not found.</div>
+  if (loading) return <div>Loading…</div>
+  if (!exam) return <div>Exam not found.</div>
 
-  const selectedQuestions = Array.from(selectedIds).map((id) => allQuestionsById[id]).filter(Boolean)
-  const totalPoints = selectedQuestions.reduce((sum, q) => sum + q.points, 0)
-  const activeQuestions = questionsByTeacher[activeTeacherId] || []
-  const isPublished = finalExam.status === 'published'
+  const isPublished = exam.status === 'published'
 
   return (
-    <div className="page-container" style={{ maxWidth: 900 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Link href="/supervisor/final-exams" style={{ color: 'var(--text-secondary)', fontSize: 14 }}>&larr; Back to final exams</Link>
-        <Link href={`/supervisor/final-exams/${finalExamId}/sessions`}><button className="btn btn-secondary">View student sessions</button></Link>
+    <div>
+      <Link href="/supervisor/final-exams" style={{ color: 'var(--text-secondary)', fontSize: 14 }}>
+        ← Back to final exams
+      </Link>
+
+      <div style={{ marginTop: 16, marginBottom: 24 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <div>
+            <h1 style={{ margin: 0 }}>{exam.title}</h1>
+            <p style={{ color: 'var(--text-secondary)', fontSize: 13, marginTop: 4 }}>
+              {exam.subject} · {KIND_LABELS[exam.exam_kind] || exam.exam_kind}
+              {exam.target_grade && ` · Grade ${exam.target_grade}`}
+              {exam.duration_minutes && ` · ${exam.duration_minutes} min`}
+            </p>
+          </div>
+          <span className={`badge ${isPublished ? 'badge-success' : 'badge-warning'}`}>
+            {isPublished ? 'Published' : 'Ready to publish'}
+          </span>
+        </div>
       </div>
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginTop: 16 }}>
-        <div>
-          <h1 style={{ margin: 0 }}>{finalExam.title}</h1>
-          <p style={{ color: 'var(--text-secondary)', margin: '4px 0' }}>{finalExam.subject}</p>
-        </div>
-        <span className={`badge ${isPublished ? 'badge-success' : 'badge-default'}`}>
-          {finalExam.status}
-        </span>
-      </div>
+      {errorMsg && <div className="banner banner-danger" style={{ marginBottom: 16 }}>{errorMsg}</div>}
 
       {isPublished && (
-        <div className="banner banner-success" style={{ marginTop: 16 }}>
-          <p style={{ margin: 0 }}>This exam is published and visible to students.</p>
-          {finalExam.access_password && (
-            <p style={{ marginTop: 8, marginBottom: 0, fontSize: 18, fontWeight: 700 }}>
-              Exam password: <span style={{ fontFamily: 'monospace', background: 'white', padding: '2px 10px', borderRadius: 6 }}>{finalExam.access_password}</span>
-            </p>
-          )}
+        <div className="banner banner-success" style={{ marginBottom: 20 }}>
+          This exam has been published to students.
         </div>
       )}
 
-      <div style={{
-        position: 'sticky', top: 0, background: 'var(--page-bg)', padding: '12px 0',
-        borderBottom: '2px solid var(--border-strong)', marginTop: 16, marginBottom: 16, zIndex: 10,
-      }}>
-        <strong>{selectedQuestions.length} questions selected — {totalPoints} total points</strong>
+      {/* Questions preview */}
+      <div className="card" style={{ marginBottom: 20 }}>
+        <h2 style={{ marginBottom: 12 }}>Questions ({questions.length})</h2>
+        {questions.length === 0 && <p style={{ color: 'var(--text-secondary)', fontSize: 13 }}>No questions found.</p>}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {questions.map((q, i) => (
+            <div key={q.id} style={{ padding: '10px 12px', background: 'var(--page-bg)', borderRadius: 8, border: '1px solid var(--border)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ fontSize: 12, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>
+                  {i + 1}. {q.question_type.replace('_', ' ')}
+                </span>
+                <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{q.points} pt{q.points !== 1 ? 's' : ''}</span>
+              </div>
+              <p style={{ margin: '6px 0 0', fontSize: 14 }}>{q.question_text}</p>
+            </div>
+          ))}
+        </div>
       </div>
 
-      {teachers.length === 0 && (
-        <div className="card"><p style={{ color: 'var(--text-secondary)' }}>No approved exams found yet in your department. Approve some teacher submissions first.</p></div>
-      )}
-
-      {teachers.length > 0 && (
-        <>
-          <div style={{ display: 'flex', gap: 8, borderBottom: '1px solid #ddd', marginBottom: 16, flexWrap: 'wrap' }}>
-            {teachers.map((t) => (
-              <button
-                key={t.id}
-                onClick={() => setActiveTeacherId(t.id)}
-                style={{
-                  padding: '8px 16px',
-                  border: 'none',
-                  background: 'none',
-                  borderBottom: activeTeacherId === t.id ? '3px solid var(--accent)' : '3px solid transparent',
-                  fontWeight: activeTeacherId === t.id ? 700 : 400,
-                  cursor: 'pointer',
-                  fontSize: 15,
-                  color: 'var(--text-primary)',
-                }}
-              >
-                {t.full_name} ({(questionsByTeacher[t.id] || []).length})
-              </button>
-            ))}
-          </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {activeQuestions.map((q) => (
-              <label
-                key={q.id}
-                className="card"
-                style={{
-                  display: 'flex', gap: 12, alignItems: 'flex-start',
-                  cursor: isPublished ? 'default' : 'pointer',
-                  background: selectedIds.has(q.id) ? 'var(--accent-light)' : 'var(--card-bg)',
-                  opacity: isPublished ? 0.7 : 1,
-                }}
-              >
-                <input
-                  type="checkbox"
-                  checked={selectedIds.has(q.id)}
-                  onChange={() => toggleQuestion(q.id)}
-                  disabled={isPublished}
-                  style={{ marginTop: 4 }}
-                />
-                <div>
-                  <div className="section-label" style={{ fontSize: 11 }}>
-                    {q.question_type.replace('_', ' ')} — {q.points} pt{q.points !== 1 ? 's' : ''}
-                    {q.draft_exams && ` — from "${q.draft_exams.title}"`}
-                  </div>
-                  <p style={{ margin: '4px 0 0' }}>{q.question_text}</p>
-                </div>
-              </label>
-            ))}
-            {activeQuestions.length === 0 && <p style={{ color: 'var(--text-secondary)' }}>No questions from this teacher.</p>}
-          </div>
-        </>
-      )}
-
-      {!isPublished && (
-        <div style={{ marginTop: 24, paddingTop: 16, borderTop: '1px solid var(--border)', display: 'flex', gap: 12 }}>
-          <button onClick={handleSaveSelections} disabled={saving || publishing} className="btn btn-ghost">
-            {saving ? 'Saving…' : 'Save selections'}
-          </button>
-          <button onClick={() => {
-            setModalGrade(finalExam?.target_grade ? `Grade ${finalExam.target_grade}` : '')
+      {!isPublished && questions.length > 0 && (
+        <button
+          onClick={() => {
+            setModalGrade(exam.target_grade ? `Grade ${exam.target_grade}` : '')
+            if (exam.target_grade) {
+              const gradeClasses = classGroups.filter(cg => cg.year_grade === `Grade ${exam.target_grade}`)
+              setSelectedGroups(new Set(gradeClasses.map(cg => cg.id)))
+            }
             setShowPublishModal(true)
-          }} disabled={saving || publishing} className="btn btn-primary">
-            Publish exam
-          </button>
-        </div>
+          }}
+          className="btn btn-primary"
+        >
+          Publish to students
+        </button>
       )}
 
       {/* Publish modal */}
@@ -376,9 +226,8 @@ export default function AssembleFinalExamPage() {
                 value={modalGrade}
                 onChange={(e) => {
                   setModalGrade(e.target.value)
-                  // Auto-select all classes in this grade
-                  const gradeGroups = allClassGroups.filter(cg => cg.year_grade === e.target.value)
-                  setSelectedClassGroups(new Set(gradeGroups.map(cg => cg.id)))
+                  const gradeClasses = classGroups.filter(cg => cg.year_grade === e.target.value)
+                  setSelectedGroups(new Set(gradeClasses.map(cg => cg.id)))
                 }}
                 style={{ width: '100%', marginTop: 6 }}
               >
@@ -391,18 +240,24 @@ export default function AssembleFinalExamPage() {
 
             {modalGrade && (
               <div style={{ marginBottom: 20 }}>
-                <label style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-secondary)' }}>Classes (deselect any to exclude)</label>
+                <label style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-secondary)' }}>Classes</label>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 8 }}>
-                  {allClassGroups.filter(cg => cg.year_grade === modalGrade).map(cg => (
-                    <label key={cg.id} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 14px', borderRadius: 20, border: `1.5px solid ${selectedClassGroups.has(cg.id) ? 'var(--accent)' : 'var(--border-strong)'}`, background: selectedClassGroups.has(cg.id) ? 'var(--accent-light)' : 'var(--card-bg)', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>
+                  {classGroups.filter(cg => cg.year_grade === modalGrade).map(cg => (
+                    <label key={cg.id} style={{
+                      display: 'flex', alignItems: 'center', gap: 6,
+                      padding: '6px 14px', borderRadius: 20, cursor: 'pointer',
+                      border: `1.5px solid ${selectedGroups.has(cg.id) ? 'var(--accent)' : 'var(--border-strong)'}`,
+                      background: selectedGroups.has(cg.id) ? 'var(--accent-light)' : 'var(--card-bg)',
+                      fontSize: 13, fontWeight: 600,
+                    }}>
                       <input
                         type="checkbox"
-                        checked={selectedClassGroups.has(cg.id)}
+                        checked={selectedGroups.has(cg.id)}
                         onChange={() => {
-                          const updated = new Set(selectedClassGroups)
+                          const updated = new Set(selectedGroups)
                           if (updated.has(cg.id)) updated.delete(cg.id)
                           else updated.add(cg.id)
-                          setSelectedClassGroups(updated)
+                          setSelectedGroups(updated)
                         }}
                         style={{ accentColor: 'var(--accent)' }}
                       />
@@ -411,7 +266,7 @@ export default function AssembleFinalExamPage() {
                   ))}
                 </div>
                 <p style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 8 }}>
-                  {selectedClassGroups.size} class{selectedClassGroups.size !== 1 ? 'es' : ''} selected
+                  {selectedGroups.size} class{selectedGroups.size !== 1 ? 'es' : ''} selected
                 </p>
               </div>
             )}
@@ -419,11 +274,11 @@ export default function AssembleFinalExamPage() {
             <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
               <button onClick={() => setShowPublishModal(false)} className="btn btn-ghost">Cancel</button>
               <button
-                onClick={() => { setShowPublishModal(false); handlePublish() }}
-                disabled={selectedClassGroups.size === 0 || publishing}
+                onClick={handlePublish}
+                disabled={selectedGroups.size === 0 || publishing}
                 className="btn btn-primary"
               >
-                {publishing ? 'Publishing…' : `Publish to ${selectedClassGroups.size} class${selectedClassGroups.size !== 1 ? 'es' : ''}`}
+                {publishing ? 'Publishing…' : `Publish to ${selectedGroups.size} class${selectedGroups.size !== 1 ? 'es' : ''}`}
               </button>
             </div>
           </div>

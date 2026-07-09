@@ -176,7 +176,11 @@ export default function TakeDirectExamPage() {
 
   useEffect(() => {
     function handleVisibilityChange() {
-      if (document.hidden && !submittedRef.current && !intentionalExitRef.current) registerViolation('switched tabs or minimized window')
+      if (document.hidden && !submittedRef.current && !intentionalExitRef.current) {
+        setWarningReason('You switched tabs or minimized the window.')
+        setShowWarningOverlay(true)
+        registerViolation('switched tabs or minimized window')
+      }
     }
     document.addEventListener('visibilitychange', handleVisibilityChange)
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange)

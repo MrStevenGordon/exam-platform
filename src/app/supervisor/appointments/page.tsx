@@ -169,7 +169,7 @@ export default function AppointmentsPage() {
 
   if (loading) return <div>Loading…</div>
 
-  const getTeacherName = (id: string) => teachers.find((t) => t.id === id)?.full_name || 'Unknown'
+  const getTeacherName = (id: string) => [...teachers, ...allTeachers].find((t) => t.id === id)?.full_name || 'Unknown'
 
   return (
     <div>

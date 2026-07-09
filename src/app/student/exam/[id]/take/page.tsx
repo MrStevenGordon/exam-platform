@@ -205,6 +205,42 @@ export default function TakeExamPage() {
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
   }, [session])
 
+  // Block keyboard shortcuts and right-click
+  useEffect(() => {
+    if (!session) return
+
+    function handleKeyDown(e: KeyboardEvent) {
+      // Block Tab switching: Cmd+Tab, Alt+Tab
+      if ((e.metaKey || e.altKey) && e.key === 'Tab') { e.preventDefault(); return }
+      // Block closing: Cmd+W, Cmd+Q, Alt+F4
+      if ((e.metaKey || e.ctrlKey) && (e.key === 'w' || e.key === 'q')) { e.preventDefault(); return }
+      // Block new window/tab: Cmd+N, Cmd+T
+      if ((e.metaKey || e.ctrlKey) && (e.key === 'n' || e.key === 't')) { e.preventDefault(); return }
+      // Block F11 (fullscreen toggle)
+      if (e.key === 'F11') { e.preventDefault(); return }
+      // Block Escape (exits fullscreen)
+      if (e.key === 'Escape' && !submittedRef.current) { e.preventDefault(); return }
+      // Block copy/paste
+      if ((e.metaKey || e.ctrlKey) && (e.key === 'c' || e.key === 'v' || e.key === 'a')) { e.preventDefault(); return }
+    }
+
+    function handleContextMenu(e: MouseEvent) { e.preventDefault() }
+    function handleSelectStart(e: Event) { e.preventDefault() }
+    function handleCopy(e: ClipboardEvent) { e.preventDefault() }
+
+    document.addEventListener('keydown', handleKeyDown)
+    document.addEventListener('contextmenu', handleContextMenu)
+    document.addEventListener('selectstart', handleSelectStart)
+    document.addEventListener('copy', handleCopy)
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown)
+      document.removeEventListener('contextmenu', handleContextMenu)
+      document.removeEventListener('selectstart', handleSelectStart)
+      document.removeEventListener('copy', handleCopy)
+    }
+  }, [session])
+
   async function registerViolation(reason: string) {
     if (!session) return
     violationCount.current += 1
@@ -315,7 +351,28 @@ export default function TakeExamPage() {
   const answeredCount = questions.filter((q) => answers[q.id]).length
 
   return (
-    <div className="page-container" style={{ maxWidth: 640 }}>
+    <div onCopy={(e) => e.preventDefault()} onCut={(e) => e.preventDefault()}>
+      {/* Warning overlay */}
+      {showWarningOverlay && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+          <div style={{ background: 'white', borderRadius: 16, padding: 32, maxWidth: 440, width: '100%', textAlign: 'center' }}>
+            <div style={{ fontSize: 48, marginBottom: 16 }}>⚠️</div>
+            <h2 style={{ margin: '0 0 10px', color: '#c0392b' }}>Security Warning</h2>
+            <p style={{ fontSize: 15, margin: '0 0 8px' }}>{warningReason}</p>
+            <p style={{ fontSize: 13, color: '#666', margin: '0 0 20px' }}>
+              This is a monitored exam. Exiting the exam window is not permitted.
+              {violationCount.current < 3 && ` You have ${3 - violationCount.current} warning${3 - violationCount.current !== 1 ? 's' : ''} remaining before auto-submit.`}
+            </p>
+            <button
+              onClick={() => { setShowWarningOverlay(false); enterFullscreen() }}
+              style={{ background: '#c0392b', color: 'white', border: 'none', borderRadius: 8, padding: '12px 28px', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}
+            >
+              Return to exam
+            </button>
+          </div>
+        </div>
+      )}
+      <div className="page-container" style={{ maxWidth: 640, userSelect: 'none' }}>
       {/* Sticky header */}
       <div style={{ position: 'sticky', top: 0, background: 'var(--page-bg)', padding: '12px 0', borderBottom: '2px solid var(--border-strong)', marginBottom: 20, zIndex: 10 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -513,5 +570,6 @@ export default function TakeExamPage() {
         )}
       </div>
     </div>
+      </div>
   )
 }
