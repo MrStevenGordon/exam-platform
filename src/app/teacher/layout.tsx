@@ -7,7 +7,6 @@ import { supabase } from '@/lib/supabase'
 const BASE_NAV = [
   { label: 'Home', icon: 'ti-home', href: '/teacher' },
   { label: 'My Exams', icon: 'ti-file-text', href: '/teacher/exams' },
-  { label: 'Grade Essays', icon: 'ti-edit', href: '/teacher/grade' },
   { label: 'Question Bank', icon: 'ti-database', href: '/teacher/bank' },
   { label: 'My Profile', icon: 'ti-user', href: '/teacher/profile' },
 ]

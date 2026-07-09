@@ -20,6 +20,8 @@ export default function TeacherHome() {
   const [exams, setExams] = useState<DraftExam[]>([])
   const [essayCount, setEssayCount] = useState(0)
   const [bankCount, setBankCount] = useState(0)
+  const [studentCount, setStudentCount] = useState(0)
+  const [avgScore, setAvgScore] = useState<number | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -58,6 +60,38 @@ export default function TeacherHome() {
       .eq('is_bank_question', true)
     setBankCount(bank || 0)
 
+    // Load students in teacher's classes
+    const { data: teacherClasses } = await supabase
+      .from('teacher_class_groups')
+      .select('class_group_id')
+      .eq('teacher_id', user.id)
+
+    if (teacherClasses && teacherClasses.length > 0) {
+      const classIds = teacherClasses.map((tc) => tc.class_group_id)
+      const { count } = await supabase
+        .from('enrollments')
+        .select('id', { count: 'exact', head: true })
+        .in('class_group_id', classIds)
+      setStudentCount(count || 0)
+
+      // Average score from completed sessions
+      const { data: sessions } = await supabase
+        .from('exam_sessions')
+        .select('total_score, max_possible_score')
+        .eq('status', 'completed')
+        .not('total_score', 'is', null)
+        .in('student_id', 
+          (await supabase.from('enrollments').select('student_id').in('class_group_id', classIds)).data?.map(e => e.student_id) || []
+        )
+      
+      if (sessions && sessions.length > 0) {
+        const avg = sessions.reduce((sum, s) => {
+          return sum + (s.max_possible_score > 0 ? (s.total_score / s.max_possible_score) * 100 : 0)
+        }, 0) / sessions.length
+        setAvgScore(Math.round(avg))
+      }
+    }
+
     setLoading(false)
   }
 
@@ -82,17 +116,13 @@ export default function TeacherHome() {
           <div className="stat-card-value">{exams.length}</div>
           <div className="stat-card-label">Total exams</div>
         </div>
-        <div className={`stat-card ${submitted > 0 ? 'stat-card-accent' : ''}`}>
-          <div className="stat-card-value">{submitted}</div>
-          <div className="stat-card-label">Pending review</div>
-        </div>
-        <div className={`stat-card ${essayCount > 0 ? 'stat-card-danger' : 'stat-card-success'}`}>
-          <div className="stat-card-value">{essayCount}</div>
-          <div className="stat-card-label">Essays to grade</div>
-        </div>
         <div className="stat-card">
-          <div className="stat-card-value">{bankCount}</div>
-          <div className="stat-card-label">Bank questions</div>
+          <div className="stat-card-value">{studentCount}</div>
+          <div className="stat-card-label">Number of students</div>
+        </div>
+        <div className="stat-card stat-card-accent">
+          <div className="stat-card-value">{avgScore !== null ? `${avgScore}%` : '—'}</div>
+          <div className="stat-card-label">Student performance</div>
         </div>
       </div>
 
