@@ -152,7 +152,7 @@ export default function TakeExamPage() {
         image_url: q.image_url,
         order_index: l.order_index,
       }
-    }).filter((q: any) => q && q.id)
+    }).filter((q: any) => q && q.id) as Question[]
     setQuestions(qs)
 
     const { data: existingAnswers } = await supabase
