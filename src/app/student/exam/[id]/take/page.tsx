@@ -74,6 +74,8 @@ export default function TakeExamPage() {
   const [secondsLeft, setSecondsLeft] = useState(0)
   const [warning, setWarning] = useState('')
   const [inFullscreen, setInFullscreen] = useState(false)
+  const [showWarningOverlay, setShowWarningOverlay] = useState(false)
+  const [warningReason, setWarningReason] = useState('')
   const [confirmingSubmit, setConfirmingSubmit] = useState(false)
   const [studentProfile, setStudentProfile] = useState<{ full_name: string; student_id: string | null } | null>(null)
 
