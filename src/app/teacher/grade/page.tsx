@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 
 type UngradedResponse = {
+  overrideScore?: number
   response_id: string
   session_id: string
   answer: string
@@ -12,6 +13,8 @@ type UngradedResponse = {
   points: number
   student_name: string
   exam_title: string
+  marking_points?: any[] | null
+  total_marks?: number | null
 }
 
 export default function GradeEssaysPage() {
@@ -177,7 +180,7 @@ export default function GradeEssaysPage() {
                 <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 8 }}>
                   <button
                     onClick={() => {
-                      const total = item.marking_points.reduce((sum: number, _: any, pi: number) => {
+                      const total = (item.marking_points || []).reduce((sum: number, _: any, pi: number) => {
                         const pointKey = `${item.response_id}_${pi}`
                         return sum + Number(scores[pointKey] ?? 0)
                       }, 0)

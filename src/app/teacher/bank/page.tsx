@@ -19,7 +19,7 @@ export default function TeacherBankPage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.push('/login'); return }
       const { data } = await supabase.from('questions').select('id, question_text, question_type, points, created_at, draft_exams(subject)').eq('created_by', user.id).eq('is_bank_question', true).order('created_at', { ascending: false })
-      setQuestions(data || [])
+      setQuestions((data as any) || [])
       setLoading(false)
     }
     load()

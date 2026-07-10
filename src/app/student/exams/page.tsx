@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 
-type Exam = { id: string; title: string; subject: string; duration_minutes: number; exam_category: string; profiles?: { full_name: string } | null }
+type Exam = { id: string; title: string; subject: string; duration_minutes: number; exam_category: string; profiles?: { full_name: string } | { full_name: string }[] | null }
 
 export default function StudentExamsPage() {
   const router = useRouter()
@@ -18,7 +18,7 @@ export default function StudentExamsPage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.push('/login'); return }
       const { data } = await supabase.from('final_exams').select('id, title, subject, duration_minutes, exam_category, profiles!final_exams_created_by_fkey(full_name)').order('published_at', { ascending: false })
-      setExams(data || [])
+      setExams((data as any) || [])
       const { data: sessions } = await supabase.from('exam_sessions').select('final_exam_id, status').eq('student_id', user.id)
       const map: Record<string, string> = {}
       ;(sessions || []).forEach((s: any) => { if (s.final_exam_id) map[s.final_exam_id] = s.status })

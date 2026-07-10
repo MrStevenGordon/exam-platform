@@ -40,6 +40,10 @@ type Question = {
   options: string[] | null
   correct_answer: string | null
   order_index: number
+  marking_points?: any[] | null
+  total_marks?: number | null
+  section_id?: string | null
+  image_url?: string | null
 }
 
 type SessionInfo = {

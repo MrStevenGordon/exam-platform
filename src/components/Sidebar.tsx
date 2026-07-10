@@ -30,7 +30,7 @@ export default function Sidebar({ navItems, portalLabel }: SidebarProps) {
         .select('full_name, role, student_id, grade_level, departments!profiles_department_id_fkey(name)')
         .eq('id', user.id)
         .single()
-      if (data) setProfile(data)
+      if (data) setProfile(data as any)
     }
     loadProfile()
   }, [])
@@ -120,7 +120,7 @@ export default function Sidebar({ navItems, portalLabel }: SidebarProps) {
                 : profile?.role || ''}
               {profile?.grade_level ? ` · Grade ${profile.grade_level}` : ''}
               {!profile?.student_id && (profile?.departments as any)?.name 
-                ? ` · ${(profile.departments as any).name}` 
+                ? ` · ${(profile?.departments as any)?.name}` 
                 : ''}
             </div>
           </div>

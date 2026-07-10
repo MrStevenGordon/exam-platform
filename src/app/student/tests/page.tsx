@@ -18,7 +18,7 @@ export default function StudentTestsPage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.push('/login'); return }
       const { data } = await supabase.from('draft_exams').select('id, title, subject, exam_kind, duration_minutes, profiles!draft_exams_created_by_fkey(full_name)').eq('direct_published', true).order('direct_published_at', { ascending: false })
-      setExams(data || [])
+      setExams((data as any) || [])
       const { data: sessions } = await supabase.from('exam_sessions').select('draft_exam_id, status').eq('student_id', user.id)
       const map: Record<string, string> = {}
       ;(sessions || []).forEach((s: any) => { if (s.draft_exam_id) map[s.draft_exam_id] = s.status })

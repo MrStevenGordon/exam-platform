@@ -1,4 +1,5 @@
 'use client'
+import React from 'react'
 
 import { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
@@ -182,7 +183,7 @@ export default function ExamEditorPage() {
     setSavingDraft(true)
     const { error } = await supabase
       .from('draft_exams')
-      .update({ title: exam.title, instructions: exam.instructions })
+      .update({ title: exam?.title, instructions: exam?.instructions })
       .eq('id', examId)
     setSavingDraft(false)
     if (!error) {
@@ -487,7 +488,7 @@ export default function ExamEditorPage() {
           const totalS = Math.max(untypedSections.length, 1)
           const baseCount = Math.floor(totalQ / totalS)
           const remainder = totalQ % totalS
-          const items: JSX.Element[] = []
+          const items: React.ReactElement[] = []
           let qStart = 0
           const sortedSections = [...sections].sort((a, b) => {
           const aMatch = a.name.match(/^Section ([A-F])/)
