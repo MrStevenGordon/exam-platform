@@ -211,6 +211,18 @@ export default function TakeExamPage() {
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
   }, [session])
 
+  // Always hide sidebar on take page
+  useEffect(() => {
+    const sidebar = document.querySelector('.portal-layout > *:first-child') as HTMLElement
+    const portalContent = document.querySelector('.portal-content') as HTMLElement
+    if (sidebar) sidebar.style.display = 'none'
+    if (portalContent) { portalContent.style.marginLeft = '0'; portalContent.style.maxWidth = '100%' }
+    return () => {
+      if (sidebar) sidebar.style.display = ''
+      if (portalContent) { portalContent.style.marginLeft = ''; portalContent.style.maxWidth = '' }
+    }
+  }, [])
+
   // Block keyboard shortcuts and right-click
   useEffect(() => {
     if (!session) return
@@ -358,6 +370,7 @@ export default function TakeExamPage() {
 
   return (
     <div onCopy={(e) => e.preventDefault()} onCut={(e) => e.preventDefault()}>
+
       {/* Warning overlay */}
       {showWarningOverlay && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
@@ -392,7 +405,7 @@ export default function TakeExamPage() {
             {minutes}:{seconds.toString().padStart(2, '0')}
           </div>
         </div>
-        {!inFullscreen && (
+        {!inFullscreen && hasBeenFullscreenRef.current && (
           <button onClick={enterFullscreen} className="btn btn-secondary" style={{ marginTop: 8 }}>
             Re-enter fullscreen
           </button>

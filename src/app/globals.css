@@ -283,3 +283,12 @@ input:focus, textarea:focus, select:focus {
 .stat-card-success .stat-card-value { color: var(--success); }
 .stat-card-danger .stat-card-value { color: var(--danger); }
 .stat-card-accent .stat-card-value { color: var(--accent); }
+
+/* Hide sidebar during fullscreen exam */
+body.exam-fullscreen .portal-layout > *:first-child {
+  display: none !important;
+}
+body.exam-fullscreen .portal-content {
+  margin-left: 0 !important;
+  padding-left: 24px !important;
+}

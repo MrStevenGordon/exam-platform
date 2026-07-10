@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 
-type Exam = { id: string; title: string; subject: string; exam_kind: string; duration_minutes: number }
+type Exam = { id: string; title: string; subject: string; exam_kind: string; duration_minutes: number; profiles?: { full_name: string } | null }
 
 export default function StudentTestsPage() {
   const router = useRouter()
@@ -17,7 +17,7 @@ export default function StudentTestsPage() {
     async function load() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.push('/login'); return }
-      const { data } = await supabase.from('draft_exams').select('id, title, subject, exam_kind, duration_minutes').eq('direct_published', true).order('direct_published_at', { ascending: false })
+      const { data } = await supabase.from('draft_exams').select('id, title, subject, exam_kind, duration_minutes, profiles!draft_exams_created_by_fkey(full_name)').eq('direct_published', true).order('direct_published_at', { ascending: false })
       setExams(data || [])
       const { data: sessions } = await supabase.from('exam_sessions').select('draft_exam_id, status').eq('student_id', user.id)
       const map: Record<string, string> = {}
@@ -58,6 +58,9 @@ export default function StudentTestsPage() {
                       <div>
                         <div style={{ fontWeight: 700, fontSize: 14 }}>{exam.title}</div>
                         <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 2 }}>{exam.subject} · {exam.duration_minutes} min</div>
+                      {(exam as any).profiles?.full_name && (
+                        <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>Set by {(exam as any).profiles.full_name}</div>
+                      )}
                       </div>
                       <span className={`badge ${status === 'completed' ? 'badge-success' : status === 'in_progress' ? 'badge-warning' : 'badge-default'}`}>
                         {status === 'completed' ? 'View results' : status === 'in_progress' ? 'Resume' : 'Begin'}

@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 
-type Exam = { id: string; title: string; subject: string; duration_minutes: number; exam_category: string }
+type Exam = { id: string; title: string; subject: string; duration_minutes: number; exam_category: string; profiles?: { full_name: string } | null }
 
 export default function StudentExamsPage() {
   const router = useRouter()
@@ -17,7 +17,7 @@ export default function StudentExamsPage() {
     async function load() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.push('/login'); return }
-      const { data } = await supabase.from('final_exams').select('id, title, subject, duration_minutes, exam_category').order('published_at', { ascending: false })
+      const { data } = await supabase.from('final_exams').select('id, title, subject, duration_minutes, exam_category, profiles!final_exams_created_by_fkey(full_name)').order('published_at', { ascending: false })
       setExams(data || [])
       const { data: sessions } = await supabase.from('exam_sessions').select('final_exam_id, status').eq('student_id', user.id)
       const map: Record<string, string> = {}
@@ -46,6 +46,9 @@ export default function StudentExamsPage() {
                 <div>
                   <div style={{ fontWeight: 700, fontSize: 14 }}>{exam.title}</div>
                   <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 2 }}>{exam.subject} · {kindLabels[exam.exam_category]} · {exam.duration_minutes} min</div>
+                  {(exam as any).profiles?.full_name && (
+                    <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>Published by {(exam as any).profiles.full_name}</div>
+                  )}
                 </div>
                 <span className={`badge ${status === 'completed' ? 'badge-success' : status === 'in_progress' ? 'badge-warning' : 'badge-default'}`}>
                   {status === 'completed' ? 'View results' : status === 'in_progress' ? 'Resume' : 'Begin'}

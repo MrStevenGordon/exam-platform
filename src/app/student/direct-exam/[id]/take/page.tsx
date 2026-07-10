@@ -85,6 +85,18 @@ export default function TakeDirectExamPage() {
   const submittedRef = useRef(false)
   const intentionalExitRef = useRef(false)
 
+  // Always hide sidebar on take page
+  useEffect(() => {
+    const sidebar = document.querySelector('.portal-layout > *:first-child') as HTMLElement
+    const portalContent = document.querySelector('.portal-content') as HTMLElement
+    if (sidebar) sidebar.style.display = 'none'
+    if (portalContent) { portalContent.style.marginLeft = '0'; portalContent.style.maxWidth = '100%' }
+    return () => {
+      if (sidebar) sidebar.style.display = ''
+      if (portalContent) { portalContent.style.marginLeft = ''; portalContent.style.maxWidth = '' }
+    }
+  }, [])
+
   useEffect(() => { loadData() }, [examId])
 
   async function loadData() {
@@ -291,6 +303,7 @@ export default function TakeDirectExamPage() {
 
   return (
     <div onCopy={(e) => e.preventDefault()} onCut={(e) => e.preventDefault()}>
+
       {showWarningOverlay && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
           <div style={{ background: 'white', borderRadius: 16, padding: 32, maxWidth: 440, width: '100%', textAlign: 'center' }}>
@@ -340,7 +353,7 @@ export default function TakeDirectExamPage() {
             {minutes}:{seconds.toString().padStart(2, '0')}
           </div>
         </div>
-        {!inFullscreen && (
+        {!inFullscreen && hasBeenFullscreenRef.current && (
           <button onClick={enterFullscreen} className="btn btn-secondary" style={{ marginTop: 8 }}>
             Re-enter fullscreen
           </button>
