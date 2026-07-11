@@ -10,14 +10,13 @@ const SCHOOL_ADMIN_NAV = [
   { label: 'Activity', icon: 'ti-activity', href: '/school-admin/activity' },
   { label: 'Settings', icon: 'ti-settings', href: '/school-admin/settings' },
   { label: 'My Profile', icon: 'ti-user', href: '/school-admin/profile' },
-  { label: 'My Profile', icon: 'ti-user', href: '/school-admin/profile' },
 ]
 
 export default function SchoolAdminLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="portal-layout" style={{ minHeight: "100vh" }}>
-      <Sidebar navItems={SCHOOL_ADMIN_NAV} portalLabel="School Admin" />
       <main className="portal-content">{children}</main>
+      <Sidebar navItems={SCHOOL_ADMIN_NAV} portalLabel="School Admin" />
     </div>
   )
 }

@@ -134,7 +134,7 @@ export default function Sidebar({ navItems, portalLabel }: SidebarProps) {
       </div>
 
       {/* Mobile drawer */}
-      <div className="mobile-drawer" style={{ position: 'fixed', top: 0, left: mobileOpen ? 0 : -260, width: 260, height: '100vh', background: '#1A0E06', zIndex: 300, transition: 'left 0.25s ease', display: 'none', flexDirection: 'column' }}>
+      <div className="mobile-drawer" style={{ position: 'fixed', top: 0, right: mobileOpen ? 0 : -260, width: 260, height: '100vh', background: '#1A0E06', zIndex: 300, transition: 'left 0.25s ease', display: 'none', flexDirection: 'column' }}>
         {sidebarContent}
       </div>
 

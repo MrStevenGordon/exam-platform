@@ -148,6 +148,15 @@ export default function GradeEssaysPage() {
               {item.answer || <em style={{ color: 'var(--text-secondary)' }}>No answer provided</em>}
             </div>
 
+            {item.working && (
+              <div style={{ marginBottom: 12 }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6 }}>Student working</div>
+                <div style={{ padding: '10px 14px', background: '#F0F4FF', borderRadius: 8, border: '1px solid #C8D4F0', fontSize: 14, fontFamily: 'monospace', whiteSpace: 'pre-wrap', lineHeight: 1.7 }}>
+                  {item.working}
+                </div>
+              </div>
+            )}
+
             {item.marking_points && item.marking_points.length > 0 ? (
               <div style={{ marginBottom: 12 }}>
                 <div className="section-label" style={{ marginBottom: 8 }}>Marking points — award marks per point</div>

@@ -19,6 +19,7 @@ export default function AddQuestionPage() {
   const [points, setPoints] = useState(1)
   const [errorMsg, setErrorMsg] = useState('')
   const [saving, setSaving] = useState(false)
+  const [showWorking, setShowWorking] = useState(false)
   const [imageUrl, setImageUrl] = useState<string | null>(null)
   const [uploadingImage, setUploadingImage] = useState(false)
   const [aiUsage, setAiUsage] = useState<{ used: number; limit: number; remaining: number } | null>(null)
@@ -146,6 +147,7 @@ export default function AddQuestionPage() {
       points,
       order_index: count || 0,
       is_bank_question: saveToBank,
+      show_working: questionType === 'short_answer' && showWorking,
       marking_points: (questionType === 'short_answer' || questionType === 'fill_blank') && markingPoints.some(p => p.text)
         ? markingPoints.map(p => {
             const stopWords = new Set(['a','an','the','is','are','was','were','be','been','being','have','has','had','do','does','did','will','would','could','should','may','might','shall','can','need','dare','ought','used','to','of','in','for','on','with','at','by','from','up','about','into','through','during','before','after','above','below','between','each','both','few','more','most','other','some','such','no','nor','not','only','same','so','than','too','very','just','because','as','until','while','although','and','but','or','nor','so','yet','if','when','where','why','how','all','any','both','each','every','either','neither','one','two','three','four','five','six','seven','eight','nine','ten','that','this','these','those','it','its','their','they','them','he','she','his','her','we','our','you','your','i','my','me','us','who','which','what','meaning','making','requires','require','cannot','can','also','must','want','other','offer'])
@@ -330,6 +332,24 @@ export default function AddQuestionPage() {
         )}
 
         {(questionType === 'short_answer' || questionType === 'fill_blank') && (
+          <div>
+          {questionType === 'short_answer' && (
+            <div style={{ marginBottom: 14, display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: 'var(--accent-light)', borderRadius: 8 }}>
+              <input
+                type="checkbox"
+                id="show-working"
+                checked={showWorking}
+                onChange={(e) => setShowWorking(e.target.checked)}
+                style={{ width: 'auto', accentColor: 'var(--accent)' }}
+              />
+              <label htmlFor="show-working" style={{ fontSize: 13, fontWeight: 600, color: 'var(--accent-dark)', cursor: 'pointer' }}>
+                Require students to show their working
+                <span style={{ display: 'block', fontSize: 11, fontWeight: 400, color: 'var(--text-secondary)', marginTop: 2 }}>
+                  Students will see a working space and a separate final answer box. You can review their working when grading.
+                </span>
+              </label>
+            </div>
+          )}
           <div style={{ marginBottom: 16 }}>
             <label style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)' }}>Single correct answer (for exact match grading)</label><br />
             <input

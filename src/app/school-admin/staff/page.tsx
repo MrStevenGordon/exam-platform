@@ -260,7 +260,7 @@ export default function StaffPage() {
                 <span style={{ color: 'var(--danger)', fontWeight: 700 }}>✗ {csvResults.filter(r => r.status === 'failed').length} failed</span>
               </div>
               {csvResults.filter(r => r.status === 'failed').map((r, i) => (
-                <div key={i} style={{ fontSize: 12, color: 'var(--danger)', marginBottom: 4 }}>✗ {r.name} — {r.reason}</div>
+                <div key={i} style={{ fontSize: 12, color: 'var(--danger)', marginBottom: 4 }}>✗ {r.name && r.name.trim() !== 'undefined undefined' ? r.name : r.email} — {r.reason}</div>
               ))}
             </div>
           )}
@@ -307,7 +307,7 @@ export default function StaffPage() {
                 else next.add(deptName)
                 return next
               })}
-              style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', background: 'var(--card-bg)', borderRadius: 'var(--radius)', border: '1px solid var(--border)', cursor: 'pointer', marginBottom: 6 }}
+              style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', background: expandedDepts.has(deptName) ? 'var(--accent-light)' : 'var(--card-bg)', borderRadius: 'var(--radius)', border: `1px solid ${expandedDepts.has(deptName) ? 'var(--accent)' : 'var(--border)'}`, cursor: 'pointer', marginBottom: 6, transition: 'all 0.15s' }}
             >
               <div style={{ fontWeight: 700, fontSize: 15 }}>{deptName}</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>

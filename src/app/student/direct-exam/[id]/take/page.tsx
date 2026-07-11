@@ -67,6 +67,7 @@ export default function TakeDirectExamPage() {
   const [exam, setExam] = useState<ExamInfo | null>(null)
   const [questions, setQuestions] = useState<Question[]>([])
   const [answers, setAnswers] = useState<Record<string, string>>({})
+  const [workings, setWorkings] = useState<Record<string, string>>({})
   const [session, setSession] = useState<SessionInfo | null>(null)
   const [currentPage, setCurrentPage] = useState(0)
   const [loading, setLoading] = useState(true)
@@ -138,7 +139,7 @@ export default function TakeDirectExamPage() {
 
     const { data: questionData, error: questionError } = await supabase
       .from('questions')
-      .select('id, question_type, question_text, points, options, correct_answer, order_index, marking_points, total_marks, image_url')
+      .select('id, question_type, question_text, points, options, correct_answer, order_index, marking_points, total_marks, image_url, show_working')
       .eq('draft_exam_id', examId)
       .order('order_index', { ascending: true })
 
@@ -220,6 +221,10 @@ export default function TakeDirectExamPage() {
     }
   }
 
+  function updateWorking(questionId: string, value: string) {
+    setWorkings(prev => ({ ...prev, [questionId]: value }))
+  }
+
   function updateAnswer(questionId: string, value: string) {
     setAnswers((prev) => ({ ...prev, [questionId]: value }))
   }
@@ -269,7 +274,7 @@ export default function TakeDirectExamPage() {
       if (awarded === null) hasEssay = true
       else autoScore += awarded
       autoMax += q.points
-      return { session_id: session.id, question_id: q.id, answer: studentAnswer, points_awarded: awarded, graded_at: awarded !== null ? new Date().toISOString() : null }
+      return { session_id: session.id, question_id: q.id, answer: studentAnswer, working: workings[q.id] || null, points_awarded: awarded, graded_at: awarded !== null ? new Date().toISOString() : null }
     })
 
     await supabase.from('responses').delete().eq('session_id', session.id)
@@ -400,6 +405,22 @@ export default function TakeDirectExamPage() {
                 </div>
               )}
 
+              {q.question_type === 'short_answer' && (q as any).show_working && (
+                <div style={{ marginBottom: 12 }}>
+                  <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: 0.5 }}>Show your working</label>
+                  <textarea
+                    value={workings[q.id] || ''}
+                    onChange={(e) => updateWorking(q.id, e.target.value)}
+                    rows={5}
+                    style={{ width: '100%', marginTop: 6, fontFamily: 'monospace', fontSize: 14 }}
+                    placeholder="Show all your working here — steps, calculations…"
+                  />
+                  <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>Your working is visible to your teacher but does not affect automatic grading.</div>
+                </div>
+              )}
+              {q.question_type === 'short_answer' && (q as any).show_working && (
+                <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: 0.5, display: 'block', marginBottom: 6 }}>Final answer</label>
+              )}
               {(q.question_type === 'short_answer' || q.question_type === 'fill_blank') && (
                 <div>
                   {q.marking_points && q.marking_points.length > 0 ? (
