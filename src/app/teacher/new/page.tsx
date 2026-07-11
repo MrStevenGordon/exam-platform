@@ -68,7 +68,11 @@ export default function NewExamPage() {
               onChange={(e) => setExamKind(e.target.value)}
               style={{ width: '100%', marginTop: 6 }}
             >
-              <option value="pop_quiz">Pop quiz (publish directly to your class)</option>
+              <option value="pop_quiz">Pop quiz</option>
+              <option value="pop_quiz">Class test</option>
+              <option value="pop_quiz">Weekly test</option>
+              <option value="pop_quiz">Assignment</option>
+              <option value="pop_quiz">Homework</option>
 
             </select>
           </div>

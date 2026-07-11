@@ -17,6 +17,7 @@ export default function TeacherProfilePage() {
   const [assignedIds, setAssignedIds] = useState<Set<string>>(new Set())
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [expandedGrades, setExpandedGrades] = useState<Set<string>>(new Set())
   const [changingPassword, setChangingPassword] = useState(false)
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -43,6 +44,7 @@ export default function TeacherProfilePage() {
       .from('class_groups')
       .select('id, name, year_grade')
       .order('year_grade', { ascending: true })
+      .order('name', { ascending: true })
     setClassGroups(cgData || [])
 
     // Load teacher's assigned classes
@@ -120,11 +122,27 @@ export default function TeacherProfilePage() {
         </p>
 
         {grades.map((grade) => {
-          const gradeClasses = classGroups.filter((cg) => cg.year_grade === grade)
+          const gradeClasses = classGroups.filter((cg) => cg.year_grade === grade).sort((a, b) => {
+              const aNum = parseInt(a.name.split('-')[1] || '0')
+              const bNum = parseInt(b.name.split('-')[1] || '0')
+              return aNum - bNum
+            })
           if (gradeClasses.length === 0) return null
+          const selectedInGrade = gradeClasses.filter(cg => assignedIds.has(cg.id)).length
+          const isExpanded = expandedGrades.has(grade)
           return (
-            <div key={grade} style={{ marginBottom: 20 }}>
-              <div className="section-label" style={{ marginBottom: 10 }}>{grade}</div>
+            <div key={grade} style={{ marginBottom: 8, border: '1px solid var(--border)', borderRadius: 8, overflow: 'hidden' }}>
+              <div
+                onClick={() => setExpandedGrades(prev => { const next = new Set(prev); next.has(grade) ? next.delete(grade) : next.add(grade); return next })}
+                style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', cursor: 'pointer', background: isExpanded ? 'var(--accent-light)' : 'var(--page-bg)' }}
+              >
+                <div style={{ fontWeight: 600, fontSize: 14 }}>{grade}</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  {selectedInGrade > 0 && <span style={{ fontSize: 11, background: 'var(--accent)', color: 'white', borderRadius: 20, padding: '2px 8px' }}>{selectedInGrade} selected</span>}
+                  <span style={{ color: 'var(--text-muted)', fontSize: 16 }}>{isExpanded ? '▲' : '▼'}</span>
+                </div>
+              </div>
+              {isExpanded && <div style={{ padding: '10px 14px', borderTop: '1px solid var(--border)' }}>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                 {gradeClasses.map((cg) => (
                   <label key={cg.id} style={{
@@ -145,6 +163,7 @@ export default function TeacherProfilePage() {
                   </label>
                 ))}
               </div>
+              </div>}
             </div>
           )
         })}

@@ -665,7 +665,7 @@ export default function ExamEditorPage() {
                 return (
                   <div key={grade} style={{ marginBottom: 12 }}>
                     {/* Year group header with select-all */}
-                    <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', padding: '8px 10px', background: 'var(--page-bg)', borderRadius: 8, border: '1px solid var(--border)', fontWeight: 700, fontSize: 13 }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', padding: '8px 10px', background: 'var(--page-bg)', borderRadius: 8, border: '1px solid var(--border)', fontWeight: 700, fontSize: 13, width: '100%', boxSizing: 'border-box' }}>
                       <input
                         type="checkbox"
                         checked={allSelected}
@@ -685,14 +685,14 @@ export default function ExamEditorPage() {
                     </label>
 
                     {/* Individual classes */}
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 8, paddingLeft: 16 }}>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 8, paddingLeft: 8 }}>
                       {gradeClasses.map((cg) => (
                         <label key={cg.id} style={{
                           display: 'flex', alignItems: 'center', gap: 6,
-                          padding: '5px 12px', borderRadius: 20, cursor: 'pointer',
+                          padding: '6px 12px', borderRadius: 8, cursor: 'pointer',
                           border: `1.5px solid ${selectedGroups.has(cg.id) ? 'var(--accent)' : 'var(--border-strong)'}`,
                           background: selectedGroups.has(cg.id) ? 'var(--accent-light)' : 'var(--card-bg)',
-                          fontSize: 13, fontWeight: 600,
+                          fontSize: 13, fontWeight: 600, minWidth: 60,
                           color: selectedGroups.has(cg.id) ? 'var(--accent-dark)' : 'var(--text-secondary)',
                         }}>
                           <input

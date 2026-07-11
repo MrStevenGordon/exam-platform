@@ -143,7 +143,11 @@ export default function StudentsPage() {
       .filter((s) => !filterGrade || s.grade_level === parseInt(filterGrade))
       .map((s) => s.class_name)
       .filter(Boolean)
-  )].sort()
+  )].sort((a, b) => {
+    const aNum = parseInt((a || '').split('-')[1] || '0')
+    const bNum = parseInt((b || '').split('-')[1] || '0')
+    return aNum - bNum
+  })
 
   const successCount = importResults.filter((r) => r.status === 'success').length
   const failCount = importResults.filter((r) => r.status === 'failed').length
@@ -253,7 +257,11 @@ export default function StudentsPage() {
       {[7, 8, 9, 10, 11].map((grade) => {
         const gradeStudents = filtered.filter((s) => s.grade_level === grade)
         if (gradeStudents.length === 0) return null
-        const classes = [...new Set(gradeStudents.map((s) => s.class_name).filter(Boolean))].sort()
+        const classes = [...new Set(gradeStudents.map((s) => s.class_name).filter(Boolean))].sort((a, b) => {
+          const aNum = parseInt((a || '').split('-')[1] || '0')
+          const bNum = parseInt((b || '').split('-')[1] || '0')
+          return aNum - bNum
+        })
 
         return (
           <div key={grade} style={{ marginBottom: 16 }}>

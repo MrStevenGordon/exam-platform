@@ -37,7 +37,7 @@ const TERMS = [
 ]
 
 const TERM_EXAM_KINDS: Record<string, string[]> = {
-  christmas: ['monthly', 'end_of_term'],
+  christmas: ['monthly', 'midterm', 'end_of_term'],
   easter: ['monthly', 'midterm'],
   summer: ['monthly', 'midterm', 'end_of_year'],
 }

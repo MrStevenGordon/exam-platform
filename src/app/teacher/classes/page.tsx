@@ -39,7 +39,7 @@ export default function MyClassesPage() {
       // Get students in those classes
       const { data: enrollments } = await supabase
         .from('enrollments')
-        .select('class_group_id, profiles!enrollments_student_id_fkey(id, full_name, student_id)')
+        .select('class_group_id, student_id, profiles!enrollments_student_id_fkey(id, full_name, student_id)')
         .in('class_group_id', classIds)
 
       // Group students by class

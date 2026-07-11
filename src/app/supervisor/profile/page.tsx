@@ -42,6 +42,7 @@ export default function SupervisorProfilePage() {
       .from('class_groups')
       .select('id, name, year_grade')
       .order('year_grade')
+      .order('name', { ascending: true })
     setClassGroups(cgData || [])
 
     const { data: assigned } = await supabase
@@ -118,7 +119,11 @@ export default function SupervisorProfilePage() {
         </p>
 
         {grades.map((grade) => {
-          const gradeClasses = classGroups.filter((cg) => cg.year_grade === grade)
+          const gradeClasses = classGroups.filter((cg) => cg.year_grade === grade).sort((a, b) => {
+              const aNum = parseInt(a.name.split('-')[1] || '0')
+              const bNum = parseInt(b.name.split('-')[1] || '0')
+              return aNum - bNum
+            })
           if (gradeClasses.length === 0) return null
           return (
             <div key={grade} style={{ marginBottom: 20 }}>

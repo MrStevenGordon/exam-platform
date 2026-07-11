@@ -42,7 +42,7 @@ export default function TeacherLayout({ children }: { children: React.ReactNode 
   }, [])
 
   return (
-    <div className="portal-layout">
+    <div className="portal-layout" style={{ minHeight: "100vh" }}>
       <Sidebar navItems={navItems} portalLabel="Teacher Portal" />
       <main className="portal-content">{children}</main>
     </div>

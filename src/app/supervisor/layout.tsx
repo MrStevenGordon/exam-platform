@@ -16,7 +16,7 @@ const SUPERVISOR_NAV = [
 
 export default function SupervisorLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="portal-layout">
+    <div className="portal-layout" style={{ minHeight: "100vh" }}>
       <Sidebar navItems={SUPERVISOR_NAV} portalLabel="Supervisor Portal" />
       <main className="portal-content">{children}</main>
     </div>
