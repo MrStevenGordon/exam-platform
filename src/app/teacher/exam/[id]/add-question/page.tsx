@@ -359,6 +359,7 @@ export default function AddQuestionPage() {
               placeholder="Leave blank if using marking points below"
             />
           </div>
+          </div>
         )}
 
         {(questionType === 'short_answer' || questionType === 'fill_blank') && (
