@@ -455,6 +455,24 @@ body.exam-fullscreen .portal-content {
   /* Ensure no horizontal overflow from inline styles */
   [style*="display: grid"]:not(.calc-grid) { min-width: 0; }
   [style*="display: flex"]:not(.calc-row) { min-width: 0; }
+
+  /* Header-style rows (page title + button/badge/timer) are set inline
+     across almost every portal page with no wrap and no shrink guard —
+     on narrow screens the two sides collide or push off-screen.
+     Let them wrap onto two lines instead. */
+  [style*="justify-content: space-between"]:not(.calc-row) {
+    flex-wrap: wrap;
+    row-gap: 8px;
+  }
+
+  /* Ad-hoc 2/3-equal-column grids (form fields, filter rows, stat pairs)
+     stay multi-column at any width today, which crushes each column too
+     narrow to read on a phone. Stack them to one column on mobile.
+     (.stat-grid is handled separately above and unaffected — it's a
+     class, not an inline style, so this selector doesn't touch it.) */
+  [style*="grid-template-columns: 1fr 1fr"] {
+    grid-template-columns: 1fr !important;
+  }
 }
 
 @media (max-width: 480px) {
