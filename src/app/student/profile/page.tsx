@@ -68,13 +68,13 @@ export default function StudentProfilePage() {
         .eq('student_id', user.id)
         .single()
 
-      if (enrollment) {
+      if (classEnrollment) {
         const { data: teacherData, error: teacherError } = await supabase
           .from('teacher_class_groups')
           .select('teacher_id, class_group_id')
           .eq('class_group_id', classEnrollment.class_group_id)
 
-        console.log('teacherData:', teacherData, 'error:', teacherError)
+        console.log('teacherData:', JSON.stringify(teacherData), 'error:', teacherError)
 
         if (teacherData && teacherData.length > 0) {
           const teacherIds = teacherData.map((t: any) => t.teacher_id)
@@ -83,6 +83,7 @@ export default function StudentProfilePage() {
             .select('id, full_name, department_id, departments!profiles_department_id_fkey(name)')
             .in('id', teacherIds)
 
+          console.log('profileData:', JSON.stringify(profileData))
           const mapped = (profileData || []).map((p: any) => ({
             full_name: p.full_name || 'Unknown',
             class_name: classEnrollment.class_group_id,
