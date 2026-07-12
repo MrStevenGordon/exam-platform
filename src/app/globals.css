@@ -87,7 +87,7 @@ button {
   cursor: pointer;
 }
 
-input, textarea, select {
+input:not([type="checkbox"]):not([type="radio"]), textarea, select {
   font-family: inherit;
   font-size: 14px;
   border: 1.5px solid var(--border-strong);
@@ -97,6 +97,11 @@ input, textarea, select {
   color: var(--text-primary);
   transition: border-color 0.15s, box-shadow 0.15s;
   width: 100%;
+}
+
+input[type="checkbox"], input[type="radio"] {
+  width: auto;
+  flex-shrink: 0;
 }
 
 input:focus, textarea:focus, select:focus {
