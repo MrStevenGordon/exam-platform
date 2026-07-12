@@ -453,8 +453,8 @@ body.exam-fullscreen .portal-content {
   .form-row { flex-direction: column !important; }
 
   /* Ensure no horizontal overflow from inline styles */
-  [style*="display: grid"] { min-width: 0; }
-  [style*="display: flex"] { min-width: 0; }
+  [style*="display: grid"]:not(.calc-grid) { min-width: 0; }
+  [style*="display: flex"]:not(.calc-row) { min-width: 0; }
 }
 
 @media (max-width: 480px) {
@@ -464,4 +464,17 @@ body.exam-fullscreen .portal-content {
   .portal-page-title { font-size: 15px; }
   .card { padding: 10px 12px; }
   .btn { font-size: 13px; padding: 9px 14px; }
+}
+
+/* Scientific calculator — protect from mobile overrides */
+.scientific-calculator,
+.scientific-calculator * {
+  box-sizing: border-box !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  width: auto !important;
+}
+.scientific-calculator button {
+  width: 100% !important;
+  min-height: 36px !important;
 }

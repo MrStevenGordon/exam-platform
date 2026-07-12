@@ -104,6 +104,7 @@ export default function ScientificCalculator() {
 
       {open && (
         <div
+          className="scientific-calculator"
           style={{
             position: 'fixed', left: position.x, top: position.y, zIndex: 600,
             background: 'var(--card-bg)', borderRadius: 12, padding: 12,
