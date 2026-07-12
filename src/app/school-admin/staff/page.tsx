@@ -28,6 +28,7 @@ export default function StaffPage() {
   const [showCsvImport, setShowCsvImport] = useState(false)
   const [csvImporting, setCsvImporting] = useState(false)
   const [csvResults, setCsvResults] = useState<{name: string; email: string; status: string; reason?: string}[]>([])
+  const [bulkResetting, setBulkResetting] = useState(false)
 
   // New staff form
   const [newFirstName, setNewFirstName] = useState('')
@@ -64,6 +65,29 @@ export default function StaffPage() {
     const result = await res.json()
     if (result.error) alert('Error: ' + result.error)
     else alert(`Password reset to "${defaultPw}". User must change it on next login.`)
+  }
+
+  async function handleResetAllPasswords() {
+    const first = confirm(`Reset ALL ${staff.length} staff passwords to "Staff.Default1"? This does not touch system admin accounts.`)
+    if (!first) return
+    const second = confirm(`Are you sure? This cannot be undone, and everyone will need to log in and change their password.`)
+    if (!second) return
+
+    setBulkResetting(true)
+    let success = 0
+    let failed = 0
+    for (const s of staff) {
+      const res = await fetch('/api/create-user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'reset-password', data: { user_id: s.id, password: 'Staff.Default1' } })
+      })
+      const result = await res.json()
+      if (result.error) failed++
+      else success++
+    }
+    setBulkResetting(false)
+    alert(`Done. ${success} reset, ${failed} failed, out of ${staff.length} staff.`)
   }
 
   async function handleAddStaff() {
@@ -199,6 +223,9 @@ export default function StaffPage() {
           </button>
           <button className="btn btn-secondary" onClick={() => setShowCsvImport(!showCsvImport)}>
             ↑ Import CSV
+          </button>
+          <button className="btn btn-secondary" onClick={handleResetAllPasswords} disabled={bulkResetting}>
+            {bulkResetting ? 'Resetting…' : 'Reset all passwords'}
           </button>
         </div>
       </div>

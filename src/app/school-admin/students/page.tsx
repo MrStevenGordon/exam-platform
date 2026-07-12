@@ -41,6 +41,7 @@ export default function StudentsPage() {
   const [csvPreview, setCsvPreview] = useState<any[]>([])
   const [csvRaw, setCsvRaw] = useState('')
   const fileRef = useRef<HTMLInputElement>(null)
+  const [bulkResetting, setBulkResetting] = useState(false)
 
   useEffect(() => { loadData() }, [])
 
@@ -72,6 +73,29 @@ export default function StudentsPage() {
     const result = await res.json()
     if (result.error) alert('Error: ' + result.error)
     else alert('Password reset to "Student.Test". Student must change it on next login.')
+  }
+
+  async function handleResetAllStudentPasswords() {
+    const first = confirm(`Reset ALL ${students.length} student passwords to "Student.Test"?`)
+    if (!first) return
+    const second = confirm(`Are you sure? This cannot be undone, and every student will need to log in and change their password.`)
+    if (!second) return
+
+    setBulkResetting(true)
+    let success = 0
+    let failed = 0
+    for (const s of students) {
+      const res = await fetch('/api/create-user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'reset-password', data: { user_id: s.id, password: 'Student.Test' } })
+      })
+      const result = await res.json()
+      if (result.error) failed++
+      else success++
+    }
+    setBulkResetting(false)
+    alert(`Done. ${success} reset, ${failed} failed, out of ${students.length} students.`)
   }
 
   function parseCSV(text: string) {
@@ -171,9 +195,14 @@ export default function StudentsPage() {
           <p className="portal-page-title" style={{ margin: 0 }}>Students</p>
           <p className="portal-page-sub" style={{ margin: '4px 0 0' }}>{students.length} enrolled students</p>
         </div>
-        <button className="btn btn-primary" onClick={() => setShowImport(!showImport)}>
-          ↑ Import students
-        </button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button className="btn btn-primary" onClick={() => setShowImport(!showImport)}>
+            ↑ Import students
+          </button>
+          <button className="btn btn-secondary" onClick={handleResetAllStudentPasswords} disabled={bulkResetting}>
+            {bulkResetting ? 'Resetting…' : 'Reset all passwords'}
+          </button>
+        </div>
       </div>
 
       {showImport && (
