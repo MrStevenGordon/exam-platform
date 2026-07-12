@@ -80,9 +80,9 @@ export default function ScientificCalculator() {
   }
 
   const btnStyle = (color = 'var(--card-bg)', textColor = 'var(--text-primary)') => ({
-    padding: '8px 4px', borderRadius: 6, border: '1px solid var(--border)',
+    padding: '9px 2px', borderRadius: 6, border: '1px solid var(--border)',
     background: color, color: textColor, cursor: 'pointer', fontSize: 13, fontWeight: 600,
-    width: '100%',
+    width: '100%', textAlign: 'center' as const, minHeight: 36,
   })
 
   return (
@@ -127,9 +127,13 @@ export default function ScientificCalculator() {
           </div>
 
           {/* Scientific row */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 4, marginBottom: 4 }}>
-            {[['sin','sin'],['cos','cos'],['tan','tan'],['log','log'],['ln','ln'],
-              ['√','sqrt'],['x²','x2'],['x³','x3'],['1/x','1/x'],['π','pi']].map(([label, fn]) => (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 3, marginBottom: 4 }}>
+            {[['sin','sin'],['cos','cos'],['tan','tan'],['log','log'],['ln','ln']].map(([label, fn]) => (
+              <button key={fn} onClick={() => handleSci(fn)} style={btnStyle('var(--accent-light)', 'var(--accent-dark)')}>{label}</button>
+            ))}
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 3, marginBottom: 4 }}>
+            {[['√','sqrt'],['x²','x2'],['x³','x3'],['1/x','1/x'],['π','pi']].map(([label, fn]) => (
               <button key={fn} onClick={() => handleSci(fn)} style={btnStyle('var(--accent-light)', 'var(--accent-dark)')}>{label}</button>
             ))}
           </div>
