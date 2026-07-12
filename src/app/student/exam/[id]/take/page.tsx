@@ -61,6 +61,7 @@ type ExamInfo = {
   id: string
   title: string
   questions_per_page: number
+  calculator_enabled: boolean
 }
 
 export default function TakeExamPage() {
@@ -85,6 +86,7 @@ export default function TakeExamPage() {
   const [warningReason, setWarningReason] = useState('')
   const [confirmingSubmit, setConfirmingSubmit] = useState(false)
   const [studentProfile, setStudentProfile] = useState<{ full_name: string; student_id: string | null } | null>(null)
+  const [calculatorEnabled, setCalculatorEnabled] = useState(false)
 
   const violationCount = useRef(0)
   const hasBeenFullscreenRef = useRef(false)
@@ -123,12 +125,13 @@ export default function TakeExamPage() {
 
     const { data: examData, error: examError } = await supabase
       .from('final_exams')
-      .select('id, title, questions_per_page')
+      .select('id, title, questions_per_page, calculator_enabled')
       .eq('id', examId)
       .single()
 
     if (examError) { setErrorMsg(examError.message); setLoading(false); return }
     setExam(examData)
+    if (examData?.calculator_enabled) setCalculatorEnabled(true)
 
     const { data: sectionData } = await supabase
       .from('exam_sections')
@@ -639,6 +642,7 @@ export default function TakeExamPage() {
         )}
       </div>
     </div>
+      {calculatorEnabled && <ScientificCalculator />}
       </div>
   )
 }

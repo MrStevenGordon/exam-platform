@@ -18,6 +18,7 @@ type DraftExam = {
   access_password: string | null
   questions_per_page: number
   department_id: string | null
+  calculator_enabled: boolean
 }
 
 type Question = {
@@ -68,7 +69,7 @@ export default function SupervisorExamPublishPage() {
   async function loadData() {
     const { data: examData } = await supabase
       .from('draft_exams')
-      .select('id, title, subject, exam_kind, term, target_grade, status, instructions, duration_minutes, access_password, questions_per_page, department_id')
+      .select('id, title, subject, exam_kind, term, target_grade, status, instructions, duration_minutes, access_password, questions_per_page, department_id, calculator_enabled')
       .eq('id', examId)
       .single()
     setExam(examData)
@@ -110,6 +111,7 @@ export default function SupervisorExamPublishPage() {
         published_at: new Date().toISOString(),
         questions_per_page: exam!.questions_per_page,
         target_grade: exam!.target_grade,
+        calculator_enabled: exam!.calculator_enabled,
       })
       .select()
       .single()
