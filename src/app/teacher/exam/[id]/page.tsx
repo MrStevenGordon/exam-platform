@@ -312,6 +312,11 @@ export default function ExamEditorPage() {
             </p>
           )}
         </div>
+        <div style={{ marginTop: 12 }}>
+          <Link href={`/teacher/exam/${examId}/sessions`}>
+            <button className="btn btn-secondary" style={{ fontSize: 13 }}>📊 View student results</button>
+          </Link>
+        </div>
       )}
 
       {isFinalExamSubmission && !isLocked && hasComments && (
