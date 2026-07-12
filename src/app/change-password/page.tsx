@@ -1,10 +1,10 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 
-export default function ChangePasswordPage() {
+function ChangePasswordForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const isFirst = searchParams.get('first') === 'true'
@@ -94,5 +94,13 @@ export default function ChangePasswordPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function ChangePasswordPage() {
+  return (
+    <Suspense fallback={<div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Loading…</div>}>
+      <ChangePasswordForm />
+    </Suspense>
   )
 }
