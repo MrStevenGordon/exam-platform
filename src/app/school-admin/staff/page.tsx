@@ -76,6 +76,7 @@ export default function StaffPage() {
     setBulkResetting(true)
     let success = 0
     let failed = 0
+    const errors: string[] = []
     for (const s of staff) {
       const res = await fetch('/api/create-user', {
         method: 'POST',
@@ -83,11 +84,16 @@ export default function StaffPage() {
         body: JSON.stringify({ type: 'reset-password', data: { user_id: s.id, password: 'Staff.Default1' } })
       })
       const result = await res.json()
-      if (result.error) failed++
-      else success++
+      if (result.error) {
+        failed++
+        console.error(`Reset failed for ${s.full_name} (${s.id}):`, result.error)
+        if (errors.length < 3) errors.push(`${s.full_name}: ${result.error}`)
+      } else {
+        success++
+      }
     }
     setBulkResetting(false)
-    alert(`Done. ${success} reset, ${failed} failed, out of ${staff.length} staff.`)
+    alert(`Done. ${success} reset, ${failed} failed, out of ${staff.length} staff.${errors.length ? '\n\nSample errors:\n' + errors.join('\n') : ''}`)
   }
 
   async function handleAddStaff() {
