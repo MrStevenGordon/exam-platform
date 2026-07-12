@@ -304,18 +304,20 @@ export default function ExamEditorPage() {
 
 
       {!isFinalExamSubmission && exam.direct_published && (
-        <div className="banner banner-success" style={{ marginTop: 16 }}>
-          <p style={{ margin: 0 }}>This exam is published and visible to students in the selected class(es).</p>
-          {exam.access_password && (
-            <p style={{ marginTop: 8, marginBottom: 0, fontSize: 18, fontWeight: 700 }}>
-              Exam password: <span style={{ fontFamily: 'monospace', background: 'white', padding: '2px 10px', borderRadius: 6 }}>{exam.access_password}</span>
-            </p>
-          )}
-        </div>
-        <div style={{ marginTop: 12 }}>
-          <Link href={`/teacher/exam/${examId}/sessions`}>
-            <button className="btn btn-secondary" style={{ fontSize: 13 }}>📊 View student results</button>
-          </Link>
+        <div style={{ marginTop: 16 }}>
+          <div className="banner banner-success">
+            <p style={{ margin: 0 }}>This exam is published and visible to students in the selected class(es).</p>
+            {exam.access_password && (
+              <p style={{ marginTop: 8, marginBottom: 0, fontSize: 18, fontWeight: 700 }}>
+                Exam password: <span style={{ fontFamily: 'monospace', background: 'white', padding: '2px 10px', borderRadius: 6 }}>{exam.access_password}</span>
+              </p>
+            )}
+          </div>
+          <div style={{ marginTop: 12 }}>
+            <Link href={`/teacher/exam/${examId}/sessions`}>
+              <button className="btn btn-secondary" style={{ fontSize: 13 }}>📊 View student results</button>
+            </Link>
+          </div>
         </div>
       )}
 

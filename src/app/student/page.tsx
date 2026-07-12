@@ -65,7 +65,7 @@ export default function StudentHome() {
 
     const { data: directSessions } = await supabase
       .from('exam_sessions')
-      .select('total_score, max_possible_score, completed_at, results_released, draft_exam_id, draft_exams(title, exam_kind)')
+      .select('total_score, max_possible_score, completed_at, results_released, draft_exam_id')
       .eq('student_id', user.id)
       .eq('status', 'completed')
       .eq('results_released', true)
@@ -88,9 +88,9 @@ export default function StudentHome() {
         examType: 'final',
       })),
       ...((directSessions as any) || []).filter((s: any) => s.max_possible_score > 0).map((s: any) => ({
-        title: s.draft_exams?.title || 'Exam',
+        title: 'Exam',
         pct: Math.round((s.total_score / s.max_possible_score) * 100),
-        kind: kindLabels[s.draft_exams?.exam_kind] || 'Exam',
+        kind: 'Exam',
         date: s.completed_at,
         examId: s.draft_exam_id,
         examType: 'direct',
@@ -105,12 +105,18 @@ export default function StudentHome() {
       .order('published_at', { ascending: false })
       .limit(3)
 
-    const { data: directExams } = await supabase
-      .from('draft_exams')
-      .select('id, title, subject, exam_kind')
-      .eq('direct_published', true)
-      .order('direct_published_at', { ascending: false })
-      .limit(3)
+    // Get student's class first for filtering
+    const { data: studentEnrollment } = await supabase
+      .from('enrollments')
+      .select('class_group_id')
+      .eq('student_id', user.id)
+      .single()
+
+    const { data: directExams } = studentEnrollment ? await supabase
+      .from('draft_exam_class_groups')
+      .select('draft_exams!draft_exam_class_groups_draft_exam_id_fkey(id, title, subject, exam_kind)')
+      .eq('class_group_id', studentEnrollment.class_group_id)
+      .limit(3) : { data: [] }
 
     const { data: takenSessions } = await supabase
       .from('exam_sessions')

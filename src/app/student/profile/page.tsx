@@ -17,6 +17,7 @@ export default function StudentProfilePage() {
   const [pwSuccess, setPwSuccess] = useState('')
   const [savingPw, setSavingPw] = useState(false)
   const [stats, setStats] = useState({ total: 0, completed: 0, avgScore: null as number | null })
+  const [teachers, setTeachers] = useState<{ full_name: string; class_name: string; department: string }[]>([])
 
   useEffect(() => {
     async function load() {
@@ -33,10 +34,17 @@ export default function StudentProfilePage() {
       // Get class
       const { data: enrollment } = await supabase
         .from('enrollments')
-        .select('class_groups(name, year_grade)')
+        .select('class_group_id')
         .eq('student_id', user.id)
         .single()
-      setClassName((enrollment?.class_groups as any)?.name || '—')
+      if (enrollment?.class_group_id) {
+        const { data: cgData } = await supabase
+          .from('class_groups')
+          .select('name, year_grade')
+          .eq('id', enrollment.class_group_id)
+          .single()
+        setClassName(cgData?.name || '—')
+      }
 
       // Get exam stats
       const { data: sessions } = await supabase
@@ -51,6 +59,37 @@ export default function StudentProfilePage() {
           ? Math.round(scored.reduce((sum, s) => sum + (s.total_score / s.max_possible_score * 100), 0) / scored.length)
           : null
         setStats({ total: sessions.length, completed: completed.length, avgScore: avg })
+      }
+
+      // Load student's teachers via class enrollment
+      const { data: classEnrollment } = await supabase
+        .from('enrollments')
+        .select('class_group_id')
+        .eq('student_id', user.id)
+        .single()
+
+      if (enrollment) {
+        const { data: teacherData, error: teacherError } = await supabase
+          .from('teacher_class_groups')
+          .select('teacher_id, class_group_id')
+          .eq('class_group_id', classEnrollment.class_group_id)
+
+        console.log('teacherData:', teacherData, 'error:', teacherError)
+
+        if (teacherData && teacherData.length > 0) {
+          const teacherIds = teacherData.map((t: any) => t.teacher_id)
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('id, full_name, department_id, departments!profiles_department_id_fkey(name)')
+            .in('id', teacherIds)
+
+          const mapped = (profileData || []).map((p: any) => ({
+            full_name: p.full_name || 'Unknown',
+            class_name: classEnrollment.class_group_id,
+            department: p.departments?.name || '',
+          }))
+          setTeachers(mapped)
+        }
       }
 
       setLoading(false)
@@ -125,6 +164,30 @@ export default function StudentProfilePage() {
           <div className="stat-card-value">{stats.avgScore !== null ? `${stats.avgScore}%` : '—'}</div>
           <div className="stat-card-label">Average score</div>
         </div>
+      </div>
+
+      {/* My Teachers */}
+      <div className="card" style={{ marginBottom: 16 }}>
+        <h2 style={{ marginBottom: 12 }}>My teachers</h2>
+        {teachers.length === 0 ? (
+          <p style={{ color: 'var(--text-secondary)', fontSize: 13 }}>No teachers assigned yet.</p>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {teachers.map((t, i) => (
+              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 0', borderBottom: i < teachers.length - 1 ? '1px solid var(--border)' : 'none' }}>
+                <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--accent-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, color: 'var(--accent-dark)', flexShrink: 0 }}>
+                  {t.full_name.split(' ').map((n: string) => n[0]).slice(0, 2).join('')}
+                </div>
+                <div>
+                  <div style={{ fontWeight: 600, fontSize: 14 }}>{t.full_name}</div>
+                  <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
+                    {t.department}{t.class_name && ` · Class ${t.class_name}`}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Change password */}
