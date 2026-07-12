@@ -62,6 +62,18 @@ export default function StudentsPage() {
     setLoading(false)
   }
 
+  async function handleResetStudentPassword(studentId: string, name: string) {
+    if (!confirm(`Reset ${name}'s password to "Student.Test"?`)) return
+    const res = await fetch('/api/create-user', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: 'reset-password', data: { user_id: studentId, password: 'Student.Test' } })
+    })
+    const result = await res.json()
+    if (result.error) alert('Error: ' + result.error)
+    else alert('Password reset to "Student.Test". Student must change it on next login.')
+  }
+
   function parseCSV(text: string) {
     const lines = text.trim().split('\n')
     const headers = lines[0].split(',').map((h) => h.trim().toLowerCase().replace(/ /g, '_'))
@@ -319,6 +331,9 @@ export default function StudentsPage() {
                                 <div style={{ fontWeight: 600, fontSize: 13 }}>{s.full_name}</div>
                                 <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 2 }}>ID: {s.student_id}</div>
                               </div>
+                              <button onClick={() => handleResetStudentPassword(s.id, s.full_name)} className="btn btn-ghost" style={{ fontSize: 11 }}>
+                                Reset password
+                              </button>
                             </div>
                           ))}
                         </div>

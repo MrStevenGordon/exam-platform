@@ -53,6 +53,19 @@ export default function StaffPage() {
     setLoading(false)
   }
 
+  async function handleResetPassword(userId: string, name: string, isStudent: boolean) {
+    const defaultPw = isStudent ? 'Student.Test' : 'Staff.Default1'
+    if (!confirm(`Reset ${name}'s password to "${defaultPw}"?`)) return
+    const res = await fetch('/api/create-user', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: 'reset-password', data: { user_id: userId, password: defaultPw } })
+    })
+    const result = await res.json()
+    if (result.error) alert('Error: ' + result.error)
+    else alert(`Password reset to "${defaultPw}". User must change it on next login.`)
+  }
+
   async function handleAddStaff() {
     setSaving(true)
     setErrorMsg('')
@@ -332,9 +345,14 @@ export default function StaffPage() {
                         </div>
                       </div>
                     </div>
-                    <button onClick={() => handleDeactivate(s.id, s.full_name)} className="btn btn-ghost" style={{ fontSize: 11, color: 'var(--danger)' }}>
-                      Deactivate
-                    </button>
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      <button onClick={() => handleResetPassword(s.id, s.full_name, false)} className="btn btn-ghost" style={{ fontSize: 11 }}>
+                        Reset password
+                      </button>
+                      <button onClick={() => handleDeactivate(s.id, s.full_name)} className="btn btn-ghost" style={{ fontSize: 11, color: 'var(--danger)' }}>
+                        Deactivate
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>

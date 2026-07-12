@@ -102,6 +102,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, email })
     }
 
+    if (type === 'reset-password') {
+      const { user_id, password } = data
+      const { error } = await supabaseAdmin.auth.admin.updateUserById(user_id, { password })
+      if (error) return NextResponse.json({ error: error.message }, { status: 400 })
+      return NextResponse.json({ success: true })
+    }
+
     return NextResponse.json({ error: 'Invalid type' }, { status: 400 })
 
   } catch (err: any) {
