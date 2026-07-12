@@ -86,7 +86,7 @@ export default function StudentProfilePage() {
           console.log('profileData:', JSON.stringify(profileData))
           const mapped = (profileData || []).map((p: any) => ({
             full_name: p.full_name || 'Unknown',
-            class_name: classEnrollment.class_group_id,
+            class_name: className,
             department: p.departments?.name || '',
           }))
           setTeachers(mapped)
