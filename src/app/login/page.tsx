@@ -84,9 +84,22 @@ export default function LoginPage() {
 
     // System admin goes to school-admin portal
     if (profile.is_system_admin) {
+      // Check if using default password
+      if (password === 'Staff.Default1' || password === 'Student.Test') {
+        router.push('/change-password?first=true')
+        return
+      }
       router.push('/school-admin')
       return
     }
+
+    // Check if using default password — prompt to change
+    const defaultPasswords = ['Staff.Default1', 'Student.Test', 'Demo.Default']
+    if (defaultPasswords.includes(password)) {
+      router.push('/change-password?first=true')
+      return
+    }
+
     router.push(ROLE_REDIRECTS[profile.role] || '/dashboard')
   }
 
