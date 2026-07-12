@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef, useCallback } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import ScientificCalculator from '@/components/ScientificCalculator'
 
 function mulberry32(seed: number) {
   let a = seed
@@ -71,6 +72,7 @@ export default function TakeDirectExamPage() {
   const [session, setSession] = useState<SessionInfo | null>(null)
   const [currentPage, setCurrentPage] = useState(0)
   const [loading, setLoading] = useState(true)
+  const [calculatorEnabled, setCalculatorEnabled] = useState(false)
   const [errorMsg, setErrorMsg] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [secondsLeft, setSecondsLeft] = useState(0)
@@ -165,6 +167,7 @@ export default function TakeDirectExamPage() {
 
     if (examError) { setErrorMsg(examError.message); setLoading(false); return }
     setExam(examData)
+    if (examData?.calculator_enabled) setCalculatorEnabled(true)
 
     const { data: questionData, error: questionError } = await supabase
       .from('questions')
@@ -538,5 +541,6 @@ export default function TakeDirectExamPage() {
       </div>
     </div>
       </div>
+      {calculatorEnabled && <ScientificCalculator />}
   )
 }

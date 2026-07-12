@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef, useCallback } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import ScientificCalculator from '@/components/ScientificCalculator'
 
 function mulberry32(seed: number) {
   let a = seed

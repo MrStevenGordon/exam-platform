@@ -15,6 +15,7 @@ export default function NewExamPage() {
   const [targetGrade, setTargetGrade] = useState<number | ''>('')
   const [questionsPerPage, setQuestionsPerPage] = useState(10)
   const [saving, setSaving] = useState(false)
+  const [calculatorEnabled, setCalculatorEnabled] = useState(false)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -43,6 +44,7 @@ export default function NewExamPage() {
         department_id: profile?.department_id,
         exam_kind: examKind,
         questions_per_page: questionsPerPage,
+        calculator_enabled: calculatorEnabled,
         target_grade: targetGrade || null,
       })
       .select()
@@ -115,6 +117,23 @@ export default function NewExamPage() {
               <option value={20}>20 questions per page</option>
             </select>
           </div>
+
+          <div style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', background: 'var(--accent-light)', borderRadius: 8 }}>
+            <input
+              type="checkbox"
+              id="calc-enabled"
+              checked={calculatorEnabled}
+              onChange={(e) => setCalculatorEnabled(e.target.checked)}
+              style={{ width: 'auto', accentColor: 'var(--accent)' }}
+            />
+            <label htmlFor="calc-enabled" style={{ cursor: 'pointer', fontSize: 14 }}>
+              <span style={{ fontWeight: 600, color: 'var(--accent-dark)' }}>Enable scientific calculator</span>
+              <span style={{ display: 'block', fontSize: 12, color: 'var(--text-secondary)', marginTop: 2 }}>
+                Students will have access to a built-in calculator during this exam
+              </span>
+            </label>
+          </div>
+
           {errorMsg && <p className="banner banner-danger" style={{ marginBottom: 16 }}>{errorMsg}</p>}
           <button type="submit" disabled={saving} className="btn btn-primary">
             {saving ? 'Creating…' : 'Create exam'}
