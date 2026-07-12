@@ -540,7 +540,7 @@ export default function TakeDirectExamPage() {
         )}
       </div>
     </div>
-      </div>
       {calculatorEnabled && <ScientificCalculator />}
+      </div>
   )
 }
