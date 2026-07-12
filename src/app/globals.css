@@ -473,6 +473,17 @@ body.exam-fullscreen .portal-content {
   [style*="grid-template-columns: 1fr 1fr"] {
     grid-template-columns: 1fr !important;
   }
+
+  /* Homepage top nav — desktop padding (3rem) plus an unwrapped 4-item
+     link row was wider than any phone screen, pushing "Log in" past
+     the right edge. Shrink padding and let the links wrap/shrink. */
+  .site-nav { padding: 12px 16px !important; }
+  .site-nav-links {
+    flex-wrap: wrap !important;
+    justify-content: flex-end !important;
+    row-gap: 4px !important;
+  }
+  .site-nav-links a { font-size: 12px !important; padding: 4px 6px !important; }
 }
 
 @media (max-width: 480px) {
