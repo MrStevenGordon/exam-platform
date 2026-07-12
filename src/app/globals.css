@@ -437,8 +437,12 @@ body.exam-fullscreen .portal-content {
     width: 100%;
   }
 
-  /* Inputs full width */
-  input, select, textarea { width: 100% !important; }
+  /* Inputs full width — but never checkboxes/radios, which have a fixed
+     native size; forcing width:100% stretches them into an oversized,
+     misshapen control and shoves everything next to them out of place
+     (e.g. the answer-option radio buttons on the add-question page). */
+  input:not([type="checkbox"]):not([type="radio"]), select, textarea { width: 100% !important; }
+  input[type="checkbox"], input[type="radio"] { width: auto !important; flex-shrink: 0; }
 
   /* Flex rows that have inline gap styles — let them wrap */
   .flex-wrap-mobile { flex-wrap: wrap !important; }
