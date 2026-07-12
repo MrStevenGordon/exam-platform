@@ -131,9 +131,9 @@ export default function StudentHome() {
         id: e.id, title: e.title, subject: e.subject,
         kind: kindLabels[e.exam_category] || 'Exam', examType: 'final',
       }))),
-      ...((directExams || []).filter((e) => !takenDirectIds.has(e.id)).map((e) => ({
-        id: e.id, title: e.title, subject: e.subject,
-        kind: kindLabels[e.exam_kind] || 'Exam', examType: 'direct',
+      ...((directExams || []).filter((e: any) => e.draft_exams && !takenDirectIds.has(e.draft_exams.id)).map((e: any) => ({
+        id: e.draft_exams.id, title: e.draft_exams.title, subject: e.draft_exams.subject,
+        kind: kindLabels[e.draft_exams.exam_kind] || 'Exam', examType: 'direct',
       }))),
     ].slice(0, 3)
 
