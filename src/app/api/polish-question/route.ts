@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
     // Check monthly usage
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
+      (process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY)!
     )
 
     const monthYear = new Date().toISOString().slice(0, 7) // e.g. '2026-07'
