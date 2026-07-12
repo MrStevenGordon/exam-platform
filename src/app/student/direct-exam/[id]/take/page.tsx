@@ -161,7 +161,7 @@ export default function TakeDirectExamPage() {
 
     const { data: examData, error: examError } = await supabase
       .from('draft_exams')
-      .select('id, title, questions_per_page')
+      .select('id, title, questions_per_page, calculator_enabled')
       .eq('id', examId)
       .single()
 
