@@ -98,6 +98,35 @@ export default function TakeDirectExamPage() {
     }
   }, [])
 
+  // Block keyboard shortcuts, copy, paste during exam
+  useEffect(() => {
+    if (!session) return
+    function handleKeyDown(e: KeyboardEvent) {
+      if ((e.metaKey || e.altKey) && e.key === 'Tab') { e.preventDefault(); return }
+      if ((e.metaKey || e.ctrlKey) && (e.key === 'w' || e.key === 'q')) { e.preventDefault(); return }
+      if ((e.metaKey || e.ctrlKey) && (e.key === 'n' || e.key === 't')) { e.preventDefault(); return }
+      if (e.key === 'F11') { e.preventDefault(); return }
+      if (e.key === 'Escape' && !submittedRef.current) { e.preventDefault(); return }
+      if ((e.metaKey || e.ctrlKey) && (e.key === 'c' || e.key === 'v' || e.key === 'a' || e.key === 'x')) { e.preventDefault(); return }
+    }
+    function handleContextMenu(e: MouseEvent) { e.preventDefault() }
+    function handleSelectStart(e: Event) { e.preventDefault() }
+    function handleCopy(e: ClipboardEvent) { e.preventDefault() }
+    function handlePaste(e: ClipboardEvent) { e.preventDefault() }
+    document.addEventListener('keydown', handleKeyDown)
+    document.addEventListener('contextmenu', handleContextMenu)
+    document.addEventListener('selectstart', handleSelectStart)
+    document.addEventListener('copy', handleCopy)
+    document.addEventListener('paste', handlePaste)
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown)
+      document.removeEventListener('contextmenu', handleContextMenu)
+      document.removeEventListener('selectstart', handleSelectStart)
+      document.removeEventListener('copy', handleCopy)
+      document.removeEventListener('paste', handlePaste)
+    }
+  }, [session])
+
   useEffect(() => { loadData() }, [examId])
 
   async function loadData() {
@@ -307,7 +336,7 @@ export default function TakeDirectExamPage() {
   const answeredCount = questions.filter((q) => answers[q.id]).length
 
   return (
-    <div onCopy={(e) => e.preventDefault()} onCut={(e) => e.preventDefault()}>
+    <div onCopy={(e) => e.preventDefault()} onCut={(e) => e.preventDefault()} onPaste={(e) => e.preventDefault()}>
 
       {showWarningOverlay && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>

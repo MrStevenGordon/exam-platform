@@ -254,17 +254,20 @@ export default function TakeExamPage() {
     function handleContextMenu(e: MouseEvent) { e.preventDefault() }
     function handleSelectStart(e: Event) { e.preventDefault() }
     function handleCopy(e: ClipboardEvent) { e.preventDefault() }
+    function handlePaste(e: ClipboardEvent) { e.preventDefault() }
 
     document.addEventListener('keydown', handleKeyDown)
     document.addEventListener('contextmenu', handleContextMenu)
     document.addEventListener('selectstart', handleSelectStart)
     document.addEventListener('copy', handleCopy)
+    document.addEventListener('paste', handlePaste)
 
     return () => {
       document.removeEventListener('keydown', handleKeyDown)
       document.removeEventListener('contextmenu', handleContextMenu)
       document.removeEventListener('selectstart', handleSelectStart)
       document.removeEventListener('copy', handleCopy)
+      document.removeEventListener('paste', handlePaste)
     }
   }, [session])
 
@@ -382,7 +385,7 @@ export default function TakeExamPage() {
   const answeredCount = questions.filter((q) => answers[q.id]).length
 
   return (
-    <div onCopy={(e) => e.preventDefault()} onCut={(e) => e.preventDefault()}>
+    <div onCopy={(e) => e.preventDefault()} onCut={(e) => e.preventDefault()} onPaste={(e) => e.preventDefault()}>
 
       {/* Warning overlay */}
       {showWarningOverlay && (
