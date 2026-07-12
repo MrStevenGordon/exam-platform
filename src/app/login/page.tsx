@@ -190,6 +190,12 @@ export default function LoginPage() {
           >
             {loading ? 'Signing in…' : `Sign in as ${ROLE_OPTIONS.find(r => r.value === selectedRole)?.label}`}
           </button>
+
+          <div style={{ textAlign: 'center', marginTop: 14 }}>
+            <Link href="/forgot-password" style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
+              Forgot password?
+            </Link>
+          </div>
         </form>
       </div>
 
