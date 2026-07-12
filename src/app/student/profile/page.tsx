@@ -78,15 +78,19 @@ export default function StudentProfilePage() {
 
         if (teacherData && teacherData.length > 0) {
           const teacherIds = teacherData.map((t: any) => t.teacher_id)
+
+          const { data: cgInfo } = await supabase
+            .from('class_groups').select('name').eq('id', classEnrollment.class_group_id).single()
+          const cgName = cgInfo?.name || ''
+
           const { data: profileData } = await supabase
             .from('profiles')
             .select('id, full_name, department_id, departments!profiles_department_id_fkey(name)')
             .in('id', teacherIds)
 
-          console.log('profileData:', JSON.stringify(profileData))
           const mapped = (profileData || []).map((p: any) => ({
             full_name: p.full_name || 'Unknown',
-            class_name: className,
+            class_name: cgName,
             department: p.departments?.name || '',
           }))
           setTeachers(mapped)
