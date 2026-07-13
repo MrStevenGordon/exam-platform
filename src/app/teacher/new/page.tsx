@@ -1,15 +1,33 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
+import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
+
+const TASK_OPTIONS = [
+  { value: 'homework', label: 'Homework' },
+  { value: 'assignment', label: 'Assignment' },
+]
+
+const TEST_OPTIONS = [
+  { value: 'pop_quiz', label: 'Pop quiz' },
+  { value: 'class_test', label: 'Class test' },
+  { value: 'weekly_test', label: 'Weekly test' },
+]
 
 export default function NewExamPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const mode = searchParams.get('kind') === 'task' ? 'task' : searchParams.get('kind') === 'test' ? 'test' : 'all'
+  const options = mode === 'task' ? TASK_OPTIONS : mode === 'test' ? TEST_OPTIONS : [...TEST_OPTIONS, ...TASK_OPTIONS]
+  const pageTitle = mode === 'task' ? 'New task' : mode === 'test' ? 'New test' : 'New exam'
+  const returnPath = mode === 'task' ? '/teacher/tasks' : mode === 'test' ? '/teacher/tests' : '/teacher/tasks'
+
   const [title, setTitle] = useState('')
   const [subject, setSubject] = useState('')
   const [instructions, setInstructions] = useState('')
-  const [examKind, setExamKind] = useState('pop_quiz')
+  const [examKind, setExamKind] = useState(options[0].value)
   const [errorMsg, setErrorMsg] = useState('')
   const [isTeamLead, setIsTeamLead] = useState(false)
   const [targetGrade, setTargetGrade] = useState<number | ''>('')
@@ -60,7 +78,8 @@ export default function NewExamPage() {
 
   return (
     <div className="page-container" style={{ maxWidth: 520 }}>
-      <h1>New exam</h1>
+      <Link href={returnPath} style={{ color: 'var(--text-secondary)', fontSize: 14 }}>&larr; Back</Link>
+      <h1 style={{ marginTop: 12 }}>{pageTitle}</h1>
       <div className="card" style={{ marginTop: 20 }}>
         <form onSubmit={handleSubmit}>
           <div style={{ marginBottom: 16 }}>
@@ -70,12 +89,9 @@ export default function NewExamPage() {
               onChange={(e) => setExamKind(e.target.value)}
               style={{ width: '100%', marginTop: 6 }}
             >
-              <option value="pop_quiz">Pop quiz</option>
-              <option value="class_test">Class test</option>
-              <option value="weekly_test">Weekly test</option>
-              <option value="assignment">Assignment</option>
-              <option value="homework">Homework</option>
-
+              {options.map((opt) => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
             </select>
           </div>
           <div style={{ marginBottom: 16 }}>

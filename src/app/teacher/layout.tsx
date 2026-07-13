@@ -6,7 +6,9 @@ import { supabase } from '@/lib/supabase'
 
 const BASE_NAV = [
   { label: 'Home', icon: 'ti-home', href: '/teacher' },
-  { label: 'My Exams', icon: 'ti-file-text', href: '/teacher/exams' },
+  { label: 'Tasks', icon: 'ti-clipboard-list', href: '/teacher/tasks' },
+  { label: 'Tests', icon: 'ti-file-text', href: '/teacher/tests' },
+  { label: 'Folder', icon: 'ti-folder', href: '/teacher/folder' },
   { label: 'Question Bank', icon: 'ti-database', href: '/teacher/bank' },
   { label: 'My Classes', icon: 'ti-users', href: '/teacher/classes' },
   { label: 'My Profile', icon: 'ti-user', href: '/teacher/profile' },
@@ -34,7 +36,7 @@ export default function TeacherLayout({ children }: { children: React.ReactNode 
       ])
 
       const nav = [...BASE_NAV]
-      if (tlData && tlData.length > 0) nav.splice(2, 0, ...TEAM_LEAD_NAV)
+      if (tlData && tlData.length > 0) nav.splice(4, 0, ...TEAM_LEAD_NAV)
       if (stlData && stlData.length > 0) nav.splice(nav.length - 1, 0, ...SENIOR_TL_NAV)
       setNavItems(nav)
     }
