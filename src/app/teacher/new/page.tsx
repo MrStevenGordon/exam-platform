@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
@@ -17,6 +17,14 @@ const TEST_OPTIONS = [
 ]
 
 export default function NewExamPage() {
+  return (
+    <Suspense fallback={<div className="page-container">Loading…</div>}>
+      <NewExamForm />
+    </Suspense>
+  )
+}
+
+function NewExamForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const mode = searchParams.get('kind') === 'task' ? 'task' : searchParams.get('kind') === 'test' ? 'test' : 'all'
