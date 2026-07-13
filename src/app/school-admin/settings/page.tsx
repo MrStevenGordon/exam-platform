@@ -17,15 +17,17 @@ export default function SettingsPage() {
         { count: students },
         { count: staff },
         { count: departments },
-        { count: exams },
+        { count: finalExams },
+        { count: directExams },
       ] = await Promise.all([
         supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'student'),
         supabase.from('profiles').select('id', { count: 'exact', head: true }).in('role', ['teacher', 'supervisor']),
         supabase.from('departments').select('id', { count: 'exact', head: true }),
         supabase.from('final_exams').select('id', { count: 'exact', head: true }),
+        supabase.from('draft_exams').select('id', { count: 'exact', head: true }).eq('direct_published', true),
       ])
 
-      setStats({ students: students || 0, staff: staff || 0, departments: departments || 0, exams: exams || 0 })
+      setStats({ students: students || 0, staff: staff || 0, departments: departments || 0, exams: (finalExams || 0) + (directExams || 0) })
       setLoading(false)
     }
     load()

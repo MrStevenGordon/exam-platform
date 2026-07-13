@@ -85,6 +85,7 @@ export default function DepartmentsPage() {
     if (error) { setErrorMsg(error.message); setSaving(false); return }
 
     if (newDeptHOD) {
+      await supabase.from('departments').update({ head_id: null }).eq('head_id', newDeptHOD).neq('id', data.id)
       await supabase.from('profiles').update({ department_id: data.id, role: 'supervisor' }).eq('id', newDeptHOD)
     }
 
@@ -99,6 +100,9 @@ export default function DepartmentsPage() {
     const { data: prevDept } = await supabase.from('departments').select('head_id').eq('id', deptId).single()
     if (prevDept?.head_id && prevDept.head_id !== hodId) {
       await supabase.from('profiles').update({ role: 'teacher' }).eq('id', prevDept.head_id)
+    }
+    if (hodId) {
+      await supabase.from('departments').update({ head_id: null }).eq('head_id', hodId).neq('id', deptId)
     }
     await supabase.from('departments').update({ head_id: hodId || null }).eq('id', deptId)
     if (hodId) {

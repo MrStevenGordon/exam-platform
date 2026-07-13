@@ -35,19 +35,21 @@ export default function SchoolAdminHome() {
         { count: staffCount },
         { count: studentCount },
         { count: flaggedCount },
-        { count: examCount },
+        { count: finalExamCount },
+        { count: directExamCount },
       ] = await Promise.all([
         supabase.from('profiles').select('id', { count: 'exact', head: true }).in('role', ['teacher', 'supervisor']),
         supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'student'),
         supabase.from('exam_sessions').select('id', { count: 'exact', head: true }).eq('flagged', true),
         supabase.from('final_exams').select('id', { count: 'exact', head: true }).eq('status', 'published'),
+        supabase.from('draft_exams').select('id', { count: 'exact', head: true }).eq('direct_published', true),
       ])
 
       setStats({
         totalStaff: staffCount || 0,
         totalStudents: studentCount || 0,
         flaggedSessions: flaggedCount || 0,
-        activeExams: examCount || 0,
+        activeExams: (finalExamCount || 0) + (directExamCount || 0),
       })
       setLoading(false)
     }
