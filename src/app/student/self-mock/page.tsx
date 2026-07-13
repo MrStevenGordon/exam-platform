@@ -4,6 +4,64 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 
+// Only questions from exams the current student has personally completed
+// are eligible for self-mock practice. This intentionally does NOT use
+// "published" as the bar — a published-but-not-yet-taken exam would let a
+// student preview real questions before sitting it. Completion is checked
+// per exam type since direct exams and final exams use different linking:
+// direct exams via exam_sessions.draft_exam_id -> questions.draft_exam_id,
+// final exams via exam_sessions.final_exam_id -> final_exam_questions.
+async function getEligibleQuestions(userId: string) {
+  const { data: directSessions } = await supabase
+    .from('exam_sessions')
+    .select('draft_exam_id')
+    .eq('student_id', userId)
+    .eq('status', 'completed')
+    .not('draft_exam_id', 'is', null)
+  const completedDraftIds = Array.from(new Set((directSessions || []).map((s: any) => s.draft_exam_id)))
+
+  const { data: finalSessions } = await supabase
+    .from('exam_sessions')
+    .select('final_exam_id')
+    .eq('student_id', userId)
+    .eq('status', 'completed')
+    .not('final_exam_id', 'is', null)
+  const completedFinalIds = Array.from(new Set((finalSessions || []).map((s: any) => s.final_exam_id)))
+
+  let finalQuestionIds: string[] = []
+  if (completedFinalIds.length > 0) {
+    const { data: feq } = await supabase
+      .from('final_exam_questions')
+      .select('question_id')
+      .in('final_exam_id', completedFinalIds)
+    finalQuestionIds = (feq || []).map((r: any) => r.question_id)
+  }
+
+  let directQuestions: any[] = []
+  if (completedDraftIds.length > 0) {
+    const { data: dq } = await supabase
+      .from('questions')
+      .select('id, draft_exams(subject)')
+      .neq('question_type', 'essay')
+      .in('draft_exam_id', completedDraftIds)
+    directQuestions = dq || []
+  }
+
+  let finalQuestions: any[] = []
+  if (finalQuestionIds.length > 0) {
+    const { data: fq } = await supabase
+      .from('questions')
+      .select('id, draft_exams(subject)')
+      .neq('question_type', 'essay')
+      .in('id', finalQuestionIds)
+    finalQuestions = fq || []
+  }
+
+  const merged = new Map<string, any>()
+  ;[...directQuestions, ...finalQuestions].forEach((q) => merged.set(q.id, q))
+  return Array.from(merged.values())
+}
+
 export default function GenerateSelfMockPage() {
   const router = useRouter()
   const [subjects, setSubjects] = useState<string[]>([])
@@ -21,20 +79,10 @@ export default function GenerateSelfMockPage() {
         return
       }
 
-      const { data, error } = await supabase
-        .from('questions')
-        .select('draft_exams!inner(subject, direct_published, status)')
-        .neq('question_type', 'essay')
-        .or('direct_published.eq.true,status.eq.published', { foreignTable: 'draft_exams' })
-
-      if (error) {
-        setErrorMsg(error.message)
-        setLoading(false)
-        return
-      }
+      const rows = await getEligibleQuestions(user.id)
 
       const subjectSet = new Set<string>()
-      ;(data || []).forEach((row: any) => {
+      rows.forEach((row: any) => {
         if (row.draft_exams?.subject) subjectSet.add(row.draft_exams.subject)
       })
       setSubjects(Array.from(subjectSet))
@@ -56,19 +104,8 @@ export default function GenerateSelfMockPage() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
 
-    const { data: candidateQuestions, error: qError } = await supabase
-      .from('questions')
-      .select('id, draft_exams!inner(subject, direct_published, status)')
-      .neq('question_type', 'essay')
-      .or('direct_published.eq.true,status.eq.published', { foreignTable: 'draft_exams' })
-
-    if (qError) {
-      setErrorMsg(qError.message)
-      setGenerating(false)
-      return
-    }
-
-    const filtered = (candidateQuestions || []).filter((q: any) => q.draft_exams?.subject === subject)
+    const candidateQuestions = await getEligibleQuestions(user.id)
+    const filtered = candidateQuestions.filter((q: any) => q.draft_exams?.subject === subject)
 
     if (filtered.length === 0) {
       setErrorMsg('No questions found for this subject yet.')
