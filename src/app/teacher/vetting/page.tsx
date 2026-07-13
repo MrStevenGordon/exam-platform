@@ -65,7 +65,11 @@ export default function VettingPage() {
   async function handleRequestChanges(examId: string) {
     const feedback = prompt('Enter feedback for the team lead:')
     if (!feedback) return
-    await supabase.from('draft_exams').update({ status: 'draft', supervisor_notes: feedback } as any).eq('id', examId)
+    const { error } = await supabase.from('draft_exams').update({ status: 'draft', supervisor_notes: feedback } as any).eq('id', examId)
+    if (error) {
+      alert('Failed to send feedback: ' + error.message)
+      return
+    }
     setExams((prev) => prev.filter((e) => e.id !== examId))
   }
 

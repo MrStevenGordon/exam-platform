@@ -16,6 +16,7 @@ type DraftExam = {
   direct_published: boolean
   access_password: string | null
   target_grade: number | null
+  supervisor_notes: string | null
 }
 
 type Question = {
@@ -80,7 +81,7 @@ export default function ExamEditorPage() {
 
     const { data: examData, error: examError } = await supabase
       .from('draft_exams')
-      .select('id, title, subject, instructions, status, exam_kind, direct_published, access_password, target_grade')
+      .select('id, title, subject, instructions, status, exam_kind, direct_published, access_password, target_grade, supervisor_notes')
       .eq('id', examId)
       .single()
 
@@ -327,6 +328,12 @@ export default function ExamEditorPage() {
       {isFinalExamSubmission && !isLocked && hasComments && (
         <div className="banner banner-warning" style={{ marginTop: 16 }}>
           Your supervisor left feedback on one or more questions below. Please review and make changes before resubmitting.
+        </div>
+      )}
+
+      {isTeamLeadExam && exam.status === 'draft' && exam.supervisor_notes && (
+        <div className="banner banner-warning" style={{ marginTop: 16 }}>
+          <strong>Feedback from senior team lead:</strong> {exam.supervisor_notes}
         </div>
       )}
 
