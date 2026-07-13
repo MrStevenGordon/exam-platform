@@ -30,6 +30,7 @@ function NewExamForm() {
   const mode = searchParams.get('kind') === 'task' ? 'task' : searchParams.get('kind') === 'test' ? 'test' : 'all'
   const options = mode === 'task' ? TASK_OPTIONS : mode === 'test' ? TEST_OPTIONS : [...TEST_OPTIONS, ...TASK_OPTIONS]
   const pageTitle = mode === 'task' ? 'New task' : mode === 'test' ? 'New test' : 'New exam'
+  const submitLabel = mode === 'task' ? 'Create task' : mode === 'test' ? 'Create test' : 'Create exam'
   const returnPath = mode === 'task' ? '/teacher/tasks' : mode === 'test' ? '/teacher/tests' : '/teacher/tasks'
 
   const [title, setTitle] = useState('')
@@ -160,7 +161,7 @@ function NewExamForm() {
 
           {errorMsg && <p className="banner banner-danger" style={{ marginBottom: 16 }}>{errorMsg}</p>}
           <button type="submit" disabled={saving} className="btn btn-primary">
-            {saving ? 'Creating…' : 'Create exam'}
+            {saving ? 'Creating…' : submitLabel}
           </button>
         </form>
       </div>
