@@ -58,6 +58,8 @@ type ExamInfo = {
   id: string
   title: string
   questions_per_page: number
+  calculator_enabled: boolean
+  exam_kind: string
 }
 
 export default function TakeDirectExamPage() {
@@ -87,6 +89,12 @@ export default function TakeDirectExamPage() {
   const hasBeenFullscreenRef = useRef(false)
   const submittedRef = useRef(false)
   const intentionalExitRef = useRef(false)
+
+  // Homework and assignments are meant to be done at home, on the student's
+  // own time — no countdown pressure, no fullscreen/tab-switch proctoring,
+  // no 3-strike auto-submit. Everything else (exams, tests, pop quizzes)
+  // keeps the full timed, proctored behavior.
+  const isRelaxedExam = exam?.exam_kind === 'homework' || exam?.exam_kind === 'assignment'
 
   // Always hide sidebar on take page
   useEffect(() => {
@@ -191,7 +199,7 @@ export default function TakeDirectExamPage() {
   }
 
   useEffect(() => {
-    if (!session) return
+    if (!session || isRelaxedExam) return
     const interval = setInterval(() => {
       const startedAt = new Date(session.started_at).getTime()
       const deadline = startedAt + session.time_limit_seconds * 1000
@@ -204,7 +212,7 @@ export default function TakeDirectExamPage() {
       }
     }, 1000)
     return () => clearInterval(interval)
-  }, [session])
+  }, [session, isRelaxedExam])
 
   const enterFullscreen = useCallback(() => {
     const el = document.documentElement
@@ -212,6 +220,7 @@ export default function TakeDirectExamPage() {
   }, [])
 
   useEffect(() => {
+    if (isRelaxedExam) return
     function handleFullscreenChange() {
       const isFull = !!document.fullscreenElement
       setInFullscreen(isFull)
@@ -224,9 +233,10 @@ export default function TakeDirectExamPage() {
     }
     document.addEventListener('fullscreenchange', handleFullscreenChange)
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange)
-  }, [session])
+  }, [session, isRelaxedExam])
 
   useEffect(() => {
+    if (isRelaxedExam) return
     function handleVisibilityChange() {
       if (document.hidden && !submittedRef.current && !intentionalExitRef.current) {
         setWarningReason('You switched tabs or minimized the window.')
@@ -236,7 +246,7 @@ export default function TakeDirectExamPage() {
     }
     document.addEventListener('visibilitychange', handleVisibilityChange)
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
-  }, [session])
+  }, [session, isRelaxedExam])
 
   async function registerViolation(reason: string) {
     if (!session) return
@@ -386,11 +396,13 @@ export default function TakeDirectExamPage() {
               {answeredCount} of {questions.length} answered · Page {currentPage + 1} of {totalPages}
             </p>
           </div>
-          <div style={{ fontSize: 24, fontWeight: 700, color: timeLow ? 'var(--danger)' : 'var(--text-primary)', fontVariantNumeric: 'tabular-nums' }}>
-            {minutes}:{seconds.toString().padStart(2, '0')}
-          </div>
+          {!isRelaxedExam && (
+            <div style={{ fontSize: 24, fontWeight: 700, color: timeLow ? 'var(--danger)' : 'var(--text-primary)', fontVariantNumeric: 'tabular-nums' }}>
+              {minutes}:{seconds.toString().padStart(2, '0')}
+            </div>
+          )}
         </div>
-        {!inFullscreen && hasBeenFullscreenRef.current && (
+        {!isRelaxedExam && !inFullscreen && hasBeenFullscreenRef.current && (
           <button onClick={enterFullscreen} className="btn btn-secondary" style={{ marginTop: 8 }}>
             Re-enter fullscreen
           </button>

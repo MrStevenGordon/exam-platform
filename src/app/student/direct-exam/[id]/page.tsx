@@ -123,7 +123,8 @@ export default function DirectExamFrontPage() {
   if (!exam) return <div className="page-container">Exam not found.</div>
 
   const alreadyCompleted = existingSession?.status === 'completed'
-  const kindLabels: Record<string, string> = { pop_quiz: 'Pop quiz', midterm: 'Mid term', end_of_year: 'End of year' }
+  const isRelaxedExam = exam.exam_kind === 'homework' || exam.exam_kind === 'assignment'
+  const kindLabels: Record<string, string> = { pop_quiz: 'Pop quiz', midterm: 'Mid term', end_of_year: 'End of year', class_test: 'Class test', weekly_test: 'Weekly test', assignment: 'Assignment', homework: 'Homework', monthly: 'Monthly exam', end_of_term: 'End of term' }
 
   return (
     <div className="page-container" style={{ maxWidth: 640 }}>
@@ -139,10 +140,16 @@ export default function DirectExamFrontPage() {
         </div>
       </div>
 
-      <div className="banner banner-warning" style={{ marginBottom: 20 }}>
-        <strong>Before you begin:</strong> this exam opens in fullscreen. Leaving fullscreen or switching tabs
-        is monitored and logged. Repeated violations submit your exam automatically.
-      </div>
+      {isRelaxedExam ? (
+        <div className="banner" style={{ marginBottom: 20 }}>
+          This is {kindLabels[exam.exam_kind]?.toLowerCase() || 'homework'} — take your time, no timer or proctoring is applied.
+        </div>
+      ) : (
+        <div className="banner banner-warning" style={{ marginBottom: 20 }}>
+          <strong>Before you begin:</strong> this exam opens in fullscreen. Leaving fullscreen or switching tabs
+          is monitored and logged. Repeated violations submit your exam automatically.
+        </div>
+      )}
 
       {exam.instructions && (
         <div style={{ marginBottom: 20 }}>
@@ -185,10 +192,13 @@ export default function DirectExamFrontPage() {
         </div>
       ) : (
         <button onClick={async () => {
-          // Request fullscreen first (must be from user gesture)
-          try {
-            await document.documentElement.requestFullscreen()
-          } catch {}
+          // Request fullscreen first (must be from user gesture) — skip for
+          // relaxed exam types where no proctoring applies.
+          if (!isRelaxedExam) {
+            try {
+              await document.documentElement.requestFullscreen()
+            } catch {}
+          }
           handleBeginExam()
         }} className="btn btn-primary" style={{ fontSize: 16, padding: '14px 28px' }}>
           {existingSession ? 'Resume exam' : 'Begin exam'}
