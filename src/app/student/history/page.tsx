@@ -43,6 +43,9 @@ export default function ScoreHistoryPage() {
       const kindLabels: Record<string, string> = {
         pop_quiz: 'Pop quiz', midterm: 'Mid term',
         end_of_year: 'End of year', final_exam_submission: 'End of year',
+        class_test: 'Class test', weekly_test: 'Weekly test',
+        assignment: 'Assignment', homework: 'Homework',
+        monthly: 'Monthly exam', end_of_term: 'End of term',
       }
 
       const combined: ScoreEntry[] = [

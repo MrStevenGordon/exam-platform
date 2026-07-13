@@ -30,7 +30,7 @@ export default function StudentTestsPage() {
 
   if (loading) return <div>Loading…</div>
 
-  const kindLabels: Record<string, string> = { pop_quiz: 'Pop Quiz', midterm: 'Mid Term', end_of_year: 'End of Year' }
+  const kindLabels: Record<string, string> = { pop_quiz: 'Pop Quiz', midterm: 'Mid Term', end_of_year: 'End of Year', class_test: 'Class Test', weekly_test: 'Weekly Test', assignment: 'Assignment', homework: 'Homework', monthly: 'Monthly Exam', end_of_term: 'End of Term' }
 
   const grouped: Record<string, Exam[]> = {}
   exams.forEach((e) => {
