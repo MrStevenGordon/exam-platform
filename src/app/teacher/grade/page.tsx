@@ -9,6 +9,7 @@ type UngradedResponse = {
   response_id: string
   session_id: string
   answer: string
+  working?: string | null
   question_text: string
   points: number
   student_name: string
@@ -39,9 +40,9 @@ export default function GradeEssaysPage() {
     const { data, error } = await supabase
       .from('responses')
       .select(`
-        id, answer, session_id, points_awarded,
+        id, answer, working, session_id, points_awarded,
         questions(question_text, points, question_type, marking_points),
-        exam_sessions(profiles!exam_sessions_student_id_fkey(full_name), final_exams(title))
+        exam_sessions(profiles!exam_sessions_student_id_fkey(full_name), final_exams(title), draft_exams(title))
       `)
       .is('points_awarded', null)
 
@@ -58,10 +59,11 @@ export default function GradeEssaysPage() {
         session_id: r.session_id,
         marking_points: r.questions?.marking_points || null,
         answer: r.answer,
+        working: r.working,
         question_text: r.questions.question_text,
         points: r.questions.points,
         student_name: r.exam_sessions?.profiles?.full_name || 'Unknown',
-        exam_title: r.exam_sessions?.final_exams?.title || 'Unknown exam',
+        exam_title: r.exam_sessions?.final_exams?.title || r.exam_sessions?.draft_exams?.title || 'Unknown exam',
       }))
 
     setItems(essayOnly)
