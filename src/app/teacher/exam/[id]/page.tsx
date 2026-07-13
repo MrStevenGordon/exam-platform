@@ -272,6 +272,9 @@ export default function ExamEditorPage() {
     mock: 'Mock Exam',
     pop_quiz: 'Pop Quiz',
     midterm: 'Midterm Exam',
+    monthly: 'Monthly Exam',
+    end_of_term: 'End of Term',
+    end_of_year: 'End of Year',
   }
 
   return (
