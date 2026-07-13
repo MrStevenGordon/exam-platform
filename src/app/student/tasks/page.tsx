@@ -7,7 +7,9 @@ import { supabase } from '@/lib/supabase'
 
 type Exam = { id: string; title: string; subject: string; exam_kind: string; duration_minutes: number; profiles?: { full_name: string } | null }
 
-export default function StudentTestsPage() {
+const TASK_KINDS = ['homework', 'assignment']
+
+export default function StudentTasksPage() {
   const router = useRouter()
   const [exams, setExams] = useState<Exam[]>([])
   const [sessionMap, setSessionMap] = useState<Record<string, string>>({})
@@ -21,7 +23,7 @@ export default function StudentTestsPage() {
         .from('draft_exams')
         .select('id, title, subject, exam_kind, duration_minutes, profiles!draft_exams_created_by_fkey(full_name)')
         .eq('direct_published', true)
-        .not('exam_kind', 'in', '(homework,assignment)')
+        .in('exam_kind', TASK_KINDS)
         .order('direct_published_at', { ascending: false })
       setExams((data as any) || [])
       const { data: sessions } = await supabase.from('exam_sessions').select('draft_exam_id, status').eq('student_id', user.id)
@@ -35,7 +37,7 @@ export default function StudentTestsPage() {
 
   if (loading) return <div>Loading…</div>
 
-  const kindLabels: Record<string, string> = { pop_quiz: 'Pop Quiz', midterm: 'Mid Term', end_of_year: 'End of Year', class_test: 'Class Test', weekly_test: 'Weekly Test', assignment: 'Assignment', homework: 'Homework', monthly: 'Monthly Exam', end_of_term: 'End of Term' }
+  const kindLabels: Record<string, string> = { homework: 'Homework', assignment: 'Assignment' }
 
   const grouped: Record<string, Exam[]> = {}
   exams.forEach((e) => {
@@ -45,10 +47,10 @@ export default function StudentTestsPage() {
 
   return (
     <div>
-      <p className="portal-page-title">Tests</p>
-      <p className="portal-page-sub">Pop quizzes, midterms, and direct teacher assessments</p>
-      {exams.length === 0 && <div className="card"><p style={{ color: 'var(--text-secondary)' }}>No tests available yet.</p></div>}
-      {['pop_quiz', 'class_test', 'weekly_test', 'midterm', 'end_of_year'].map((kind) => {
+      <p className="portal-page-title">Tasks</p>
+      <p className="portal-page-sub">Homework and assignments — no timer, take your time</p>
+      {exams.length === 0 && <div className="card"><p style={{ color: 'var(--text-secondary)' }}>No tasks available yet.</p></div>}
+      {TASK_KINDS.map((kind) => {
         const items = grouped[kind]
         if (!items?.length) return null
         return (
@@ -62,10 +64,10 @@ export default function StudentTestsPage() {
                     <div className="card card-clickable" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <div>
                         <div style={{ fontWeight: 700, fontSize: 14 }}>{exam.title}</div>
-                        <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 2 }}>{exam.subject} · {exam.duration_minutes} min</div>
-                      {(exam as any).profiles?.full_name && (
-                        <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>Set by {(exam as any).profiles.full_name}</div>
-                      )}
+                        <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 2 }}>{exam.subject}</div>
+                        {(exam as any).profiles?.full_name && (
+                          <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>Set by {(exam as any).profiles.full_name}</div>
+                        )}
                       </div>
                       <span className={`badge ${status === 'completed' ? 'badge-success' : status === 'in_progress' ? 'badge-warning' : 'badge-default'}`}>
                         {status === 'completed' ? 'View results' : status === 'in_progress' ? 'Resume' : 'Begin'}

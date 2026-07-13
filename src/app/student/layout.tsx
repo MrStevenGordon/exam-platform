@@ -7,6 +7,7 @@ const STUDENT_NAV = [
   { label: 'Home', icon: 'ti-home', href: '/student' },
   { label: 'Exams', icon: 'ti-file-text', href: '/student/exams' },
   { label: 'Tests', icon: 'ti-pencil', href: '/student/tests' },
+  { label: 'Tasks', icon: 'ti-clipboard-list', href: '/student/tasks' },
   { label: 'Mock Exams', icon: 'ti-books', href: '/student/self-mock' },
   { label: 'My Progress', icon: 'ti-chart-line', href: '/student/history' },
   { label: 'My Profile', icon: 'ti-user', href: '/student/profile' },
