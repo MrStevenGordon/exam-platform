@@ -35,6 +35,7 @@ export default function TeacherReviewSessionPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [errorMsg, setErrorMsg] = useState('')
   const [totalScore, setTotalScore] = useState<number | null>(null)
   const [maxScore, setMaxScore] = useState<number | null>(null)
 
@@ -66,8 +67,20 @@ export default function TeacherReviewSessionPage() {
 
   async function handleSaveOverrides() {
     setSaving(true)
+    setErrorMsg('')
+
+    const { data: { user } } = await supabase.auth.getUser()
+
     for (const [responseId, pts] of Object.entries(overrides)) {
-      await supabase.from('responses').update({ points_awarded: parseInt(pts), graded_by: 'teacher', graded_at: new Date().toISOString() }).eq('id', responseId)
+      const { error } = await supabase
+        .from('responses')
+        .update({ points_awarded: parseInt(pts), graded_by: user?.id, graded_at: new Date().toISOString() })
+        .eq('id', responseId)
+      if (error) {
+        setErrorMsg(`Failed to save one or more marks: ${error.message}`)
+        setSaving(false)
+        return
+      }
     }
 
     // Recalculate total score
@@ -101,6 +114,7 @@ export default function TeacherReviewSessionPage() {
       </div>
 
       {saved && <div className="banner banner-success" style={{ marginBottom: 16 }}>Marks saved successfully.</div>}
+      {errorMsg && <div className="banner banner-danger" style={{ marginBottom: 16 }}>{errorMsg}</div>}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
         {responses.map((r, i) => {
