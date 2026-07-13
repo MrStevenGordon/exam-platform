@@ -23,8 +23,9 @@ export default function GenerateSelfMockPage() {
 
       const { data, error } = await supabase
         .from('questions')
-        .select('draft_exams(subject)')
+        .select('draft_exams!inner(subject, direct_published, status)')
         .neq('question_type', 'essay')
+        .or('direct_published.eq.true,status.eq.published', { foreignTable: 'draft_exams' })
 
       if (error) {
         setErrorMsg(error.message)
@@ -57,8 +58,9 @@ export default function GenerateSelfMockPage() {
 
     const { data: candidateQuestions, error: qError } = await supabase
       .from('questions')
-      .select('id, draft_exams(subject)')
+      .select('id, draft_exams!inner(subject, direct_published, status)')
       .neq('question_type', 'essay')
+      .or('direct_published.eq.true,status.eq.published', { foreignTable: 'draft_exams' })
 
     if (qError) {
       setErrorMsg(qError.message)

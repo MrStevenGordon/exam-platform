@@ -64,7 +64,7 @@ export default function SelfMockPage() {
 
     const { data: linkData, error: linkError } = await supabase
       .from('self_mock_questions')
-      .select('id, question_id, answer, points_awarded, order_index, questions(question_text, question_type, options, correct_answer, points)')
+      .select(`id, question_id, answer, points_awarded, order_index, questions(question_text, question_type, options, points${mock.completed_at ? ', correct_answer' : ''})`)
       .eq('self_mock_id', mockId)
       .order('order_index', { ascending: true })
 
@@ -83,7 +83,7 @@ export default function SelfMockPage() {
       question_text: l.questions.question_text,
       question_type: l.questions.question_type,
       options: l.questions.options,
-      correct_answer: l.questions.correct_answer,
+      correct_answer: l.questions.correct_answer ?? null,
       points: l.questions.points,
     }))
     setItems(combined)
@@ -103,19 +103,32 @@ export default function SelfMockPage() {
     setSubmitting(true)
     setErrorMsg('')
 
+    const { data: keyData, error: keyError } = await supabase
+      .from('self_mock_questions')
+      .select('id, questions(correct_answer, points)')
+      .eq('self_mock_id', mockId)
+
+    if (keyError || !keyData) {
+      setErrorMsg(keyError?.message || 'Could not load answer key.')
+      setSubmitting(false)
+      return
+    }
+
     let score = 0
     let max = 0
 
-    for (const item of items) {
-      const studentAnswer = answers[item.id] || ''
-      const awarded = item.correct_answer && studentAnswer.trim() === item.correct_answer.trim() ? item.points : 0
+    for (const row of keyData as any[]) {
+      const studentAnswer = answers[row.id] || ''
+      const correctAnswer = row.questions?.correct_answer as string | null
+      const points = row.questions?.points || 0
+      const awarded = correctAnswer && studentAnswer.trim() === correctAnswer.trim() ? points : 0
       score += awarded
-      max += item.points
+      max += points
 
       await supabase
         .from('self_mock_questions')
         .update({ answer: studentAnswer, points_awarded: awarded })
-        .eq('id', item.id)
+        .eq('id', row.id)
     }
 
     const { error } = await supabase
