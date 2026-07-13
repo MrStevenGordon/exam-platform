@@ -71,10 +71,10 @@ export default function NewExamPage() {
               style={{ width: '100%', marginTop: 6 }}
             >
               <option value="pop_quiz">Pop quiz</option>
-              <option value="pop_quiz">Class test</option>
-              <option value="pop_quiz">Weekly test</option>
-              <option value="pop_quiz">Assignment</option>
-              <option value="pop_quiz">Homework</option>
+              <option value="class_test">Class test</option>
+              <option value="weekly_test">Weekly test</option>
+              <option value="assignment">Assignment</option>
+              <option value="homework">Homework</option>
 
             </select>
           </div>
