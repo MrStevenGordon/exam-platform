@@ -30,10 +30,26 @@ export default function TeacherLayout({ children }: { children: React.ReactNode 
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
 
-      const [{ data: tlData }, { data: stlData }] = await Promise.all([
-        supabase.from('team_lead_appointments').select('id').eq('teacher_id', user.id).limit(1),
-        supabase.from('senior_team_lead_appointments').select('id').eq('teacher_id', user.id).limit(1),
-      ])
+      // Each check runs independently — if one fails (network hiccup, RLS
+      // issue, etc.) it should not silently hide the OTHER nav item too.
+      let tlData: any[] | null = null
+      let stlData: any[] | null = null
+
+      try {
+        const res = await supabase.from('team_lead_appointments').select('id').eq('teacher_id', user.id).limit(1)
+        if (res.error) console.error('team_lead_appointments check failed:', res.error)
+        tlData = res.data
+      } catch (e) {
+        console.error('team_lead_appointments check threw:', e)
+      }
+
+      try {
+        const res = await supabase.from('senior_team_lead_appointments').select('id').eq('teacher_id', user.id).limit(1)
+        if (res.error) console.error('senior_team_lead_appointments check failed:', res.error)
+        stlData = res.data
+      } catch (e) {
+        console.error('senior_team_lead_appointments check threw:', e)
+      }
 
       const nav = [...BASE_NAV]
       if (tlData && tlData.length > 0) nav.splice(4, 0, ...TEAM_LEAD_NAV)
