@@ -63,7 +63,7 @@ export default function FinalExamsPage() {
   return (
     <div>
       <p className="portal-page-title">Final Exams</p>
-      <p className="portal-page-sub">Approved exams ready to publish to students</p>
+      <p className="portal-page-sub">Approved exams</p>
 
       <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
         <button

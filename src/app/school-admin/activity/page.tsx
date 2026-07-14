@@ -122,7 +122,7 @@ export default function ActivityPage() {
   return (
     <div>
       <p className="portal-page-title">Activity Monitor</p>
-      <p className="portal-page-sub">Exam sessions and integrity monitoring</p>
+      <p className="portal-page-sub">Exam sessions</p>
 
       <div className="stat-grid" style={{ marginBottom: 20 }}>
         <div className="stat-card"><div className="stat-card-value">{stats.total}</div><div className="stat-card-label">Recent sessions</div></div>

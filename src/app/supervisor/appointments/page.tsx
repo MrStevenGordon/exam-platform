@@ -174,7 +174,7 @@ export default function AppointmentsPage() {
   return (
     <div>
       <p className="portal-page-title">Appointments</p>
-      <p className="portal-page-sub">Appoint team leads and senior team leads for your department</p>
+      <p className="portal-page-sub">Team leads and senior team leads</p>
 
       {successMsg && <div className="banner banner-success" style={{ marginBottom: 16 }}>{successMsg}</div>}
 

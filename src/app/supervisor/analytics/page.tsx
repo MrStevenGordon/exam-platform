@@ -28,7 +28,7 @@ export default function SupervisorAnalyticsPage() {
   return (
     <div>
       <p className="portal-page-title">Analytics</p>
-      <p className="portal-page-sub">Performance data for published exams</p>
+      <p className="portal-page-sub">Published exams</p>
       {exams.length === 0 && (
         <div className="card"><p style={{ color: 'var(--text-secondary)' }}>No published exams with results yet.</p></div>
       )}
