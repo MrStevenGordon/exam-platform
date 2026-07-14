@@ -113,18 +113,16 @@ export default function SupervisorExamReviewPage() {
 
     await saveComments()
 
-    const { data: { user } } = await supabase.auth.getUser()
-    const { error } = await supabase
-      .from('draft_exams')
-      .update({
-        status: 'approved',
-        reviewed_by: user?.id,
-        reviewed_at: new Date().toISOString(),
-      })
-      .eq('id', examId)
+    const { data: { session } } = await supabase.auth.getSession()
+    const res = await fetch('/api/review-exam', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ examId, action: 'approve', accessToken: session?.access_token }),
+    })
+    const result = await res.json()
 
-    if (error) {
-      setErrorMsg(error.message)
+    if (result.error) {
+      setErrorMsg(result.error)
     } else {
       loadData()
     }
@@ -146,18 +144,16 @@ export default function SupervisorExamReviewPage() {
 
     await saveComments()
 
-    const { data: { user } } = await supabase.auth.getUser()
-    const { error } = await supabase
-      .from('draft_exams')
-      .update({
-        status: 'draft',
-        reviewed_by: user?.id,
-        reviewed_at: new Date().toISOString(),
-      })
-      .eq('id', examId)
+    const { data: { session } } = await supabase.auth.getSession()
+    const res = await fetch('/api/review-exam', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ examId, action: 'request-changes', accessToken: session?.access_token }),
+    })
+    const result = await res.json()
 
-    if (error) {
-      setErrorMsg(error.message)
+    if (result.error) {
+      setErrorMsg(result.error)
     } else {
       loadData()
     }
