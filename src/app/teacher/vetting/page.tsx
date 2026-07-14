@@ -58,16 +58,32 @@ export default function VettingPage() {
   }, [router])
 
   async function handleApprove(examId: string) {
-    await supabase.from('draft_exams').update({ status: 'approved' }).eq('id', examId)
+    const { data: { session } } = await supabase.auth.getSession()
+    const res = await fetch('/api/review-exam', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ examId, action: 'approve', accessToken: session?.access_token }),
+    })
+    const result = await res.json()
+    if (result.error) {
+      alert('Failed to approve: ' + result.error)
+      return
+    }
     setExams((prev) => prev.map((e) => e.id === examId ? { ...e, status: 'approved' } : e))
   }
 
   async function handleRequestChanges(examId: string) {
     const feedback = prompt('Enter feedback for the team lead:')
     if (!feedback) return
-    const { error } = await supabase.from('draft_exams').update({ status: 'draft', supervisor_notes: feedback } as any).eq('id', examId)
-    if (error) {
-      alert('Failed to send feedback: ' + error.message)
+    const { data: { session } } = await supabase.auth.getSession()
+    const res = await fetch('/api/review-exam', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ examId, action: 'request-changes', accessToken: session?.access_token, comment: feedback }),
+    })
+    const result = await res.json()
+    if (result.error) {
+      alert('Failed to send feedback: ' + result.error)
       return
     }
     setExams((prev) => prev.filter((e) => e.id !== examId))

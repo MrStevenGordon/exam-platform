@@ -8,7 +8,7 @@ const supabaseAdmin = createClient(
 
 export async function POST(req: NextRequest) {
   try {
-    const { examId, action, accessToken } = await req.json()
+    const { examId, action, accessToken, comment } = await req.json()
 
     if (!accessToken) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
@@ -70,7 +70,7 @@ export async function POST(req: NextRequest) {
     } else if (action === 'request-changes') {
       const { error } = await supabaseAdmin
         .from('draft_exams')
-        .update({ status: 'draft', reviewed_by: user.id, reviewed_at: new Date().toISOString() })
+        .update({ status: 'draft', reviewed_by: user.id, reviewed_at: new Date().toISOString(), supervisor_notes: comment || null } as any)
         .eq('id', examId)
       if (error) return NextResponse.json({ error: error.message }, { status: 500 })
     } else {
