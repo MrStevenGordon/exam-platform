@@ -94,6 +94,7 @@ export default function SupervisorExamPublishPage() {
     if (selectedGroups.size === 0) return
     setPublishing(true)
 
+    const { data: { user } } = await supabase.auth.getUser()
     const password = generatePassword()
 
     // Create final exam from this draft
@@ -112,6 +113,7 @@ export default function SupervisorExamPublishPage() {
         questions_per_page: exam!.questions_per_page,
         target_grade: exam!.target_grade,
         calculator_enabled: exam!.calculator_enabled,
+        created_by: user?.id,
       })
       .select()
       .single()

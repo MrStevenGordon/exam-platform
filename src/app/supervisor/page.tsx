@@ -25,6 +25,7 @@ export default function SupervisorHome() {
   const router = useRouter()
   const [submissions, setSubmissions] = useState<DraftExam[]>([])
   const [finalExams, setFinalExams] = useState<FinalExam[]>([])
+  const [awaitingPublish, setAwaitingPublish] = useState<DraftExam[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
 
@@ -51,6 +52,14 @@ export default function SupervisorHome() {
       .limit(5)
     setFinalExams(finalData || [])
 
+    const { data: awaitingData } = await supabase
+      .from('draft_exams')
+      .select('id, title, subject, status, created_at, profiles!draft_exams_created_by_fkey(full_name)')
+      .in('exam_kind', ['monthly', 'midterm', 'end_of_term', 'end_of_year'])
+      .eq('status', 'approved')
+      .order('created_at', { ascending: false })
+    setAwaitingPublish((awaitingData as any) || [])
+
     setLoading(false)
   }
 
@@ -74,6 +83,10 @@ export default function SupervisorHome() {
         <div className="stat-card">
           <div className="stat-card-value">{finalExams.length}</div>
           <div className="stat-card-label">Final exams</div>
+        </div>
+        <div className={`stat-card ${awaitingPublish.length > 0 ? 'stat-card-accent' : ''}`}>
+          <div className="stat-card-value">{awaitingPublish.length}</div>
+          <div className="stat-card-label">Awaiting publish</div>
         </div>
         <div className="stat-card stat-card-success">
           <div className="stat-card-value">{finalExams.filter((e) => e.status === 'published').length}</div>
@@ -116,6 +129,27 @@ export default function SupervisorHome() {
           </Link>
         ))}
       </div>
+
+      {awaitingPublish.length > 0 && (
+        <>
+          <div className="section-label" style={{ marginTop: 24, marginBottom: 10 }}>Approved — awaiting publish</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {awaitingPublish.map((exam) => (
+              <Link key={exam.id} href={`/supervisor/final-exams/${exam.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+                <div className="card card-clickable" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div>
+                    <div style={{ fontWeight: 700, fontSize: 14 }}>{exam.title}</div>
+                    <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 2 }}>
+                      {exam.subject} · by {(exam.profiles as any)?.full_name || 'Unknown'}
+                    </div>
+                  </div>
+                  <span className="badge badge-warning">Ready to publish</span>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </>
+      )}
 
       {finalExams.length > 0 && (
         <>
