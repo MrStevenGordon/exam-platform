@@ -142,6 +142,7 @@ export default function SupervisorExamPublishPage() {
 
     setShowPublishModal(false)
     setPublishing(false)
+    alert(`Exam published successfully!\n\nAccess password for students: ${password}\n\nMake sure to share this with your students — it won't be shown again here.`)
     router.push('/supervisor/final-exams')
   }
 
