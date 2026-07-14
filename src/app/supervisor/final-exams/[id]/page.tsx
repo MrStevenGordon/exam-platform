@@ -137,13 +137,14 @@ export default function SupervisorExamPublishPage() {
       }))
     )
 
-    // Mark draft as published
-    await supabase.from('draft_exams').update({ status: 'published' }).eq('id', examId)
+    // Mark draft as published, and store the password here too so it can be
+    // shown persistently on this page (same pattern as direct-exam publish),
+    // instead of only ever being visible in a one-time alert.
+    await supabase.from('draft_exams').update({ status: 'published', access_password: password } as any).eq('id', examId)
 
     setShowPublishModal(false)
     setPublishing(false)
-    alert(`Exam published successfully!\n\nAccess password for students: ${password}\n\nMake sure to share this with your students — it won't be shown again here.`)
-    router.push('/supervisor/final-exams')
+    loadData()
   }
 
   if (loading) return <div>Loading…</div>
@@ -178,6 +179,11 @@ export default function SupervisorExamPublishPage() {
       {isPublished && (
         <div className="banner banner-success" style={{ marginBottom: 20 }}>
           This exam has been published to students.
+          {exam.access_password && (
+            <div style={{ marginTop: 8 }}>
+              Exam password: <span style={{ fontFamily: 'monospace', background: 'white', padding: '2px 10px', borderRadius: 6 }}>{exam.access_password}</span>
+            </div>
+          )}
         </div>
       )}
 
