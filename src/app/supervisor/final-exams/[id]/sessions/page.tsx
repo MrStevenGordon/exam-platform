@@ -25,6 +25,7 @@ export default function ExamSessionsPage() {
   const finalExamId = params.id as string
 
   const [examTitle, setExamTitle] = useState('')
+  const [accessPassword, setAccessPassword] = useState('')
   const [sessions, setSessions] = useState<Session[]>([])
   const [loading, setLoading] = useState(true)
   const [errorMsg, setErrorMsg] = useState('')
@@ -44,11 +45,12 @@ export default function ExamSessionsPage() {
 
     const { data: examData } = await supabase
       .from('final_exams')
-      .select('title')
+      .select('title, access_password')
       .eq('id', finalExamId)
       .single()
 
     setExamTitle(examData?.title || '')
+    setAccessPassword(examData?.access_password || '')
 
     const { data, error } = await supabase
       .from('exam_sessions')
@@ -94,7 +96,7 @@ export default function ExamSessionsPage() {
 
   return (
     <div className="page-container">
-      <Link href={`/supervisor/final-exams/${finalExamId}`} style={{ color: 'var(--text-secondary)', fontSize: 14 }}>&larr; Back to exam</Link>
+      <Link href="/supervisor/final-exams" style={{ color: 'var(--text-secondary)', fontSize: 14 }}>&larr; Back to final exams</Link>
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginTop: 16 }}>
         <h1>{examTitle} — Student sessions</h1>
@@ -107,6 +109,12 @@ export default function ExamSessionsPage() {
         </button>
           </div>
       </div>
+
+      {accessPassword && (
+        <div className="banner" style={{ marginTop: 16, fontSize: 14 }}>
+          <strong>Access password for students:</strong> <span style={{ fontFamily: 'monospace', fontSize: 16, letterSpacing: 1 }}>{accessPassword}</span>
+        </div>
+      )}
 
       {ungradedCount > 0 && (
         <div className="banner banner-warning" style={{ marginTop: 16 }}>
