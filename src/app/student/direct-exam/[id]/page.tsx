@@ -201,7 +201,7 @@ export default function DirectExamFrontPage() {
           }
           handleBeginExam()
         }} className="btn btn-primary" style={{ fontSize: 16, padding: '14px 28px' }}>
-          {existingSession ? 'Resume exam' : 'Begin exam'}
+          {existingSession ? `Resume ${kindLabels[exam.exam_kind]?.toLowerCase() || 'exam'}` : `Begin ${kindLabels[exam.exam_kind]?.toLowerCase() || 'exam'}`}
         </button>
       )}
     </div>
