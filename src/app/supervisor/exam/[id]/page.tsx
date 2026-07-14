@@ -37,6 +37,8 @@ export default function SupervisorExamReviewPage() {
   const [loading, setLoading] = useState(true)
   const [errorMsg, setErrorMsg] = useState('')
   const [actioning, setActioning] = useState(false)
+  const [backHref, setBackHref] = useState('/supervisor')
+  const [backLabel, setBackLabel] = useState('Back to submissions')
 
   useEffect(() => {
     loadData()
@@ -47,6 +49,16 @@ export default function SupervisorExamReviewPage() {
     if (!user) {
       router.push('/login')
       return
+    }
+
+    // This review page is shared by two different reviewer roles: real
+    // supervisors approving final-exam submissions, and senior team leads
+    // vetting monthly/midterm/end-of-term/end-of-year exams. The "back"
+    // link needs to return each of them to where they actually came from.
+    const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
+    if (profile?.role !== 'supervisor') {
+      setBackHref('/teacher/vetting')
+      setBackLabel('Back to vetting')
     }
 
     const { data: examData, error: examError } = await supabase
@@ -160,7 +172,7 @@ export default function SupervisorExamReviewPage() {
 
   return (
     <div className="page-container">
-      <Link href="/supervisor" style={{ color: 'var(--text-secondary)', fontSize: 14 }}>&larr; Back to submissions</Link>
+      <Link href={backHref} style={{ color: 'var(--text-secondary)', fontSize: 14 }}>&larr; {backLabel}</Link>
 
       <div style={{ marginTop: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
