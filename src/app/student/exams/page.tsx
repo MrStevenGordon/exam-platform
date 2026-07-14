@@ -35,7 +35,6 @@ export default function StudentExamsPage() {
   return (
     <div>
       <p className="portal-page-title">End of Year Exams</p>
-      <p className="portal-page-sub">Supervisor-approved examinations</p>
       {exams.length === 0 && <div className="card"><p style={{ color: 'var(--text-secondary)' }}>No exams available yet.</p></div>}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         {exams.map((exam) => {

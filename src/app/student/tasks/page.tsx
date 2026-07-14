@@ -48,7 +48,7 @@ export default function StudentTasksPage() {
   return (
     <div>
       <p className="portal-page-title">Tasks</p>
-      <p className="portal-page-sub">Homework and assignments — no timer, take your time</p>
+      <p className="portal-page-sub">Homework and assignments</p>
       {exams.length === 0 && <div className="card"><p style={{ color: 'var(--text-secondary)' }}>No tasks available yet.</p></div>}
       {TASK_KINDS.map((kind) => {
         const items = grouped[kind]

@@ -39,7 +39,7 @@ export default function TeacherTasksPage() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
         <div>
           <p className="portal-page-title" style={{ margin: 0 }}>Tasks</p>
-          <p className="portal-page-sub" style={{ margin: '4px 0 0' }}>Homework and assignments — no timer, no proctoring</p>
+          <p className="portal-page-sub" style={{ margin: '4px 0 0' }}>Homework and assignments</p>
         </div>
         <Link href="/teacher/new?kind=task"><button className="btn btn-primary">+ New task</button></Link>
       </div>

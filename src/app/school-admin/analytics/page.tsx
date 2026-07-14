@@ -137,7 +137,7 @@ export default function SchoolAnalyticsPage() {
   return (
     <div>
       <p className="portal-page-title">School Analytics</p>
-      <p className="portal-page-sub">Performance across all graded exams — direct and final</p>
+      <p className="portal-page-sub">Performance across all graded exams</p>
 
       {totalGraded === 0 ? (
         <div className="card" style={{ textAlign: 'center', padding: 32, marginTop: 20 }}>
