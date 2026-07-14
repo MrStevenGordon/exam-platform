@@ -156,7 +156,7 @@ export default function SupervisorHome() {
           <div className="section-label" style={{ marginTop: 24, marginBottom: 10 }}>Final exams</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {finalExams.map((exam) => (
-              <Link key={exam.id} href={`/supervisor/final-exams/${exam.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+              <Link key={exam.id} href={`/supervisor/final-exams/${exam.id}/sessions`} style={{ textDecoration: 'none', color: 'inherit' }}>
                 <div className="card card-clickable" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div>
                     <div style={{ fontWeight: 700, fontSize: 14 }}>{exam.title}</div>
