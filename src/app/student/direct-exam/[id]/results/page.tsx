@@ -81,7 +81,7 @@ export default function DirectExamResultsPage() {
           <div style={{ fontSize: 40, marginBottom: 12 }}>⏳</div>
           <h2 style={{ marginBottom: 8 }}>Results pending</h2>
           <p style={{ color: 'var(--text-secondary)', fontSize: 14 }}>
-            Results has not been released yet.
+            Results have not been released yet.
           </p>
         </div>
       )}
