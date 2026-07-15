@@ -36,6 +36,7 @@ export default function StudentsPage() {
   const [expandedGrades, setExpandedGrades] = useState<Set<string>>(new Set())
   const [expandedClasses, setExpandedClasses] = useState<Set<string>>(new Set())
   const [importing, setImporting] = useState(false)
+  const [importProgress, setImportProgress] = useState({ done: 0, total: 0 })
   const [importResults, setImportResults] = useState<ImportResult[]>([])
   const [showImport, setShowImport] = useState(false)
   const [csvPreview, setCsvPreview] = useState<any[]>([])
@@ -134,6 +135,7 @@ export default function StudentsPage() {
 
     const rows = parseCSV(csvRaw)
     const results: ImportResult[] = []
+    setImportProgress({ done: 0, total: rows.length })
 
     // Load class groups
     const { data: classGroups } = await supabase.from('class_groups').select('id, name')
@@ -160,6 +162,7 @@ export default function StudentsPage() {
       } catch (err: any) {
         results.push({ name: fullName, email, status: 'failed', reason: err.message })
       }
+      setImportProgress((prev) => ({ ...prev, done: prev.done + 1 }))
     }
 
     setImportResults(results)
@@ -242,6 +245,23 @@ export default function StudentsPage() {
                     ))}
                   </tbody>
                 </table>
+              </div>
+            </div>
+          )}
+
+          {importing && (
+            <div style={{ marginBottom: 12 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--text-secondary)', marginBottom: 4 }}>
+                <span>Importing {importProgress.done} of {importProgress.total}</span>
+                <span>{importProgress.total > 0 ? Math.round((importProgress.done / importProgress.total) * 100) : 0}%</span>
+              </div>
+              <div style={{ height: 8, background: 'var(--border)', borderRadius: 4, overflow: 'hidden' }}>
+                <div style={{
+                  height: '100%',
+                  width: `${importProgress.total > 0 ? (importProgress.done / importProgress.total) * 100 : 0}%`,
+                  background: 'var(--accent)',
+                  transition: 'width 0.2s ease',
+                }} />
               </div>
             </div>
           )}

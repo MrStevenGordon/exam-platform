@@ -27,6 +27,7 @@ export default function StaffPage() {
   const [successMsg, setSuccessMsg] = useState('')
   const [showCsvImport, setShowCsvImport] = useState(false)
   const [csvImporting, setCsvImporting] = useState(false)
+  const [csvProgress, setCsvProgress] = useState({ done: 0, total: 0 })
   const [csvResults, setCsvResults] = useState<{name: string; email: string; status: string; reason?: string}[]>([])
   const [bulkResetting, setBulkResetting] = useState(false)
 
@@ -159,6 +160,7 @@ export default function StaffPage() {
     const deptList = freshDepts || departments
 
     const results = []
+    setCsvProgress({ done: 0, total: rows.length })
     for (const row of rows) {
       const deptMatch = deptList.find((d: any) => d.name.toLowerCase() === row.department?.toLowerCase())
       try {
@@ -186,6 +188,7 @@ export default function StaffPage() {
       } catch (err: any) {
         results.push({ name: `${row.first_name} ${row.last_name}`, email: row.email, status: 'failed', reason: err.message })
       }
+      setCsvProgress((prev) => ({ ...prev, done: prev.done + 1 }))
     }
 
     setCsvResults(results)
@@ -298,7 +301,22 @@ export default function StaffPage() {
             disabled={csvImporting}
             style={{ marginBottom: 12 }}
           />
-          {csvImporting && <p style={{ color: 'var(--text-secondary)', fontSize: 13 }}>Importing…</p>}
+          {csvImporting && (
+            <div style={{ marginTop: 8 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--text-secondary)', marginBottom: 4 }}>
+                <span>Importing {csvProgress.done} of {csvProgress.total}</span>
+                <span>{csvProgress.total > 0 ? Math.round((csvProgress.done / csvProgress.total) * 100) : 0}%</span>
+              </div>
+              <div style={{ height: 8, background: 'var(--border)', borderRadius: 4, overflow: 'hidden' }}>
+                <div style={{
+                  height: '100%',
+                  width: `${csvProgress.total > 0 ? (csvProgress.done / csvProgress.total) * 100 : 0}%`,
+                  background: 'var(--accent)',
+                  transition: 'width 0.2s ease',
+                }} />
+              </div>
+            </div>
+          )}
           {csvResults.length > 0 && (
             <div style={{ marginTop: 12 }}>
               <div style={{ display: 'flex', gap: 16, marginBottom: 8 }}>
