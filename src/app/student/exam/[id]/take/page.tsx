@@ -89,6 +89,7 @@ export default function TakeExamPage() {
   const [calculatorEnabled, setCalculatorEnabled] = useState(false)
 
   const violationCount = useRef(0)
+  const handleSubmitRef = useRef<() => void>(() => {})
   const hasBeenFullscreenRef = useRef(false)
   const submittedRef = useRef(false)
   const intentionalExitRef = useRef(false)
@@ -190,7 +191,7 @@ export default function TakeExamPage() {
       if (remaining <= 0 && !submittedRef.current) {
         submittedRef.current = true
         intentionalExitRef.current = true
-        handleSubmit()
+        handleSubmitRef.current()
       }
     }, 1000)
     return () => clearInterval(interval)
@@ -284,7 +285,7 @@ export default function TakeExamPage() {
     await supabase.from('exam_sessions').update({ tab_switch_count: count, flagged: true }).eq('id', session.id)
     if (count >= 3) {
       setWarning(`This is violation ${count} (${reason}). Your exam is being submitted automatically.`)
-      if (!submittedRef.current) { submittedRef.current = true; intentionalExitRef.current = true; handleSubmit() }
+      if (!submittedRef.current) { submittedRef.current = true; intentionalExitRef.current = true; handleSubmitRef.current() }
     } else {
       setWarning(`Warning ${count}/3: ${reason}. Reaching 3 violations will auto-submit your exam.`)
     }
@@ -374,6 +375,15 @@ export default function TakeExamPage() {
     if (document.fullscreenElement) document.exitFullscreen().catch(() => {})
     router.push(`/student/exam/${examId}/submitted`)
   }
+
+  // Effect-attached event listeners (timer, fullscreen-exit, tab-switch)
+  // only get recreated when their effect's dependencies change, which
+  // happens once early in the exam — so without this, they'd call a
+  // permanently stale handleSubmit closure from before the student
+  // answered anything.
+  useEffect(() => {
+    handleSubmitRef.current = handleSubmit
+  })
 
   if (loading) return <div className="page-container">Loading…</div>
   if (errorMsg) return <div className="page-container"><p className="banner banner-danger">{errorMsg}</p></div>
