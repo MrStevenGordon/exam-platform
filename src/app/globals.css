@@ -59,9 +59,13 @@ h1, h2, h3 {
   margin: 0;
   font-weight: 700;
   color: var(--text-primary);
-  text-transform: none;
+  text-transform: capitalize;
   letter-spacing: -0.2px;
   line-height: 1.3;
+}
+
+label {
+  text-transform: capitalize;
 }
 
 h1 { font-size: 22px; }
@@ -133,7 +137,7 @@ select {
   font-size: 13px;
   font-weight: 600;
   letter-spacing: 0.1px;
-  text-transform: none;
+  text-transform: capitalize;
   padding: 9px 18px;
   border-radius: var(--radius);
   border: none;
@@ -222,6 +226,7 @@ select {
   letter-spacing: 0.2px;
   padding: 3px 10px;
   border-radius: 6px;
+  text-transform: capitalize;
 }
 
 .badge-default {
@@ -257,7 +262,7 @@ select {
   font-weight: 700;
   letter-spacing: 0.8px;
   color: var(--text-muted);
-  text-transform: uppercase;
+  text-transform: capitalize;
 }
 
 /* Banners */
@@ -315,7 +320,7 @@ select {
   letter-spacing: -0.3px;
   margin: 0 0 4px;
   color: var(--text-primary);
-  text-transform: none;
+  text-transform: capitalize;
 }
 
 .portal-page-sub {
@@ -349,7 +354,7 @@ select {
 .stat-card-label {
   font-size: 11px;
   color: var(--text-secondary);
-  text-transform: uppercase;
+  text-transform: capitalize;
   letter-spacing: 0.5px;
   margin-top: 3px;
 }
