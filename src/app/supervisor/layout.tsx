@@ -9,6 +9,7 @@ const SUPERVISOR_NAV = [
   { label: 'Final Exams', icon: 'ti-file-check', href: '/supervisor/final-exams' },
   { label: 'Appointments', icon: 'ti-award', href: '/supervisor/appointments' },
   { label: 'My Classes', icon: 'ti-users', href: '/supervisor/classes' },
+  { label: 'Class Assignments', icon: 'ti-user-check', href: '/supervisor/class-assignments' },
   { label: 'Subjects', icon: 'ti-books', href: '/supervisor/subjects' },
   { label: 'Analytics', icon: 'ti-chart-bar', href: '/supervisor/analytics' },
   { label: 'My Profile', icon: 'ti-user', href: '/supervisor/profile' },
