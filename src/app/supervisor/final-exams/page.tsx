@@ -87,13 +87,8 @@ export default function FinalExamsPage() {
           <div style={{ fontSize: 32, marginBottom: 12 }}>
             {activeTab === 'approved' ? '✓' : '📋'}
           </div>
-          <p style={{ fontWeight: 700, margin: '0 0 6px' }}>
+          <p style={{ fontWeight: 700, margin: 0 }}>
             {activeTab === 'approved' ? 'No exams awaiting publication' : 'No published exams yet'}
-          </p>
-          <p style={{ color: 'var(--text-secondary)', fontSize: 13, margin: 0 }}>
-            {activeTab === 'approved'
-              ? 'Approved exams from senior team leads will appear here.'
-              : 'Published exams will appear here after you publish them to students.'}
           </p>
         </div>
       )}

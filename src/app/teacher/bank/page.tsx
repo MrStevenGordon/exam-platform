@@ -86,10 +86,7 @@ export default function TeacherBankPage() {
       {!search && !filterSubject && !filterType && (
         <div className="card" style={{ textAlign: 'center', padding: 32 }}>
           <div style={{ fontSize: 32, marginBottom: 12 }}>🔍</div>
-          <p style={{ fontWeight: 700, margin: '0 0 6px' }}>Search or filter to view questions</p>
-          <p style={{ color: 'var(--text-secondary)', fontSize: 13, margin: 0 }}>
-            Use the search box or dropdowns above to find questions in your bank.
-          </p>
+          <p style={{ fontWeight: 700, margin: 0 }}>Search or filter to view questions</p>
         </div>
       )}
       {(search || filterSubject || filterType) && filtered.length === 0 && (

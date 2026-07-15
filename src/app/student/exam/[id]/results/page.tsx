@@ -80,7 +80,7 @@ export default function FinalExamResultsPage() {
           <div style={{ fontSize: 40, marginBottom: 12 }}>⏳</div>
           <h2 style={{ marginBottom: 8 }}>Results pending</h2>
           <p style={{ color: 'var(--text-secondary)', fontSize: 14 }}>
-            Your exam has been submitted. Results will be released by your supervisor — check back later.
+            Your supervisor hasn't released results yet.
           </p>
         </div>
       )}
