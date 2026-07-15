@@ -75,8 +75,13 @@ Respond ONLY with valid JSON in this exact format, no other text or markdown:
 
     if (!response.ok) {
       const errText = await response.text()
-      console.error('Anthropic API error:', errText)
-      return NextResponse.json({ error: 'AI processing failed. Please try again.' }, { status: 500 })
+      console.error('Anthropic API error:', response.status, errText)
+      let detail = errText
+      try {
+        const errJson = JSON.parse(errText)
+        detail = errJson.error?.message || errText
+      } catch {}
+      return NextResponse.json({ error: `AI processing failed (${response.status}): ${detail}` }, { status: 500 })
     }
 
     const data = await response.json()
