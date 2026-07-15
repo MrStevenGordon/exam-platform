@@ -16,6 +16,7 @@ type DraftExam = {
   instructions: string | null
   duration_minutes: number | null
   access_password: string | null
+  published_final_exam_id: string | null
   questions_per_page: number
   department_id: string | null
   calculator_enabled: boolean
@@ -69,7 +70,7 @@ export default function SupervisorExamPublishPage() {
   async function loadData() {
     const { data: examData } = await supabase
       .from('draft_exams')
-      .select('id, title, subject, exam_kind, term, target_grade, status, instructions, duration_minutes, access_password, questions_per_page, department_id, calculator_enabled')
+      .select('id, title, subject, exam_kind, term, target_grade, status, instructions, duration_minutes, access_password, questions_per_page, department_id, calculator_enabled, published_final_exam_id')
       .eq('id', examId)
       .single()
     setExam(examData)
@@ -140,7 +141,7 @@ export default function SupervisorExamPublishPage() {
     // Mark draft as published, and store the password here too so it can be
     // shown persistently on this page (same pattern as direct-exam publish),
     // instead of only ever being visible in a one-time alert.
-    await supabase.from('draft_exams').update({ status: 'published', access_password: password } as any).eq('id', examId)
+    await supabase.from('draft_exams').update({ status: 'published', access_password: password, published_final_exam_id: finalExam.id } as any).eq('id', examId)
 
     setShowPublishModal(false)
     setPublishing(false)
@@ -178,12 +179,21 @@ export default function SupervisorExamPublishPage() {
 
       {isPublished && (
         <div className="banner banner-success" style={{ marginBottom: 20 }}>
-          This exam has been published to students.
-          {exam.access_password && (
-            <div style={{ marginTop: 8 }}>
-              Exam password: <span style={{ fontFamily: 'monospace', background: 'white', padding: '2px 10px', borderRadius: 6 }}>{exam.access_password}</span>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+            <div>
+              This exam has been published to students.
+              {exam.access_password && (
+                <div style={{ marginTop: 8 }}>
+                  Exam password: <span style={{ fontFamily: 'monospace', background: 'white', padding: '2px 10px', borderRadius: 6 }}>{exam.access_password}</span>
+                </div>
+              )}
             </div>
-          )}
+            {exam.published_final_exam_id && (
+              <Link href={`/supervisor/final-exams/${exam.published_final_exam_id}/sessions`}>
+                <button className="btn btn-primary" style={{ whiteSpace: 'nowrap' }}>View sessions / release results</button>
+              </Link>
+            )}
+          </div>
         </div>
       )}
 
