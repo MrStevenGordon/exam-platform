@@ -26,6 +26,14 @@ type Question = {
   supervisor_comment: string | null
 }
 
+type Section = {
+  id: string
+  name: string
+  instructions: string | null
+  order_index: number
+  question_type: string | null
+}
+
 export default function SupervisorExamReviewPage() {
   const router = useRouter()
   const params = useParams()
@@ -33,6 +41,7 @@ export default function SupervisorExamReviewPage() {
 
   const [exam, setExam] = useState<DraftExam | null>(null)
   const [questions, setQuestions] = useState<Question[]>([])
+  const [sections, setSections] = useState<Section[]>([])
   const [comments, setComments] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(true)
   const [errorMsg, setErrorMsg] = useState('')
@@ -73,6 +82,13 @@ export default function SupervisorExamReviewPage() {
       return
     }
     setExam(examData as any)
+
+    const { data: sectionData } = await supabase
+      .from('exam_sections')
+      .select('id, name, instructions, order_index, question_type')
+      .eq('draft_exam_id', examId)
+      .order('order_index', { ascending: true })
+    setSections(sectionData || [])
 
     const { data: questionData, error: questionError } = await supabase
       .from('questions')
@@ -166,6 +182,46 @@ export default function SupervisorExamReviewPage() {
 
   const canDecide = exam.status === 'submitted'
 
+  function renderQuestion(q: Question, displayNumber: number) {
+    return (
+      <div key={q.id} className="card">
+        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+          <span className="section-label" style={{ fontSize: 11 }}>
+            {displayNumber}. {q.question_type.replace('_', ' ')}
+          </span>
+          <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{q.points} pt{q.points !== 1 ? 's' : ''}</span>
+        </div>
+        <p style={{ margin: '8px 0 0' }}>{q.question_text}</p>
+        {q.options && (
+          <ul style={{ margin: '8px 0 0', paddingLeft: 20 }}>
+            {q.options.map((opt, idx) => (
+              <li key={idx} style={{ color: opt === q.correct_answer ? 'var(--success)' : undefined, fontWeight: opt === q.correct_answer ? 700 : 400 }}>
+                {opt}
+              </li>
+            ))}
+          </ul>
+        )}
+        {!q.options && q.correct_answer && (
+          <p style={{ margin: '8px 0 0', fontSize: 14, color: 'var(--success)' }}>
+            Correct answer: {q.correct_answer}
+          </p>
+        )}
+
+        <div style={{ marginTop: 10 }}>
+          <label style={{ fontSize: 13, color: 'var(--text-secondary)' }}>Comment for teacher (optional)</label>
+          <textarea
+            value={comments[q.id] || ''}
+            onChange={(e) => updateComment(q.id, e.target.value)}
+            disabled={!canDecide}
+            rows={2}
+            placeholder="e.g. This option is ambiguous, please clarify"
+            style={{ width: '100%', marginTop: 4 }}
+          />
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="page-container">
       <Link href={backHref} style={{ color: 'var(--text-secondary)', fontSize: 14 }}>&larr; {backLabel}</Link>
@@ -185,50 +241,63 @@ export default function SupervisorExamReviewPage() {
       {exam.instructions && (
         <div className="card" style={{ marginTop: 16, background: 'var(--page-bg)' }}>
           <strong>Instructions:</strong>
-          <p style={{ margin: '4px 0 0' }}>{exam.instructions}</p>
+          <p style={{ margin: '4px 0 0', whiteSpace: 'pre-wrap' }}>{exam.instructions}</p>
         </div>
       )}
 
       <h2 style={{ marginTop: 32 }}>Questions ({questions.length})</h2>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        {questions.map((q, i) => (
-          <div key={q.id} className="card">
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span className="section-label" style={{ fontSize: 11 }}>
-                {i + 1}. {q.question_type.replace('_', ' ')}
-              </span>
-              <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{q.points} pt{q.points !== 1 ? 's' : ''}</span>
-            </div>
-            <p style={{ margin: '8px 0 0' }}>{q.question_text}</p>
-            {q.options && (
-              <ul style={{ margin: '8px 0 0', paddingLeft: 20 }}>
-                {q.options.map((opt, idx) => (
-                  <li key={idx} style={{ color: opt === q.correct_answer ? 'var(--success)' : undefined, fontWeight: opt === q.correct_answer ? 700 : 400 }}>
-                    {opt}
-                  </li>
-                ))}
-              </ul>
-            )}
-            {!q.options && q.correct_answer && (
-              <p style={{ margin: '8px 0 0', fontSize: 14, color: 'var(--success)' }}>
-                Correct answer: {q.correct_answer}
-              </p>
-            )}
+        {(() => {
+          if (sections.length === 0) {
+            // No sections defined — fall back to a flat numbered list
+            return questions.map((q, i) => renderQuestion(q, i + 1))
+          }
 
-            <div style={{ marginTop: 10 }}>
-              <label style={{ fontSize: 13, color: 'var(--text-secondary)' }}>Comment for teacher (optional)</label>
-              <textarea
-                value={comments[q.id] || ''}
-                onChange={(e) => updateComment(q.id, e.target.value)}
-                disabled={!canDecide}
-                rows={2}
-                placeholder="e.g. This option is ambiguous, please clarify"
-                style={{ width: '100%', marginTop: 4 }}
-              />
-            </div>
-          </div>
-        ))}
+          const items: React.ReactNode[] = []
+          let runningNumber = 0
+          const assignedIds = new Set<string>()
+
+          sections.forEach((s, si) => {
+            const sectionQuestions = s.question_type
+              ? questions.filter((q) => q.question_type === s.question_type)
+              : []
+            sectionQuestions.forEach((q) => assignedIds.add(q.id))
+
+            items.push(
+              <div key={`section-${s.id}`} style={{ padding: '12px 16px', background: 'var(--accent-light)', borderRadius: 'var(--radius)', borderLeft: '4px solid var(--accent)', marginTop: si > 0 ? 16 : 0, display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 800, fontSize: 14, flexShrink: 0 }}>
+                  {String.fromCharCode(65 + si)}
+                </div>
+                <div>
+                  <div style={{ fontWeight: 800, fontSize: 15, color: 'var(--accent-dark)' }}>
+                    Section {String.fromCharCode(65 + si)}: {s.name}
+                  </div>
+                  <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 2 }}>
+                    {sectionQuestions.length} question{sectionQuestions.length !== 1 ? 's' : ''}
+                    {s.question_type && ` · ${s.question_type.replace('_', ' ')}`}
+                    {s.instructions && ` · ${s.instructions}`}
+                  </div>
+                </div>
+              </div>
+            )
+
+            sectionQuestions.forEach((q) => {
+              runningNumber++
+              items.push(renderQuestion(q, runningNumber))
+            })
+          })
+
+          // Any questions that didn't match a section's question_type
+          questions.forEach((q) => {
+            if (!assignedIds.has(q.id)) {
+              runningNumber++
+              items.push(renderQuestion(q, runningNumber))
+            }
+          })
+
+          return items
+        })()}
       </div>
 
       {canDecide && (
