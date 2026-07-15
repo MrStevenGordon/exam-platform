@@ -133,10 +133,27 @@ export default function AddQuestionPage() {
       return
     }
 
-    const { count } = await supabase
+    // Sections are matched to questions purely by question_type (no explicit
+    // foreign key), so two people adding questions to different sections at
+    // the same time can end up interleaved if we just use a global count.
+    // Instead, place this question in its section's own numeric "band" —
+    // all questions of the same type always sort together, in section order,
+    // regardless of when each collaborator adds theirs.
+    const { data: examSections } = await supabase
+      .from('exam_sections')
+      .select('id, question_type')
+      .eq('draft_exam_id', examId)
+      .order('order_index', { ascending: true })
+
+    const sectionBand = examSections
+      ? Math.max(examSections.findIndex((s) => s.question_type === questionType), 0)
+      : 0
+
+    const { count: withinSectionCount } = await supabase
       .from('questions')
       .select('id', { count: 'exact', head: true })
       .eq('draft_exam_id', examId)
+      .eq('question_type', questionType)
 
     let payload: any = {
       draft_exam_id: examId,
@@ -145,7 +162,7 @@ export default function AddQuestionPage() {
       question_text: questionText,
       image_url: imageUrl || null,
       points,
-      order_index: count || 0,
+      order_index: sectionBand * 100000 + (withinSectionCount || 0),
       is_bank_question: saveToBank,
       show_working: questionType === 'short_answer' && showWorking,
       marking_points: (questionType === 'short_answer' || questionType === 'fill_blank') && markingPoints.some(p => p.text)

@@ -67,25 +67,45 @@ export default function AddFromBankPage() {
     setSaving(true)
     const { data: { user } } = await supabase.auth.getUser()
 
-    const { count } = await supabase
-      .from('questions')
-      .select('id', { count: 'exact', head: true })
+    const { data: examSections } = await supabase
+      .from('exam_sections')
+      .select('id, question_type')
       .eq('draft_exam_id', examId)
+      .order('order_index', { ascending: true })
 
-    let nextIndex = count || 0
     const toCopy = bankQuestions.filter((q) => selectedIds.has(q.id))
 
-    const rows = toCopy.map((q) => ({
-      draft_exam_id: examId,
-      created_by: user?.id,
-      question_type: q.question_type,
-      question_text: q.question_text,
-      points: q.points,
-      options: q.options,
-      correct_answer: q.correct_answer,
-      order_index: nextIndex++,
-      is_bank_question: true,
-    }))
+    // Track a running count per question_type, seeded with how many of
+    // that type already exist, so batch-added questions (which may mix
+    // several types) still land in the correct section band and don't
+    // collide with counts from other collaborators adding concurrently.
+    const typeCounts: Record<string, number> = {}
+    for (const type of new Set(toCopy.map((q) => q.question_type))) {
+      const { count } = await supabase
+        .from('questions')
+        .select('id', { count: 'exact', head: true })
+        .eq('draft_exam_id', examId)
+        .eq('question_type', type)
+      typeCounts[type] = count || 0
+    }
+
+    const rows = toCopy.map((q) => {
+      const sectionBand = examSections
+        ? Math.max(examSections.findIndex((s) => s.question_type === q.question_type), 0)
+        : 0
+      const orderIndex = sectionBand * 100000 + typeCounts[q.question_type]++
+      return {
+        draft_exam_id: examId,
+        created_by: user?.id,
+        question_type: q.question_type,
+        question_text: q.question_text,
+        points: q.points,
+        options: q.options,
+        correct_answer: q.correct_answer,
+        order_index: orderIndex,
+        is_bank_question: true,
+      }
+    })
 
     const { error } = await supabase.from('questions').insert(rows)
 

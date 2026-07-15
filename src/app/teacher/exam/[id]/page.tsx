@@ -518,6 +518,7 @@ export default function ExamEditorPage() {
           const bLetter = bMatch ? bMatch[1] : 'Z'
           return aLetter.localeCompare(bLetter)
         })
+        let runningNumber = 0
         sortedSections.forEach((s, si) => {
             // If section has a question_type, group matching questions
             // Otherwise use equal distribution
@@ -548,13 +549,14 @@ export default function ExamEditorPage() {
                 </div>
               </div>
             )
-            sectionQuestions.forEach((q, qi) => {
-              const globalI = questions.indexOf(q)
+            sectionQuestions.forEach((q) => {
+              runningNumber++
+              const displayNumber = runningNumber
               items.push(
                 <div key={q.id} className="card">
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                     <span style={{ fontSize: 12, color: '#888', textTransform: 'uppercase' }}>
-                      {globalI + 1}. {q.question_type.replace('_', ' ')} {q.is_bank_question && '• from bank'}
+                      {displayNumber}. {q.question_type.replace('_', ' ')} {q.is_bank_question && '• from bank'}
                     </span>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                       <span style={{ fontSize: 12, color: '#888' }}>{q.points} pt{q.points !== 1 ? 's' : ''}</span>
@@ -580,13 +582,15 @@ export default function ExamEditorPage() {
           const assignedIds = new Set(items
             .filter((item: any) => item?.key && !item.key.startsWith('section-'))
             .map((item: any) => item?.key))
-          questions.forEach((q, i) => {
+          questions.forEach((q) => {
             if (!assignedIds.has(q.id)) {
+              runningNumber++
+              const displayNumber = runningNumber
               items.push(
                 <div key={q.id} className="card">
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                     <span style={{ fontSize: 12, color: '#888', textTransform: 'uppercase' }}>
-                      {i + 1}. {q.question_type.replace('_', ' ')} {q.is_bank_question && '• from bank'}
+                      {displayNumber}. {q.question_type.replace('_', ' ')} {q.is_bank_question && '• from bank'}
                     </span>
                     <span style={{ fontSize: 12, color: '#888' }}>{q.points} pt{q.points !== 1 ? 's' : ''}</span>
                   </div>
