@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 
 type ClassGroup = {
@@ -150,22 +151,25 @@ export default function MyClassesPage() {
                           filteredStudents
                             .sort((a, b) => a.full_name.localeCompare(b.full_name))
                             .map((s, i) => (
-                              <div key={s.id} style={{
-                                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                                padding: '10px 16px',
-                                borderBottom: i < filteredStudents.length - 1 ? '1px solid var(--border)' : 'none',
-                              }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                                  <div style={{ width: 30, height: 30, borderRadius: '50%', background: 'var(--accent-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: 'var(--accent-dark)', flexShrink: 0 }}>
-                                    {s.full_name.split(' ').map((n) => n[0]).slice(0, 2).join('')}
+                              <Link key={s.id} href={`/teacher/student/${s.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+                                <div style={{
+                                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                                  padding: '10px 16px',
+                                  borderBottom: i < filteredStudents.length - 1 ? '1px solid var(--border)' : 'none',
+                                  cursor: 'pointer',
+                                }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                    <div style={{ width: 30, height: 30, borderRadius: '50%', background: 'var(--accent-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: 'var(--accent-dark)', flexShrink: 0 }}>
+                                      {s.full_name.split(' ').map((n) => n[0]).slice(0, 2).join('')}
+                                    </div>
+                                    <div>
+                                      <div style={{ fontWeight: 600, fontSize: 13 }}>{s.full_name}</div>
+                                      <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>ID: {s.student_id}</div>
+                                    </div>
                                   </div>
-                                  <div>
-                                    <div style={{ fontWeight: 600, fontSize: 13 }}>{s.full_name}</div>
-                                    <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>ID: {s.student_id}</div>
-                                  </div>
+                                  <span style={{ fontSize: 11, color: 'var(--text-secondary)' }}>{i + 1}</span>
                                 </div>
-                                <span style={{ fontSize: 11, color: 'var(--text-secondary)' }}>{i + 1}</span>
-                              </div>
+                              </Link>
                             ))
                         )}
                       </div>
