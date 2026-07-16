@@ -68,7 +68,7 @@ export default function PasswordRequestsPage() {
       </div>
 
       <div className="banner" style={{ marginBottom: 20, fontSize: 13 }}>
-        To resolve a request: open the person's record on the <strong>Staff</strong> or <strong>Students</strong> page, click <strong>Reset password</strong> there, then come back here and mark this request resolved.
+        To resolve a request: open the person's record on the <strong>Staff</strong> or <strong>Students</strong> page, click <strong>Reset password</strong> there, then return here and mark this request resolved.
       </div>
 
       {visible.length === 0 && (

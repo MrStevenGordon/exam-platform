@@ -52,26 +52,29 @@ export default function Sidebar({ navItems, portalLabel }: SidebarProps) {
 
       {/* Nav */}
       <nav style={{ flex: 1, padding: '12px 10px', display: 'flex', flexDirection: 'column', gap: 2, overflowY: 'auto' }}>
-        {navItems.map((item) => {
-          const isActive = pathname === item.href || (item.href !== '/' && pathname?.startsWith(item.href))
-          return (
-            <Link key={item.href} href={item.href} onClick={() => setMobileOpen(false)} style={{ textDecoration: 'none' }}>
-              <div style={{
-                display: 'flex', alignItems: 'center', gap: 10,
-                padding: '9px 12px', borderRadius: 8, cursor: 'pointer',
-                background: isActive ? 'rgba(212,118,42,0.25)' : 'transparent',
-                color: isActive ? '#FAC882' : 'rgba(255,255,255,0.55)',
-                fontWeight: isActive ? 600 : 400,
-                fontSize: 13,
-                borderLeft: isActive ? '3px solid #D4762A' : '3px solid transparent',
-                transition: 'all 0.1s',
-              }}>
-                <i className={`ti ${item.icon}`} style={{ fontSize: 16, flexShrink: 0 }} />
-                <span>{item.label}</span>
-              </div>
-            </Link>
-          )
-        })}
+        {(() => {
+          const hasExactMatch = navItems.some((i) => i.href === pathname)
+          return navItems.map((item) => {
+            const isActive = hasExactMatch ? item.href === pathname : (item.href !== '/' && pathname?.startsWith(item.href))
+            return (
+              <Link key={item.href} href={item.href} onClick={() => setMobileOpen(false)} style={{ textDecoration: 'none' }}>
+                <div style={{
+                  display: 'flex', alignItems: 'center', gap: 10,
+                  padding: '9px 12px', borderRadius: 8, cursor: 'pointer',
+                  background: isActive ? 'rgba(212,118,42,0.25)' : 'transparent',
+                  color: isActive ? '#FAC882' : 'rgba(255,255,255,0.55)',
+                  fontWeight: isActive ? 600 : 400,
+                  fontSize: 13,
+                  borderLeft: isActive ? '3px solid #D4762A' : '3px solid transparent',
+                  transition: 'all 0.1s',
+                }}>
+                  <i className={`ti ${item.icon}`} style={{ fontSize: 16, flexShrink: 0 }} />
+                  <span>{item.label}</span>
+                </div>
+              </Link>
+            )
+          })
+        })()}
       </nav>
 
       {/* User */}

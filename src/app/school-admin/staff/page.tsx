@@ -227,10 +227,10 @@ export default function StaffPage() {
           <p className="portal-page-sub" style={{ margin: '4px 0 0' }}>{staff.length} staff accounts</p>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
-          <button className="btn btn-primary" onClick={() => setShowAddForm(!showAddForm)}>
+          <button className="btn btn-primary" onClick={() => { setShowAddForm(!showAddForm); setShowCsvImport(false) }}>
             + Add staff member
           </button>
-          <button className="btn btn-secondary" onClick={() => setShowCsvImport(!showCsvImport)}>
+          <button className="btn btn-secondary" onClick={() => { setShowCsvImport(!showCsvImport); setShowAddForm(false) }}>
             ↑ Import CSV
           </button>
           <button className="btn btn-secondary" onClick={handleResetAllPasswords} disabled={bulkResetting}>
@@ -280,7 +280,7 @@ export default function StaffPage() {
             <button onClick={() => setShowAddForm(false)} className="btn btn-ghost">Cancel</button>
           </div>
           <p style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 10 }}>
-            Default password: <strong>Staff.Default1</strong> — staff should change this on first login.
+            Default password: <strong>Staff.Default1</strong>
           </p>
         </div>
       )}
