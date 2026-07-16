@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 
 type StaffMember = {
@@ -430,18 +431,20 @@ export default function StaffPage() {
               <div style={{ paddingLeft: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {deptStaff.map((s) => (
                   <div key={s.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px', background: 'var(--card-bg)', borderRadius: 8, border: '1px solid var(--border)' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <div style={{ width: 34, height: 34, borderRadius: '50%', background: s.role === 'supervisor' ? 'var(--success-bg)' : 'var(--accent-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 12, color: s.role === 'supervisor' ? 'var(--success)' : 'var(--accent-dark)', flexShrink: 0 }}>
-                        {s.full_name?.split(' ').map((n: string) => n[0]).slice(0, 2).join('')}
-                      </div>
-                      <div>
-                        <div style={{ fontWeight: 700, fontSize: 14 }}>{s.full_name}</div>
-                        <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 2 }}>
-                          {roleLabel[s.role] || s.role}
-                          {s.is_system_admin && <span style={{ marginLeft: 6, color: 'var(--accent-dark)', fontWeight: 700 }}>· System Admin</span>}
+                    <Link href={`/school-admin/staff/${s.id}`} style={{ textDecoration: 'none', color: 'inherit', flex: 1 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
+                        <div style={{ width: 34, height: 34, borderRadius: '50%', background: s.role === 'supervisor' ? 'var(--success-bg)' : 'var(--accent-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 12, color: s.role === 'supervisor' ? 'var(--success)' : 'var(--accent-dark)', flexShrink: 0 }}>
+                          {s.full_name?.split(' ').map((n: string) => n[0]).slice(0, 2).join('')}
+                        </div>
+                        <div>
+                          <div style={{ fontWeight: 700, fontSize: 14 }}>{s.full_name}</div>
+                          <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 2 }}>
+                            {roleLabel[s.role] || s.role}
+                            {s.is_system_admin && <span style={{ marginLeft: 6, color: 'var(--accent-dark)', fontWeight: 700 }}>· System Admin</span>}
+                          </div>
                         </div>
                       </div>
-                    </div>
+                    </Link>
                     <div style={{ display: 'flex', gap: 6 }}>
                       <button onClick={() => handleResetPassword(s.id, s.full_name, false)} className="btn btn-ghost" style={{ fontSize: 11 }}>
                         Reset password
