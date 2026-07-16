@@ -33,6 +33,9 @@ export default function StudentsPage() {
   const [search, setSearch] = useState('')
   const [filterGrade, setFilterGrade] = useState('')
   const [filterClass, setFilterClass] = useState('')
+  const [classDropdownOpen, setClassDropdownOpen] = useState(false)
+  const [expandedFilterGrade, setExpandedFilterGrade] = useState<number | null>(null)
+  const classDropdownRef = useRef<HTMLDivElement>(null)
   const [expandedGrades, setExpandedGrades] = useState<Set<string>>(new Set())
   const [expandedClasses, setExpandedClasses] = useState<Set<string>>(new Set())
   const [importing, setImporting] = useState(false)
@@ -45,6 +48,16 @@ export default function StudentsPage() {
   const [bulkResetting, setBulkResetting] = useState(false)
 
   useEffect(() => { loadData() }, [])
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (classDropdownRef.current && !classDropdownRef.current.contains(e.target as Node)) {
+        setClassDropdownOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   async function loadData() {
     const { data } = await supabase
@@ -309,26 +322,95 @@ export default function StudentsPage() {
           onChange={(e) => setSearch(e.target.value)}
           style={{ flex: 2, minWidth: 160 }}
         />
-        <select
-          value={filterClass}
-          onChange={(e) => {
-            const cls = e.target.value
-            setFilterClass(cls)
-            setFilterGrade(cls ? String(gradeForClass[cls] || '') : '')
-          }}
-          style={{ flex: 1, minWidth: 160 }}
-        >
-          <option value="">All classes</option>
-          {[7, 8, 9, 10, 11].map((g) => {
-            const classes = classesByGrade[g]
-            if (!classes || classes.length === 0) return null
-            return (
-              <optgroup key={g} label={`Grade ${g}`}>
-                {classes.map((c) => <option key={c} value={c}>{c}</option>)}
-              </optgroup>
-            )
-          })}
-        </select>
+        <div ref={classDropdownRef} style={{ position: 'relative', flex: 1, minWidth: 160 }}>
+          <button
+            type="button"
+            onClick={() => setClassDropdownOpen(!classDropdownOpen)}
+            style={{
+              width: '100%',
+              textAlign: 'left',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              background: 'white',
+              border: '1px solid var(--border)',
+              borderRadius: 8,
+              padding: '9px 12px',
+              fontSize: 14,
+              cursor: 'pointer',
+            }}
+          >
+            <span>{filterClass || 'All classes'}</span>
+            <span style={{ fontSize: 11, color: 'var(--text-secondary)' }}>{classDropdownOpen ? '▴' : '▾'}</span>
+          </button>
+
+          {classDropdownOpen && (
+            <div style={{
+              position: 'absolute',
+              top: '100%',
+              left: 0,
+              right: 0,
+              marginTop: 4,
+              background: 'white',
+              border: '1px solid var(--border)',
+              borderRadius: 8,
+              boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+              maxHeight: 320,
+              overflowY: 'auto',
+              zIndex: 50,
+            }}>
+              <div
+                onClick={() => { setFilterClass(''); setFilterGrade(''); setClassDropdownOpen(false) }}
+                style={{ padding: '10px 12px', cursor: 'pointer', fontWeight: 600, fontSize: 14, borderBottom: '1px solid var(--border)' }}
+              >
+                All classes
+              </div>
+              {[7, 8, 9, 10, 11].map((g) => {
+                const classes = classesByGrade[g]
+                if (!classes || classes.length === 0) return null
+                const isExpanded = expandedFilterGrade === g
+                return (
+                  <div key={g}>
+                    <div
+                      onClick={() => setExpandedFilterGrade(isExpanded ? null : g)}
+                      style={{
+                        padding: '10px 12px',
+                        cursor: 'pointer',
+                        fontWeight: 700,
+                        fontSize: 13,
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        background: 'var(--page-bg)',
+                      }}
+                    >
+                      <span>Grade {g}</span>
+                      <span style={{ fontSize: 11, color: 'var(--text-secondary)' }}>{isExpanded ? '▴' : '▾'}</span>
+                    </div>
+                    {isExpanded && classes.map((c) => (
+                      <div
+                        key={c}
+                        onClick={() => {
+                          setFilterClass(c)
+                          setFilterGrade(String(g))
+                          setClassDropdownOpen(false)
+                        }}
+                        style={{
+                          padding: '9px 12px 9px 24px',
+                          cursor: 'pointer',
+                          fontSize: 14,
+                          background: filterClass === c ? 'var(--accent-light)' : undefined,
+                        }}
+                      >
+                        {c}
+                      </div>
+                    ))}
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
       </div>
 
       {filtered.length === 0 && (
