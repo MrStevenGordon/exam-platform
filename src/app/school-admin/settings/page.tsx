@@ -7,11 +7,21 @@ export default function SettingsPage() {
   const [classGroups, setClassGroups] = useState<{ id: string; name: string; year_grade: string }[]>([])
   const [stats, setStats] = useState({ students: 0, staff: 0, departments: 0, exams: 0 })
   const [loading, setLoading] = useState(true)
+  const [settingsId, setSettingsId] = useState<string | null>(null)
+  const [logoUrl, setLogoUrl] = useState<string | null>(null)
+  const [uploadingLogo, setUploadingLogo] = useState(false)
+  const [logoError, setLogoError] = useState('')
 
   useEffect(() => {
     async function load() {
       const { data } = await supabase.from('class_groups').select('id, name, year_grade').order('year_grade')
       setClassGroups(data || [])
+
+      const { data: settingsRow } = await supabase.from('school_settings').select('id, logo_url').limit(1).single()
+      if (settingsRow) {
+        setSettingsId(settingsRow.id)
+        setLogoUrl(settingsRow.logo_url)
+      }
 
       const [
         { count: students },
@@ -33,6 +43,37 @@ export default function SettingsPage() {
     load()
   }, [])
 
+  async function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file || !settingsId) return
+
+    setUploadingLogo(true)
+    setLogoError('')
+
+    const ext = file.name.split('.').pop()
+    const path = `logo-${Date.now()}.${ext}`
+
+    const { error: uploadError } = await supabase.storage.from('school-logo').upload(path, file, { upsert: true })
+    if (uploadError) {
+      setLogoError(uploadError.message)
+      setUploadingLogo(false)
+      return
+    }
+
+    const { data: publicUrlData } = supabase.storage.from('school-logo').getPublicUrl(path)
+    const newUrl = publicUrlData.publicUrl
+
+    const { error: updateError } = await supabase.from('school_settings').update({ logo_url: newUrl }).eq('id', settingsId)
+    if (updateError) {
+      setLogoError(updateError.message)
+      setUploadingLogo(false)
+      return
+    }
+
+    setLogoUrl(newUrl)
+    setUploadingLogo(false)
+  }
+
   if (loading) return <div>Loading…</div>
 
   const grades = ['Grade 7', 'Grade 8', 'Grade 9', 'Grade 10', 'Grade 11']
@@ -41,6 +82,34 @@ export default function SettingsPage() {
     <div>
       <p className="portal-page-title">School Settings</p>
       <p className="portal-page-sub">Manchester High School · Academic year 2026–2027</p>
+
+      {/* School branding */}
+      <div className="card" style={{ marginBottom: 16 }}>
+        <h2 style={{ marginBottom: 16 }}>School branding</h2>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
+          <div style={{
+            width: 72, height: 72, borderRadius: 12, border: '1px solid var(--border)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            background: 'var(--page-bg)', overflow: 'hidden', flexShrink: 0,
+          }}>
+            {logoUrl ? (
+              <img src={logoUrl} alt="School logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+            ) : (
+              <span style={{ fontSize: 24 }}>🏫</span>
+            )}
+          </div>
+          <div>
+            <label className="btn btn-secondary" style={{ cursor: 'pointer', display: 'inline-block' }}>
+              {uploadingLogo ? 'Uploading…' : logoUrl ? 'Change logo' : 'Upload logo'}
+              <input type="file" accept="image/*" onChange={handleLogoUpload} disabled={uploadingLogo} style={{ display: 'none' }} />
+            </label>
+            <p style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 6 }}>
+              Shown across every portal. PNG or JPG recommended.
+            </p>
+            {logoError && <p style={{ fontSize: 12, color: 'var(--danger)', marginTop: 4 }}>{logoError}</p>}
+          </div>
+        </div>
+      </div>
 
       {/* School info */}
       <div className="card" style={{ marginBottom: 16 }}>

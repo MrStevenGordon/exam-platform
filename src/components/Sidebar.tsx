@@ -13,6 +13,7 @@ export default function Sidebar({ navItems, portalLabel }: SidebarProps) {
   const pathname = usePathname()
   const [profile, setProfile] = useState<{ full_name: string; role: string; student_id?: string | null; grade_level?: number | null; departments?: { name: string } | null } | null>(null)
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [schoolLogoUrl, setSchoolLogoUrl] = useState<string | null>(null)
 
   useEffect(() => {
     async function loadProfile() {
@@ -26,6 +27,12 @@ export default function Sidebar({ navItems, portalLabel }: SidebarProps) {
       if (data) setProfile(data as any)
     }
     loadProfile()
+
+    async function loadLogo() {
+      const { data } = await supabase.from('school_settings').select('logo_url').limit(1).single()
+      if (data?.logo_url) setSchoolLogoUrl(data.logo_url)
+    }
+    loadLogo()
   }, [])
 
   async function handleLogout() {
@@ -42,6 +49,9 @@ export default function Sidebar({ navItems, portalLabel }: SidebarProps) {
         onClick={() => { window.location.reload(); setMobileOpen(false) }}
         style={{ padding: '20px 20px 16px', borderBottom: '1px solid rgba(255,255,255,0.08)', cursor: 'pointer' }}
       >
+        {schoolLogoUrl && (
+          <img src={schoolLogoUrl} alt="School logo" style={{ maxHeight: 32, maxWidth: '100%', objectFit: 'contain', marginBottom: 10, display: 'block' }} />
+        )}
         <div style={{ fontSize: 10, letterSpacing: 1.5, color: 'rgba(255,255,255,0.4)', fontWeight: 700, textTransform: 'uppercase' }}>
           Smart Assess Ja
         </div>
