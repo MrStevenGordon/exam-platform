@@ -182,16 +182,27 @@ export default function StudentsPage() {
     return matchSearch && matchGrade && matchClass
   })
 
-  // Get classes for selected grade
-  const availableClasses = [...new Set(
-    students
-      .filter((s) => !filterGrade || s.grade_level === parseInt(filterGrade))
-      .map((s) => s.class_name)
-      .filter(Boolean)
-  )].sort((a, b) => {
-    const aNum = parseInt((a || '').split('-')[1] || '0')
-    const bNum = parseInt((b || '').split('-')[1] || '0')
-    return aNum - bNum
+  // All classes that actually have students, grouped by grade, for the
+  // combined class filter dropdown (Grade 7 > 1-1, 1-2... / Grade 8 > 2-1...)
+  const classesByGrade: Record<number, string[]> = {}
+  students.forEach((s) => {
+    if (!s.class_name || !s.grade_level) return
+    if (!classesByGrade[s.grade_level]) classesByGrade[s.grade_level] = []
+    if (!classesByGrade[s.grade_level].includes(s.class_name)) classesByGrade[s.grade_level].push(s.class_name)
+  })
+  Object.keys(classesByGrade).forEach((g) => {
+    classesByGrade[parseInt(g)].sort((a, b) => {
+      const aNum = parseInt((a || '').split('-')[1] || '0')
+      const bNum = parseInt((b || '').split('-')[1] || '0')
+      return aNum - bNum
+    })
+  })
+
+  // Which grade a given class belongs to, for setting filterGrade when a
+  // specific class is picked from the combined dropdown.
+  const gradeForClass: Record<string, number> = {}
+  Object.entries(classesByGrade).forEach(([g, classes]) => {
+    classes.forEach((c) => { gradeForClass[c] = parseInt(g) })
   })
 
   const successCount = importResults.filter((r) => r.status === 'success').length
@@ -299,21 +310,24 @@ export default function StudentsPage() {
           style={{ flex: 2, minWidth: 160 }}
         />
         <select
-          value={filterGrade}
-          onChange={(e) => { setFilterGrade(e.target.value); setFilterClass('') }}
-          style={{ flex: 1, minWidth: 120 }}
-        >
-          <option value="">All grades</option>
-          {[7, 8, 9, 10, 11].map((g) => <option key={g} value={g}>Grade {g}</option>)}
-        </select>
-        <select
           value={filterClass}
-          onChange={(e) => setFilterClass(e.target.value)}
-          style={{ flex: 1, minWidth: 100 }}
-          disabled={availableClasses.length === 0}
+          onChange={(e) => {
+            const cls = e.target.value
+            setFilterClass(cls)
+            setFilterGrade(cls ? String(gradeForClass[cls] || '') : '')
+          }}
+          style={{ flex: 1, minWidth: 160 }}
         >
           <option value="">All classes</option>
-          {availableClasses.map((c) => <option key={c} value={c}>{c}</option>)}
+          {[7, 8, 9, 10, 11].map((g) => {
+            const classes = classesByGrade[g]
+            if (!classes || classes.length === 0) return null
+            return (
+              <optgroup key={g} label={`Grade ${g}`}>
+                {classes.map((c) => <option key={c} value={c}>{c}</option>)}
+              </optgroup>
+            )
+          })}
         </select>
       </div>
 
