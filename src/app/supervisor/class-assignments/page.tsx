@@ -34,15 +34,12 @@ export default function ClassAssignmentsPage() {
     const departmentId = profile?.department_id
     setDepartmentName((profile?.departments as any)?.name || '')
 
-    if (!departmentId) {
-      setErrorMsg('Your account has no department set — cannot manage class assignments.')
-      setLoading(false)
-      return
-    }
+    const teacherQuery = supabase.from('profiles').select('id, full_name').eq('role', 'teacher').order('full_name', { ascending: true })
+    if (departmentId) teacherQuery.eq('department_id', departmentId)
 
     const [{ data: cgData }, { data: teacherData }] = await Promise.all([
       supabase.from('class_groups').select('id, name, year_grade').order('year_grade', { ascending: true }).order('name', { ascending: true }),
-      supabase.from('profiles').select('id, full_name').eq('role', 'teacher').eq('department_id', departmentId).order('full_name', { ascending: true }),
+      teacherQuery,
     ])
 
     setClassGroups(cgData || [])
