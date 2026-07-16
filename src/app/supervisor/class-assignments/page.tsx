@@ -18,6 +18,7 @@ export default function ClassAssignmentsPage() {
   const [teachers, setTeachers] = useState<Teacher[]>([])
   const [originalAssignments, setOriginalAssignments] = useState<Record<string, string>>({})
   const [assignments, setAssignments] = useState<Record<string, string>>({}) // class_group_id -> teacher_id ('' = unassigned)
+  const [expandedGrades, setExpandedGrades] = useState<Set<string>>(new Set())
 
   useEffect(() => { loadData() }, [])
 
@@ -114,6 +115,22 @@ export default function ClassAssignmentsPage() {
     if (!grouped[cg.year_grade]) grouped[cg.year_grade] = []
     grouped[cg.year_grade].push(cg)
   })
+  Object.keys(grouped).forEach((g) => {
+    grouped[g].sort((a, b) => {
+      const aNum = parseInt((a.name || '').split('-')[1] || '0')
+      const bNum = parseInt((b.name || '').split('-')[1] || '0')
+      return aNum - bNum
+    })
+  })
+
+  function toggleGrade(grade: string) {
+    setExpandedGrades((prev) => {
+      const next = new Set(prev)
+      if (next.has(grade)) next.delete(grade)
+      else next.add(grade)
+      return next
+    })
+  }
 
   return (
     <div className="page-container">
@@ -138,29 +155,51 @@ export default function ClassAssignmentsPage() {
         </div>
       )}
 
-      {Object.entries(grouped).map(([grade, classes]) => (
-        <div key={grade} style={{ marginTop: 24 }}>
-          <div className="section-label" style={{ marginBottom: 10 }}>{grade}</div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {classes.map((cg) => (
-              <div key={cg.id} className="card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
-                <div style={{ fontWeight: 700, fontSize: 14 }}>{cg.name}</div>
-                <select
-                  value={assignments[cg.id] || ''}
-                  onChange={(e) => updateAssignment(cg.id, e.target.value)}
-                  style={{ maxWidth: 260 }}
-                  disabled={teachers.length === 0}
-                >
-                  <option value="">— Unassigned —</option>
-                  {teachers.map((t) => (
-                    <option key={t.id} value={t.id}>{t.full_name}</option>
-                  ))}
-                </select>
+      {Object.entries(grouped).map(([grade, classes]) => {
+        const assignedCount = classes.filter((cg) => assignments[cg.id]).length
+        const isExpanded = expandedGrades.has(grade)
+        return (
+          <div key={grade} style={{ marginTop: 16 }}>
+            <div
+              onClick={() => toggleGrade(grade)}
+              style={{
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                padding: '12px 16px', background: 'var(--card-bg)', borderRadius: 'var(--radius)',
+                border: '1px solid var(--border)', cursor: 'pointer',
+              }}
+            >
+              <div style={{ fontWeight: 700, fontSize: 15 }}>{grade}</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
+                  {assignedCount} / {classes.length} assigned
+                </span>
+                <span style={{ color: 'var(--text-secondary)' }}>{isExpanded ? '▲' : '▼'}</span>
               </div>
-            ))}
+            </div>
+
+            {isExpanded && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8, paddingLeft: 12 }}>
+                {classes.map((cg) => (
+                  <div key={cg.id} className="card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
+                    <div style={{ fontWeight: 700, fontSize: 14 }}>{cg.name}</div>
+                    <select
+                      value={assignments[cg.id] || ''}
+                      onChange={(e) => updateAssignment(cg.id, e.target.value)}
+                      style={{ maxWidth: 260 }}
+                      disabled={teachers.length === 0}
+                    >
+                      <option value="">— Unassigned —</option>
+                      {teachers.map((t) => (
+                        <option key={t.id} value={t.id}>{t.full_name}</option>
+                      ))}
+                    </select>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
-        </div>
-      ))}
+        )
+      })}
     </div>
   )
 }
