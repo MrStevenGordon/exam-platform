@@ -5,6 +5,7 @@ import Sidebar from '@/components/Sidebar'
 const SCHOOL_ADMIN_NAV = [
   { label: 'Overview', icon: 'ti-home', href: '/school-admin' },
   { label: 'Departments', icon: 'ti-building', href: '/school-admin/departments' },
+  { label: 'Subjects', icon: 'ti-book', href: '/school-admin/subjects' },
   { label: 'Staff', icon: 'ti-users', href: '/school-admin/staff' },
   { label: 'Students', icon: 'ti-school', href: '/school-admin/students' },
   { label: 'Password requests', icon: 'ti-key', href: '/school-admin/password-requests' },

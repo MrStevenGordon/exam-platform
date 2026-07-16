@@ -37,6 +37,8 @@ export default function StaffPage() {
   const [newEmail, setNewEmail] = useState('')
   const [newRole, setNewRole] = useState('teacher')
   const [newDept, setNewDept] = useState('')
+  const [allSubjects, setAllSubjects] = useState<{ id: string; subject: string; department_id: string }[]>([])
+  const [selectedSubjects, setSelectedSubjects] = useState<Set<string>>(new Set())
 
   useEffect(() => { loadData() }, [])
 
@@ -51,6 +53,9 @@ export default function StaffPage() {
 
     const { data: deptData } = await supabase.from('departments').select('id, name').order('name')
     setDepartments(deptData || [])
+
+    const { data: subData } = await supabase.from('department_subjects').select('id, subject, department_id').order('subject')
+    setAllSubjects(subData || [])
 
     setLoading(false)
   }
@@ -117,6 +122,7 @@ export default function StaffPage() {
           email,
           role: newRole,
           department_id: newDept || null,
+          subjects: Array.from(selectedSubjects).join(';'),
         }
       }),
     })
@@ -134,6 +140,7 @@ export default function StaffPage() {
     setNewEmail('')
     setNewRole('teacher')
     setNewDept('')
+    setSelectedSubjects(new Set())
     setShowAddForm(false)
     setSaving(false)
     loadData()
@@ -175,6 +182,7 @@ export default function StaffPage() {
               email: row.email,
               role: row.role || 'teacher',
               department_id: deptMatch?.id || null,
+              subjects: row.subjects || '',
             }
           }),
         })
@@ -273,6 +281,44 @@ export default function StaffPage() {
               </select>
             </div>
           </div>
+
+          {newRole === 'teacher' && allSubjects.length > 0 && (
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>
+                Subjects taught (a teacher can teach more than one)
+              </label>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 6 }}>
+                {allSubjects.map((s) => {
+                  const checked = selectedSubjects.has(s.subject)
+                  return (
+                    <label
+                      key={s.id}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: 6, padding: '6px 10px',
+                        borderRadius: 6, border: '1px solid var(--border)', fontSize: 13, cursor: 'pointer',
+                        background: checked ? 'var(--accent-light)' : 'white',
+                      }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={(e) => {
+                          setSelectedSubjects((prev) => {
+                            const next = new Set(prev)
+                            if (e.target.checked) next.add(s.subject)
+                            else next.delete(s.subject)
+                            return next
+                          })
+                        }}
+                        style={{ width: 'auto' }}
+                      />
+                      {s.subject}
+                    </label>
+                  )
+                })}
+              </div>
+            </div>
+          )}
           <div style={{ display: 'flex', gap: 8 }}>
             <button onClick={handleAddStaff} disabled={saving || !newFirstName || !newLastName || !newEmail} className="btn btn-primary">
               {saving ? 'Adding…' : 'Add staff member'}
@@ -289,7 +335,7 @@ export default function StaffPage() {
         <div className="card" style={{ marginBottom: 20 }}>
           <h2 style={{ marginBottom: 8 }}>Import staff from CSV</h2>
           <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 12 }}>
-            CSV format: <code>first_name, last_name, email, role, department</code>
+            CSV format: <code>first_name, last_name, email, role, department, subjects</code> — separate multiple subjects with a semicolon (e.g. <code>Mathematics;Additional Mathematics</code>)
           </p>
           <p style={{ fontSize: 12, color: 'var(--text-secondary)', marginBottom: 12 }}>
             Role values: <code>teacher</code> or <code>supervisor</code> · Department must match exactly

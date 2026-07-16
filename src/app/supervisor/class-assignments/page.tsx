@@ -35,13 +35,31 @@ export default function ClassAssignmentsPage() {
     const departmentId = profile?.department_id
     setDepartmentName((profile?.departments as any)?.name || '')
 
-    const teacherQuery = supabase.from('profiles').select('id, full_name').eq('role', 'teacher').order('full_name', { ascending: true })
-    if (departmentId) teacherQuery.eq('department_id', departmentId)
+    let teacherData: Teacher[] = []
+    if (departmentId) {
+      const { data: subjectTeachers } = await supabase
+        .from('teacher_subjects')
+        .select('teacher_id, profiles(id, full_name)')
+        .eq('department_id', departmentId)
 
-    const [{ data: cgData }, { data: teacherData }] = await Promise.all([
-      supabase.from('class_groups').select('id, name, year_grade').order('year_grade', { ascending: true }).order('name', { ascending: true }),
-      teacherQuery,
-    ])
+      const seen = new Set<string>()
+      ;(subjectTeachers || []).forEach((row: any) => {
+        if (row.profiles && !seen.has(row.profiles.id)) {
+          seen.add(row.profiles.id)
+          teacherData.push({ id: row.profiles.id, full_name: row.profiles.full_name })
+        }
+      })
+      teacherData.sort((a, b) => a.full_name.localeCompare(b.full_name))
+    } else {
+      const { data } = await supabase.from('profiles').select('id, full_name').eq('role', 'teacher').order('full_name', { ascending: true })
+      teacherData = data || []
+    }
+
+    const { data: cgData } = await supabase
+      .from('class_groups')
+      .select('id, name, year_grade')
+      .order('year_grade', { ascending: true })
+      .order('name', { ascending: true })
 
     setClassGroups(cgData || [])
     setTeachers(teacherData || [])

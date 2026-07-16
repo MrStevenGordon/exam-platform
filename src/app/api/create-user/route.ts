@@ -74,7 +74,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (type === 'staff') {
-      const { first_name, last_name, email, role, department_id } = data
+      const { first_name, last_name, email, role, department_id, subjects } = data
       const fullName = `${first_name} ${last_name}`
 
       const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
@@ -97,6 +97,29 @@ export async function POST(req: NextRequest) {
       if (profileError) {
         await supabaseAdmin.auth.admin.deleteUser(authData.user.id)
         return NextResponse.json({ error: profileError.message }, { status: 400 })
+      }
+
+      const subjectNames: string[] = (subjects || '')
+        .split(';')
+        .map((s: string) => s.trim())
+        .filter(Boolean)
+
+      if (subjectNames.length > 0) {
+        const { data: subjectRows } = await supabaseAdmin
+          .from('department_subjects')
+          .select('department_id, subject')
+          .in('subject', subjectNames)
+
+        const rowsToInsert = subjectNames
+          .map((name) => {
+            const match = (subjectRows || []).find((r: any) => r.subject.toLowerCase() === name.toLowerCase())
+            return match ? { teacher_id: authData.user.id, department_id: match.department_id, subject: match.subject } : null
+          })
+          .filter(Boolean)
+
+        if (rowsToInsert.length > 0) {
+          await supabaseAdmin.from('teacher_subjects').insert(rowsToInsert as any)
+        }
       }
 
       return NextResponse.json({ success: true, email })
