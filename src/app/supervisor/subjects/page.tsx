@@ -16,6 +16,7 @@ export default function DepartmentSubjectsPage() {
   const [newSubject, setNewSubject] = useState('')
   const [saving, setSaving] = useState(false)
   const [deptName, setDeptName] = useState('')
+  const [errorMsg, setErrorMsg] = useState('')
 
   useEffect(() => { loadData() }, [])
 
@@ -44,6 +45,7 @@ export default function DepartmentSubjectsPage() {
   async function handleAdd() {
     if (!newSubject.trim()) return
     setSaving(true)
+    setErrorMsg('')
     const { data: { user } } = await supabase.auth.getUser()
     const { data: profile } = await supabase.from('profiles').select('department_id').eq('id', user!.id).single()
 
@@ -53,7 +55,9 @@ export default function DepartmentSubjectsPage() {
       created_by: user!.id,
     })
 
-    if (!error) {
+    if (error) {
+      setErrorMsg(error.message)
+    } else {
       setNewSubject('')
       loadData()
     }
@@ -89,6 +93,7 @@ export default function DepartmentSubjectsPage() {
             {saving ? 'Adding…' : 'Add'}
           </button>
         </div>
+        {errorMsg && <p className="banner banner-danger" style={{ marginTop: 12, fontSize: 13 }}>{errorMsg}</p>}
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
