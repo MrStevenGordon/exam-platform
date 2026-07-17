@@ -12,6 +12,8 @@ type FinalExam = {
   instructions: string
   duration_minutes: number
   access_password: string | null
+  available_from: string | null
+  available_until: string | null
 }
 
 type EligibleTeacher = { id: string; full_name: string }
@@ -45,7 +47,7 @@ export default function ExamFrontPage() {
 
     const { data: examData, error: examError } = await supabase
       .from('final_exams')
-      .select('id, title, subject, instructions, duration_minutes, access_password')
+      .select('id, title, subject, instructions, duration_minutes, access_password, available_from, available_until')
       .eq('id', examId)
       .single()
 
@@ -143,6 +145,14 @@ export default function ExamFrontPage() {
 
   const alreadyCompleted = existingSession?.status === 'completed'
 
+  const now = new Date()
+  const opensAt = exam.available_from ? new Date(exam.available_from) : null
+  const closesAt = exam.available_until ? new Date(exam.available_until) : null
+  const notYetOpen = !existingSession && opensAt && now < opensAt
+  const windowClosed = !existingSession && closesAt && now > closesAt
+
+  const dateFmt = (d: Date) => d.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })
+
   return (
     <div className="page-container" style={{ maxWidth: 640 }}>
       <Link href="/student" style={{ color: 'var(--text-secondary)', fontSize: 14 }}>&larr; Back to my exams</Link>
@@ -187,6 +197,18 @@ export default function ExamFrontPage() {
           <Link href={`/student/exam/${examId}/results`}>
             <button className="btn btn-primary">View results</button>
           </Link>
+        </div>
+      ) : notYetOpen ? (
+        <div className="card" style={{ textAlign: 'center' }}>
+          <p style={{ fontSize: 32 }}>🔒</p>
+          <p style={{ fontWeight: 700, marginBottom: 6 }}>This exam is not open yet</p>
+          <p style={{ color: 'var(--text-secondary)' }}>Opens {dateFmt(opensAt!)}</p>
+        </div>
+      ) : windowClosed ? (
+        <div className="card" style={{ textAlign: 'center' }}>
+          <p style={{ fontSize: 32 }}>🔒</p>
+          <p style={{ fontWeight: 700, marginBottom: 6 }}>This exam's window has closed</p>
+          <p style={{ color: 'var(--text-secondary)' }}>It closed {dateFmt(closesAt!)}. Contact your teacher or supervisor if you were unable to sit it.</p>
         </div>
       ) : !unlocked ? (
         <div className="card">
