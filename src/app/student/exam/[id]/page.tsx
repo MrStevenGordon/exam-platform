@@ -211,9 +211,6 @@ export default function ExamFrontPage() {
           {!existingSession && eligibleTeachers.length > 0 && (
             <div className="card" style={{ marginBottom: 16 }}>
               <p style={{ fontWeight: 700, marginBottom: 6 }}>Which teacher should grade your exam?</p>
-              <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 12 }}>
-                This helps make sure your results reach the right person.
-              </p>
               <select
                 value={selectedTeacherId}
                 onChange={(e) => { setSelectedTeacherId(e.target.value); setErrorMsg('') }}

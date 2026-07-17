@@ -159,9 +159,6 @@ export default function ClassAssignmentsPage() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
         <div>
           <h1 style={{ margin: 0 }}>Class Assignments</h1>
-          <p style={{ color: 'var(--text-secondary)', margin: '4px 0 0' }}>
-            Assign a {departmentName || 'department'} teacher to each class — this determines who receives that class's papers for grading.
-          </p>
         </div>
         <button onClick={handleSave} disabled={saving || !hasChanges} className="btn btn-primary">
           {saving ? 'Saving…' : 'Save changes'}

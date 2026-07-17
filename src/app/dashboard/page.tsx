@@ -251,21 +251,18 @@ export default function Dashboard() {
       {profile?.role === 'teacher' && (
         <div className="card" style={{ marginTop: 24 }}>
           <h2>Teacher portal</h2>
-          <p style={{ color: 'var(--text-secondary)', marginTop: 8 }}>Manage your exams and questions.</p>
         </div>
       )}
 
       {profile?.role === 'supervisor' && (
         <div className="card" style={{ marginTop: 24 }}>
           <h2>Supervisor portal</h2>
-          <p style={{ color: 'var(--text-secondary)', marginTop: 8 }}>Review and approve exam submissions.</p>
         </div>
       )}
 
       {profile?.role === 'student' && (
         <div className="card" style={{ marginTop: 24 }}>
           <h2>Student portal</h2>
-          <p style={{ color: 'var(--text-secondary)', marginTop: 8 }}>Your exams and results are available in the student portal.</p>
         </div>
       )}
     </div>

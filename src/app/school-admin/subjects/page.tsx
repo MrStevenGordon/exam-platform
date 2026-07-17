@@ -73,9 +73,6 @@ export default function SchoolAdminSubjectsPage() {
 
       <div className="card" style={{ marginBottom: 20 }}>
         <h2 style={{ marginBottom: 12 }}>Add subject</h2>
-        <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 12 }}>
-          Subjects are used when assigning teachers and appointing team leads / senior team leads.
-        </p>
         <div style={{ display: 'flex', gap: 8 }}>
           <select
             value={selectedDept}

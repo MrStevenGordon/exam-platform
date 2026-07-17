@@ -141,9 +141,6 @@ export default function StaffDetailPage() {
               {saving ? 'Saving…' : 'Save changes'}
             </button>
           </div>
-          <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 16 }}>
-            Controls which exams get routed to this teacher for grading.
-          </p>
 
           {saved && <div className="banner banner-success" style={{ marginBottom: 12 }}>Subjects updated.</div>}
           {errorMsg && <div className="banner banner-danger" style={{ marginBottom: 12 }}>{errorMsg}</div>}
