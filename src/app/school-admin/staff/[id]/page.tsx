@@ -81,7 +81,12 @@ export default function StaffDetailPage() {
     const toRemove = [...originalSubjects].filter((s) => !selectedSubjects.has(s))
 
     if (toRemove.length > 0) {
-      await supabase.from('teacher_subjects').delete().eq('teacher_id', staffId).in('subject', toRemove)
+      const { error: deleteError } = await supabase.from('teacher_subjects').delete().eq('teacher_id', staffId).in('subject', toRemove)
+      if (deleteError) {
+        setErrorMsg(deleteError.message)
+        setSaving(false)
+        return
+      }
     }
 
     if (toAdd.length > 0) {

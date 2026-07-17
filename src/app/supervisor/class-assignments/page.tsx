@@ -107,8 +107,15 @@ export default function ClassAssignmentsPage() {
       if (after) toInsert.push({ teacherId: after, classGroupId: cgId })
     })
 
+    let deleteFailed = false
     for (const { teacherId, classGroupId } of toDelete) {
-      await supabase.from('teacher_class_groups').delete().eq('teacher_id', teacherId).eq('class_group_id', classGroupId)
+      const { error: deleteError } = await supabase.from('teacher_class_groups').delete().eq('teacher_id', teacherId).eq('class_group_id', classGroupId)
+      if (deleteError) deleteFailed = true
+    }
+    if (deleteFailed) {
+      setErrorMsg('Some existing assignments could not be removed. Your changes may not be fully saved — please review before continuing.')
+      setSaving(false)
+      return
     }
 
     if (toInsert.length > 0) {
