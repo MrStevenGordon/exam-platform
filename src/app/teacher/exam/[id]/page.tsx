@@ -182,12 +182,15 @@ export default function ExamEditorPage() {
 
   async function handleSaveDraft() {
     setSavingDraft(true)
+    setErrorMsg('')
     const { error } = await supabase
       .from('draft_exams')
       .update({ title: exam?.title, instructions: exam?.instructions })
       .eq('id', examId)
     setSavingDraft(false)
-    if (!error) {
+    if (error) {
+      setErrorMsg(error.message)
+    } else {
       setSavedMsg('Saved')
       setTimeout(() => setSavedMsg(''), 2000)
     }

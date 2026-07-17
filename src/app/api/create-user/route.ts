@@ -99,6 +99,17 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: profileError.message }, { status: 400 })
       }
 
+      // Every RLS policy that scopes a supervisor's access checks
+      // departments.head_id, not profiles.department_id — without this,
+      // a newly-imported supervisor looks correctly set up in the UI but
+      // can't actually do anything (every check silently fails).
+      if ((role === 'supervisor') && department_id) {
+        const { data: dept } = await supabaseAdmin.from('departments').select('head_id').eq('id', department_id).single()
+        if (dept && !dept.head_id) {
+          await supabaseAdmin.from('departments').update({ head_id: authData.user.id }).eq('id', department_id)
+        }
+      }
+
       const subjectNames: string[] = (subjects || '')
         .split(';')
         .map((s: string) => s.trim())

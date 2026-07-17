@@ -111,6 +111,7 @@ export default function ImportPDFPage() {
 
     const selectedQuestions = questions.filter((q) => q.selected)
     let saved = 0
+    let failed = 0
 
     // Get current max order_index
     const { data: existing } = await supabase
@@ -147,10 +148,18 @@ export default function ImportPDFPage() {
         created_by: user.id,
       })
 
-      if (!error) saved++
+      if (error) {
+        failed++
+        console.error('Failed to import question:', error.message, q.question_text)
+      } else {
+        saved++
+      }
     }
 
     setSavedCount(saved)
+    if (failed > 0) {
+      alert(`${saved} question(s) imported successfully, but ${failed} failed to save. Check the exam and re-add any missing questions manually.`)
+    }
     router.push(`/teacher/exam/${examId}`)
   }
 
