@@ -45,6 +45,8 @@ type Question = {
   total_marks?: number | null
   section_id?: string | null
   image_url?: string | null
+  audio_url?: string | null
+  video_url?: string | null
   show_working?: boolean | null
 }
 
@@ -143,7 +145,7 @@ export default function TakeExamPage() {
 
     const { data: linkData, error: linkError } = await supabase
       .from('final_exam_questions')
-      .select('order_index, questions(id, question_type, question_text, points, options, correct_answer, marking_points, total_marks, section_id, image_url, show_working)')
+      .select('order_index, questions(id, question_type, question_text, points, options, correct_answer, marking_points, total_marks, section_id, image_url, audio_url, video_url, show_working)')
       .eq('final_exam_id', examId)
       .order('order_index', { ascending: true })
 
@@ -163,6 +165,8 @@ export default function TakeExamPage() {
         total_marks: q.total_marks,
         section_id: q.section_id,
         image_url: q.image_url,
+        audio_url: q.audio_url,
+        video_url: q.video_url,
         show_working: q.show_working,
         order_index: l.order_index,
       }
@@ -498,8 +502,21 @@ export default function TakeExamPage() {
                   <img
                     src={(q as any).image_url}
                     alt="Question diagram"
+                    loading="lazy"
                     style={{ maxWidth: '100%', maxHeight: 350, borderRadius: 8, border: '1px solid var(--border)' }}
                   />
+                </div>
+              )}
+
+              {(q as any).audio_url && (
+                <div style={{ marginBottom: 12 }}>
+                  <audio controls preload="none" src={(q as any).audio_url} style={{ width: '100%', maxWidth: 400 }} />
+                </div>
+              )}
+
+              {(q as any).video_url && (
+                <div style={{ marginBottom: 12 }}>
+                  <video controls preload="none" src={(q as any).video_url} style={{ maxWidth: '100%', maxHeight: 350, borderRadius: 8, border: '1px solid var(--border)' }} />
                 </div>
               )}
 

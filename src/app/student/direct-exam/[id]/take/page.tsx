@@ -180,7 +180,7 @@ export default function TakeDirectExamPage() {
 
     const { data: questionData, error: questionError } = await supabase
       .from('questions')
-      .select('id, question_type, question_text, points, options, correct_answer, order_index, marking_points, total_marks, image_url, show_working')
+      .select('id, question_type, question_text, points, options, correct_answer, order_index, marking_points, total_marks, image_url, audio_url, video_url, show_working')
       .eq('draft_exam_id', examId)
       .order('order_index', { ascending: true })
 
@@ -433,7 +433,19 @@ export default function TakeDirectExamPage() {
 
               {(q as any).image_url && (
                 <div style={{ marginBottom: 12 }}>
-                  <img src={(q as any).image_url} alt="Question diagram" style={{ maxWidth: '100%', maxHeight: 350, borderRadius: 8, border: '1px solid var(--border)' }} />
+                  <img src={(q as any).image_url} alt="Question diagram" loading="lazy" style={{ maxWidth: '100%', maxHeight: 350, borderRadius: 8, border: '1px solid var(--border)' }} />
+                </div>
+              )}
+
+              {(q as any).audio_url && (
+                <div style={{ marginBottom: 12 }}>
+                  <audio controls preload="none" src={(q as any).audio_url} style={{ width: '100%', maxWidth: 400 }} />
+                </div>
+              )}
+
+              {(q as any).video_url && (
+                <div style={{ marginBottom: 12 }}>
+                  <video controls preload="none" src={(q as any).video_url} style={{ maxWidth: '100%', maxHeight: 350, borderRadius: 8, border: '1px solid var(--border)' }} />
                 </div>
               )}
 

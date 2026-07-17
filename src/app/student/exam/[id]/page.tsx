@@ -14,6 +14,8 @@ type FinalExam = {
   access_password: string | null
 }
 
+type EligibleTeacher = { id: string; full_name: string }
+
 export default function ExamFrontPage() {
   const router = useRouter()
   const params = useParams()
@@ -27,6 +29,8 @@ export default function ExamFrontPage() {
   const [passwordInput, setPasswordInput] = useState('')
   const [passwordError, setPasswordError] = useState('')
   const [unlocked, setUnlocked] = useState(false)
+  const [eligibleTeachers, setEligibleTeachers] = useState<EligibleTeacher[]>([])
+  const [selectedTeacherId, setSelectedTeacherId] = useState('')
 
   useEffect(() => {
     loadData()
@@ -51,6 +55,16 @@ export default function ExamFrontPage() {
       return
     }
     setExam(examData)
+
+    const { data: teacherSubjects } = await supabase
+      .from('teacher_subjects')
+      .select('teacher_id, profiles(id, full_name)')
+      .eq('subject', examData.subject)
+
+    const teacherList: EligibleTeacher[] = (teacherSubjects || [])
+      .map((row: any) => row.profiles)
+      .filter(Boolean)
+    setEligibleTeachers(teacherList)
 
     const { count } = await supabase
       .from('final_exam_questions')
@@ -95,6 +109,11 @@ export default function ExamFrontPage() {
       return
     }
 
+    if (eligibleTeachers.length > 0 && !selectedTeacherId) {
+      setErrorMsg('Please select which teacher should grade your exam before starting.')
+      return
+    }
+
     const { data, error } = await supabase
       .from('exam_sessions')
       .insert({
@@ -105,6 +124,7 @@ export default function ExamFrontPage() {
         time_limit_seconds: exam.duration_minutes * 60,
         password_verified: true,
         option_shuffle_seed: Math.floor(Math.random() * 1000000),
+        assigned_teacher_id: selectedTeacherId || null,
       })
       .select()
       .single()
@@ -187,12 +207,35 @@ export default function ExamFrontPage() {
           {passwordError && <p className="banner banner-danger" style={{ marginTop: 10 }}>{passwordError}</p>}
         </div>
       ) : (
-        <button onClick={async () => {
-          try { await document.documentElement.requestFullscreen() } catch {}
-          handleBeginExam()
-        }} className="btn btn-primary" style={{ fontSize: 16, padding: '14px 28px' }}>
-          {existingSession ? 'Resume exam' : 'Begin exam'}
-        </button>
+        <>
+          {!existingSession && eligibleTeachers.length > 0 && (
+            <div className="card" style={{ marginBottom: 16 }}>
+              <p style={{ fontWeight: 700, marginBottom: 6 }}>Which teacher should grade your exam?</p>
+              <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 12 }}>
+                This helps make sure your results reach the right person.
+              </p>
+              <select
+                value={selectedTeacherId}
+                onChange={(e) => { setSelectedTeacherId(e.target.value); setErrorMsg('') }}
+                style={{ width: '100%' }}
+              >
+                <option value="">Select your teacher…</option>
+                {eligibleTeachers.map((t) => (
+                  <option key={t.id} value={t.id}>{t.full_name}</option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {errorMsg && <p className="banner banner-danger" style={{ marginBottom: 16 }}>{errorMsg}</p>}
+
+          <button onClick={async () => {
+            try { await document.documentElement.requestFullscreen() } catch {}
+            handleBeginExam()
+          }} className="btn btn-primary" style={{ fontSize: 16, padding: '14px 28px' }}>
+            {existingSession ? 'Resume exam' : 'Begin exam'}
+          </button>
+        </>
       )}
     </div>
   )

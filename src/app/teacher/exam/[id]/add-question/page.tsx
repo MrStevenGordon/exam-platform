@@ -22,6 +22,11 @@ export default function AddQuestionPage() {
   const [showWorking, setShowWorking] = useState(false)
   const [imageUrl, setImageUrl] = useState<string | null>(null)
   const [uploadingImage, setUploadingImage] = useState(false)
+  const [audioUrl, setAudioUrl] = useState<string | null>(null)
+  const [uploadingAudio, setUploadingAudio] = useState(false)
+  const [videoUrl, setVideoUrl] = useState<string | null>(null)
+  const [uploadingVideo, setUploadingVideo] = useState(false)
+  const [mediaError, setMediaError] = useState('')
   const [aiUsage, setAiUsage] = useState<{ used: number; limit: number; remaining: number } | null>(null)
   const [userId, setUserId] = useState<string | null>(null)
 
@@ -122,6 +127,51 @@ export default function AddQuestionPage() {
 
   function handleImageRemove() { setImageUrl(null) }
 
+  const AUDIO_MAX_MB = 15
+  const VIDEO_MAX_MB = 50
+
+  async function handleAudioUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setMediaError('')
+    if (file.size > AUDIO_MAX_MB * 1024 * 1024) {
+      setMediaError(`Audio file is too large (max ${AUDIO_MAX_MB}MB). Try a shorter clip or a more compressed format.`)
+      e.target.value = ''
+      return
+    }
+    setUploadingAudio(true)
+    const { data: { user } } = await supabase.auth.getUser()
+    const fileName = `${user?.id}/${Date.now()}-${file.name.replace(/\s/g, '_')}`
+    const { error } = await supabase.storage.from('question-media').upload(fileName, file, { upsert: true })
+    if (error) { setMediaError('Upload failed: ' + error.message); setUploadingAudio(false); return }
+    const { data: urlData } = supabase.storage.from('question-media').getPublicUrl(fileName)
+    setAudioUrl(urlData.publicUrl)
+    setUploadingAudio(false)
+  }
+
+  function handleAudioRemove() { setAudioUrl(null) }
+
+  async function handleVideoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setMediaError('')
+    if (file.size > VIDEO_MAX_MB * 1024 * 1024) {
+      setMediaError(`Video file is too large (max ${VIDEO_MAX_MB}MB). Large videos slow the exam down for every student — try compressing it or trimming the clip first.`)
+      e.target.value = ''
+      return
+    }
+    setUploadingVideo(true)
+    const { data: { user } } = await supabase.auth.getUser()
+    const fileName = `${user?.id}/${Date.now()}-${file.name.replace(/\s/g, '_')}`
+    const { error } = await supabase.storage.from('question-media').upload(fileName, file, { upsert: true })
+    if (error) { setMediaError('Upload failed: ' + error.message); setUploadingVideo(false); return }
+    const { data: urlData } = supabase.storage.from('question-media').getPublicUrl(fileName)
+    setVideoUrl(urlData.publicUrl)
+    setUploadingVideo(false)
+  }
+
+  function handleVideoRemove() { setVideoUrl(null) }
+
     async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setSaving(true)
@@ -161,6 +211,8 @@ export default function AddQuestionPage() {
       question_type: questionType,
       question_text: questionText,
       image_url: imageUrl || null,
+      audio_url: audioUrl || null,
+      video_url: videoUrl || null,
       points,
       order_index: sectionBand * 100000 + (withinSectionCount || 0),
       is_bank_question: saveToBank,
@@ -261,7 +313,7 @@ export default function AddQuestionPage() {
             <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Question image (optional)</label>
             {imageUrl ? (
               <div style={{ marginTop: 6, position: 'relative', display: 'inline-block' }}>
-                <img src={imageUrl} alt="Question" style={{ maxWidth: '100%', maxHeight: 300, borderRadius: 8, border: '1px solid var(--border)' }} />
+                <img src={imageUrl} alt="Question" loading="lazy" style={{ maxWidth: '100%', maxHeight: 300, borderRadius: 8, border: '1px solid var(--border)' }} />
                 <button type="button" onClick={handleImageRemove} style={{ position: 'absolute', top: 6, right: 6, background: 'rgba(0,0,0,0.6)', color: 'white', border: 'none', borderRadius: '50%', width: 24, height: 24, cursor: 'pointer', fontSize: 12 }}>x</button>
               </div>
             ) : (
@@ -271,6 +323,37 @@ export default function AddQuestionPage() {
               </label>
             )}
           </div>
+
+          <div style={{ marginTop: 10 }}>
+            <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Audio clip (optional, max {AUDIO_MAX_MB}MB)</label>
+            {audioUrl ? (
+              <div style={{ marginTop: 6, display: 'flex', alignItems: 'center', gap: 10 }}>
+                <audio controls preload="none" src={audioUrl} style={{ height: 36 }} />
+                <button type="button" onClick={handleAudioRemove} className="btn btn-ghost" style={{ fontSize: 11 }}>Remove</button>
+              </div>
+            ) : (
+              <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '8px 14px', marginTop: 6, borderRadius: 8, border: '1.5px dashed var(--border-strong)', cursor: 'pointer', fontSize: 13, color: 'var(--text-secondary)' }}>
+                {uploadingAudio ? 'Uploading...' : 'Upload audio (listening exercise)'}
+                <input type="file" accept="audio/*" onChange={handleAudioUpload} style={{ display: 'none' }} disabled={uploadingAudio} />
+              </label>
+            )}
+          </div>
+
+          <div style={{ marginTop: 10 }}>
+            <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Video clip (optional, max {VIDEO_MAX_MB}MB)</label>
+            {videoUrl ? (
+              <div style={{ marginTop: 6, position: 'relative', display: 'inline-block' }}>
+                <video controls preload="none" src={videoUrl} style={{ maxWidth: '100%', maxHeight: 260, borderRadius: 8, border: '1px solid var(--border)' }} />
+                <button type="button" onClick={handleVideoRemove} style={{ position: 'absolute', top: 6, right: 6, background: 'rgba(0,0,0,0.6)', color: 'white', border: 'none', borderRadius: '50%', width: 24, height: 24, cursor: 'pointer', fontSize: 12 }}>x</button>
+              </div>
+            ) : (
+              <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '8px 14px', marginTop: 6, borderRadius: 8, border: '1.5px dashed var(--border-strong)', cursor: 'pointer', fontSize: 13, color: 'var(--text-secondary)' }}>
+                {uploadingVideo ? 'Uploading...' : 'Upload video clip'}
+                <input type="file" accept="video/*" onChange={handleVideoUpload} style={{ display: 'none' }} disabled={uploadingVideo} />
+              </label>
+            )}
+          </div>
+          {mediaError && <p className="banner banner-danger" style={{ marginTop: 10, fontSize: 13 }}>{mediaError}</p>}
           {questionType !== 'essay' && (
             <button
               type="button"
