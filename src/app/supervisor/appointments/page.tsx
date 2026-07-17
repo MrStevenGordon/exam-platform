@@ -41,6 +41,7 @@ export default function AppointmentsPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [successMsg, setSuccessMsg] = useState('')
+  const [errorMsg, setErrorMsg] = useState('')
 
   // New team lead form
   const [tlTeacher, setTlTeacher] = useState('')
@@ -110,6 +111,7 @@ export default function AppointmentsPage() {
   async function handleAppointTeamLead() {
     if (!tlTeacher || !tlGrade || !tlSubject) return
     setSaving(true)
+    setErrorMsg('')
     const { data: { user } } = await supabase.auth.getUser()
     const { data: profile } = await supabase.from('profiles').select('department_id').eq('id', user!.id).single()
 
@@ -121,7 +123,9 @@ export default function AppointmentsPage() {
       appointed_by: user!.id,
     })
 
-    if (!error) {
+    if (error) {
+      setErrorMsg(error.message)
+    } else {
       setSuccessMsg('Team lead appointed successfully')
       setTlTeacher(''); setTlGrade(''); setTlSubject('')
       setShowTLForm(false)
@@ -134,6 +138,7 @@ export default function AppointmentsPage() {
   async function handleAppointSeniorTeamLead() {
     if (!stlTeacher) return
     setSaving(true)
+    setErrorMsg('')
     const { data: { user } } = await supabase.auth.getUser()
     const { data: profile } = await supabase.from('profiles').select('department_id').eq('id', user!.id).single()
 
@@ -145,7 +150,9 @@ export default function AppointmentsPage() {
       appointed_by: user!.id,
     })
 
-    if (!error) {
+    if (error) {
+      setErrorMsg(error.message)
+    } else {
       setSuccessMsg('Senior team lead appointed successfully')
       setStlTeacher('')
       setStlSubject('')
@@ -177,6 +184,7 @@ export default function AppointmentsPage() {
       <p className="portal-page-sub">Team leads and senior team leads</p>
 
       {successMsg && <div className="banner banner-success" style={{ marginBottom: 16 }}>{successMsg}</div>}
+      {errorMsg && <div className="banner banner-danger" style={{ marginBottom: 16 }}>{errorMsg}</div>}
 
       {/* Team Leads */}
       <div className="card" style={{ marginBottom: 20 }}>
