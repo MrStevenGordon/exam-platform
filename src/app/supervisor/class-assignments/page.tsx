@@ -17,7 +17,7 @@ export default function ClassAssignmentsPage() {
   const [classGroups, setClassGroups] = useState<ClassGroup[]>([])
   const [teachers, setTeachers] = useState<Teacher[]>([])
   const [originalAssignments, setOriginalAssignments] = useState<Record<string, string>>({})
-  const [assignments, setAssignments] = useState<Record<string, string>>({}) // class_group_id -> teacher_id ('' = unassigned)
+  const [assignments, setAssignments] = useState<Record<string, string>>({})
   const [expandedGrades, setExpandedGrades] = useState<Set<string>>(new Set())
 
   useEffect(() => { loadData() }, [])
@@ -62,22 +62,26 @@ export default function ClassAssignmentsPage() {
       .order('name', { ascending: true })
 
     setClassGroups(cgData || [])
-    setTeachers(teacherData || [])
 
-    const teacherIds = (teacherData || []).map((t) => t.id)
+    const classGroupIds = (cgData || []).map((c) => c.id)
     const assignmentMap: Record<string, string> = {}
 
-    if (teacherIds.length > 0) {
+    if (classGroupIds.length > 0) {
       const { data: existing } = await supabase
         .from('teacher_class_groups')
-        .select('teacher_id, class_group_id')
-        .in('teacher_id', teacherIds)
+        .select('teacher_id, class_group_id, profiles(id, full_name)')
+        .in('class_group_id', classGroupIds)
 
-      ;(existing || []).forEach((row) => {
+      ;(existing || []).forEach((row: any) => {
         assignmentMap[row.class_group_id] = row.teacher_id
+        if (row.profiles && !teacherData.some((t) => t.id === row.teacher_id)) {
+          teacherData.push({ id: row.profiles.id, full_name: row.profiles.full_name })
+        }
       })
+      teacherData.sort((a, b) => a.full_name.localeCompare(b.full_name))
     }
 
+    setTeachers(teacherData || [])
     setOriginalAssignments(assignmentMap)
     setAssignments(assignmentMap)
     setLoading(false)
@@ -173,7 +177,9 @@ export default function ClassAssignmentsPage() {
         </div>
       )}
 
-      {Object.entries(grouped).map(([grade, classes]) => {
+      {['Grade 7', 'Grade 8', 'Grade 9', 'Grade 10', 'Grade 11'].map((grade) => {
+        const classes = grouped[grade]
+        if (!classes || classes.length === 0) return null
         const assignedCount = classes.filter((cg) => assignments[cg.id]).length
         const isExpanded = expandedGrades.has(grade)
         return (
