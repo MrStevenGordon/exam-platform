@@ -1,25 +1,7 @@
 'use client'
 
 import React, { useState, useRef, useEffect } from 'react'
-
-const SUPERSCRIPT_MAP: Record<string, string> = {
-  '0': '⁰', '1': '¹', '2': '²', '3': '³', '4': '⁴',
-  '5': '⁵', '6': '⁶', '7': '⁷', '8': '⁸', '9': '⁹',
-  '-': '⁻', '+': '⁺', '(': '⁽', ')': '⁾',
-}
-
-function toSuperscript(input: string): string {
-  return input.split('').map((ch) => SUPERSCRIPT_MAP[ch] ?? ch).join('')
-}
-
-const QUICK_SYMBOLS = [
-  '²', '³', '⁴', '⁻¹', '⁻²', '√', '∛',
-  '×', '÷', '±', '≤', '≥', '≠', '≈',
-  'π', 'θ', '°', '∠', '∥', '⊥',
-  '∪', '∩', '∈', '∉', '⊂',
-  '℃', '℉', '$', '₁', '₂',
-  '× 10⁻⁵', '× 10⁵', '× 10⁻³', '× 10³',
-]
+import { toSuperscript, BUTTON_GROUPS } from './mathSymbols'
 
 interface MathSymbolPickerProps {
   inputId: string
@@ -29,6 +11,7 @@ interface MathSymbolPickerProps {
 
 export default function MathSymbolPicker({ inputId, value, onChange }: MathSymbolPickerProps) {
   const [open, setOpen] = useState(false)
+  const [activeGroup, setActiveGroup] = useState('Powers')
   const [customPower, setCustomPower] = useState('')
   const pickerRef = useRef<HTMLDivElement>(null)
 
@@ -46,7 +29,6 @@ export default function MathSymbolPicker({ inputId, value, onChange }: MathSymbo
     const input = document.getElementById(inputId) as HTMLInputElement | HTMLTextAreaElement
     if (!input) {
       onChange(value + symbol)
-      setOpen(false)
       return
     }
 
@@ -56,7 +38,6 @@ export default function MathSymbolPicker({ inputId, value, onChange }: MathSymbo
     const newPos = start + symbol.length
 
     onChange(newVal)
-    setOpen(false)
 
     setTimeout(() => {
       input.focus()
@@ -83,16 +64,18 @@ export default function MathSymbolPicker({ inputId, value, onChange }: MathSymbo
         <div style={{
           position: 'absolute', top: 32, left: 0, zIndex: 100,
           background: 'var(--card-bg)', border: '1px solid var(--border-strong)',
-          borderRadius: 8, padding: 8, width: 260,
+          borderRadius: 8, width: 300,
           boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+          overflow: 'hidden',
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 8, paddingBottom: 8, borderBottom: '1px solid var(--border)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '8px 10px', borderBottom: '1px solid var(--border)', flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)' }}>Any power:</span>
             <input
               type="text"
               value={customPower}
               onChange={(e) => setCustomPower(e.target.value)}
-              placeholder="power e.g. -6"
-              style={{ width: 80, fontSize: 12, padding: '3px 5px' }}
+              placeholder="e.g. -6"
+              style={{ width: 60, fontSize: 12, padding: '3px 5px' }}
               onClick={(e) => e.stopPropagation()}
             />
             <button
@@ -112,22 +95,43 @@ export default function MathSymbolPicker({ inputId, value, onChange }: MathSymbo
               ⁿ only
             </button>
           </div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-          {QUICK_SYMBOLS.map((sym) => (
-            <button
-              key={sym}
-              type="button"
-              onClick={() => insertSymbol(sym)}
-              style={{
-                padding: '3px 6px', borderRadius: 4, fontSize: 14,
-                border: '1px solid var(--border)', background: 'var(--page-bg)',
-                color: 'var(--text-primary)', cursor: 'pointer',
-                minWidth: 32, textAlign: 'center',
-              }}
-            >
-              {sym}
-            </button>
-          ))}
+
+          <div style={{ display: 'flex', flexWrap: 'wrap', borderBottom: '1px solid var(--border)', background: 'var(--page-bg)' }}>
+            {BUTTON_GROUPS.map((g) => (
+              <button
+                key={g.label}
+                type="button"
+                onClick={() => setActiveGroup(g.label)}
+                style={{
+                  padding: '4px 8px', fontSize: 10, fontWeight: 700,
+                  border: 'none', cursor: 'pointer',
+                  background: activeGroup === g.label ? 'var(--accent-light)' : 'transparent',
+                  color: activeGroup === g.label ? 'var(--accent-dark)' : 'var(--text-secondary)',
+                  borderBottom: activeGroup === g.label ? '2px solid var(--accent)' : '2px solid transparent',
+                }}
+              >
+                {g.label}
+              </button>
+            ))}
+          </div>
+
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, padding: 8 }}>
+            {BUTTON_GROUPS.find(g => g.label === activeGroup)?.buttons.map((btn) => (
+              <button
+                key={btn.label}
+                type="button"
+                title={btn.title}
+                onClick={() => insertSymbol(btn.insert)}
+                style={{
+                  padding: '3px 6px', borderRadius: 4, fontSize: 14,
+                  border: '1px solid var(--border)', background: 'var(--page-bg)',
+                  color: 'var(--text-primary)', cursor: 'pointer',
+                  minWidth: 32, textAlign: 'center',
+                }}
+              >
+                {btn.label}
+              </button>
+            ))}
           </div>
         </div>
       )}

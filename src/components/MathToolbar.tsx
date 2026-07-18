@@ -1,88 +1,7 @@
 'use client'
 
 import React from 'react'
-
-// Converts normal digits/sign/parens to their Unicode superscript equivalents,
-// so a teacher can type "-6" and get a real ⁻⁶ inserted — works for any
-// exponent, not just the couple of hardcoded common ones below.
-const SUPERSCRIPT_MAP: Record<string, string> = {
-  '0': '⁰', '1': '¹', '2': '²', '3': '³', '4': '⁴',
-  '5': '⁵', '6': '⁶', '7': '⁷', '8': '⁸', '9': '⁹',
-  '-': '⁻', '+': '⁺', '(': '⁽', ')': '⁾',
-}
-
-function toSuperscript(input: string): string {
-  return input
-    .split('')
-    .map((ch) => SUPERSCRIPT_MAP[ch] ?? ch)
-    .join('')
-}
-
-const MATH_BUTTONS = [
-  // Superscripts
-  { label: 'x²', insert: '²', title: 'Squared' },
-  { label: 'x³', insert: '³', title: 'Cubed' },
-  { label: 'x⁴', insert: '⁴', title: 'Power 4' },
-  { label: 'xⁿ', insert: 'ⁿ', title: 'Power n' },
-  { label: 'x⁻¹', insert: '⁻¹', title: 'Power -1' },
-  { label: 'x⁻²', insert: '⁻²', title: 'Power -2' },
-  // Roots
-  { label: '√', insert: '√', title: 'Square root' },
-  { label: '∛', insert: '∛', title: 'Cube root' },
-  // Fractions - separator
-  { label: '/', insert: '/', title: 'Fraction' },
-  // Operations
-  { label: '×', insert: '×', title: 'Multiply' },
-  { label: '÷', insert: '÷', title: 'Divide' },
-  { label: '±', insert: '±', title: 'Plus/minus' },
-  // Comparisons
-  { label: '≠', insert: '≠', title: 'Not equal' },
-  { label: '≤', insert: '≤', title: 'Less than or equal' },
-  { label: '≥', insert: '≥', title: 'Greater than or equal' },
-  { label: '≈', insert: '≈', title: 'Approximately' },
-  { label: '<', insert: '<', title: 'Less than' },
-  { label: '>', insert: '>', title: 'Greater than' },
-  // Greek
-  { label: 'π', insert: 'π', title: 'Pi' },
-  { label: 'θ', insert: 'θ', title: 'Theta' },
-  { label: 'α', insert: 'α', title: 'Alpha' },
-  { label: 'β', insert: 'β', title: 'Beta' },
-  // Number notation
-  { label: '10⁻⁵', insert: '× 10⁻⁵', title: 'Standard form ×10⁻⁵' },
-  { label: '10⁵', insert: '× 10⁵', title: 'Standard form ×10⁵' },
-  // Subscripts
-  { label: 'x₁', insert: '₁', title: 'Subscript 1' },
-  { label: 'x₂', insert: '₂', title: 'Subscript 2' },
-  // Geometry
-  { label: '°', insert: '°', title: 'Degrees' },
-  { label: '∠', insert: '∠', title: 'Angle' },
-  { label: '△', insert: '△', title: 'Triangle' },
-  { label: '∥', insert: '∥', title: 'Parallel' },
-  { label: '⊥', insert: '⊥', title: 'Perpendicular' },
-  // Sets
-  { label: '∈', insert: '∈', title: 'Element of' },
-  { label: '∉', insert: '∉', title: 'Not element of' },
-  { label: '∪', insert: '∪', title: 'Union' },
-  { label: '∩', insert: '∩', title: 'Intersection' },
-  { label: '⊂', insert: '⊂', title: 'Subset' },
-  { label: 'U', insert: 'U = {}', title: 'Universal set' },
-  // Currency
-  { label: '$', insert: '$', title: 'Dollar' },
-  // Temperature
-  { label: '℃', insert: '℃', title: 'Celsius' },
-  { label: '℉', insert: '℉', title: 'Fahrenheit' },
-]
-
-const BUTTON_GROUPS = [
-  { label: 'Powers', buttons: MATH_BUTTONS.slice(0, 6) },
-  { label: 'Roots & Ops', buttons: MATH_BUTTONS.slice(6, 12) },
-  { label: 'Compare', buttons: MATH_BUTTONS.slice(12, 18) },
-  { label: 'Greek', buttons: MATH_BUTTONS.slice(18, 22) },
-  { label: 'Notation', buttons: MATH_BUTTONS.slice(22, 26) },
-  { label: 'Geometry', buttons: MATH_BUTTONS.slice(26, 31) },
-  { label: 'Sets', buttons: MATH_BUTTONS.slice(31, 37) },
-  { label: 'Other', buttons: MATH_BUTTONS.slice(37) },
-]
+import { toSuperscript, BUTTON_GROUPS } from './mathSymbols'
 
 interface MathToolbarProps {
   textareaId: string
@@ -135,7 +54,6 @@ export default function MathToolbar({ textareaId, value, onChange }: MathToolbar
           background: 'var(--page-bg)',
           overflow: 'hidden',
         }}>
-          {/* Custom exponent — handles any power, not just the fixed shortcuts below */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 10px', borderBottom: '1px solid var(--border)', background: 'var(--card-bg)', flexWrap: 'wrap' }}>
             <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)' }}>Any power:</span>
             <input
@@ -163,7 +81,6 @@ export default function MathToolbar({ textareaId, value, onChange }: MathToolbar
             </button>
           </div>
 
-          {/* Group tabs */}
           <div style={{ display: 'flex', flexWrap: 'wrap', borderBottom: '1px solid var(--border)', background: 'var(--card-bg)' }}>
             {BUTTON_GROUPS.map((g) => (
               <button
@@ -183,7 +100,6 @@ export default function MathToolbar({ textareaId, value, onChange }: MathToolbar
             ))}
           </div>
 
-          {/* Buttons for active group */}
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, padding: '8px 10px' }}>
             {BUTTON_GROUPS.find(g => g.label === activeGroup)?.buttons.map((btn) => (
               <button
