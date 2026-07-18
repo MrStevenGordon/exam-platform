@@ -2,6 +2,22 @@
 
 import React from 'react'
 
+// Converts normal digits/sign/parens to their Unicode superscript equivalents,
+// so a teacher can type "-6" and get a real ⁻⁶ inserted — works for any
+// exponent, not just the couple of hardcoded common ones below.
+const SUPERSCRIPT_MAP: Record<string, string> = {
+  '0': '⁰', '1': '¹', '2': '²', '3': '³', '4': '⁴',
+  '5': '⁵', '6': '⁶', '7': '⁷', '8': '⁸', '9': '⁹',
+  '-': '⁻', '+': '⁺', '(': '⁽', ')': '⁾',
+}
+
+function toSuperscript(input: string): string {
+  return input
+    .split('')
+    .map((ch) => SUPERSCRIPT_MAP[ch] ?? ch)
+    .join('')
+}
+
 const MATH_BUTTONS = [
   // Superscripts
   { label: 'x²', insert: '²', title: 'Squared' },
@@ -77,6 +93,7 @@ interface MathToolbarProps {
 export default function MathToolbar({ textareaId, value, onChange }: MathToolbarProps) {
   const [open, setOpen] = React.useState(false)
   const [activeGroup, setActiveGroup] = React.useState('Powers')
+  const [customPower, setCustomPower] = React.useState('')
 
   function insertAtCursor(insert: string) {
     const textarea = document.getElementById(textareaId) as HTMLTextAreaElement
@@ -118,6 +135,34 @@ export default function MathToolbar({ textareaId, value, onChange }: MathToolbar
           background: 'var(--page-bg)',
           overflow: 'hidden',
         }}>
+          {/* Custom exponent — handles any power, not just the fixed shortcuts below */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 10px', borderBottom: '1px solid var(--border)', background: 'var(--card-bg)', flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)' }}>Any power:</span>
+            <input
+              type="text"
+              value={customPower}
+              onChange={(e) => setCustomPower(e.target.value)}
+              placeholder="e.g. -6"
+              style={{ width: 60, fontSize: 13, padding: '3px 6px' }}
+            />
+            <button
+              type="button"
+              disabled={!customPower.trim()}
+              onClick={() => { insertAtCursor('×10' + toSuperscript(customPower.trim())); setCustomPower('') }}
+              style={{ padding: '4px 10px', borderRadius: 6, fontSize: 12, fontWeight: 600, border: '1px solid var(--border-strong)', background: 'white', cursor: customPower.trim() ? 'pointer' : 'default', opacity: customPower.trim() ? 1 : 0.5 }}
+            >
+              Insert ×10ⁿ
+            </button>
+            <button
+              type="button"
+              disabled={!customPower.trim()}
+              onClick={() => { insertAtCursor(toSuperscript(customPower.trim())); setCustomPower('') }}
+              style={{ padding: '4px 10px', borderRadius: 6, fontSize: 12, fontWeight: 600, border: '1px solid var(--border-strong)', background: 'white', cursor: customPower.trim() ? 'pointer' : 'default', opacity: customPower.trim() ? 1 : 0.5 }}
+            >
+              Insert power only
+            </button>
+          </div>
+
           {/* Group tabs */}
           <div style={{ display: 'flex', flexWrap: 'wrap', borderBottom: '1px solid var(--border)', background: 'var(--card-bg)' }}>
             {BUTTON_GROUPS.map((g) => (
