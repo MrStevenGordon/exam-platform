@@ -8,11 +8,32 @@ const SUPERSCRIPT_MAP: Record<string, string> = {
   '-': '⁻', '+': '⁺', '(': '⁽', ')': '⁾',
 }
 
+const SUBSCRIPT_MAP: Record<string, string> = {
+  '0': '₀', '1': '₁', '2': '₂', '3': '₃', '4': '₄',
+  '5': '₅', '6': '₆', '7': '₇', '8': '₈', '9': '₉',
+  '-': '₋', '+': '₊', '(': '₍', ')': '₎',
+}
+
 export function toSuperscript(input: string): string {
   return input
     .split('')
     .map((ch) => SUPERSCRIPT_MAP[ch] ?? ch)
     .join('')
+}
+
+export function toSubscript(input: string): string {
+  return input
+    .split('')
+    .map((ch) => SUBSCRIPT_MAP[ch] ?? ch)
+    .join('')
+}
+
+// Builds a real-looking inline fraction using the dedicated Unicode fraction
+// slash (⁄) with a superscript numerator and subscript denominator — the
+// standard technique for arbitrary fractions, since Unicode only has a
+// handful of fixed fraction characters (½, ⅓, etc.), not general ones.
+export function buildFraction(numerator: string, denominator: string): string {
+  return toSuperscript(numerator) + '⁄' + toSubscript(denominator)
 }
 
 export type MathButton = { label: string; insert: string; title: string }

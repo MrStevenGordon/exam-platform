@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useRef, useEffect } from 'react'
-import { toSuperscript, BUTTON_GROUPS } from './mathSymbols'
+import { toSuperscript, buildFraction, BUTTON_GROUPS } from './mathSymbols'
 
 interface MathSymbolPickerProps {
   inputId: string
@@ -13,6 +13,8 @@ export default function MathSymbolPicker({ inputId, value, onChange }: MathSymbo
   const [open, setOpen] = useState(false)
   const [activeGroup, setActiveGroup] = useState('Powers')
   const [customPower, setCustomPower] = useState('')
+  const [fracNum, setFracNum] = useState('')
+  const [fracDenom, setFracDenom] = useState('')
   const pickerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -93,6 +95,35 @@ export default function MathSymbolPicker({ inputId, value, onChange }: MathSymbo
               style={{ padding: '3px 6px', borderRadius: 4, fontSize: 11, fontWeight: 600, border: '1px solid var(--border-strong)', background: 'var(--page-bg)', cursor: customPower.trim() ? 'pointer' : 'default', opacity: customPower.trim() ? 1 : 0.5 }}
             >
               ⁿ only
+            </button>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '8px 10px', borderBottom: '1px solid var(--border)', flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)' }}>Fraction:</span>
+            <input
+              type="text"
+              value={fracNum}
+              onChange={(e) => setFracNum(e.target.value)}
+              placeholder="3"
+              style={{ width: 40, fontSize: 12, padding: '3px 5px' }}
+              onClick={(e) => e.stopPropagation()}
+            />
+            <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>/</span>
+            <input
+              type="text"
+              value={fracDenom}
+              onChange={(e) => setFracDenom(e.target.value)}
+              placeholder="-4"
+              style={{ width: 40, fontSize: 12, padding: '3px 5px' }}
+              onClick={(e) => e.stopPropagation()}
+            />
+            <button
+              type="button"
+              disabled={!fracNum.trim() || !fracDenom.trim()}
+              onClick={() => { insertSymbol(buildFraction(fracNum.trim(), fracDenom.trim())); setFracNum(''); setFracDenom('') }}
+              style={{ padding: '3px 6px', borderRadius: 4, fontSize: 11, fontWeight: 600, border: '1px solid var(--border-strong)', background: 'var(--page-bg)', cursor: (fracNum.trim() && fracDenom.trim()) ? 'pointer' : 'default', opacity: (fracNum.trim() && fracDenom.trim()) ? 1 : 0.5 }}
+            >
+              Insert
             </button>
           </div>
 

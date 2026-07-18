@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import { toSuperscript, BUTTON_GROUPS } from './mathSymbols'
+import { toSuperscript, buildFraction, BUTTON_GROUPS } from './mathSymbols'
 
 interface MathToolbarProps {
   textareaId: string
@@ -13,6 +13,8 @@ export default function MathToolbar({ textareaId, value, onChange }: MathToolbar
   const [open, setOpen] = React.useState(false)
   const [activeGroup, setActiveGroup] = React.useState('Powers')
   const [customPower, setCustomPower] = React.useState('')
+  const [fracNum, setFracNum] = React.useState('')
+  const [fracDenom, setFracDenom] = React.useState('')
 
   function insertAtCursor(insert: string) {
     const textarea = document.getElementById(textareaId) as HTMLTextAreaElement
@@ -78,6 +80,33 @@ export default function MathToolbar({ textareaId, value, onChange }: MathToolbar
               style={{ padding: '4px 10px', borderRadius: 6, fontSize: 12, fontWeight: 600, border: '1px solid var(--border-strong)', background: 'white', cursor: customPower.trim() ? 'pointer' : 'default', opacity: customPower.trim() ? 1 : 0.5 }}
             >
               Insert power only
+            </button>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 10px', borderBottom: '1px solid var(--border)', background: 'var(--card-bg)', flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)' }}>Fraction:</span>
+            <input
+              type="text"
+              value={fracNum}
+              onChange={(e) => setFracNum(e.target.value)}
+              placeholder="e.g. 3"
+              style={{ width: 50, fontSize: 13, padding: '3px 6px' }}
+            />
+            <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>over</span>
+            <input
+              type="text"
+              value={fracDenom}
+              onChange={(e) => setFracDenom(e.target.value)}
+              placeholder="e.g. -4"
+              style={{ width: 50, fontSize: 13, padding: '3px 6px' }}
+            />
+            <button
+              type="button"
+              disabled={!fracNum.trim() || !fracDenom.trim()}
+              onClick={() => { insertAtCursor(buildFraction(fracNum.trim(), fracDenom.trim())); setFracNum(''); setFracDenom('') }}
+              style={{ padding: '4px 10px', borderRadius: 6, fontSize: 12, fontWeight: 600, border: '1px solid var(--border-strong)', background: 'white', cursor: (fracNum.trim() && fracDenom.trim()) ? 'pointer' : 'default', opacity: (fracNum.trim() && fracDenom.trim()) ? 1 : 0.5 }}
+            >
+              Insert fraction
             </button>
           </div>
 

@@ -27,6 +27,7 @@ export default function AddQuestionPage() {
   const [videoUrl, setVideoUrl] = useState<string | null>(null)
   const [uploadingVideo, setUploadingVideo] = useState(false)
   const [mediaError, setMediaError] = useState('')
+  const [mediaType, setMediaType] = useState<'none' | 'image' | 'audio' | 'video'>('none')
   const [aiUsage, setAiUsage] = useState<{ used: number; limit: number; remaining: number } | null>(null)
   const [userId, setUserId] = useState<string | null>(null)
 
@@ -310,47 +311,64 @@ export default function AddQuestionPage() {
           />
 
           <div style={{ marginTop: 10 }}>
-            <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Question image (optional)</label>
-            {imageUrl ? (
-              <div style={{ marginTop: 6, position: 'relative', display: 'inline-block' }}>
-                <img src={imageUrl} alt="Question" loading="lazy" style={{ maxWidth: '100%', maxHeight: 300, borderRadius: 8, border: '1px solid var(--border)' }} />
-                <button type="button" onClick={handleImageRemove} style={{ position: 'absolute', top: 6, right: 6, background: 'rgba(0,0,0,0.6)', color: 'white', border: 'none', borderRadius: '50%', width: 24, height: 24, cursor: 'pointer', fontSize: 12 }}>x</button>
-              </div>
-            ) : (
-              <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '8px 14px', marginTop: 6, borderRadius: 8, border: '1.5px dashed var(--border-strong)', cursor: 'pointer', fontSize: 13, color: 'var(--text-secondary)' }}>
-                {uploadingImage ? 'Uploading...' : 'Upload image (diagram, graph, chart)'}
-                <input type="file" accept="image/*" onChange={handleImageUpload} style={{ display: 'none' }} disabled={uploadingImage} />
-              </label>
-            )}
-          </div>
+            <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Media (optional)</label>
+            <select
+              value={mediaType}
+              onChange={(e) => setMediaType(e.target.value as typeof mediaType)}
+              style={{ width: '100%', marginTop: 6 }}
+            >
+              <option value="none">No media</option>
+              <option value="image">Image (diagram, graph, chart)</option>
+              <option value="audio">Audio clip (listening exercise)</option>
+              <option value="video">Video clip</option>
+            </select>
 
-          <div style={{ marginTop: 10 }}>
-            <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Audio clip (optional, max {AUDIO_MAX_MB}MB)</label>
-            {audioUrl ? (
-              <div style={{ marginTop: 6, display: 'flex', alignItems: 'center', gap: 10 }}>
-                <audio controls preload="none" src={audioUrl} style={{ height: 36 }} />
-                <button type="button" onClick={handleAudioRemove} className="btn btn-ghost" style={{ fontSize: 11 }}>Remove</button>
+            {mediaType === 'image' && (
+              <div style={{ marginTop: 10 }}>
+                {imageUrl ? (
+                  <div style={{ position: 'relative', display: 'inline-block' }}>
+                    <img src={imageUrl} alt="Question" loading="lazy" style={{ maxWidth: '100%', maxHeight: 300, borderRadius: 8, border: '1px solid var(--border)' }} />
+                    <button type="button" onClick={handleImageRemove} style={{ position: 'absolute', top: 6, right: 6, background: 'rgba(0,0,0,0.6)', color: 'white', border: 'none', borderRadius: '50%', width: 24, height: 24, cursor: 'pointer', fontSize: 12 }}>x</button>
+                  </div>
+                ) : (
+                  <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '8px 14px', borderRadius: 8, border: '1.5px dashed var(--border-strong)', cursor: 'pointer', fontSize: 13, color: 'var(--text-secondary)' }}>
+                    {uploadingImage ? 'Uploading...' : 'Upload image'}
+                    <input type="file" accept="image/*" onChange={handleImageUpload} style={{ display: 'none' }} disabled={uploadingImage} />
+                  </label>
+                )}
               </div>
-            ) : (
-              <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '8px 14px', marginTop: 6, borderRadius: 8, border: '1.5px dashed var(--border-strong)', cursor: 'pointer', fontSize: 13, color: 'var(--text-secondary)' }}>
-                {uploadingAudio ? 'Uploading...' : 'Upload audio (listening exercise)'}
-                <input type="file" accept="audio/*" onChange={handleAudioUpload} style={{ display: 'none' }} disabled={uploadingAudio} />
-              </label>
             )}
-          </div>
 
-          <div style={{ marginTop: 10 }}>
-            <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Video clip (optional, max {VIDEO_MAX_MB}MB)</label>
-            {videoUrl ? (
-              <div style={{ marginTop: 6, position: 'relative', display: 'inline-block' }}>
-                <video controls preload="none" src={videoUrl} style={{ maxWidth: '100%', maxHeight: 260, borderRadius: 8, border: '1px solid var(--border)' }} />
-                <button type="button" onClick={handleVideoRemove} style={{ position: 'absolute', top: 6, right: 6, background: 'rgba(0,0,0,0.6)', color: 'white', border: 'none', borderRadius: '50%', width: 24, height: 24, cursor: 'pointer', fontSize: 12 }}>x</button>
+            {mediaType === 'audio' && (
+              <div style={{ marginTop: 10 }}>
+                {audioUrl ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <audio controls preload="none" src={audioUrl} style={{ height: 36 }} />
+                    <button type="button" onClick={handleAudioRemove} className="btn btn-ghost" style={{ fontSize: 11 }}>Remove</button>
+                  </div>
+                ) : (
+                  <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '8px 14px', borderRadius: 8, border: '1.5px dashed var(--border-strong)', cursor: 'pointer', fontSize: 13, color: 'var(--text-secondary)' }}>
+                    {uploadingAudio ? 'Uploading...' : `Upload audio (max ${AUDIO_MAX_MB}MB)`}
+                    <input type="file" accept="audio/*" onChange={handleAudioUpload} style={{ display: 'none' }} disabled={uploadingAudio} />
+                  </label>
+                )}
               </div>
-            ) : (
-              <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '8px 14px', marginTop: 6, borderRadius: 8, border: '1.5px dashed var(--border-strong)', cursor: 'pointer', fontSize: 13, color: 'var(--text-secondary)' }}>
-                {uploadingVideo ? 'Uploading...' : 'Upload video clip'}
-                <input type="file" accept="video/*" onChange={handleVideoUpload} style={{ display: 'none' }} disabled={uploadingVideo} />
-              </label>
+            )}
+
+            {mediaType === 'video' && (
+              <div style={{ marginTop: 10 }}>
+                {videoUrl ? (
+                  <div style={{ position: 'relative', display: 'inline-block' }}>
+                    <video controls preload="none" src={videoUrl} style={{ maxWidth: '100%', maxHeight: 260, borderRadius: 8, border: '1px solid var(--border)' }} />
+                    <button type="button" onClick={handleVideoRemove} style={{ position: 'absolute', top: 6, right: 6, background: 'rgba(0,0,0,0.6)', color: 'white', border: 'none', borderRadius: '50%', width: 24, height: 24, cursor: 'pointer', fontSize: 12 }}>x</button>
+                  </div>
+                ) : (
+                  <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '8px 14px', borderRadius: 8, border: '1.5px dashed var(--border-strong)', cursor: 'pointer', fontSize: 13, color: 'var(--text-secondary)' }}>
+                    {uploadingVideo ? 'Uploading...' : `Upload video (max ${VIDEO_MAX_MB}MB)`}
+                    <input type="file" accept="video/*" onChange={handleVideoUpload} style={{ display: 'none' }} disabled={uploadingVideo} />
+                  </label>
+                )}
+              </div>
             )}
           </div>
           {mediaError && <p className="banner banner-danger" style={{ marginTop: 10, fontSize: 13 }}>{mediaError}</p>}
