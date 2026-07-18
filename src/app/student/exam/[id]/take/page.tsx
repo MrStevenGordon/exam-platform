@@ -376,6 +376,20 @@ export default function TakeExamPage() {
       .eq('id', session.id)
 
     if (sessionError) { setErrorMsg(sessionError.message); setSubmitting(false); return }
+
+    const { data: { user } } = await supabase.auth.getUser()
+    if (user) {
+      const { data: stillInProgress } = await supabase
+        .from('exam_sessions')
+        .select('id')
+        .eq('student_id', user.id)
+        .eq('status', 'in_progress')
+      if (!stillInProgress || stillInProgress.length === 0) {
+        await supabase.from('profiles').update({ active_login_token: null, active_login_started_at: null }).eq('id', user.id)
+        localStorage.removeItem(`exam_lock_${user.id}`)
+      }
+    }
+
     if (document.fullscreenElement) document.exitFullscreen().catch(() => {})
     router.push(`/student/exam/${examId}/submitted`)
   }

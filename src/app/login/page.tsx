@@ -82,6 +82,41 @@ export default function LoginPage() {
       return
     }
 
+    // Students: while an exam is in progress, only one device may be logged
+    // in at a time — this prevents a second device being used to look up
+    // answers while the exam is actively open elsewhere.
+    if (profile.role === 'student') {
+      const { data: activeSessions } = await supabase
+        .from('exam_sessions')
+        .select('id')
+        .eq('student_id', data.user.id)
+        .eq('status', 'in_progress')
+
+      const { data: lockProfile } = await supabase
+        .from('profiles')
+        .select('active_login_token')
+        .eq('id', data.user.id)
+        .single()
+
+      if (activeSessions && activeSessions.length > 0) {
+        const myToken = localStorage.getItem(`exam_lock_${data.user.id}`)
+        const dbToken = lockProfile?.active_login_token
+
+        if (dbToken && dbToken !== myToken) {
+          setError('You appear to already be logged in on another device with an exam in progress. Ask your school admin to release your session if this isn\'t you.')
+          await supabase.auth.signOut()
+          setLoading(false)
+          return
+        }
+
+        const newToken = dbToken || crypto.randomUUID()
+        localStorage.setItem(`exam_lock_${data.user.id}`, newToken)
+        await supabase.from('profiles').update({ active_login_token: newToken, active_login_started_at: new Date().toISOString() }).eq('id', data.user.id)
+      } else if (lockProfile?.active_login_token) {
+        await supabase.from('profiles').update({ active_login_token: null, active_login_started_at: null }).eq('id', data.user.id)
+      }
+    }
+
     // System admin goes to school-admin portal
     if (profile.is_system_admin) {
       // Check if using default password
