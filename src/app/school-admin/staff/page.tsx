@@ -11,6 +11,7 @@ type StaffMember = {
   role: string
   department_id: string | null
   is_system_admin: boolean
+  is_active?: boolean
   departments?: { name: string } | null
 }
 
@@ -46,7 +47,7 @@ export default function StaffPage() {
   async function loadData() {
     const { data } = await supabase
       .from('profiles')
-      .select('id, full_name, role, department_id, is_system_admin, departments!profiles_department_id_fkey(name)')
+      .select('id, full_name, role, department_id, is_system_admin, is_active, departments!profiles_department_id_fkey(name)')
       .in('role', ['teacher', 'supervisor'])
       .neq('is_system_admin', true)
       .order('full_name')
@@ -205,10 +206,14 @@ export default function StaffPage() {
     loadData()
   }
 
-  async function handleDeactivate(staffId: string, name: string) {
-    if (!confirm(`Deactivate ${name}? They will no longer be able to log in.`)) return
-    await supabase.auth.admin.updateUserById(staffId, { ban_duration: 'none' })
-    await supabase.from('profiles').update({ role: 'deactivated' }).eq('id', staffId)
+  async function handleToggleActive(staffId: string, name: string, currentlyActive: boolean) {
+    const action = currentlyActive ? 'deactivate' : 'reactivate'
+    if (!confirm(`${action === 'deactivate' ? 'Deactivate' : 'Reactivate'} ${name}? ${action === 'deactivate' ? 'They will no longer be able to log in.' : 'They will be able to log in again.'}`)) return
+    const { error } = await supabase.from('profiles').update({ is_active: !currentlyActive }).eq('id', staffId)
+    if (error) {
+      alert('Failed to update: ' + error.message)
+      return
+    }
     loadData()
   }
 
@@ -445,12 +450,24 @@ export default function StaffPage() {
                         </div>
                       </div>
                     </Link>
-                    <div style={{ display: 'flex', gap: 6 }}>
+                    <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
                       <button onClick={() => handleResetPassword(s.id, s.full_name, false)} className="btn btn-ghost" style={{ fontSize: 11 }}>
                         Reset password
                       </button>
-                      <button onClick={() => handleDeactivate(s.id, s.full_name)} className="btn btn-ghost" style={{ fontSize: 11, color: 'var(--danger)' }}>
-                        Deactivate
+                      <button
+                        onClick={() => handleToggleActive(s.id, s.full_name, s.is_active !== false)}
+                        title={s.is_active !== false ? 'Active — click to deactivate' : 'Deactivated — click to reactivate'}
+                        style={{
+                          width: 44, height: 24, borderRadius: 12, border: 'none', cursor: 'pointer',
+                          background: s.is_active !== false ? 'var(--success)' : 'var(--danger)',
+                          position: 'relative', flexShrink: 0, padding: 0, transition: 'background 0.15s',
+                        }}
+                      >
+                        <div style={{
+                          width: 18, height: 18, borderRadius: '50%', background: 'white',
+                          position: 'absolute', top: 3, left: s.is_active !== false ? 23 : 3,
+                          transition: 'left 0.15s', boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
+                        }} />
                       </button>
                     </div>
                   </div>

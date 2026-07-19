@@ -44,12 +44,19 @@ export default function LoginPage() {
     // Verify their actual role matches what they selected
     const { data: profile } = await supabase
       .from('profiles')
-      .select('role, is_system_admin')
+      .select('role, is_system_admin, is_active')
       .eq('id', data.user.id)
       .single()
 
     if (!profile) {
       setError('Account not found. Contact your administrator.')
+      await supabase.auth.signOut()
+      setLoading(false)
+      return
+    }
+
+    if (profile.is_active === false) {
+      setError('This account has been deactivated. Contact your school administrator.')
       await supabase.auth.signOut()
       setLoading(false)
       return

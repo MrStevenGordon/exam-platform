@@ -64,8 +64,8 @@ export default function HomePage() {
       <section style={{ background: 'var(--card-bg)', borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)', padding: '1.5rem 2rem' }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '1rem', maxWidth: 560, margin: '0 auto', textAlign: 'center' }}>
           {[
-            { value: '5', label: 'Exam types' },
-            { value: '100%', label: 'Browser-based' },
+            { value: '9', label: 'Exam formats' },
+            { value: '7', label: 'Role-based portals' },
             { value: '0', label: 'Paper needed' },
           ].map((stat) => (
             <div key={stat.label}>
@@ -84,12 +84,12 @@ export default function HomePage() {
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16, maxWidth: 820, margin: '0 auto' }}>
           {[
-            { icon: '🛡️', title: 'Anti-cheating built in', desc: 'Fullscreen lock, tab monitoring, auto-submit on violations, and per-student answer shuffling.' },
-            { icon: '📊', title: 'Real-time analytics', desc: 'Class averages, score distributions, and question difficulty breakdowns — instantly after results.' },
-            { icon: '👥', title: 'Role-based access', desc: 'Separate portals for students, teachers, supervisors, and administrators — each sees only what they need.' },
-            { icon: '📋', title: 'Two exam pipelines', desc: 'Supervisor-approved finals and teacher-direct quizzes — with full review and approval workflows.' },
-            { icon: '🔒', title: 'Exam access passwords', desc: 'Auto-generated 6-character codes distributed on exam day — students can\'t begin without it.' },
-            { icon: '✨', title: 'AI question assistance', desc: 'Teachers polish rough question drafts with AI — improved wording and distractor suggestions instantly.' },
+            { icon: '🛡️', title: 'Exam integrity built in', desc: 'Fullscreen lock, tab-switch detection, 3-strike auto-submit, scheduled opening/closing windows, and single-device login during exams.' },
+            { icon: '📝', title: 'Tasks, Tests & Final Exams', desc: 'Flexible take-home tasks, timed proctored tests, and a full Team Lead → Senior Team Lead → Supervisor review pipeline for final exams.' },
+            { icon: '👥', title: 'Seven role-based portals', desc: 'Student, Teacher, Team Lead, Senior Team Lead, Supervisor, School Admin, and System Admin — each sees only what they need.' },
+            { icon: '∑', title: 'Real math notation', desc: 'A proper symbol toolbar for powers, roots, fractions, Greek letters and more — plus image, audio, and video questions.' },
+            { icon: '🎯', title: 'Smart grading routing', desc: 'A completed exam finds the right subject teacher automatically, based on class assignment and what they actually teach.' },
+            { icon: '✨', title: 'AI-assisted authoring', desc: 'Import questions straight from a PDF exam paper, and polish rough drafts with one click.' },
           ].map((f) => (
             <div key={f.title} className="card">
               <div style={{ fontSize: 24, marginBottom: '0.75rem' }}>{f.icon}</div>
@@ -104,14 +104,15 @@ export default function HomePage() {
       <section id="how-it-works" style={{ padding: '5rem 3rem', background: 'var(--card-bg)' }}>
         <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
           <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase', color: 'var(--accent)', marginBottom: '0.5rem' }}>How it works</div>
-          <h2 style={{ fontSize: 30, fontWeight: 700, margin: 0, textTransform: 'none', color: 'var(--text-primary)' }}>From question to results in four steps</h2>
+          <h2 style={{ fontSize: 30, fontWeight: 700, margin: 0, textTransform: 'none', color: 'var(--text-primary)' }}>From question to results in five steps</h2>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', maxWidth: 780, margin: '0 auto', border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', maxWidth: 960, margin: '0 auto', border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden' }}>
           {[
-            { step: '1', title: 'Teacher creates', desc: 'Writes questions across 5 types — MCQ, T/F, short answer, fill in the blank, or essay.' },
-            { step: '2', title: 'Supervisor reviews', desc: 'Approves or sends feedback per question, then assembles and publishes the final exam.' },
-            { step: '3', title: 'Students sit exam', desc: 'Enter the access password, answer page by page in fullscreen — timer counts down live.' },
-            { step: '4', title: 'Results released', desc: 'Supervisor releases grades — students see scores, class comparison, and full question review.' },
+            { step: '1', title: 'Team Lead creates', desc: 'Writes and organizes the exam into sections, collaborating with other team leads on the same grade and subject.' },
+            { step: '2', title: 'Senior Team Lead vets', desc: 'Reviews every section and question for accuracy and fairness before it goes further.' },
+            { step: '3', title: 'Supervisor publishes', desc: 'Sets the exam window and assigns it to the right classes — students see nothing until it opens.' },
+            { step: '4', title: 'Student sits exam', desc: 'Enters the access password, answers under full proctoring — fullscreen, timed, monitored.' },
+            { step: '5', title: 'Teacher grades & releases', desc: 'Routed automatically to the right subject teacher, who grades and releases results.' },
           ].map((s, i, arr) => (
             <div key={s.step} style={{ padding: '1.5rem', borderRight: i < arr.length - 1 ? '1px solid var(--border)' : 'none', textAlign: 'center' }}>
               <div style={{ width: 40, height: 40, background: 'var(--accent-light)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem', fontSize: 16, fontWeight: 700, color: 'var(--accent-dark)' }}>{s.step}</div>
