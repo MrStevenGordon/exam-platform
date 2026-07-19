@@ -31,12 +31,15 @@ export default function MfaSetupPage() {
       return
     }
 
-    const unverified = factorsData?.totp?.find((f) => f.status === 'unverified')
-    if (unverified) {
-      await supabase.auth.mfa.unenroll({ factorId: unverified.id })
+    const unverifiedFactors = factorsData?.totp?.filter((f) => f.status === 'unverified') || []
+    for (const f of unverifiedFactors) {
+      try { await supabase.auth.mfa.unenroll({ factorId: f.id }) } catch {}
     }
 
-    const { data, error: enrollError } = await supabase.auth.mfa.enroll({ factorType: 'totp', friendlyName: 'Authenticator' })
+    const { data, error: enrollError } = await supabase.auth.mfa.enroll({
+      factorType: 'totp',
+      friendlyName: `Authenticator-${Date.now()}`,
+    })
     if (enrollError || !data) {
       setError(enrollError?.message || 'Could not start 2FA setup.')
       setLoading(false)
