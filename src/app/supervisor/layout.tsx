@@ -1,6 +1,9 @@
 'use client'
 
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import Sidebar from '@/components/Sidebar'
+import { getMfaRedirect } from '@/lib/mfaCheck'
 
 const SUPERVISOR_NAV = [
   { label: 'Home', icon: 'ti-home', href: '/supervisor' },
@@ -17,6 +20,20 @@ const SUPERVISOR_NAV = [
 ]
 
 export default function SupervisorLayout({ children }: { children: React.ReactNode }) {
+  const router = useRouter()
+  const [checked, setChecked] = useState(false)
+
+  useEffect(() => {
+    async function checkMfa() {
+      const redirect = await getMfaRedirect('supervisor')
+      if (redirect) { router.push(redirect); return }
+      setChecked(true)
+    }
+    checkMfa()
+  }, [router])
+
+  if (!checked) return null
+
   return (
     <div className="portal-layout" style={{ minHeight: "100vh" }}>
       <main className="portal-content">{children}</main>

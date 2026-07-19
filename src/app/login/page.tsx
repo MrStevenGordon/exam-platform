@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
+import { getMfaRedirect } from '@/lib/mfaCheck'
 
 const ROLE_OPTIONS = [
   { value: 'student', label: 'Student' },
@@ -27,6 +28,9 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [mfaRequired, setMfaRequired] = useState(false)
+  const [mfaFactorId, setMfaFactorId] = useState('')
+  const [mfaCode, setMfaCode] = useState('')
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault()
@@ -41,11 +45,63 @@ export default function LoginPage() {
       return
     }
 
+    // Check if this account has 2FA enabled — if so, pause here and require
+    // the authenticator code before completing login.
+    const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
+    if (aal && aal.nextLevel === 'aal2' && aal.currentLevel !== 'aal2') {
+      const { data: factors } = await supabase.auth.mfa.listFactors()
+      const verifiedFactor = factors?.totp?.find((f) => f.status === 'verified')
+      if (verifiedFactor) {
+        setMfaFactorId(verifiedFactor.id)
+        setMfaRequired(true)
+        setLoading(false)
+        return
+      }
+    }
+
+    await completeLogin(data.user.id)
+  }
+
+  async function handleVerifyMfa(e: React.FormEvent) {
+    e.preventDefault()
+    setError('')
+    setLoading(true)
+
+    const { data: challenge, error: challengeError } = await supabase.auth.mfa.challenge({ factorId: mfaFactorId })
+    if (challengeError) {
+      setError(challengeError.message)
+      setLoading(false)
+      return
+    }
+
+    const { error: verifyError } = await supabase.auth.mfa.verify({
+      factorId: mfaFactorId,
+      challengeId: challenge.id,
+      code: mfaCode.trim(),
+    })
+
+    if (verifyError) {
+      setError('Incorrect code. Please check your authenticator app and try again.')
+      setLoading(false)
+      return
+    }
+
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      setError('Something went wrong. Please try signing in again.')
+      setLoading(false)
+      return
+    }
+
+    await completeLogin(user.id)
+  }
+
+  async function completeLogin(userId: string) {
     // Verify their actual role matches what they selected
     const { data: profile } = await supabase
       .from('profiles')
       .select('role, is_system_admin, is_active')
-      .eq('id', data.user.id)
+      .eq('id', userId)
       .single()
 
     if (!profile) {
@@ -89,24 +145,39 @@ export default function LoginPage() {
       return
     }
 
-    // Students: while an exam is in progress, only one device may be logged
-    // in at a time — this prevents a second device being used to look up
-    // answers while the exam is actively open elsewhere.
+    // Students: while a TEST or FINAL exam is in progress, only one device
+    // may be logged in at a time. Homework/Assignment are deliberately
+    // excluded — they're untimed, take-home work, so a session left open
+    // overnight shouldn't block login the next day for an unrelated exam.
     if (profile.role === 'student') {
-      const { data: activeSessions } = await supabase
+      const { data: draftSessions } = await supabase
+        .from('exam_sessions')
+        .select('id, draft_exams(exam_kind)')
+        .eq('student_id', userId)
+        .eq('status', 'in_progress')
+        .not('draft_exam_id', 'is', null)
+
+      const { data: finalSessions } = await supabase
         .from('exam_sessions')
         .select('id')
-        .eq('student_id', data.user.id)
+        .eq('student_id', userId)
         .eq('status', 'in_progress')
+        .not('final_exam_id', 'is', null)
+
+      const lockingDraftSessions = (draftSessions || []).filter((s: any) => {
+        const kind = s.draft_exams?.exam_kind
+        return kind !== 'homework' && kind !== 'assignment'
+      })
+      const activeSessions = [...lockingDraftSessions, ...(finalSessions || [])]
 
       const { data: lockProfile } = await supabase
         .from('profiles')
         .select('active_login_token')
-        .eq('id', data.user.id)
+        .eq('id', userId)
         .single()
 
       if (activeSessions && activeSessions.length > 0) {
-        const myToken = localStorage.getItem(`exam_lock_${data.user.id}`)
+        const myToken = localStorage.getItem(`exam_lock_${userId}`)
         const dbToken = lockProfile?.active_login_token
 
         if (dbToken && dbToken !== myToken) {
@@ -117,30 +188,33 @@ export default function LoginPage() {
         }
 
         const newToken = dbToken || crypto.randomUUID()
-        localStorage.setItem(`exam_lock_${data.user.id}`, newToken)
-        await supabase.from('profiles').update({ active_login_token: newToken, active_login_started_at: new Date().toISOString() }).eq('id', data.user.id)
+        localStorage.setItem(`exam_lock_${userId}`, newToken)
+        await supabase.from('profiles').update({ active_login_token: newToken, active_login_started_at: new Date().toISOString() }).eq('id', userId)
       } else if (lockProfile?.active_login_token) {
-        await supabase.from('profiles').update({ active_login_token: null, active_login_started_at: null }).eq('id', data.user.id)
+        await supabase.from('profiles').update({ active_login_token: null, active_login_started_at: null }).eq('id', userId)
       }
     }
 
     // System admin goes to school-admin portal
     if (profile.is_system_admin) {
-      // Check if using default password
       if (password === 'Staff.Default1' || password === 'Student.Test') {
         router.push('/change-password?first=true')
         return
       }
+      const mfaRedirect = await getMfaRedirect('system_admin')
+      if (mfaRedirect) { router.push(mfaRedirect); return }
       router.push('/school-admin')
       return
     }
 
-    // Check if using default password — prompt to change
     const defaultPasswords = ['Staff.Default1', 'Student.Test', 'Demo.Default']
     if (defaultPasswords.includes(password)) {
       router.push('/change-password?first=true')
       return
     }
+
+    const mfaRedirect = await getMfaRedirect(profile.role)
+    if (mfaRedirect) { router.push(mfaRedirect); return }
 
     router.push(ROLE_REDIRECTS[profile.role] || '/dashboard')
   }
@@ -155,7 +229,6 @@ export default function LoginPage() {
       background: 'var(--page-bg)',
       padding: 24,
     }}>
-      {/* Brand header */}
       <Link href="/" style={{ textDecoration: 'none', marginBottom: 32, textAlign: 'center' }}>
         <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 2, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>
           Smart Assess Ja
@@ -171,8 +244,54 @@ export default function LoginPage() {
           Sign in to your portal
         </p>
 
+        {mfaRequired ? (
+          <form onSubmit={handleVerifyMfa}>
+            <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 16 }}>
+              Enter the 6-digit code from your authenticator app.
+            </p>
+            <div style={{ marginBottom: 20 }}>
+              <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: 0.5, textTransform: 'uppercase' }}>
+                Authentication code
+              </label>
+              <input
+                type="text"
+                value={mfaCode}
+                onChange={(e) => setMfaCode(e.target.value)}
+                required
+                maxLength={6}
+                placeholder="123456"
+                style={{ width: '100%', marginTop: 6 }}
+                autoFocus
+              />
+            </div>
+
+            {error && (
+              <div className="banner banner-danger" style={{ marginBottom: 16, fontSize: 13 }}>
+                {error}
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={loading || mfaCode.trim().length < 6}
+              className="btn btn-primary"
+              style={{ width: '100%', justifyContent: 'center', fontSize: 14, padding: '12px 20px' }}
+            >
+              {loading ? 'Verifying…' : 'Verify'}
+            </button>
+
+            <div style={{ textAlign: 'center', marginTop: 14 }}>
+              <button
+                type="button"
+                onClick={() => { setMfaRequired(false); setMfaCode(''); setError(''); supabase.auth.signOut() }}
+                style={{ fontSize: 13, color: 'var(--text-secondary)', background: 'none', border: 'none', cursor: 'pointer' }}
+              >
+                Back to login
+              </button>
+            </div>
+          </form>
+        ) : (
         <form onSubmit={handleLogin}>
-          {/* Role selector */}
           <div style={{ marginBottom: 16 }}>
             <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: 0.5, textTransform: 'uppercase' }}>
               I am a
@@ -188,7 +307,6 @@ export default function LoginPage() {
             </select>
           </div>
 
-          {/* Email */}
           <div style={{ marginBottom: 16 }}>
             <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: 0.5, textTransform: 'uppercase' }}>
               Email / Student ID
@@ -203,7 +321,6 @@ export default function LoginPage() {
             />
           </div>
 
-          {/* Password */}
           <div style={{ marginBottom: 20 }}>
             <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: 0.5, textTransform: 'uppercase' }}>
               Password
@@ -239,6 +356,7 @@ export default function LoginPage() {
             </Link>
           </div>
         </form>
+        )}
       </div>
 
       <p style={{ marginTop: 24, fontSize: 12, color: 'var(--text-muted)' }}>

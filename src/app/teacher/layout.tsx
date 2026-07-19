@@ -1,8 +1,10 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import Sidebar from '@/components/Sidebar'
 import { supabase } from '@/lib/supabase'
+import { getMfaRedirect } from '@/lib/mfaCheck'
 
 const BASE_NAV = [
   { label: 'Home', icon: 'ti-home', href: '/teacher' },
@@ -23,15 +25,25 @@ const SENIOR_TL_NAV = [
 ]
 
 export default function TeacherLayout({ children }: { children: React.ReactNode }) {
+  const router = useRouter()
   const [navItems, setNavItems] = useState(BASE_NAV)
+  const [mfaChecked, setMfaChecked] = useState(false)
 
   useEffect(() => {
+    async function checkMfa() {
+      const redirect = await getMfaRedirect('teacher')
+      if (redirect) { router.push(redirect); return }
+      setMfaChecked(true)
+    }
+    checkMfa()
+  }, [router])
+
+  useEffect(() => {
+    if (!mfaChecked) return
     async function checkAppointments() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
 
-      // Each check runs independently — if one fails (network hiccup, RLS
-      // issue, etc.) it should not silently hide the OTHER nav item too.
       let tlData: any[] | null = null
       let stlData: any[] | null = null
 
@@ -57,7 +69,9 @@ export default function TeacherLayout({ children }: { children: React.ReactNode 
       setNavItems(nav)
     }
     checkAppointments()
-  }, [])
+  }, [mfaChecked])
+
+  if (!mfaChecked) return null
 
   return (
     <div className="portal-layout" style={{ minHeight: "100vh" }}>
