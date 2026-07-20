@@ -47,7 +47,7 @@ export default function MfaSetupPage() {
     }
 
     setFactorId(data.id)
-    setQrCode(data.totp.qr_code)
+    setQrCode((data.totp as any).qr || (data.totp as any).qr_code || '')
     setSecret(data.totp.secret)
     setLoading(false)
   }
