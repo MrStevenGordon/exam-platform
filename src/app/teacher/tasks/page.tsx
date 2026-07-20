@@ -7,7 +7,7 @@ import { supabase } from '@/lib/supabase'
 
 type DraftExam = { id: string; title: string; subject: string; status: string; exam_kind: string; direct_published: boolean; created_at: string }
 
-const TASK_KINDS = ['homework', 'assignment']
+const TASK_KINDS = ['homework', 'assignment', 'group_project']
 
 export default function TeacherTasksPage() {
   const router = useRouter()
@@ -32,7 +32,7 @@ export default function TeacherTasksPage() {
 
   if (loading) return <div>Loading…</div>
 
-  const kindLabels: Record<string, string> = { homework: 'Homework', assignment: 'Assignment' }
+  const kindLabels: Record<string, string> = { homework: 'Homework', assignment: 'Assignment', group_project: 'Group Project' }
 
   return (
     <div>

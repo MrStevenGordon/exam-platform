@@ -77,6 +77,10 @@ export default function TakeDirectExamPage() {
   const [calculatorEnabled, setCalculatorEnabled] = useState(false)
   const [errorMsg, setErrorMsg] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [fileUrl, setFileUrl] = useState<string | null>(null)
+  const [fileName, setFileName] = useState<string | null>(null)
+  const [uploadingFile, setUploadingFile] = useState(false)
+  const [fileError, setFileError] = useState('')
   const [secondsLeft, setSecondsLeft] = useState(0)
   const [warning, setWarning] = useState('')
   const [inFullscreen, setInFullscreen] = useState(false)
@@ -302,6 +306,37 @@ export default function TakeDirectExamPage() {
       ? question.points : 0
   }
 
+  const FILE_MAX_MB = 25
+
+  async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setFileError('')
+    if (file.size > FILE_MAX_MB * 1024 * 1024) {
+      setFileError(`File is too large (max ${FILE_MAX_MB}MB).`)
+      e.target.value = ''
+      return
+    }
+    setUploadingFile(true)
+    const { data: { user } } = await supabase.auth.getUser()
+    const path = `${user?.id}/${examId}/${Date.now()}-${file.name.replace(/\s/g, '_')}`
+    const { error } = await supabase.storage.from('task-submissions').upload(path, file, { upsert: true })
+    if (error) {
+      setFileError('Upload failed: ' + error.message)
+      setUploadingFile(false)
+      return
+    }
+    const { data: urlData } = supabase.storage.from('task-submissions').getPublicUrl(path)
+    setFileUrl(urlData.publicUrl)
+    setFileName(file.name)
+    setUploadingFile(false)
+  }
+
+  function handleFileRemove() {
+    setFileUrl(null)
+    setFileName(null)
+  }
+
   async function handleSubmit() {
     if (!session) return
     setSubmitting(true)
@@ -328,7 +363,10 @@ export default function TakeDirectExamPage() {
 
     const { error: sessionError } = await supabase
       .from('exam_sessions')
-      .update({ status: 'completed', completed_at: new Date().toISOString(), total_score: autoScore, max_possible_score: autoMax, fully_graded: !hasEssay })
+      .update({
+        status: 'completed', completed_at: new Date().toISOString(), total_score: autoScore, max_possible_score: autoMax, fully_graded: !hasEssay,
+        file_submission_url: fileUrl, file_submission_name: fileName,
+      })
       .eq('id', session.id)
 
     if (sessionError) { setErrorMsg(sessionError.message); setSubmitting(false); return }
@@ -548,6 +586,31 @@ export default function TakeDirectExamPage() {
           )
         })}
       </div>
+
+      {isRelaxedExam && (
+        <div className="card" style={{ marginTop: 20 }}>
+          <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>
+            Attach a file (optional) — PDF, Word, PowerPoint, Excel, or other document
+          </label>
+          <p style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 4, marginBottom: 10 }}>
+            If you completed this work outside the platform, upload it here alongside (or instead of) your answers above.
+          </p>
+          {fileUrl ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <a href={fileUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize: 13, fontWeight: 600, color: 'var(--accent-dark)' }}>
+                📎 {fileName}
+              </a>
+              <button type="button" onClick={handleFileRemove} className="btn btn-ghost" style={{ fontSize: 11 }}>Remove</button>
+            </div>
+          ) : (
+            <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '8px 14px', borderRadius: 8, border: '1.5px dashed var(--border-strong)', cursor: 'pointer', fontSize: 13, color: 'var(--text-secondary)' }}>
+              {uploadingFile ? 'Uploading…' : `Upload file (max ${FILE_MAX_MB}MB)`}
+              <input type="file" onChange={handleFileUpload} style={{ display: 'none' }} disabled={uploadingFile} />
+            </label>
+          )}
+          {fileError && <p className="banner banner-danger" style={{ marginTop: 10, fontSize: 13 }}>{fileError}</p>}
+        </div>
+      )}
 
       <div style={{ marginTop: 24, paddingTop: 16, borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <button

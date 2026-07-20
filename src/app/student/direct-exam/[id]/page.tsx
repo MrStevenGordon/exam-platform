@@ -53,6 +53,12 @@ export default function DirectExamFrontPage() {
       setLoading(false)
       return
     }
+
+    if (examData.exam_kind === 'group_project') {
+      router.push(`/student/direct-exam/${examId}/group`)
+      return
+    }
+
     setExam(examData)
 
     const { count } = await supabase
@@ -126,7 +132,7 @@ export default function DirectExamFrontPage() {
 
   const alreadyCompleted = existingSession?.status === 'completed'
   const isRelaxedExam = exam.exam_kind === 'homework' || exam.exam_kind === 'assignment'
-  const kindLabels: Record<string, string> = { pop_quiz: 'Pop quiz', midterm: 'Mid term', end_of_year: 'End of year', class_test: 'Class test', weekly_test: 'Weekly test', assignment: 'Assignment', homework: 'Homework', monthly: 'Monthly exam', end_of_term: 'End of term' }
+  const kindLabels: Record<string, string> = { pop_quiz: 'Pop quiz', midterm: 'Mid term', end_of_year: 'End of year', class_test: 'Class test', weekly_test: 'Weekly test', assignment: 'Assignment', homework: 'Homework', monthly: 'Monthly exam', end_of_term: 'End of term', group_project: 'Group Project' }
 
   const now = new Date()
   const opensAt = exam.available_from ? new Date(exam.available_from) : null

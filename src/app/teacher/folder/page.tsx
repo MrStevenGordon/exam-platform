@@ -7,7 +7,7 @@ import { supabase } from '@/lib/supabase'
 
 type DraftExam = { id: string; title: string; subject: string; exam_kind: string; created_at: string }
 
-const TASK_KINDS = ['homework', 'assignment']
+const TASK_KINDS = ['homework', 'assignment', 'group_project']
 const TEST_KINDS = ['pop_quiz', 'class_test', 'weekly_test']
 
 const KIND_LABELS: Record<string, string> = {

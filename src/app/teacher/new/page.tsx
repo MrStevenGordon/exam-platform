@@ -8,6 +8,7 @@ import { supabase } from '@/lib/supabase'
 const TASK_OPTIONS = [
   { value: 'homework', label: 'Homework' },
   { value: 'assignment', label: 'Assignment' },
+  { value: 'group_project', label: 'Group Project' },
 ]
 
 const TEST_OPTIONS = [

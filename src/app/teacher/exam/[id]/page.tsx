@@ -268,6 +268,7 @@ export default function ExamEditorPage() {
 
   const isFinalExamSubmission = exam.exam_kind === 'final_exam_submission'
   const isTeamLeadExam = ['monthly', 'midterm', 'end_of_term', 'end_of_year'].includes(exam.exam_kind)
+  const isGroupProject = exam.exam_kind === 'group_project'
   const isLocked = exam.direct_published === true
   const hasComments = questions.some((q) => q.supervisor_comment)
 
@@ -279,6 +280,7 @@ export default function ExamEditorPage() {
     weekly_test: 'Weekly Test',
     assignment: 'Assignment',
     homework: 'Homework',
+    group_project: 'Group Project',
     midterm: 'Midterm Exam',
     monthly: 'Monthly Exam',
     end_of_term: 'End of Term',
@@ -293,6 +295,11 @@ export default function ExamEditorPage() {
         <div>
           <h1 style={{ margin: 0 }}>{exam.title}</h1>
           <p style={{ color: '#666', margin: '4px 0' }}>{exam.subject} — {kindLabels[exam.exam_kind]}</p>
+          {isGroupProject && (
+            <Link href={`/teacher/exam/${examId}/groups`}>
+              <button className="btn btn-secondary" style={{ marginTop: 6 }}>Manage Groups</button>
+            </Link>
+          )}
         </div>
         {isFinalExamSubmission ? (
           <span className={`badge ${exam.status === 'draft' ? 'badge-default' : exam.status === 'submitted' ? 'badge-warning' : 'badge-success'}`}>

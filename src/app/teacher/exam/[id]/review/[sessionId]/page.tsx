@@ -38,13 +38,15 @@ export default function TeacherReviewSessionPage() {
   const [errorMsg, setErrorMsg] = useState('')
   const [totalScore, setTotalScore] = useState<number | null>(null)
   const [maxScore, setMaxScore] = useState<number | null>(null)
+  const [fileUrl, setFileUrl] = useState<string | null>(null)
+  const [fileName, setFileName] = useState<string | null>(null)
 
   useEffect(() => { loadData() }, [sessionId])
 
   async function loadData() {
     const { data: session } = await supabase
       .from('exam_sessions')
-      .select('total_score, max_possible_score, profiles!exam_sessions_student_id_fkey(full_name, student_id)')
+      .select('total_score, max_possible_score, file_submission_url, file_submission_name, profiles!exam_sessions_student_id_fkey(full_name, student_id)')
       .eq('id', sessionId)
       .single()
 
@@ -53,6 +55,8 @@ export default function TeacherReviewSessionPage() {
       setStudentIdNum((session.profiles as any)?.student_id || '')
       setTotalScore(session.total_score)
       setMaxScore(session.max_possible_score)
+      setFileUrl((session as any).file_submission_url || null)
+      setFileName((session as any).file_submission_name || null)
     }
 
     const { data: responseData } = await supabase
@@ -111,6 +115,11 @@ export default function TeacherReviewSessionPage() {
           ID: {studentIdNum}
           {totalScore !== null && ` · Score: ${totalScore} / ${maxScore} (${Math.round((totalScore / (maxScore || 1)) * 100)}%)`}
         </p>
+        {fileUrl && (
+          <a href={fileUrl} target="_blank" rel="noopener noreferrer" className="btn btn-secondary" style={{ marginTop: 10, display: 'inline-block', fontSize: 13 }}>
+            📎 Download attached file{fileName ? `: ${fileName}` : ''}
+          </a>
+        )}
       </div>
 
       {saved && <div className="banner banner-success" style={{ marginBottom: 16 }}>Marks saved successfully.</div>}

@@ -21,7 +21,7 @@ export default function StudentTestsPage() {
         .from('draft_exams')
         .select('id, title, subject, exam_kind, duration_minutes, profiles!draft_exams_created_by_fkey(full_name)')
         .eq('direct_published', true)
-        .not('exam_kind', 'in', '(homework,assignment)')
+        .not('exam_kind', 'in', '(homework,assignment,group_project)')
         .order('direct_published_at', { ascending: false })
       setExams((data as any) || [])
       const { data: sessions } = await supabase.from('exam_sessions').select('draft_exam_id, status').eq('student_id', user.id)

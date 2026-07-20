@@ -7,7 +7,7 @@ import { supabase } from '@/lib/supabase'
 
 type Exam = { id: string; title: string; subject: string; exam_kind: string; duration_minutes: number; profiles?: { full_name: string } | null }
 
-const TASK_KINDS = ['homework', 'assignment']
+const TASK_KINDS = ['homework', 'assignment', 'group_project']
 
 export default function StudentTasksPage() {
   const router = useRouter()
@@ -37,7 +37,7 @@ export default function StudentTasksPage() {
 
   if (loading) return <div>Loading…</div>
 
-  const kindLabels: Record<string, string> = { homework: 'Homework', assignment: 'Assignment' }
+  const kindLabels: Record<string, string> = { homework: 'Homework', assignment: 'Assignment', group_project: 'Group Project' }
 
   const grouped: Record<string, Exam[]> = {}
   exams.forEach((e) => {
