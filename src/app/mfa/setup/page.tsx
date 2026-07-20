@@ -4,6 +4,15 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 
+function buildQrSrc(qrValue: string): string {
+  if (!qrValue) return ''
+  if (qrValue.startsWith('data:')) return qrValue
+  if (qrValue.trim().startsWith('<svg') || qrValue.trim().startsWith('<?xml')) {
+    return `data:image/svg+xml;utf8,${encodeURIComponent(qrValue)}`
+  }
+  return `data:image/svg+xml;base64,${qrValue}`
+}
+
 export default function MfaSetupPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
@@ -109,7 +118,7 @@ export default function MfaSetupPage() {
         {qrCode && (
           <div style={{ textAlign: 'center', marginBottom: 16 }}>
             <img
-              src={`data:image/svg+xml;utf8,${encodeURIComponent(qrCode)}`}
+              src={buildQrSrc(qrCode)}
               alt="Scan with your authenticator app"
               style={{ width: 200, height: 200, border: '1px solid var(--border)', borderRadius: 8, padding: 8, background: 'white' }}
             />
@@ -121,6 +130,13 @@ export default function MfaSetupPage() {
             <summary style={{ cursor: 'pointer', color: 'var(--text-secondary)' }}>Can't scan the code?</summary>
             <p style={{ marginTop: 8 }}>Enter this key manually in your authenticator app:</p>
             <code style={{ display: 'block', padding: 10, background: 'var(--page-bg)', borderRadius: 6, wordBreak: 'break-all', fontSize: 13 }}>{secret}</code>
+          </details>
+        )}
+
+        {qrCode && (
+          <details style={{ marginBottom: 16, fontSize: 11 }}>
+            <summary style={{ cursor: 'pointer', color: 'var(--text-secondary)' }}>Debug: raw QR value (first 80 chars)</summary>
+            <code style={{ display: 'block', padding: 8, background: 'var(--page-bg)', borderRadius: 6, wordBreak: 'break-all', fontSize: 10 }}>{qrCode.slice(0, 80)}</code>
           </details>
         )}
 
