@@ -135,6 +135,30 @@ export default function LoginPage() {
     const isOwner = profile.is_system_admin === true
     const selectedOwner = selectedRole === 'owner'
 
+    // Subscription gate — replaces the desktop app's old license-key
+    // screen. Every account here belongs to this one school (each school
+    // runs its own separate database), so a single subscription flag on
+    // school_settings blocks every login uniformly, on web or desktop,
+    // the moment it lapses — no per-account key needed. The owner is
+    // exempt: they're not "this school's" account, they're the platform
+    // owner, who happens to share this database only because Manchester
+    // High predates full multi-tenant provisioning.
+    if (!isOwner) {
+      const { data: settings } = await supabase
+        .from('school_settings')
+        .select('subscription_active, subscription_expires_at')
+        .limit(1)
+        .maybeSingle()
+
+      const expired = settings?.subscription_expires_at ? new Date(settings.subscription_expires_at) < new Date() : false
+      if (settings && (settings.subscription_active === false || expired)) {
+        setError('This school\'s subscription is not currently active. Contact your school administrator.')
+        await supabase.auth.signOut()
+        setLoading(false)
+        return
+      }
+    }
+
     if (isOwner && !selectedOwner) {
       setError('Please select "Administrator" and try again.')
       await supabase.auth.signOut()

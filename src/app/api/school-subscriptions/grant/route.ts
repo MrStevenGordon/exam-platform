@@ -1,27 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { Client } from 'pg'
 import { verifySystemAdmin, supabaseAdmin } from '@/lib/verifySystemAdmin'
 import { sendEmail } from '@/lib/email'
-import { schoolLicenseKeyEmail } from '@/lib/emailTemplates'
+import { schoolSubscriptionActiveEmail } from '@/lib/emailTemplates'
 
 const PLAN_DAYS: Record<string, number> = { '3_month': 90, '6_month': 182, yearly: 365 }
 const PLAN_LABELS: Record<string, string> = { '3_month': '3 Months', '6_month': '6 Months', yearly: 'Yearly' }
-const DOWNLOAD_URL = 'https://exam-platform-chi.vercel.app/download'
-
-function generateLicenseKey() {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
-  const group = () => Array.from({ length: 4 }, () => chars[Math.floor(Math.random() * chars.length)]).join('')
-  return `SA-${group()}-${group()}-${group()}`
-}
 
 // Same manual wire-transfer flow as organizations: a school wires payment
 // and a system admin grants or renews the subscription here. Unlike
-// organizations, there's no central "schools" table (each school is meant
-// to eventually get its own separate Supabase project) — a subscription is
-// keyed to an existing school_request row, or created fresh from a name +
-// email for schools that predate that flow (e.g. Manchester High).
+// organizations, there's no central "schools" table (each school gets its
+// own separate Supabase project) — a subscription is keyed to an existing
+// school_request row, or created fresh from a name + email for schools
+// that predate that flow (e.g. Manchester High).
+//
+// Access control actually happens on each school's own database, not
+// here — this route tracks billing centrally, and if targetDatabaseUrl is
+// supplied (that school's own connection string, on hand from when it was
+// provisioned), it also pushes the resulting status directly into that
+// school's school_settings so login enforcement there picks it up
+// immediately. The connection string is never stored.
 export async function POST(req: NextRequest) {
   try {
-    const { subscriptionId, schoolRequestId, schoolName, contactEmail, plan, accessToken } = await req.json()
+    const { subscriptionId, schoolRequestId, schoolName, contactEmail, plan, targetDatabaseUrl, accessToken } = await req.json()
 
     if (!PLAN_DAYS[plan]) {
       return NextResponse.json({ error: 'Invalid plan.' }, { status: 400 })
@@ -35,25 +36,24 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Not authorized.' }, { status: 403 })
     }
 
-    let existingSub: { id: string; school_name: string; contact_email: string; license_key: string | null } | null = null
+    let existingSub: { id: string; school_name: string; contact_email: string } | null = null
 
     if (subscriptionId) {
       const { data } = await supabaseAdmin
         .from('school_subscriptions')
-        .select('id, school_name, contact_email, license_key')
+        .select('id, school_name, contact_email')
         .eq('id', subscriptionId)
         .maybeSingle()
       existingSub = data
     } else if (schoolRequestId) {
       const { data } = await supabaseAdmin
         .from('school_subscriptions')
-        .select('id, school_name, contact_email, license_key')
+        .select('id, school_name, contact_email')
         .eq('school_request_id', schoolRequestId)
         .maybeSingle()
       existingSub = data
     }
 
-    const licenseKey = existingSub?.license_key || generateLicenseKey()
     const currentPeriodEnd = new Date(Date.now() + PLAN_DAYS[plan] * 24 * 60 * 60 * 1000).toISOString()
 
     let resolvedName = existingSub?.school_name || schoolName
@@ -82,7 +82,6 @@ export async function POST(req: NextRequest) {
       subscription_status: 'active',
       subscription_plan: plan,
       current_period_end: currentPeriodEnd,
-      license_key: licenseKey,
       approved_by: admin.userId,
       approved_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
@@ -96,16 +95,34 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: writeError.message }, { status: 400 })
     }
 
-    try {
-      const { subject, html } = schoolLicenseKeyEmail(resolvedName, licenseKey, PLAN_LABELS[plan], currentPeriodEnd, DOWNLOAD_URL)
-      await sendEmail({ to: resolvedEmail, subject, html })
-    } catch (emailError) {
-      console.error('school license-key email failed:', emailError)
+    let pushedToSchool = false
+    if (targetDatabaseUrl?.trim()) {
+      const client = new Client({ connectionString: targetDatabaseUrl.trim(), ssl: { rejectUnauthorized: false } })
+      try {
+        await client.connect()
+        const { rows } = await client.query('select id from school_settings limit 1')
+        if (rows.length > 0) {
+          await client.query(
+            'update school_settings set subscription_active = true, subscription_expires_at = $1 where id = $2',
+            [currentPeriodEnd, rows[0].id]
+          )
+          pushedToSchool = true
+        }
+      } finally {
+        await client.end()
+      }
     }
 
-    return NextResponse.json({ success: true, licenseKey })
+    try {
+      const { subject, html } = schoolSubscriptionActiveEmail(resolvedName, PLAN_LABELS[plan], currentPeriodEnd)
+      await sendEmail({ to: resolvedEmail, subject, html })
+    } catch (emailError) {
+      console.error('school subscription email failed:', emailError)
+    }
+
+    return NextResponse.json({ success: true, pushedToSchool })
   } catch (err) {
     console.error('school-subscriptions/grant error:', err)
-    return NextResponse.json({ error: 'Something went wrong.' }, { status: 500 })
+    return NextResponse.json({ error: err instanceof Error ? err.message : 'Something went wrong.' }, { status: 500 })
   }
 }

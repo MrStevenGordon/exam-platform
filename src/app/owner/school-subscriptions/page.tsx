@@ -14,7 +14,6 @@ type Subscription = {
   subscription_status: string
   subscription_plan: string | null
   current_period_end: string | null
-  license_key: string | null
 }
 
 const PLAN_LABELS: Record<string, string> = { '3_month': '3 Months', '6_month': '6 Months', yearly: 'Yearly' }
@@ -25,14 +24,15 @@ export default function SchoolSubscriptionsPage() {
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([])
   const [loading, setLoading] = useState(true)
   const [errorMsg, setErrorMsg] = useState('')
+  const [successMsg, setSuccessMsg] = useState('')
 
   const [mode, setMode] = useState<'existing' | 'manual'>('existing')
   const [selectedRequestId, setSelectedRequestId] = useState('')
   const [manualName, setManualName] = useState('')
   const [manualEmail, setManualEmail] = useState('')
   const [selectedPlan, setSelectedPlan] = useState('3_month')
+  const [targetDatabaseUrl, setTargetDatabaseUrl] = useState('')
   const [granting, setGranting] = useState(false)
-  const [grantedKey, setGrantedKey] = useState('')
 
   useEffect(() => { loadData() }, [])
 
@@ -51,7 +51,7 @@ export default function SchoolSubscriptionsPage() {
 
     const { data: subData } = await supabase
       .from('school_subscriptions')
-      .select('id, school_request_id, school_name, contact_email, subscription_status, subscription_plan, current_period_end, license_key')
+      .select('id, school_request_id, school_name, contact_email, subscription_status, subscription_plan, current_period_end')
       .order('school_name')
     setSubscriptions(subData || [])
 
@@ -60,7 +60,7 @@ export default function SchoolSubscriptionsPage() {
 
   async function handleGrant() {
     setErrorMsg('')
-    setGrantedKey('')
+    setSuccessMsg('')
 
     const existing = mode === 'existing' ? subscriptions.find((s) => s.school_request_id === selectedRequestId) : null
     if (mode === 'existing' && !selectedRequestId) { setErrorMsg('Choose a school first.'); return }
@@ -70,8 +70,8 @@ export default function SchoolSubscriptionsPage() {
     const { data: { session } } = await supabase.auth.getSession()
 
     const body = mode === 'existing'
-      ? { subscriptionId: existing?.id, schoolRequestId: selectedRequestId, plan: selectedPlan, accessToken: session?.access_token }
-      : { schoolName: manualName.trim(), contactEmail: manualEmail.trim(), plan: selectedPlan, accessToken: session?.access_token }
+      ? { subscriptionId: existing?.id, schoolRequestId: selectedRequestId, plan: selectedPlan, targetDatabaseUrl: targetDatabaseUrl.trim() || undefined, accessToken: session?.access_token }
+      : { schoolName: manualName.trim(), contactEmail: manualEmail.trim(), plan: selectedPlan, targetDatabaseUrl: targetDatabaseUrl.trim() || undefined, accessToken: session?.access_token }
 
     const res = await fetch('/api/school-subscriptions/grant', {
       method: 'POST',
@@ -80,10 +80,17 @@ export default function SchoolSubscriptionsPage() {
     })
     const data = await res.json()
 
-    if (!res.ok) { setErrorMsg(data.error || 'Something went wrong.') } else {
-      setGrantedKey(data.licenseKey)
+    if (!res.ok) {
+      setErrorMsg(data.error || 'Something went wrong.')
+    } else {
+      setSuccessMsg(
+        data.pushedToSchool
+          ? 'Subscription active — pushed directly to the school\'s own database, their accounts can log in now.'
+          : 'Subscription recorded here, but no database connection string was given, so it wasn\'t pushed to the school\'s login gate — paste it above and grant again to actually unlock their accounts.'
+      )
       setManualName('')
       setManualEmail('')
+      setTargetDatabaseUrl('')
     }
     await loadData()
     setGranting(false)
@@ -95,11 +102,11 @@ export default function SchoolSubscriptionsPage() {
     <div className="page-container">
       <h1 style={{ marginBottom: 4 }}>School subscriptions</h1>
       <p style={{ color: 'var(--text-secondary)', fontSize: 13, marginBottom: 20 }}>
-        Schools pay by wire transfer and email proof of payment directly — grant or renew a subscription here once you&apos;ve verified it landed in the account. The license key is entered once in the desktop app to activate it.
+        Schools pay by wire transfer and email proof of payment directly — grant or renew a subscription here once you&apos;ve verified it landed in the account. Paste that school&apos;s database connection string to push the status directly to their login gate — used once, then forgotten, never stored.
       </p>
 
       {errorMsg && <div className="banner banner-danger" style={{ marginBottom: 16 }}>{errorMsg}</div>}
-      {grantedKey && <div className="banner banner-success" style={{ marginBottom: 16 }}>License key <strong>{grantedKey}</strong> — emailed to the school.</div>}
+      {successMsg && <div className="banner banner-success" style={{ marginBottom: 16 }}>{successMsg}</div>}
 
       <div className="card" style={{ marginBottom: 24 }}>
         <h2 style={{ marginBottom: 12 }}>Grant or renew a subscription</h2>
@@ -113,7 +120,7 @@ export default function SchoolSubscriptionsPage() {
           </label>
         </div>
 
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'flex-end' }}>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'flex-end', marginBottom: 14 }}>
           {mode === 'existing' ? (
             <div style={{ flex: '1 1 260px' }}>
               <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>School</label>
@@ -144,10 +151,22 @@ export default function SchoolSubscriptionsPage() {
               <option value="yearly">Yearly</option>
             </select>
           </div>
-          <button className="btn btn-primary" disabled={granting} onClick={handleGrant}>
-            {granting ? 'Granting…' : 'Grant subscription'}
-          </button>
         </div>
+
+        <div style={{ marginBottom: 16 }}>
+          <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>School&apos;s database connection string</label>
+          <input
+            type="password"
+            value={targetDatabaseUrl}
+            onChange={(e) => setTargetDatabaseUrl(e.target.value)}
+            placeholder="postgresql://postgres...@...pooler.supabase.com:5432/postgres"
+            style={{ width: '100%', marginTop: 6, fontFamily: 'monospace', fontSize: 12 }}
+          />
+        </div>
+
+        <button className="btn btn-primary" disabled={granting} onClick={handleGrant}>
+          {granting ? 'Granting…' : 'Grant subscription'}
+        </button>
       </div>
 
       <h2 style={{ marginBottom: 12 }}>All school subscriptions</h2>
@@ -167,7 +186,6 @@ export default function SchoolSubscriptionsPage() {
                   Plan: <strong>{s.subscription_plan ? PLAN_LABELS[s.subscription_plan] : '—'}</strong>
                   {s.current_period_end && <> · expires {new Date(s.current_period_end).toLocaleDateString()}</>}
                 </div>
-                {s.license_key && <div style={{ fontSize: 13, marginTop: 4 }}>License key: <strong>{s.license_key}</strong></div>}
               </div>
               <span className={`badge ${s.subscription_status === 'active' ? 'badge-success' : 'badge-default'}`}>
                 {s.subscription_status.charAt(0).toUpperCase() + s.subscription_status.slice(1)}

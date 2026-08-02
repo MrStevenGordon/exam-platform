@@ -45,7 +45,7 @@ export default function DownloadPage() {
           </a>
         </div>
         <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-          Schools and organizations only — you&apos;ll need a subscription license key to activate it after installing.
+          For students and staff at schools with an active Smart Assess subscription — just log in with your normal account.
         </p>
       </section>
 
@@ -55,8 +55,7 @@ export default function DownloadPage() {
           <ol style={{ fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.9, paddingLeft: 20, margin: 0 }}>
             <li>Download and run the installer (on Mac, drag Smart Assess into Applications).</li>
             <li>The first time you open it, your computer may warn it&apos;s from an unidentified developer — on Mac, right-click the app and choose <strong>Open</strong>; on Windows, click <strong>More info → Run anyway</strong> on the SmartScreen prompt.</li>
-            <li>On first launch, enter the license key emailed to your school or organization to activate it.</li>
-            <li>Log in with your normal Smart Assess account — the app works the same as the website from there.</li>
+            <li>Log in with your normal Smart Assess account — the app works the same as the website from there. If your school&apos;s subscription isn&apos;t active, login will say so.</li>
           </ol>
         </div>
         <p style={{ fontSize: 13, color: 'var(--text-secondary)', textAlign: 'center', marginTop: 20 }}>
