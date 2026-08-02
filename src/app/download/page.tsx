@@ -3,6 +3,7 @@
 import Link from 'next/link'
 
 const MAC_DOWNLOAD_URL = 'https://github.com/MrStevenGordon/exam-platform/releases/download/desktop-v0.1.0/Smart%20Assess-0.1.0.dmg'
+const WIN_DOWNLOAD_URL = 'https://github.com/MrStevenGordon/exam-platform/releases/download/desktop-v0.1.0/Smart%20Assess%20Setup%200.1.0.exe'
 
 export default function DownloadPage() {
   return (
@@ -33,11 +34,11 @@ export default function DownloadPage() {
 
         <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap', marginBottom: '1rem' }}>
           <a href={MAC_DOWNLOAD_URL}>
-            <button className="btn btn-primary" style={{ fontSize: 15, padding: '14px 32px' }}> Download for Mac</button>
+            <button className="btn btn-primary" style={{ fontSize: 15, padding: '14px 32px' }}>Download for Mac</button>
           </a>
-          <button className="btn btn-secondary" style={{ fontSize: 15, padding: '14px 32px' }} disabled>
-            Windows — coming soon
-          </button>
+          <a href={WIN_DOWNLOAD_URL}>
+            <button className="btn btn-secondary" style={{ fontSize: 15, padding: '14px 32px' }}>Download for Windows</button>
+          </a>
         </div>
         <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>
           Schools and organizations only — you&apos;ll need a subscription license key to activate it after installing.
@@ -48,8 +49,8 @@ export default function DownloadPage() {
         <div className="card" style={{ padding: '1.5rem 1.75rem' }}>
           <h2 style={{ fontSize: 16, marginBottom: 12 }}>Setting it up</h2>
           <ol style={{ fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.9, paddingLeft: 20, margin: 0 }}>
-            <li>Download and open the installer, then drag Smart Assess into Applications.</li>
-            <li>The first time you open it, macOS may warn it&apos;s from an unidentified developer — right-click the app and choose <strong>Open</strong> to continue.</li>
+            <li>Download and run the installer (on Mac, drag Smart Assess into Applications).</li>
+            <li>The first time you open it, your computer may warn it&apos;s from an unidentified developer — on Mac, right-click the app and choose <strong>Open</strong>; on Windows, click <strong>More info → Run anyway</strong> on the SmartScreen prompt.</li>
             <li>On first launch, enter the license key emailed to your school or organization to activate it.</li>
             <li>Log in with your normal Smart Assess account — the app works the same as the website from there.</li>
           </ol>

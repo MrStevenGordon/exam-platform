@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain } = require('electron')
+const { app, BrowserWindow, ipcMain, globalShortcut } = require('electron')
 const path = require('path')
 const fs = require('fs')
 
@@ -34,15 +34,18 @@ function saveLicense(data) {
 }
 
 // If the app crashes or is closed mid-exam and reopened, it should land
-// back on the same page rather than the homepage — combined with the web
-// app's own IndexedDB-based answer resume, this is what makes "automatic
-// resume" actually feel automatic.
+// back on the same page rather than login — combined with the web app's
+// own IndexedDB-based answer resume, this is what makes "automatic resume"
+// actually feel automatic. Before any navigation has happened (a fresh
+// install, right after activation), there's nothing to resume — land on
+// login rather than the public marketing homepage, since everyone opening
+// this app already has an account.
 function getLastRoute() {
   try {
     const data = fs.readFileSync(STATE_FILE, 'utf8')
-    return JSON.parse(data).path || '/'
+    return JSON.parse(data).path || '/login'
   } catch {
-    return '/'
+    return '/login'
   }
 }
 
@@ -59,6 +62,35 @@ let mainWindow = null
 
 function loadApp(win) {
   win.loadURL(new URL(getLastRoute(), APP_URL).toString())
+}
+
+// Exam-only lockdown: the exam take page is the only place in the whole app
+// that calls requestFullscreen(), and Electron automatically mirrors the
+// HTML5 Fullscreen API to native window fullscreen — so hooking the
+// window's own enter/leave-full-screen events scopes kiosk mode to exactly
+// exam-taking with zero changes needed in the web app. Native fullscreen
+// alone doesn't stop Cmd+Tab/Cmd+Q from switching away or quitting, which
+// is the actual gap kiosk mode + these shortcut blocks close. Some
+// OS-reserved combos (Cmd+Space/Spotlight in particular) can't be
+// intercepted by any app — that's a macOS-level limit, not fixable here.
+const EXAM_BLOCKED_SHORTCUTS = [
+  'CommandOrControl+Tab', 'CommandOrControl+Q', 'CommandOrControl+W',
+  'CommandOrControl+M', 'CommandOrControl+H', 'CommandOrControl+Space',
+  'Alt+Tab', 'CommandOrControl+Alt+Escape',
+]
+
+function enterExamLockdown(win) {
+  win.setKiosk(true)
+  for (const accelerator of EXAM_BLOCKED_SHORTCUTS) {
+    try { globalShortcut.register(accelerator, () => {}) } catch {
+      // Some combos are OS-reserved and can't be intercepted — best effort.
+    }
+  }
+}
+
+function exitExamLockdown(win) {
+  win.setKiosk(false)
+  globalShortcut.unregisterAll()
 }
 
 function createWindow() {
@@ -98,6 +130,9 @@ function createWindow() {
   win.webContents.on('did-navigate', trackNavigation)
   win.webContents.on('did-navigate-in-page', trackNavigation)
 
+  win.on('enter-full-screen', () => enterExamLockdown(win))
+  win.on('leave-full-screen', () => exitExamLockdown(win))
+
   return win
 }
 
@@ -130,4 +165,8 @@ app.whenReady().then(() => {
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit()
+})
+
+app.on('will-quit', () => {
+  globalShortcut.unregisterAll()
 })
