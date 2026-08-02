@@ -2,7 +2,12 @@ import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { supabaseAdmin } from '@/lib/verifySystemAdmin'
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
+// Constructed lazily, not at module scope — Stripe isn't configured yet
+// (dormant pending a Jamaica-compatible provider), and building the Stripe
+// client at import time crashes the whole build when the key is missing.
+function getStripe() {
+  return new Stripe(process.env.STRIPE_SECRET_KEY!)
+}
 
 async function upsertSubscription(organizationId: string, fields: Record<string, unknown>) {
   await supabaseAdmin
@@ -11,6 +16,11 @@ async function upsertSubscription(organizationId: string, fields: Record<string,
 }
 
 export async function POST(req: NextRequest) {
+  if (!process.env.STRIPE_SECRET_KEY) {
+    return NextResponse.json({ error: 'Stripe is not configured.' }, { status: 503 })
+  }
+
+  const stripe = getStripe()
   const signature = req.headers.get('stripe-signature')
   const rawBody = await req.text()
 

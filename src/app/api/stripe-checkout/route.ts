@@ -2,7 +2,12 @@ import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { supabaseAdmin } from '@/lib/verifySystemAdmin'
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
+// Constructed lazily, not at module scope — Stripe isn't configured yet
+// (dormant pending a Jamaica-compatible provider), and building the Stripe
+// client at import time crashes the whole build when the key is missing.
+function getStripe() {
+  return new Stripe(process.env.STRIPE_SECRET_KEY!)
+}
 
 const PRICE_IDS: Record<string, string | undefined> = {
   '3_month': process.env.STRIPE_PRICE_3_MONTH,
@@ -11,7 +16,12 @@ const PRICE_IDS: Record<string, string | undefined> = {
 }
 
 export async function POST(req: NextRequest) {
+  if (!process.env.STRIPE_SECRET_KEY) {
+    return NextResponse.json({ error: 'Card payments are not available yet — use bank transfer instead.' }, { status: 503 })
+  }
+
   try {
+    const stripe = getStripe()
     const { plan, accessToken } = await req.json()
 
     const priceId = PRICE_IDS[plan]

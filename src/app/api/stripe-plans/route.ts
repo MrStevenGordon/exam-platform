@@ -1,7 +1,12 @@
 import { NextResponse } from 'next/server'
 import Stripe from 'stripe'
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
+// Constructed lazily, not at module scope — Stripe isn't configured yet
+// (dormant pending a Jamaica-compatible provider), and building the Stripe
+// client at import time crashes the whole build when the key is missing.
+function getStripe() {
+  return new Stripe(process.env.STRIPE_SECRET_KEY!)
+}
 
 const PLAN_KEYS: { key: string; envVar: string; label: string }[] = [
   { key: '3_month', envVar: 'STRIPE_PRICE_3_MONTH', label: '3 Months' },
@@ -10,7 +15,11 @@ const PLAN_KEYS: { key: string; envVar: string; label: string }[] = [
 ]
 
 export async function GET() {
+  if (!process.env.STRIPE_SECRET_KEY) {
+    return NextResponse.json({ plans: [] })
+  }
   try {
+    const stripe = getStripe()
     const plans = []
     for (const p of PLAN_KEYS) {
       const priceId = process.env[p.envVar]
