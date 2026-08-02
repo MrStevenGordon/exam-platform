@@ -1,4 +1,4 @@
-const { app, BrowserWindow, globalShortcut, dialog } = require('electron')
+const { app, BrowserWindow, globalShortcut, dialog, ipcMain } = require('electron')
 const { autoUpdater } = require('electron-updater')
 const path = require('path')
 const fs = require('fs')
@@ -109,6 +109,11 @@ function createWindow() {
 
   return win
 }
+
+// Lets the web app show the installed version — only meaningful inside
+// the desktop shell, never on the regular website, so this is exposed via
+// preload rather than baked into the page itself.
+ipcMain.handle('app:get-version', () => app.getVersion())
 
 // Checked once at launch only — never mid-session, so a background update
 // check can't interrupt someone partway through an exam. Downloads

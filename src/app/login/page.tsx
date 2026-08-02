@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
@@ -43,6 +43,12 @@ export default function LoginPage() {
   const [mfaRequired, setMfaRequired] = useState(false)
   const [mfaFactorId, setMfaFactorId] = useState('')
   const [mfaCode, setMfaCode] = useState('')
+  const [desktopVersion, setDesktopVersion] = useState('')
+
+  useEffect(() => {
+    const electronAPI = (window as unknown as { electronAPI?: { getAppVersion: () => Promise<string> } }).electronAPI
+    if (electronAPI) electronAPI.getAppVersion().then(setDesktopVersion).catch(() => {})
+  }, [])
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault()
@@ -398,7 +404,7 @@ export default function LoginPage() {
       </div>
 
       <p style={{ marginTop: 24, fontSize: 12, color: 'var(--text-muted)' }}>
-        © {new Date().getFullYear()} Smart Assess Ja · All rights reserved
+        © {new Date().getFullYear()} Smart Assess Ja · All rights reserved{desktopVersion && ` · v${desktopVersion}`}
       </p>
     </div>
   )
