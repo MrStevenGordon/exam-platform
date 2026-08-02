@@ -4,6 +4,8 @@ import { useEffect, useState, useRef, useCallback } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import ScientificCalculator from '@/components/ScientificCalculator'
+import { useIntegrityCapture, IntegritySignals } from '@/hooks/useIntegrityCapture'
+import { gradeAnswer as gradeAnswerShared } from '@/lib/grading'
 
 function mulberry32(seed: number) {
   let a = seed
@@ -43,6 +45,7 @@ type Question = {
   order_index: number
   marking_points: { text: string; keywords: string[]; marks: number }[] | null
   total_marks: number | null
+  show_working?: boolean | null
 }
 
 type SessionInfo = {
@@ -94,6 +97,7 @@ export default function TakeDirectExamPage() {
   const hasBeenFullscreenRef = useRef(false)
   const submittedRef = useRef(false)
   const intentionalExitRef = useRef(false)
+  const capture = useIntegrityCapture()
 
   // Homework and assignments are meant to be done at home, on the student's
   // own time — no countdown pressure, no fullscreen/tab-switch proctoring,
@@ -127,7 +131,11 @@ export default function TakeDirectExamPage() {
     function handleContextMenu(e: MouseEvent) { e.preventDefault() }
     function handleSelectStart(e: Event) { e.preventDefault() }
     function handleCopy(e: ClipboardEvent) { e.preventDefault() }
-    function handlePaste(e: ClipboardEvent) { e.preventDefault() }
+    function handlePaste(e: ClipboardEvent) {
+      e.preventDefault()
+      const fieldId = (document.activeElement as HTMLElement | null)?.dataset?.integrityField
+      if (fieldId) capture.onPasteAttempt(fieldId)
+    }
     document.addEventListener('keydown', handleKeyDown)
     document.addEventListener('contextmenu', handleContextMenu)
     document.addEventListener('selectstart', handleSelectStart)
@@ -276,34 +284,8 @@ export default function TakeDirectExamPage() {
     setAnswers((prev) => ({ ...prev, [questionId]: value }))
   }
 
-  function gradeMultiPoint(question: Question, answers: string[]): number {
-    if (!question.marking_points || question.marking_points.length === 0) return 0
-    let totalAwarded = 0
-    const maxMarks = question.points
-    for (const point of question.marking_points) {
-      if (!point.keywords || point.keywords.length === 0) continue
-      const matched = answers.some((ans) => {
-        const ansLower = ans.toLowerCase().trim()
-        return point.keywords.some((kw: string) => ansLower.includes(kw.toLowerCase()))
-      })
-      if (matched) totalAwarded += point.marks
-    }
-    return Math.min(totalAwarded, maxMarks)
-  }
-
   function gradeAnswer(question: Question, studentAnswer: string): number | null {
-    const autoGradable = ['multiple_choice', 'true_false', 'short_answer', 'fill_blank']
-    if (!autoGradable.includes(question.question_type)) return null
-
-    if (question.marking_points && question.marking_points.length > 0) {
-      const answers = studentAnswer.split('\n').map(a => a.trim()).filter(Boolean)
-      if (answers.length === 0) answers.push(studentAnswer)
-      return gradeMultiPoint(question, answers)
-    }
-
-    if (!question.correct_answer) return 0
-    return studentAnswer.trim().toLowerCase() === question.correct_answer.trim().toLowerCase()
-      ? question.points : 0
+    return gradeAnswerShared(question, studentAnswer)
   }
 
   const FILE_MAX_MB = 25
@@ -345,6 +327,7 @@ export default function TakeDirectExamPage() {
     let autoScore = 0
     let autoMax = 0
     let hasEssay = false
+    const allIntegrityFlags = new Set<string>()
 
     const rows = questions.map((q) => {
       const studentAnswer = answers[q.id] || ''
@@ -352,7 +335,20 @@ export default function TakeDirectExamPage() {
       if (awarded === null) hasEssay = true
       else autoScore += awarded
       autoMax += q.points
-      return { session_id: session.id, question_id: q.id, answer: studentAnswer, working: workings[q.id] || null, points_awarded: awarded, graded_at: awarded !== null ? new Date().toISOString() : null }
+
+      let integritySignals: { answer?: IntegritySignals; working?: IntegritySignals } | null = null
+      if (q.question_type === 'essay') {
+        const answerSignals = capture.summarize(`answer:${q.id}`, studentAnswer)
+        integritySignals = { answer: answerSignals }
+        answerSignals.flags.forEach((f) => allIntegrityFlags.add(f))
+      }
+      if (q.question_type === 'short_answer' && q.show_working) {
+        const workingSignals = capture.summarize(`working:${q.id}`, workings[q.id] || '')
+        integritySignals = { ...integritySignals, working: workingSignals }
+        workingSignals.flags.forEach((f) => allIntegrityFlags.add(f))
+      }
+
+      return { session_id: session.id, question_id: q.id, answer: studentAnswer, working: workings[q.id] || null, points_awarded: awarded, graded_at: awarded !== null ? new Date().toISOString() : null, integrity_signals: integritySignals }
     })
 
     await supabase.from('responses').delete().eq('session_id', session.id)
@@ -361,15 +357,27 @@ export default function TakeDirectExamPage() {
       if (error) { setErrorMsg(error.message); setSubmitting(false); return }
     }
 
+    const hasIntegrityFlags = allIntegrityFlags.size > 0
+
     const { error: sessionError } = await supabase
       .from('exam_sessions')
       .update({
         status: 'completed', completed_at: new Date().toISOString(), total_score: autoScore, max_possible_score: autoMax, fully_graded: !hasEssay,
         file_submission_url: fileUrl, file_submission_name: fileName,
+        ...(hasIntegrityFlags ? { flagged: true } : {}),
       })
       .eq('id', session.id)
 
     if (sessionError) { setErrorMsg(sessionError.message); setSubmitting(false); return }
+
+    // Silent, teacher-only signal — no overlay/warning shown to the student and
+    // submission is never blocked, unlike the proctoring violations above.
+    if (hasIntegrityFlags) {
+      await supabase.rpc('append_violation_log', {
+        session_id: session.id,
+        entry: { type: 'integrity', reason: Array.from(allIntegrityFlags).join(', '), timestamp: new Date().toISOString() },
+      })
+    }
 
     const { data: { user } } = await supabase.auth.getUser()
     if (user) {
@@ -527,8 +535,10 @@ export default function TakeDirectExamPage() {
                 <div style={{ marginBottom: 12 }}>
                   <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: 0.5 }}>Show your working</label>
                   <textarea
+                    data-integrity-field={`working:${q.id}`}
                     value={workings[q.id] || ''}
-                    onChange={(e) => updateWorking(q.id, e.target.value)}
+                    onChange={(e) => { updateWorking(q.id, e.target.value); capture.onValueChange(`working:${q.id}`, e.target.value) }}
+                    onKeyDown={(e) => capture.onKeyDown(`working:${q.id}`, e.key)}
                     rows={5}
                     style={{ width: '100%', marginTop: 6, fontFamily: 'monospace', fontSize: 14 }}
                     placeholder="Show all your working here — steps, calculations…"
@@ -571,8 +581,10 @@ export default function TakeDirectExamPage() {
               {q.question_type === 'essay' && (
                 <div>
                   <textarea
+                    data-integrity-field={`answer:${q.id}`}
                     value={answers[q.id] || ''}
-                    onChange={(e) => updateAnswer(q.id, e.target.value)}
+                    onChange={(e) => { updateAnswer(q.id, e.target.value); capture.onValueChange(`answer:${q.id}`, e.target.value) }}
+                    onKeyDown={(e) => capture.onKeyDown(`answer:${q.id}`, e.key)}
                     rows={8}
                     style={{ width: '100%', resize: 'vertical', minHeight: 160 }}
                     placeholder="Write your response here…"

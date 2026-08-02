@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import { IntegritySignals, INTEGRITY_FLAG_LABELS } from '@/hooks/useIntegrityCapture'
 
 type UngradedResponse = {
   overrideScore?: number
@@ -16,6 +17,7 @@ type UngradedResponse = {
   exam_title: string
   marking_points?: any[] | null
   total_marks?: number | null
+  integrityFlags: string[]
 }
 
 export default function GradeEssaysPage() {
@@ -40,7 +42,7 @@ export default function GradeEssaysPage() {
     const { data, error } = await supabase
       .from('responses')
       .select(`
-        id, answer, working, session_id, points_awarded,
+        id, answer, working, session_id, points_awarded, integrity_signals,
         questions(question_text, points, question_type, marking_points),
         exam_sessions(profiles!exam_sessions_student_id_fkey(full_name), final_exams(title), draft_exams(title))
       `)
@@ -64,6 +66,7 @@ export default function GradeEssaysPage() {
         points: r.questions.points,
         student_name: r.exam_sessions?.profiles?.full_name || 'Unknown',
         exam_title: r.exam_sessions?.final_exams?.title || r.exam_sessions?.draft_exams?.title || 'Unknown exam',
+        integrityFlags: (r.integrity_signals as { answer?: IntegritySignals } | null)?.answer?.flags || [],
       }))
 
     setItems(essayOnly)
@@ -149,6 +152,17 @@ export default function GradeEssaysPage() {
             <div style={{ padding: 12, background: 'var(--page-bg)', borderRadius: 8, marginBottom: 12, border: '1px solid var(--border)' }}>
               {item.answer || <em style={{ color: 'var(--text-secondary)' }}>No answer provided</em>}
             </div>
+
+            {item.integrityFlags.length > 0 && (
+              <details style={{ marginBottom: 12, background: 'var(--warning-bg)', border: '1px solid var(--warning)', borderRadius: 8, padding: '8px 12px' }}>
+                <summary style={{ fontSize: 12, fontWeight: 700, color: 'var(--warning)', cursor: 'pointer' }}>
+                  ⚠ Possible AI-assisted writing — {item.integrityFlags.length} signal{item.integrityFlags.length !== 1 ? 's' : ''}
+                </summary>
+                <ul style={{ margin: '8px 0 0', paddingLeft: 18, fontSize: 12, color: 'var(--text-secondary)' }}>
+                  {item.integrityFlags.map((f) => <li key={f}>{INTEGRITY_FLAG_LABELS[f] || f}</li>)}
+                </ul>
+              </details>
+            )}
 
             {item.working && (
               <div style={{ marginBottom: 12 }}>

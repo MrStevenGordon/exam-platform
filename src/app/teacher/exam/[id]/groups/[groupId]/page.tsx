@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
+import { IntegritySignals, INTEGRITY_FLAG_LABELS } from '@/hooks/useIntegrityCapture'
 
 type MemberRow = {
   studentId: string
@@ -11,6 +12,7 @@ type MemberRow = {
   sessionId: string | null
   status: string
   contribution: string
+  contributionFlags: string[]
   score: string
   avgPeerRating: number | null
   ratingCount: number
@@ -72,7 +74,7 @@ export default function GroupGradingPage() {
 
       const { data: session } = await supabase
         .from('exam_sessions')
-        .select('id, status, contribution_statement, total_score, max_possible_score')
+        .select('id, status, contribution_statement, contribution_integrity_signals, total_score, max_possible_score')
         .eq('draft_exam_id', examId)
         .eq('student_id', profile.id)
         .maybeSingle()
@@ -86,6 +88,7 @@ export default function GroupGradingPage() {
         sessionId: session?.id || null,
         status: session?.status || 'not started',
         contribution: session?.contribution_statement || '',
+        contributionFlags: (session?.contribution_integrity_signals as IntegritySignals | null)?.flags || [],
         score: session?.total_score != null ? String(session.total_score) : '',
         avgPeerRating: avg,
         ratingCount: memberRatings.length,
@@ -198,6 +201,16 @@ export default function GroupGradingPage() {
             <p style={{ fontSize: 13, background: 'var(--page-bg)', padding: 10, borderRadius: 6, margin: 0 }}>{m.contribution}</p>
           ) : (
             <p style={{ fontSize: 13, color: 'var(--text-secondary)', fontStyle: 'italic' }}>No contribution statement submitted.</p>
+          )}
+          {m.contributionFlags.length > 0 && (
+            <details style={{ marginTop: 8, background: 'var(--warning-bg)', border: '1px solid var(--warning)', borderRadius: 8, padding: '8px 12px' }}>
+              <summary style={{ fontSize: 12, fontWeight: 700, color: 'var(--warning)', cursor: 'pointer' }}>
+                ⚠ Possible AI-assisted writing — {m.contributionFlags.length} signal{m.contributionFlags.length !== 1 ? 's' : ''}
+              </summary>
+              <ul style={{ margin: '8px 0 0', paddingLeft: 18, fontSize: 12, color: 'var(--text-secondary)' }}>
+                {m.contributionFlags.map((f) => <li key={f}>{INTEGRITY_FLAG_LABELS[f] || f}</li>)}
+              </ul>
+            </details>
           )}
         </div>
       ))}

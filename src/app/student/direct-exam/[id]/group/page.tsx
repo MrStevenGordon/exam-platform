@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
+import { useIntegrityCapture } from '@/hooks/useIntegrityCapture'
 
 type Member = { id: string; full_name: string }
 
@@ -26,6 +27,7 @@ export default function GroupProjectPage() {
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [errorMsg, setErrorMsg] = useState('')
+  const capture = useIntegrityCapture()
 
   useEffect(() => { loadData() }, [examId])
 
@@ -148,12 +150,26 @@ export default function GroupProjectPage() {
 
     const { data: { user } } = await supabase.auth.getUser()
 
+    const contributionSignals = capture.summarize('contribution', contribution.trim())
+
     const { error: sessionError } = await supabase
       .from('exam_sessions')
-      .update({ status: 'completed', completed_at: new Date().toISOString(), contribution_statement: contribution.trim() })
+      .update({
+        status: 'completed', completed_at: new Date().toISOString(), contribution_statement: contribution.trim(),
+        contribution_integrity_signals: contributionSignals,
+        ...(contributionSignals.flags.length > 0 ? { flagged: true } : {}),
+      })
       .eq('id', sessionId)
 
     if (sessionError) { setErrorMsg(sessionError.message); setSubmitting(false); return }
+
+    // Silent, teacher-only signal — no warning shown to the student, submission never blocked.
+    if (contributionSignals.flags.length > 0) {
+      await supabase.rpc('append_violation_log', {
+        session_id: sessionId,
+        entry: { type: 'integrity', reason: contributionSignals.flags.join(', '), timestamp: new Date().toISOString() },
+      })
+    }
 
     for (const member of members) {
       const rating = ratings[member.id]
@@ -226,7 +242,9 @@ export default function GroupProjectPage() {
         <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 10 }}>Describe what you personally did for this project.</p>
         <textarea
           value={contribution}
-          onChange={(e) => setContribution(e.target.value)}
+          onChange={(e) => { setContribution(e.target.value); capture.onValueChange('contribution', e.target.value) }}
+          onKeyDown={(e) => capture.onKeyDown('contribution', e.key)}
+          onPaste={(e) => { e.preventDefault(); capture.onPasteAttempt('contribution') }}
           rows={4}
           disabled={alreadySubmitted}
           placeholder="e.g. I researched the topic and wrote the introduction and conclusion sections..."

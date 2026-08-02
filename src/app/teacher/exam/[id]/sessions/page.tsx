@@ -12,6 +12,7 @@ type Session = {
   completed_at: string | null
   tab_switch_count: number
   flagged: boolean
+  violation_log: { type?: string; reason: string; timestamp: string }[] | null
   total_score: number | null
   max_possible_score: number | null
   fully_graded: boolean
@@ -45,7 +46,7 @@ export default function ExamSessionsPage() {
 
     const { data, error } = await supabase
       .from('exam_sessions')
-      .select('id, status, started_at, completed_at, tab_switch_count, flagged, total_score, max_possible_score, fully_graded, results_released, profiles!exam_sessions_student_id_fkey(full_name, student_id)')
+      .select('id, status, started_at, completed_at, tab_switch_count, flagged, violation_log, total_score, max_possible_score, fully_graded, results_released, profiles!exam_sessions_student_id_fkey(full_name, student_id)')
       .eq('draft_exam_id', examId)
       .order('started_at', { ascending: false })
 
@@ -109,6 +110,7 @@ export default function ExamSessionsPage() {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {sessions.map((s) => {
           const pct = s.total_score !== null && s.max_possible_score ? Math.round((s.total_score / s.max_possible_score) * 100) : null
+          const hasIntegrityFlag = (s.violation_log || []).some((v) => v.type === 'integrity')
           return (
             <div key={s.id} className="card" style={{ background: s.flagged ? 'var(--danger-bg)' : 'var(--card-bg)', borderLeft: s.flagged ? '3px solid var(--danger)' : '3px solid var(--border)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
@@ -127,9 +129,14 @@ export default function ExamSessionsPage() {
                       {s.results_released && <span style={{ marginLeft: 8, color: 'var(--success)', fontSize: 12, fontWeight: 700 }}>✓ Released</span>}
                     </div>
                   )}
-                  {s.flagged && (
+                  {s.flagged && s.tab_switch_count > 0 && (
                     <div style={{ marginTop: 4, fontSize: 12, color: 'var(--danger)', fontWeight: 600 }}>
                       ⚠ {s.tab_switch_count} violation{s.tab_switch_count !== 1 ? 's' : ''} detected
+                    </div>
+                  )}
+                  {hasIntegrityFlag && (
+                    <div style={{ marginTop: 4, fontSize: 12, color: 'var(--warning)', fontWeight: 600 }}>
+                      ⚠ Possible AI-assisted writing — see review
                     </div>
                   )}
                 </div>

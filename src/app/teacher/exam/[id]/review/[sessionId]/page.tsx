@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
+import { IntegritySignals, INTEGRITY_FLAG_LABELS } from '@/hooks/useIntegrityCapture'
 
 type Response = {
   id: string
@@ -11,6 +12,7 @@ type Response = {
   answer: string
   working: string | null
   points_awarded: number | null
+  integrity_signals: { answer?: IntegritySignals; working?: IntegritySignals } | null
   questions: {
     question_text: string
     question_type: string
@@ -61,7 +63,7 @@ export default function TeacherReviewSessionPage() {
 
     const { data: responseData } = await supabase
       .from('responses')
-      .select('id, question_id, answer, working, points_awarded, questions(question_text, question_type, correct_answer, points, options, marking_points, show_working)')
+      .select('id, question_id, answer, working, points_awarded, integrity_signals, questions(question_text, question_type, correct_answer, points, options, marking_points, show_working)')
       .eq('session_id', sessionId)
       .order('question_id')
 
@@ -132,6 +134,10 @@ export default function TeacherReviewSessionPage() {
             ? r.answer?.toLowerCase() === q.correct_answer?.toLowerCase()
             : null
           const needsManualGrade = q.question_type === 'essay' || (q.question_type === 'short_answer' && q.show_working)
+          const integrityFlags = Array.from(new Set([
+            ...(r.integrity_signals?.answer?.flags || []),
+            ...(r.integrity_signals?.working?.flags || []),
+          ]))
 
           return (
             <div key={r.id} className="card" style={{ borderLeft: `3px solid ${isCorrect === true ? 'var(--success)' : isCorrect === false ? 'var(--danger)' : 'var(--border)'}` }}>
@@ -163,6 +169,21 @@ export default function TeacherReviewSessionPage() {
                   {r.answer || <em style={{ color: 'var(--text-muted)' }}>No answer</em>}
                 </div>
               </div>
+
+              {/* Writing-integrity signals (soft flag, informational only) */}
+              {integrityFlags.length > 0 && (
+                <details style={{ marginBottom: 10, background: 'var(--warning-bg)', border: '1px solid var(--warning)', borderRadius: 8, padding: '8px 12px' }}>
+                  <summary style={{ fontSize: 12, fontWeight: 700, color: 'var(--warning)', cursor: 'pointer' }}>
+                    ⚠ Possible AI-assisted writing — {integrityFlags.length} signal{integrityFlags.length !== 1 ? 's' : ''}
+                  </summary>
+                  <ul style={{ margin: '8px 0 0', paddingLeft: 18, fontSize: 12, color: 'var(--text-secondary)' }}>
+                    {integrityFlags.map((f) => <li key={f}>{INTEGRITY_FLAG_LABELS[f] || f}</li>)}
+                  </ul>
+                  <p style={{ marginTop: 8, marginBottom: 0, fontSize: 11, color: 'var(--text-muted)' }}>
+                    This is a heuristic signal based on how the answer was typed, not proof of misconduct — use your judgment.
+                  </p>
+                </details>
+              )}
 
               {/* Correct answer for MCQ/TF */}
               {q.correct_answer && (
