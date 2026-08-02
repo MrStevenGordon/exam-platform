@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { useState } from 'react'
 
 export default function HomePage() {
-  const [formData, setFormData] = useState({ name: '', school: '', email: '', message: '' })
+  const [formData, setFormData] = useState({ name: '', org: '', email: '', message: '' })
   const [submitted, setSubmitted] = useState(false)
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
@@ -49,11 +49,11 @@ export default function HomePage() {
         <div style={{ display: 'inline-block', background: 'var(--accent-light)', color: 'var(--accent-dark)', fontSize: 11, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', padding: '4px 14px', borderRadius: 20, marginBottom: '1.5rem' }}>
           Smart Exams for Modern Education
         </div>
-        <h1 style={{ fontSize: 52, fontWeight: 800, lineHeight: 1.15, margin: '0 auto 1.25rem', maxWidth: 600, color: 'var(--text-primary)', textTransform: 'none', letterSpacing: -0.5 }}>
-          The smarter way to run exams at your school
+        <h1 style={{ fontSize: 52, fontWeight: 800, lineHeight: 1.15, margin: '0 auto 1.25rem', maxWidth: 640, color: 'var(--text-primary)', textTransform: 'none', letterSpacing: -0.5 }}>
+          The smarter way to run exams and assessments
         </h1>
-        <p style={{ fontSize: 20, color: 'var(--text-secondary)', maxWidth: 540, margin: '0 auto 2.5rem', lineHeight: 1.6 }}>
-          Built for Jamaican schools — from pop quizzes to end-of-year exams, all in one platform — all in one secure platform.
+        <p style={{ fontSize: 20, color: 'var(--text-secondary)', maxWidth: 560, margin: '0 auto 2.5rem', lineHeight: 1.6 }}>
+          One secure platform for schools and organizations across Jamaica — from pop quizzes to full final exams to one-off assessments, built around how you actually work.
         </p>
         <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
           <a href="#contact">
@@ -72,7 +72,6 @@ export default function HomePage() {
         <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: '0.5rem' }}>
           Running a school? <Link href="/build-my-school" style={{ color: 'var(--accent-dark)', fontWeight: 700 }}>Build your school&apos;s setup</Link> and request to join.
         </p>
-        <p style={{ fontSize: 15, fontWeight: 700, color: 'var(--accent-dark)', marginTop: '1rem', letterSpacing: 0.3 }}>Currently serving Manchester High School · Jamaica</p>
       </section>
 
       {/* Stats bar */}
@@ -80,7 +79,7 @@ export default function HomePage() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '1rem', maxWidth: 560, margin: '0 auto', textAlign: 'center' }}>
           {[
             { value: '9', label: 'Exam formats' },
-            { value: '7', label: 'Role-based portals' },
+            { value: '6', label: 'Role-based portals' },
             { value: '0', label: 'Paper needed' },
           ].map((stat) => (
             <div key={stat.label}>
@@ -95,16 +94,18 @@ export default function HomePage() {
       <section id="features" style={{ padding: '5rem 3rem', background: 'var(--page-bg)' }}>
         <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
           <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase', color: 'var(--accent)', marginBottom: '0.5rem' }}>Features</div>
-          <h2 style={{ fontSize: 36, fontWeight: 700, margin: 0, textTransform: 'none', color: 'var(--text-primary)' }}>Everything your school needs</h2>
+          <h2 style={{ fontSize: 36, fontWeight: 700, margin: 0, textTransform: 'none', color: 'var(--text-primary)' }}>Everything you need, however you work</h2>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16, maxWidth: 820, margin: '0 auto' }}>
           {[
-            { icon: '🛡️', title: 'Exam integrity built in', desc: 'Fullscreen lock, tab-switch detection, 3-strike auto-submit, scheduled opening/closing windows, and single-device login during exams.' },
-            { icon: '📝', title: 'Tasks, Tests & Final Exams', desc: 'Flexible take-home tasks, timed proctored tests, and a full Team Lead → Senior Team Lead → Supervisor review pipeline for final exams.' },
-            { icon: '👥', title: 'Seven role-based portals', desc: 'Student, Teacher, Team Lead, Senior Team Lead, Supervisor, School Admin, and System Admin — each sees only what they need.' },
+            { icon: '🛡️', title: 'Exam integrity built in', desc: 'Fullscreen lock, tab-switch detection, single-device login, and a dedicated desktop app with kiosk-mode lockdown during exams.' },
+            { icon: '📝', title: 'Tasks, Tests & Final Exams', desc: 'Flexible take-home tasks, timed proctored tests, and a review pipeline that adapts to your school — from a single sign-off to a full multi-stage chain.' },
+            { icon: '👥', title: 'Role-based portals', desc: 'Student, Teacher, Supervisor, and Administrator portals, each showing only what that person needs — configured to match how your school is actually structured.' },
             { icon: '∑', title: 'Real math notation', desc: 'A proper symbol toolbar for powers, roots, fractions, Greek letters and more — plus image, audio, and video questions.' },
             { icon: '🎯', title: 'Smart grading routing', desc: 'A completed exam finds the right subject teacher automatically, based on class assignment and what they actually teach.' },
             { icon: '✨', title: 'AI-assisted authoring', desc: 'Import questions straight from a PDF exam paper, and polish rough drafts with one click.' },
+            { icon: '💻', title: 'Offline-resilient desktop app', desc: 'Answers autosave locally and sync automatically — built for spotty connections, so a dropped connection never costs a student their work.' },
+            { icon: '🏢', title: 'Built for organizations too', desc: 'Running a single assessment without a full school setup? Publish it with just a code and password — no roster required.' },
           ].map((f) => (
             <div key={f.title} className="card">
               <div style={{ fontSize: 24, marginBottom: '0.75rem' }}>{f.icon}</div>
@@ -119,14 +120,17 @@ export default function HomePage() {
       <section id="how-it-works" style={{ padding: '5rem 3rem', background: 'var(--card-bg)' }}>
         <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
           <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase', color: 'var(--accent)', marginBottom: '0.5rem' }}>How it works</div>
-          <h2 style={{ fontSize: 30, fontWeight: 700, margin: 0, textTransform: 'none', color: 'var(--text-primary)' }}>From question to results in five steps</h2>
+          <h2 style={{ fontSize: 30, fontWeight: 700, margin: 0, textTransform: 'none', color: 'var(--text-primary)' }}>From question to results — your way</h2>
+          <p style={{ fontSize: 15, color: 'var(--text-secondary)', maxWidth: 480, margin: '0.75rem auto 0', lineHeight: 1.6 }}>
+            Every school reviews exams differently. Smart Assess adapts to yours — from a single supervisor sign-off to a full multi-stage review chain.
+          </p>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', maxWidth: 960, margin: '0 auto', border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden' }}>
           {[
-            { step: '1', title: 'Team Lead creates', desc: 'Writes and organizes the exam into sections, collaborating with other team leads on the same grade and subject.' },
-            { step: '2', title: 'Senior Team Lead vets', desc: 'Reviews every section and question for accuracy and fairness before it goes further.' },
+            { step: '1', title: 'Teacher creates', desc: 'Writes and organizes the exam into sections — pulling in questions from a shared bank, or importing straight from a PDF.' },
+            { step: '2', title: 'Reviewed (if needed)', desc: 'Configured per school — anywhere from no review at all to a full department-level vetting chain.' },
             { step: '3', title: 'Supervisor publishes', desc: 'Sets the exam window and assigns it to the right classes — students see nothing until it opens.' },
-            { step: '4', title: 'Student sits exam', desc: 'Enters the access password, answers under full proctoring — fullscreen, timed, monitored.' },
+            { step: '4', title: 'Student sits exam', desc: 'Enters the access password, answers under full proctoring — on the web or the desktop app, fullscreen and monitored.' },
             { step: '5', title: 'Teacher grades & releases', desc: 'Routed automatically to the right subject teacher, who grades and releases results.' },
           ].map((s, i, arr) => (
             <div key={s.step} style={{ padding: '1.5rem', borderRight: i < arr.length - 1 ? '1px solid var(--border)' : 'none', textAlign: 'center' }}>
@@ -167,24 +171,24 @@ export default function HomePage() {
       <section id="contact" style={{ padding: '5rem 3rem', background: 'var(--card-bg)' }}>
         <div style={{ maxWidth: 480, margin: '0 auto', textAlign: 'center' }}>
           <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase', color: 'var(--accent)', marginBottom: '0.5rem' }}>Contact</div>
-          <h2 style={{ fontSize: 36, fontWeight: 700, margin: '0 0 0.75rem', textTransform: 'none', color: 'var(--text-primary)' }}>Interested in Smart Assess for your school?</h2>
+          <h2 style={{ fontSize: 36, fontWeight: 700, margin: '0 0 0.75rem', textTransform: 'none', color: 'var(--text-primary)' }}>Interested in Smart Assess?</h2>
           <p style={{ fontSize: 17, color: 'var(--text-secondary)', margin: '0 0 2rem', lineHeight: 1.6 }}>
-            Send us a message and we'll get back to you within one business day.
+            Send us a message and we&apos;ll get back to you within one business day.
           </p>
 
           {submitted ? (
             <div className="card" style={{ background: 'var(--success-bg)', textAlign: 'center', padding: '2rem' }}>
               <div style={{ fontSize: 32, marginBottom: 12 }}>✅</div>
               <h3 style={{ color: 'var(--success)', textTransform: 'none', marginBottom: 8 }}>Message received!</h3>
-              <p style={{ color: 'var(--text-secondary)', fontSize: 14 }}>We'll be in touch within one business day.</p>
+              <p style={{ color: 'var(--text-secondary)', fontSize: 14 }}>We&apos;ll be in touch within one business day.</p>
             </div>
           ) : (
             <div className="card" style={{ textAlign: 'left' }}>
               <form onSubmit={handleSubmit}>
                 {[
-                  { name: 'name', label: 'Full name', placeholder: 'Principal Janet Brown', type: 'text' },
-                  { name: 'school', label: 'School name', placeholder: 'Manchester High School', type: 'text' },
-                  { name: 'email', label: 'Email address', placeholder: 'principal@school.edu.jm', type: 'email' },
+                  { name: 'name', label: 'Full name', placeholder: 'Jane Brown', type: 'text' },
+                  { name: 'org', label: 'School / Organization name', placeholder: 'e.g. Green Valley Academy', type: 'text' },
+                  { name: 'email', label: 'Email address', placeholder: 'you@example.edu.jm', type: 'email' },
                 ].map((field) => (
                   <div key={field.name} style={{ marginBottom: 14 }}>
                     <label style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, color: 'var(--text-secondary)', display: 'block', marginBottom: 6 }}>
@@ -210,7 +214,7 @@ export default function HomePage() {
                     value={formData.message}
                     onChange={handleChange}
                     rows={4}
-                    placeholder="Tell us about your school and what you're looking for…"
+                    placeholder="Tell us about your school or organization and what you're looking for…"
                     required
                     style={{ width: '100%' }}
                   />
