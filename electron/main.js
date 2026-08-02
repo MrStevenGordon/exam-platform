@@ -130,7 +130,13 @@ function checkForUpdates() {
       buttons: ['Restart now', 'Later'],
       defaultId: 0,
     }).then(({ response }) => {
-      if (response === 0) autoUpdater.quitAndInstall()
+      if (response !== 0) return
+      // Explicitly close every window first — leaving that to the default
+      // quit behavior can race with the installer's own "is this app still
+      // running" check on Windows, especially with Electron's extra
+      // helper processes (GPU, renderer) not always released in time.
+      BrowserWindow.getAllWindows().forEach((win) => win.destroy())
+      autoUpdater.quitAndInstall()
     })
   })
   autoUpdater.on('error', (err) => {
