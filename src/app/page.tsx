@@ -32,6 +32,11 @@ export default function HomePage() {
           <a href="#features" style={{ fontSize: 13, color: 'var(--text-secondary)', textDecoration: 'none', padding: '6px 10px' }}>Features</a>
           <a href="#how-it-works" style={{ fontSize: 13, color: 'var(--text-secondary)', textDecoration: 'none', padding: '6px 10px' }}>How it works</a>
           <a href="#contact" style={{ fontSize: 13, color: 'var(--text-secondary)', textDecoration: 'none', padding: '6px 10px' }}>Contact</a>
+          <Link href="/build-my-school" style={{ fontSize: 13, color: 'var(--text-secondary)', textDecoration: 'none', padding: '6px 10px' }}>Build My School</Link>
+          <Link href="/org/signup" style={{ fontSize: 13, color: 'var(--text-secondary)', textDecoration: 'none', padding: '6px 10px' }}>For Organizations</Link>
+          <Link href="/take-exam">
+            <button className="btn btn-secondary" style={{ marginLeft: 8 }}>Take an Exam</button>
+          </Link>
           <Link href="/login">
             <button className="btn btn-primary" style={{ marginLeft: 8 }}>Log in</button>
           </Link>
@@ -56,7 +61,16 @@ export default function HomePage() {
           <Link href="/login">
             <button className="btn btn-secondary" style={{ fontSize: 15, padding: '14px 32px' }}>Log in</button>
           </Link>
+          <Link href="/take-exam">
+            <button className="btn btn-secondary" style={{ fontSize: 15, padding: '14px 32px' }}>Take an Exam</button>
+          </Link>
         </div>
+        <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: '1.25rem' }}>
+          Organization running a one-off assessment? <Link href="/org/signup" style={{ color: 'var(--accent-dark)', fontWeight: 700 }}>Sign up here</Link> — no roster setup needed.
+        </p>
+        <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: '0.5rem' }}>
+          Running a school? <Link href="/build-my-school" style={{ color: 'var(--accent-dark)', fontWeight: 700 }}>Build your school&apos;s setup</Link> and request to join.
+        </p>
         <p style={{ fontSize: 15, fontWeight: 700, color: 'var(--accent-dark)', marginTop: '1rem', letterSpacing: 0.3 }}>Currently serving Manchester High School · Jamaica</p>
       </section>
 

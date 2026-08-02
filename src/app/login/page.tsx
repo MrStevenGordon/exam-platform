@@ -10,15 +10,27 @@ const ROLE_OPTIONS = [
   { value: 'student', label: 'Student' },
   { value: 'teacher', label: 'Teacher' },
   { value: 'supervisor', label: 'Supervisor / HOD' },
-  { value: 'system_admin', label: 'System Admin' },
-  { value: 'admin', label: 'Administrator' },
+  { value: 'school_admin', label: 'School Admin' },
+  { value: 'owner', label: 'Administrator' },
 ]
+
+// 'owner' isn't a profiles.role value at all — it's the is_system_admin
+// flag, handled as its own branch below (see isOwner). Every other
+// selection maps to a real role value; 'school_admin' is a friendlier label
+// for role='admin' (a single school's own admin — departments/staff/
+// students), which is distinct from the platform owner.
+const SELECTION_TO_ROLE: Record<string, string> = {
+  student: 'student',
+  teacher: 'teacher',
+  supervisor: 'supervisor',
+  school_admin: 'admin',
+}
 
 const ROLE_REDIRECTS: Record<string, string> = {
   student: '/student',
   teacher: '/teacher',
   supervisor: '/supervisor',
-  admin: '/dashboard',
+  admin: '/school-admin',
 }
 
 export default function LoginPage() {
@@ -118,27 +130,28 @@ export default function LoginPage() {
       return
     }
 
-    // System admin check — is_system_admin flag overrides role for login
-    const isSystemAdmin = profile.is_system_admin === true
-    const selectedSystemAdmin = selectedRole === 'system_admin'
+    // Owner check — is_system_admin is the platform-owner flag, entirely
+    // separate from any school's own role='admin' staff.
+    const isOwner = profile.is_system_admin === true
+    const selectedOwner = selectedRole === 'owner'
 
-    if (isSystemAdmin && !selectedSystemAdmin) {
-      setError('Please select "System Admin" and try again.')
+    if (isOwner && !selectedOwner) {
+      setError('Please select "Administrator" and try again.')
       await supabase.auth.signOut()
       setLoading(false)
       return
     }
 
-    if (!isSystemAdmin && selectedSystemAdmin) {
-      setError('This account is not a system administrator.')
+    if (!isOwner && selectedOwner) {
+      setError('This account is not an administrator.')
       await supabase.auth.signOut()
       setLoading(false)
       return
     }
 
-    if (!isSystemAdmin && profile.role !== selectedRole) {
-      const correctLabel = profile.role === 'supervisor' ? 'Supervisor / HOD' :
-        profile.role.charAt(0).toUpperCase() + profile.role.slice(1)
+    if (!isOwner && profile.role !== SELECTION_TO_ROLE[selectedRole]) {
+      const correctSelection = Object.keys(SELECTION_TO_ROLE).find((key) => SELECTION_TO_ROLE[key] === profile.role)
+      const correctLabel = ROLE_OPTIONS.find((r) => r.value === correctSelection)?.label || profile.role
       setError(`Incorrect role selected. Please select "${correctLabel}" and try again.`)
       await supabase.auth.signOut()
       setLoading(false)
@@ -195,15 +208,16 @@ export default function LoginPage() {
       }
     }
 
-    // System admin goes to school-admin portal
+    // Platform owner goes to the owner portal — separate from every school's
+    // own admin, which is handled by ROLE_REDIRECTS.admin below instead.
     if (profile.is_system_admin) {
       if (password === 'Staff.Default1' || password === 'Student.Test') {
         router.push('/change-password?first=true')
         return
       }
-      const mfaRedirect = await getMfaRedirect('system_admin')
+      const mfaRedirect = await getMfaRedirect('owner')
       if (mfaRedirect) { router.push(mfaRedirect); return }
-      router.push('/school-admin')
+      router.push('/owner')
       return
     }
 

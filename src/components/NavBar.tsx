@@ -10,7 +10,7 @@ export default function NavBar() {
   const pathname = usePathname()
   const [name, setName] = useState('')
   const [role, setRole] = useState('')
-  const portalPrefixes = ['/student', '/teacher', '/supervisor', '/dashboard', '/school-admin']
+  const portalPrefixes = ['/student', '/teacher', '/supervisor', '/dashboard', '/school-admin', '/org', '/owner', '/school-setup', '/take-exam', '/build-my-school']
   const shouldHideForPortal = portalPrefixes.some((p) => pathname.startsWith(p))
   const shouldHide = ['/login', '/'].includes(pathname) || shouldHideForPortal
 
