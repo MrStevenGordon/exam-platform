@@ -52,10 +52,11 @@ export default function ImportPDFPage() {
       const base64 = (e.target?.result as string).split(',')[1]
 
       try {
+        const { data: { session } } = await supabase.auth.getSession()
         const res = await fetch('/api/import-pdf-exam', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ pdfBase64: base64 }),
+          body: JSON.stringify({ pdfBase64: base64, accessToken: session?.access_token }),
         })
 
         const data = await res.json()

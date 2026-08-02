@@ -72,6 +72,7 @@ export default function AddQuestionPage() {
     setPolishError('')
 
     try {
+      const { data: { session } } = await supabase.auth.getSession()
       const res = await fetch('/api/polish-question', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -79,6 +80,7 @@ export default function AddQuestionPage() {
           questionType,
           questionText,
           options: questionType === 'multiple_choice' ? options : undefined,
+          accessToken: session?.access_token,
         }),
       })
       const data = await res.json()
