@@ -79,10 +79,11 @@ export default function StudentsPage() {
 
   async function handleResetStudentPassword(studentId: string, name: string) {
     if (!confirm(`Reset ${name}'s password to "Student.Test"?`)) return
+    const { data: { session } } = await supabase.auth.getSession()
     const res = await fetch('/api/create-user', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ type: 'reset-password', data: { user_id: studentId, password: 'Student.Test' } })
+      body: JSON.stringify({ type: 'reset-password', data: { user_id: studentId, password: 'Student.Test' }, accessToken: session?.access_token })
     })
     const result = await res.json()
     if (result.error) alert('Error: ' + result.error)
@@ -99,11 +100,12 @@ export default function StudentsPage() {
     let success = 0
     let failed = 0
     const errors: string[] = []
+    const { data: { session } } = await supabase.auth.getSession()
     for (const s of students) {
       const res = await fetch('/api/create-user', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: 'reset-password', data: { user_id: s.id, password: 'Student.Test' } })
+        body: JSON.stringify({ type: 'reset-password', data: { user_id: s.id, password: 'Student.Test' }, accessToken: session?.access_token })
       })
       const result = await res.json()
       if (result.error) {
@@ -154,6 +156,7 @@ export default function StudentsPage() {
     const { data: classGroups } = await supabase.from('class_groups').select('id, name')
     const classGroupMap: Record<string, string> = {}
     ;(classGroups || []).forEach((cg) => { classGroupMap[cg.name] = cg.id })
+    const { data: { session } } = await supabase.auth.getSession()
 
     for (const row of rows) {
       const fullName = [row.first_name, row.middle_name, row.last_name].filter(Boolean).join(' ')
@@ -163,7 +166,7 @@ export default function StudentsPage() {
         const res = await fetch('/api/create-user', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ type: 'student', data: row }),
+          body: JSON.stringify({ type: 'student', data: row, accessToken: session?.access_token }),
         })
         const result = await res.json()
         console.log('Create user result:', res.status, JSON.stringify(result))

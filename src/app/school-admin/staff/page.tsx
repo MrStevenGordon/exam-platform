@@ -65,10 +65,11 @@ export default function StaffPage() {
   async function handleResetPassword(userId: string, name: string, isStudent: boolean) {
     const defaultPw = isStudent ? 'Student.Test' : 'Staff.Default1'
     if (!confirm(`Reset ${name}'s password to "${defaultPw}"?`)) return
+    const { data: { session } } = await supabase.auth.getSession()
     const res = await fetch('/api/create-user', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ type: 'reset-password', data: { user_id: userId, password: defaultPw } })
+      body: JSON.stringify({ type: 'reset-password', data: { user_id: userId, password: defaultPw }, accessToken: session?.access_token })
     })
     const result = await res.json()
     if (result.error) alert('Error: ' + result.error)
@@ -85,11 +86,12 @@ export default function StaffPage() {
     let success = 0
     let failed = 0
     const errors: string[] = []
+    const { data: { session } } = await supabase.auth.getSession()
     for (const s of staff) {
       const res = await fetch('/api/create-user', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: 'reset-password', data: { user_id: s.id, password: 'Staff.Default1' } })
+        body: JSON.stringify({ type: 'reset-password', data: { user_id: s.id, password: 'Staff.Default1' }, accessToken: session?.access_token })
       })
       const result = await res.json()
       if (result.error) {
@@ -113,6 +115,7 @@ export default function StaffPage() {
     const fullName = `${newFirstName.trim()} ${newLastName.trim()}`
     const password = 'Staff.Default1'
 
+    const { data: { session } } = await supabase.auth.getSession()
     const res = await fetch('/api/create-user', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -125,7 +128,8 @@ export default function StaffPage() {
           role: newRole,
           department_id: newDept || null,
           subjects: Array.from(selectedSubjects).join(';'),
-        }
+        },
+        accessToken: session?.access_token,
       }),
     })
 
@@ -167,6 +171,7 @@ export default function StaffPage() {
     // Always reload departments fresh before processing
     const { data: freshDepts } = await supabase.from('departments').select('id, name')
     const deptList = freshDepts || departments
+    const { data: { session } } = await supabase.auth.getSession()
 
     const results = []
     setCsvProgress({ done: 0, total: rows.length })
@@ -185,7 +190,8 @@ export default function StaffPage() {
               role: row.role || 'teacher',
               department_id: deptMatch?.id || null,
               subjects: row.subjects || '',
-            }
+            },
+            accessToken: session?.access_token,
           }),
         })
         const result = await res.json()

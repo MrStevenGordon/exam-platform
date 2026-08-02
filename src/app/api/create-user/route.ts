@@ -12,7 +12,43 @@ const CLASS_TO_GRADE: Record<string, number> = {
 
 export async function POST(req: NextRequest) {
   try {
-    const { type, data } = await req.json()
+    const { type, data, accessToken } = await req.json()
+
+    // This route uses the service-role key and bypasses RLS entirely —
+    // creating accounts (with a well-known default password) and
+    // resetting arbitrary passwords. It was previously reachable with no
+    // auth check at all; re-derive the caller's identity from their own
+    // token rather than trusting anything client-supplied, same boundary
+    // verifySystemAdmin() enforces for owner-only routes.
+    if (!accessToken) {
+      return NextResponse.json({ error: 'Not authenticated.' }, { status: 401 })
+    }
+    const { data: callerData, error: callerError } = await supabaseAdmin.auth.getUser(accessToken)
+    if (callerError || !callerData.user) {
+      return NextResponse.json({ error: 'Invalid session.' }, { status: 401 })
+    }
+    const { data: callerProfile } = await supabaseAdmin
+      .from('profiles')
+      .select('role, is_active')
+      .eq('id', callerData.user.id)
+      .single()
+    if (!callerProfile || callerProfile.role !== 'admin' || callerProfile.is_active === false) {
+      return NextResponse.json({ error: 'Not authorized.' }, { status: 403 })
+    }
+
+    if (type === 'reset-password') {
+      // A school admin must never be able to reset the platform owner's
+      // password — is_system_admin is a separate, higher-privilege flag
+      // that role='admin' alone doesn't grant.
+      const { data: targetProfile } = await supabaseAdmin
+        .from('profiles')
+        .select('is_system_admin')
+        .eq('id', data?.user_id)
+        .single()
+      if (targetProfile?.is_system_admin) {
+        return NextResponse.json({ error: 'Not authorized.' }, { status: 403 })
+      }
+    }
 
     if (type === 'student') {
       const { first_name, middle_name, last_name, student_id, class_id, birth_date, gender, birth_year } = data
