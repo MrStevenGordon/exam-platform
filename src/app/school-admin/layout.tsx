@@ -15,6 +15,7 @@ const SCHOOL_ADMIN_NAV = [
   { label: 'Password requests', icon: 'ti-key', href: '/school-admin/password-requests' },
   { label: 'Analytics', icon: 'ti-chart-bar', href: '/school-admin/analytics' },
   { label: 'Activity', icon: 'ti-activity', href: '/school-admin/activity' },
+  { label: 'Year Promotion', icon: 'ti-arrow-up-circle', href: '/dashboard' },
   { label: 'Settings', icon: 'ti-settings', href: '/school-admin/settings' },
   { label: 'My Profile', icon: 'ti-user', href: '/school-admin/profile' },
 ]
