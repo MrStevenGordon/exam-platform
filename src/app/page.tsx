@@ -34,6 +34,7 @@ export default function HomePage() {
           <a href="#contact" style={{ fontSize: 13, color: 'var(--text-secondary)', textDecoration: 'none', padding: '6px 10px' }}>Contact</a>
           <Link href="/build-my-school" style={{ fontSize: 13, color: 'var(--text-secondary)', textDecoration: 'none', padding: '6px 10px' }}>Build My School</Link>
           <Link href="/org/signup" style={{ fontSize: 13, color: 'var(--text-secondary)', textDecoration: 'none', padding: '6px 10px' }}>For Organizations</Link>
+          <Link href="/download" style={{ fontSize: 13, color: 'var(--text-secondary)', textDecoration: 'none', padding: '6px 10px' }}>Download App</Link>
           <Link href="/take-exam">
             <button className="btn btn-secondary" style={{ marginLeft: 8 }}>Take an Exam</button>
           </Link>

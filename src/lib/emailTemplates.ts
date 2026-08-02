@@ -54,6 +54,22 @@ export function licenseKeyEmail(orgName: string, licenseKey: string, planLabel: 
   }
 }
 
+export function schoolLicenseKeyEmail(schoolName: string, licenseKey: string, planLabel: string, periodEnd: string, downloadUrl: string) {
+  return {
+    subject: `${schoolName}'s Smart Assess subscription is active`,
+    html: wrapper(`
+      <p>Hi ${schoolName},</p>
+      <p>Thanks for your payment — your Smart Assess subscription (${planLabel}) is now active through ${new Date(periodEnd).toLocaleDateString()}.</p>
+      <table style="margin: 16px 0; font-size: 14px;">
+        <tr><td style="padding: 4px 12px 4px 0; color: #7A6A5A;">License key</td><td><strong>${licenseKey}</strong></td></tr>
+      </table>
+      <p>Download the Smart Assess desktop app and enter this key when prompted to activate it:</p>
+      <p style="margin: 20px 0;"><a href="${downloadUrl}" style="display: inline-block; background: #D4762A; color: white; padding: 10px 20px; border-radius: 6px; text-decoration: none; font-weight: 700;">Download Smart Assess</a></p>
+      <p style="font-size: 12px; color: #7A6A5A;">Keep this key for your records — you'll only need to enter it once per computer.</p>
+    `),
+  }
+}
+
 export function credentialsEmail(schoolName: string, contactName: string, setupLink: string) {
   return {
     subject: `${schoolName}'s Smart Assess portal is ready`,

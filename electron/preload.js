@@ -1,5 +1,10 @@
-// No privileged APIs exposed yet — the app is a thin wrapper around the
-// hosted site, which only needs standard browser APIs (already available in
-// the renderer) for the offline-resilience features (IndexedDB, the online/
-// offline events) to work. Add exposeInMainWorld() bindings here if a future
-// feature needs real OS-level access.
+const { contextBridge, ipcRenderer } = require('electron')
+
+// Only used by activation.html to check a license key with the main process
+// (which makes the actual network call — a file:// page calling a JSON API
+// directly runs into CORS preflight issues that the main process avoids
+// entirely). The regular hosted site loaded after activation only needs
+// standard browser APIs, already available in the renderer.
+contextBridge.exposeInMainWorld('electronAPI', {
+  verifyLicense: (licenseKey) => ipcRenderer.invoke('license:verify', licenseKey),
+})
