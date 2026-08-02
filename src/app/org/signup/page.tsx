@@ -4,12 +4,15 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
+import TurnstileWidget from '@/components/TurnstileWidget'
 
 export default function OrgSignupPage() {
   const router = useRouter()
   const [name, setName] = useState('')
   const [contactEmail, setContactEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [website, setWebsite] = useState('') // honeypot — real users never see or fill this
+  const [turnstileToken, setTurnstileToken] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
@@ -21,6 +24,18 @@ export default function OrgSignupPage() {
       return
     }
     setLoading(true)
+
+    const guardRes = await fetch('/api/verify-signup-guard', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ honeypot: website, turnstileToken }),
+    })
+    if (!guardRes.ok) {
+      const guardData = await guardRes.json()
+      setError(guardData.error || 'Verification failed. Please try again.')
+      setLoading(false)
+      return
+    }
 
     const { data, error: authError } = await supabase.auth.signUp({ email: contactEmail, password })
     if (authError || !data.user) {
@@ -110,6 +125,23 @@ export default function OrgSignupPage() {
               style={{ width: '100%', marginTop: 6 }}
             />
           </div>
+
+          {/* Honeypot — visually hidden from real users, but a naive bot that
+              autofills every field will fill this one and get silently rejected. */}
+          <div style={{ position: 'absolute', left: '-9999px', width: 1, height: 1, overflow: 'hidden' }} aria-hidden="true">
+            <label htmlFor="website">Website</label>
+            <input
+              type="text"
+              id="website"
+              name="website"
+              value={website}
+              onChange={(e) => setWebsite(e.target.value)}
+              tabIndex={-1}
+              autoComplete="off"
+            />
+          </div>
+
+          <TurnstileWidget onToken={setTurnstileToken} />
 
           {error && (
             <div className="banner banner-danger" style={{ marginBottom: 16, fontSize: 13 }}>
