@@ -1,6 +1,6 @@
 {
   "name": "exam-platform",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "private": true,
   "main": "electron/main.js",
   "scripts": {
@@ -51,10 +51,12 @@
       "electron/**/*"
     ],
     "mac": {
-      "target": "dmg"
+      "target": "dmg",
+      "artifactName": "SmartAssess-${version}.${ext}"
     },
     "win": {
-      "target": "nsis"
+      "target": "nsis",
+      "artifactName": "SmartAssess-Setup-${version}.${ext}"
     },
     "publish": {
       "provider": "github",
