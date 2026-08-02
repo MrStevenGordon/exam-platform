@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import { getSchoolFeatures, SchoolFeatures } from '@/lib/schoolFeatures'
 
 type Teacher = {
   id: string
@@ -55,12 +56,15 @@ export default function AppointmentsPage() {
   const [stlGrade, setStlGrade] = useState('')
   const [showSTLForm, setShowSTLForm] = useState(false)
   const [deptSubjects, setDeptSubjects] = useState<string[]>([])
+  const [features, setFeatures] = useState<SchoolFeatures | null>(null)
 
   useEffect(() => { loadData() }, [])
 
   async function loadData() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { router.push('/login'); return }
+
+    setFeatures(await getSchoolFeatures())
 
     const { data: profile } = await supabase
       .from('profiles')
@@ -187,6 +191,7 @@ export default function AppointmentsPage() {
       {errorMsg && <div className="banner banner-danger" style={{ marginBottom: 16 }}>{errorMsg}</div>}
 
       {/* Team Leads */}
+      {features?.teamLeadsEnabled && (
       <div className="card" style={{ marginBottom: 20 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
           <div>
@@ -257,8 +262,10 @@ export default function AppointmentsPage() {
           ))}
         </div>
       </div>
+      )}
 
       {/* Senior Team Leads */}
+      {features?.seniorTeamLeadsEnabled && (
       <div className="card">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
           <div>
@@ -333,6 +340,7 @@ export default function AppointmentsPage() {
           ))}
         </div>
       </div>
+      )}
     </div>
   )
 }

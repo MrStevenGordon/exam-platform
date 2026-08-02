@@ -7,6 +7,7 @@ import { supabase } from '@/lib/supabase'
 
 const OWNER_NAV = [
   { label: 'School requests', href: '/owner/school-requests' },
+  { label: 'Configure school tools', href: '/owner/school-features' },
   { label: 'School subscriptions', href: '/owner/school-subscriptions' },
   { label: 'Org subscriptions & payments', href: '/owner/organization-payments' },
 ]

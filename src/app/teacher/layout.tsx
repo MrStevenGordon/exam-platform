@@ -6,6 +6,7 @@ import Sidebar from '@/components/Sidebar'
 import { supabase } from '@/lib/supabase'
 import { getMfaRedirect } from '@/lib/mfaCheck'
 import { verifyPortalRole } from '@/lib/verifyPortalRole'
+import { getSchoolFeatures } from '@/lib/schoolFeatures'
 
 const BASE_NAV = [
   { label: 'Home', icon: 'ti-home', href: '/teacher' },
@@ -47,23 +48,29 @@ export default function TeacherLayout({ children }: { children: React.ReactNode 
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
 
+      const features = await getSchoolFeatures()
+
       let tlData: any[] | null = null
       let stlData: any[] | null = null
 
-      try {
-        const res = await supabase.from('team_lead_appointments').select('id').eq('teacher_id', user.id).limit(1)
-        if (res.error) console.error('team_lead_appointments check failed:', res.error)
-        tlData = res.data
-      } catch (e) {
-        console.error('team_lead_appointments check threw:', e)
+      if (features.teamLeadsEnabled) {
+        try {
+          const res = await supabase.from('team_lead_appointments').select('id').eq('teacher_id', user.id).limit(1)
+          if (res.error) console.error('team_lead_appointments check failed:', res.error)
+          tlData = res.data
+        } catch (e) {
+          console.error('team_lead_appointments check threw:', e)
+        }
       }
 
-      try {
-        const res = await supabase.from('senior_team_lead_appointments').select('id').eq('teacher_id', user.id).limit(1)
-        if (res.error) console.error('senior_team_lead_appointments check failed:', res.error)
-        stlData = res.data
-      } catch (e) {
-        console.error('senior_team_lead_appointments check threw:', e)
+      if (features.seniorTeamLeadsEnabled) {
+        try {
+          const res = await supabase.from('senior_team_lead_appointments').select('id').eq('teacher_id', user.id).limit(1)
+          if (res.error) console.error('senior_team_lead_appointments check failed:', res.error)
+          stlData = res.data
+        } catch (e) {
+          console.error('senior_team_lead_appointments check threw:', e)
+        }
       }
 
       const nav = [...BASE_NAV]

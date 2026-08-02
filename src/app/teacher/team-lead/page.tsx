@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
+import { getSchoolFeatures, SchoolFeatures } from '@/lib/schoolFeatures'
 
 type TeamLeadAppointment = {
   id: string
@@ -59,12 +60,17 @@ export default function TeamLeadPage() {
   const [duration, setDuration] = useState(60)
   const [instructions, setInstructions] = useState('')
   const [questionsPerPage, setQuestionsPerPage] = useState(10)
+  const [features, setFeatures] = useState<SchoolFeatures | null>(null)
 
   useEffect(() => { loadData() }, [])
 
   async function loadData() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { router.push('/login'); return }
+
+    const schoolFeatures = await getSchoolFeatures()
+    if (!schoolFeatures.teamLeadsEnabled) { router.push('/teacher'); return }
+    setFeatures(schoolFeatures)
 
     const { data: apptData } = await supabase
       .from('team_lead_appointments')
@@ -192,7 +198,7 @@ export default function TeamLeadPage() {
           <div style={{ marginBottom: 12 }}>
             <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Exam type</label>
             <div style={{ display: 'flex', gap: 8, marginTop: 6, flexWrap: 'wrap' }}>
-              {EXAM_KINDS.filter((k) => !term || availableKinds.includes(k.value)).map((k) => (
+              {EXAM_KINDS.filter((k) => (!term || availableKinds.includes(k.value)) && (!features || features.examCategories.includes(k.value as any))).map((k) => (
                 <button
                   key={k.value}
                   type="button"

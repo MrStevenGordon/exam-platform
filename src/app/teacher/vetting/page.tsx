@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
+import { getSchoolFeatures } from '@/lib/schoolFeatures'
 
 type DraftExam = {
   id: string
@@ -26,6 +27,9 @@ export default function VettingPage() {
     async function load() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.push('/login'); return }
+
+      const features = await getSchoolFeatures()
+      if (!features.seniorTeamLeadsEnabled) { router.push('/teacher'); return }
 
       // Check if this teacher is a senior team lead
       const { data: stlData } = await supabase
