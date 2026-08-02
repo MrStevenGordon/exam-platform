@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
+import { releaseDeviceLock } from '@/lib/studentDeviceLock'
 
 type NavItem = { label: string; icon: string; href: string }
 type SidebarProps = { navItems: NavItem[]; portalLabel: string }
@@ -36,6 +37,10 @@ export default function Sidebar({ navItems, portalLabel }: SidebarProps) {
   }, [])
 
   async function handleLogout() {
+    if (profile?.role === 'student') {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) await releaseDeviceLock(user.id)
+    }
     await supabase.auth.signOut()
     router.push('/login')
   }

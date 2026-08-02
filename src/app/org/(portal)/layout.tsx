@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import PageTransition from '@/components/PageTransition'
+import InactivityLogout from '@/components/InactivityLogout'
 
 export default function OrgPortalLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
@@ -28,6 +29,7 @@ export default function OrgPortalLayout({ children }: { children: React.ReactNod
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--page-bg)' }}>
+      <InactivityLogout />
       <div style={{
         background: '#FDF6EC',
         borderBottom: '1px solid var(--border)',

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import Sidebar from '@/components/Sidebar'
 import PageTransition from '@/components/PageTransition'
+import InactivityLogout from '@/components/InactivityLogout'
 import { verifyPortalRole } from '@/lib/verifyPortalRole'
 
 const STUDENT_NAV = [
@@ -39,6 +40,7 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
 
   return (
     <div className="portal-layout" style={{ minHeight: "100vh" }}>
+      <InactivityLogout />
       <main className="portal-content"><PageTransition>{children}</PageTransition></main>
       <Sidebar navItems={STUDENT_NAV} portalLabel="Student Portal" />
     </div>

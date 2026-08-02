@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Sidebar from '@/components/Sidebar'
 import PageTransition from '@/components/PageTransition'
+import InactivityLogout from '@/components/InactivityLogout'
 import { getMfaRedirect } from '@/lib/mfaCheck'
 import { verifyPortalRole } from '@/lib/verifyPortalRole'
 
@@ -40,6 +41,7 @@ export default function SupervisorLayout({ children }: { children: React.ReactNo
 
   return (
     <div className="portal-layout" style={{ minHeight: "100vh" }}>
+      <InactivityLogout />
       <main className="portal-content"><PageTransition>{children}</PageTransition></main>
       <Sidebar navItems={SUPERVISOR_NAV} portalLabel="Supervisor Portal" />
     </div>

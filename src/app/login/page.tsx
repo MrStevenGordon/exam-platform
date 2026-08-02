@@ -44,10 +44,15 @@ export default function LoginPage() {
   const [mfaFactorId, setMfaFactorId] = useState('')
   const [mfaCode, setMfaCode] = useState('')
   const [desktopVersion, setDesktopVersion] = useState('')
+  const [inactivityNotice, setInactivityNotice] = useState(false)
 
   useEffect(() => {
     const electronAPI = (window as unknown as { electronAPI?: { getAppVersion: () => Promise<string> } }).electronAPI
     if (electronAPI) electronAPI.getAppVersion().then(setDesktopVersion).catch(() => {})
+
+    if (new URLSearchParams(window.location.search).get('reason') === 'inactivity') {
+      setInactivityNotice(true)
+    }
   }, [])
 
   async function handleLogin(e: React.FormEvent) {
@@ -219,54 +224,30 @@ export default function LoginPage() {
       return
     }
 
-    // Students: while a TEST or FINAL exam is in progress, only one device
-    // may be logged in at a time. Homework/Assignment are deliberately
-    // excluded — they're untimed, take-home work, so a session left open
-    // overnight shouldn't block login the next day for an unrelated exam.
+    // Students may only be logged in on one device at a time, always — not
+    // just during an active exam. The lock is released on explicit logout
+    // and on inactivity auto-logout (see releaseDeviceLock), so this binds
+    // "one active session," not "one device forever."
     if (profile.role === 'student') {
-      const { data: draftSessions } = await supabase
-        .from('exam_sessions')
-        .select('id, draft_exams(exam_kind)')
-        .eq('student_id', userId)
-        .eq('status', 'in_progress')
-        .not('draft_exam_id', 'is', null)
-
-      const { data: finalSessions } = await supabase
-        .from('exam_sessions')
-        .select('id')
-        .eq('student_id', userId)
-        .eq('status', 'in_progress')
-        .not('final_exam_id', 'is', null)
-
-      const lockingDraftSessions = (draftSessions || []).filter((s: any) => {
-        const kind = s.draft_exams?.exam_kind
-        return kind !== 'homework' && kind !== 'assignment'
-      })
-      const activeSessions = [...lockingDraftSessions, ...(finalSessions || [])]
-
       const { data: lockProfile } = await supabase
         .from('profiles')
         .select('active_login_token')
         .eq('id', userId)
         .single()
 
-      if (activeSessions && activeSessions.length > 0) {
-        const myToken = localStorage.getItem(`exam_lock_${userId}`)
-        const dbToken = lockProfile?.active_login_token
+      const myToken = localStorage.getItem(`device_lock_${userId}`)
+      const dbToken = lockProfile?.active_login_token
 
-        if (dbToken && dbToken !== myToken) {
-          setError('You appear to already be logged in on another device with an exam in progress. Ask your school admin to release your session if this isn\'t you.')
-          await supabase.auth.signOut()
-          setLoading(false)
-          return
-        }
-
-        const newToken = dbToken || crypto.randomUUID()
-        localStorage.setItem(`exam_lock_${userId}`, newToken)
-        await supabase.from('profiles').update({ active_login_token: newToken, active_login_started_at: new Date().toISOString() }).eq('id', userId)
-      } else if (lockProfile?.active_login_token) {
-        await supabase.from('profiles').update({ active_login_token: null, active_login_started_at: null }).eq('id', userId)
+      if (dbToken && dbToken !== myToken) {
+        setError('This account is already logged in on another device. Log out there first, or ask your school admin to release your session if this isn\'t you.')
+        await supabase.auth.signOut()
+        setLoading(false)
+        return
       }
+
+      const newToken = dbToken || crypto.randomUUID()
+      localStorage.setItem(`device_lock_${userId}`, newToken)
+      await supabase.from('profiles').update({ active_login_token: newToken, active_login_started_at: new Date().toISOString() }).eq('id', userId)
     }
 
     // Platform owner goes to the owner portal — separate from every school's
@@ -318,6 +299,12 @@ export default function LoginPage() {
         <p style={{ color: 'var(--text-secondary)', fontSize: 13, marginBottom: 24 }}>
           Sign in to your portal
         </p>
+
+        {inactivityNotice && (
+          <div className="banner banner-warning" style={{ marginBottom: 16, fontSize: 13 }}>
+            You were signed out after 5 minutes of inactivity.
+          </div>
+        )}
 
         {mfaRequired ? (
           <form onSubmit={handleVerifyMfa}>

@@ -5,6 +5,7 @@ import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import PageTransition from '@/components/PageTransition'
+import InactivityLogout from '@/components/InactivityLogout'
 
 const OWNER_NAV = [
   { label: 'School requests', href: '/owner/school-requests' },
@@ -44,6 +45,7 @@ export default function OwnerLayout({ children }: { children: React.ReactNode })
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--page-bg)' }}>
+      <InactivityLogout />
       <div style={{
         background: '#1A0E06',
         padding: '14px 24px',
