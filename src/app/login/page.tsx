@@ -63,6 +63,17 @@ export default function LoginPage() {
       return
     }
 
+    // Verify the account/role/subscription BEFORE ever prompting for an
+    // MFA code — previously this only ran after MFA verification
+    // succeeded, so a wrong-role selection (e.g. a real admin picking
+    // "Teacher") still walked the person through entering their
+    // authenticator code before telling them anything was wrong. Someone
+    // who already has valid credentials for an account isn't gaining any
+    // new access this way, but there's no reason to make them go through
+    // MFA just to be told they picked the wrong option.
+    const ok = await verifyAccountAccess(data.user.id)
+    if (!ok) return
+
     // Check if this account has 2FA enabled — if so, pause here and require
     // the authenticator code before completing login.
     const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
@@ -114,8 +125,11 @@ export default function LoginPage() {
     await completeLogin(user.id)
   }
 
-  async function completeLogin(userId: string) {
-    // Verify their actual role matches what they selected
+  // Runs right after password auth, before any MFA prompt — checks the
+  // account is active, its school's subscription is current, and the
+  // selected role actually matches. Sets an error + signs the account back
+  // out on any failure. Returns whether the account can proceed.
+  async function verifyAccountAccess(userId: string): Promise<boolean> {
     const { data: profile } = await supabase
       .from('profiles')
       .select('role, is_system_admin, is_active')
@@ -126,14 +140,14 @@ export default function LoginPage() {
       setError('Account not found. Contact your administrator.')
       await supabase.auth.signOut()
       setLoading(false)
-      return
+      return false
     }
 
     if (profile.is_active === false) {
       setError('This account has been deactivated. Contact your school administrator.')
       await supabase.auth.signOut()
       setLoading(false)
-      return
+      return false
     }
 
     // Owner check — is_system_admin is the platform-owner flag, entirely
@@ -161,7 +175,7 @@ export default function LoginPage() {
         setError('This school\'s subscription is not currently active. Contact your school administrator.')
         await supabase.auth.signOut()
         setLoading(false)
-        return
+        return false
       }
     }
 
@@ -169,20 +183,37 @@ export default function LoginPage() {
       setError('Please select "Administrator" and try again.')
       await supabase.auth.signOut()
       setLoading(false)
-      return
+      return false
     }
 
     if (!isOwner && selectedOwner) {
       setError('This account is not an administrator.')
       await supabase.auth.signOut()
       setLoading(false)
-      return
+      return false
     }
 
     if (!isOwner && profile.role !== SELECTION_TO_ROLE[selectedRole]) {
       const correctSelection = Object.keys(SELECTION_TO_ROLE).find((key) => SELECTION_TO_ROLE[key] === profile.role)
       const correctLabel = ROLE_OPTIONS.find((r) => r.value === correctSelection)?.label || profile.role
       setError(`Incorrect role selected. Please select "${correctLabel}" and try again.`)
+      await supabase.auth.signOut()
+      setLoading(false)
+      return false
+    }
+
+    return true
+  }
+
+  async function completeLogin(userId: string) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role, is_system_admin, is_active')
+      .eq('id', userId)
+      .single()
+
+    if (!profile) {
+      setError('Account not found. Contact your administrator.')
       await supabase.auth.signOut()
       setLoading(false)
       return
