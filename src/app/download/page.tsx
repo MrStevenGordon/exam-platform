@@ -6,8 +6,8 @@ import Link from 'next/link'
 // source repo is private, and GitHub Release assets on a private repo
 // aren't publicly downloadable. GitHub also sanitizes filenames: spaces
 // become dots.
-const MAC_DOWNLOAD_URL = 'https://github.com/MrStevenGordon/exam-platform-releases/releases/download/desktop-v0.1.0/Smart.Assess-0.1.0.dmg'
-const WIN_DOWNLOAD_URL = 'https://github.com/MrStevenGordon/exam-platform-releases/releases/download/desktop-v0.1.0/Smart.Assess.Setup.0.1.0.exe'
+const MAC_DOWNLOAD_URL = 'https://github.com/MrStevenGordon/exam-platform-releases/releases/download/desktop-v0.2.0/Smart.Assess-0.2.0.dmg'
+const WIN_DOWNLOAD_URL = 'https://github.com/MrStevenGordon/exam-platform-releases/releases/download/desktop-v0.2.0/Smart.Assess.Setup.0.2.0.exe'
 
 export default function DownloadPage() {
   return (
