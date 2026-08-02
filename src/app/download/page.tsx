@@ -2,8 +2,9 @@
 
 import Link from 'next/link'
 
-const MAC_DOWNLOAD_URL = 'https://github.com/MrStevenGordon/exam-platform/releases/download/desktop-v0.1.0/Smart%20Assess-0.1.0.dmg'
-const WIN_DOWNLOAD_URL = 'https://github.com/MrStevenGordon/exam-platform/releases/download/desktop-v0.1.0/Smart%20Assess%20Setup%200.1.0.exe'
+// GitHub sanitizes release asset filenames — spaces become dots.
+const MAC_DOWNLOAD_URL = 'https://github.com/MrStevenGordon/exam-platform/releases/download/desktop-v0.1.0/Smart.Assess-0.1.0.dmg'
+const WIN_DOWNLOAD_URL = 'https://github.com/MrStevenGordon/exam-platform/releases/download/desktop-v0.1.0/Smart.Assess.Setup.0.1.0.exe'
 
 export default function DownloadPage() {
   return (
