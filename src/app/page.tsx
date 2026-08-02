@@ -125,46 +125,58 @@ export default function HomePage() {
             Every school reviews exams differently. Smart Assess adapts to yours — from a single supervisor sign-off to a full multi-stage review chain.
           </p>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', maxWidth: 960, margin: '0 auto', border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 8, maxWidth: 1000, margin: '0 auto' }}>
           {[
-            { step: '1', title: 'Teacher creates', desc: 'Writes and organizes the exam into sections — pulling in questions from a shared bank, or importing straight from a PDF.' },
-            { step: '2', title: 'Reviewed (if needed)', desc: 'Configured per school — anywhere from no review at all to a full department-level vetting chain.' },
-            { step: '3', title: 'Supervisor publishes', desc: 'Sets the exam window and assigns it to the right classes — students see nothing until it opens.' },
-            { step: '4', title: 'Student sits exam', desc: 'Enters the access password, answers under full proctoring — on the web or the desktop app, fullscreen and monitored.' },
-            { step: '5', title: 'Teacher grades & releases', desc: 'Routed automatically to the right subject teacher, who grades and releases results.' },
-          ].map((s, i, arr) => (
-            <div key={s.step} style={{ padding: '1.5rem', borderRight: i < arr.length - 1 ? '1px solid var(--border)' : 'none', textAlign: 'center' }}>
-              <div style={{ width: 40, height: 40, background: 'var(--accent-light)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem', fontSize: 16, fontWeight: 700, color: 'var(--accent-dark)' }}>{s.step}</div>
-              <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 8 }}>{s.title}</div>
-              <div style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.6 }}>{s.desc}</div>
+            { step: '1', title: 'Teacher creates', desc: 'Writes and organizes the exam into sections — pulling in questions from a shared bank, or importing straight from a PDF.', optional: false },
+            { step: '2', title: 'Reviewed', desc: 'Anywhere from no review at all to a full department-level vetting chain — set per school, once, when it’s configured.', optional: true },
+            { step: '3', title: 'Supervisor publishes', desc: 'Sets the exam window and assigns it to the right classes — students see nothing until it opens.', optional: false },
+            { step: '4', title: 'Student sits exam', desc: 'Enters the access password, answers under full proctoring — on the web or the desktop app, fullscreen and monitored.', optional: false },
+            { step: '5', title: 'Teacher grades & releases', desc: 'Routed automatically to the right subject teacher, who grades and releases results.', optional: false },
+          ].map((s) => (
+            <div
+              key={s.step}
+              className="card"
+              style={{
+                flex: '1 1 170px',
+                maxWidth: 190,
+                textAlign: 'center',
+                border: s.optional ? '1.5px dashed var(--accent)' : '1px solid var(--border)',
+                background: s.optional ? 'var(--accent-light)' : 'var(--card-bg)',
+                position: 'relative',
+              }}
+            >
+              {s.optional && (
+                <div style={{ position: 'absolute', top: -10, left: '50%', transform: 'translateX(-50%)', background: 'var(--accent)', color: 'white', fontSize: 10, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase', padding: '2px 10px', borderRadius: 10, whiteSpace: 'nowrap' }}>
+                  Optional
+                </div>
+              )}
+              <div style={{ width: 36, height: 36, background: s.optional ? 'white' : 'var(--accent-light)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0.25rem auto 0.75rem', fontSize: 15, fontWeight: 700, color: 'var(--accent-dark)' }}>{s.step}</div>
+              <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 6 }}>{s.title}</div>
+              <div style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.5 }}>{s.desc}</div>
             </div>
           ))}
         </div>
       </section>
 
-      {/* Testimonials */}
+      {/* Why Smart Assess */}
       <section style={{ padding: '5rem 3rem', background: 'var(--page-bg)' }}>
         <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
-          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase', color: 'var(--accent)', marginBottom: '0.5rem' }}>Testimonials</div>
-          <h2 style={{ fontSize: 30, fontWeight: 700, margin: 0, textTransform: 'none', color: 'var(--text-primary)' }}>What schools are saying</h2>
+          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase', color: 'var(--accent)', marginBottom: '0.5rem' }}>Why Smart Assess</div>
+          <h2 style={{ fontSize: 30, fontWeight: 700, margin: 0, textTransform: 'none', color: 'var(--text-primary)' }}>Built to actually hold up during an exam</h2>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16, maxWidth: 720, margin: '0 auto' }}>
           {[
-            { quote: 'Smart Assess has transformed how we manage examinations. The anti-cheating features alone have made a measurable difference.', name: 'A. Thompson', role: 'Head of Department' },
-            { quote: 'The analytics tell me instantly which questions students struggled with — I can adjust my teaching before the term ends.', name: 'M. Campbell', role: 'Mathematics Teacher' },
-            { quote: 'Students actually prefer this to paper exams. They get immediate feedback and can review every question afterwards.', name: 'R. Brown', role: 'Vice Principal' },
-          ].map((t) => (
-            <div key={t.name} className="card">
-              <div style={{ fontSize: 28, color: 'var(--accent)', marginBottom: '0.75rem', lineHeight: 1 }}>"</div>
-              <p style={{ fontSize: 15, color: 'var(--text-secondary)', lineHeight: 1.7, margin: '0 0 1rem' }}>{t.quote}</p>
-              <div style={{ fontSize: 13, fontWeight: 700 }}>{t.name}</div>
-              <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{t.role} · Placeholder</div>
+            { icon: '🔒', title: 'Real proctoring, not just a checkbox', desc: 'Fullscreen lock, tab-switch detection, and single-device login are enforced automatically — not settings someone has to remember to turn on.' },
+            { icon: '📡', title: 'Survives a dropped connection', desc: 'Answers save locally as a student types and sync the moment connectivity returns — a lost connection doesn’t mean lost work.' },
+            { icon: '🧩', title: 'Fits your process, not the other way around', desc: 'Review workflow, exam types, and portals are configured per school — you’re not forced into someone else’s procedure.' },
+          ].map((f) => (
+            <div key={f.title} className="card">
+              <div style={{ fontSize: 24, marginBottom: '0.75rem' }}>{f.icon}</div>
+              <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 8 }}>{f.title}</div>
+              <div style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.6 }}>{f.desc}</div>
             </div>
           ))}
         </div>
-        <p style={{ textAlign: 'center', fontSize: 12, color: 'var(--text-muted)', marginTop: '1.5rem' }}>
-          Testimonials are placeholders — replace with real quotes once collected.
-        </p>
       </section>
 
       {/* Contact */}
