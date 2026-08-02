@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Sidebar from '@/components/Sidebar'
 import { getMfaRedirect } from '@/lib/mfaCheck'
+import { verifyPortalRole } from '@/lib/verifyPortalRole'
 
 const SUPERVISOR_NAV = [
   { label: 'Home', icon: 'ti-home', href: '/supervisor' },
@@ -24,12 +25,14 @@ export default function SupervisorLayout({ children }: { children: React.ReactNo
   const [checked, setChecked] = useState(false)
 
   useEffect(() => {
-    async function checkMfa() {
-      const redirect = await getMfaRedirect('supervisor')
-      if (redirect) { router.push(redirect); return }
+    async function checkAccess() {
+      const roleRedirect = await verifyPortalRole('supervisor')
+      if (roleRedirect) { router.push(roleRedirect); return }
+      const mfaRedirect = await getMfaRedirect('supervisor')
+      if (mfaRedirect) { router.push(mfaRedirect); return }
       setChecked(true)
     }
-    checkMfa()
+    checkAccess()
   }, [router])
 
   if (!checked) return null

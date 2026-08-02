@@ -6,7 +6,7 @@ const fs = require('fs')
 // Next.js app itself, it just loads the real site in a native window. All
 // the actual offline-resilience logic (local autosave, sync, resume) lives
 // in the web app and works the same way here as in a regular browser.
-const APP_URL = process.env.SMART_ASSESS_URL || 'http://localhost:3000'
+const APP_URL = process.env.SMART_ASSESS_URL || 'https://exam-platform-chi.vercel.app'
 
 const STATE_FILE = path.join(app.getPath('userData'), 'last-route.json')
 

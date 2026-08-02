@@ -1,7 +1,9 @@
 'use client'
 
+import { useEffect, useState } from 'react'
+import { useRouter, usePathname } from 'next/navigation'
 import Sidebar from '@/components/Sidebar'
-import { usePathname } from 'next/navigation'
+import { verifyPortalRole } from '@/lib/verifyPortalRole'
 
 const STUDENT_NAV = [
   { label: 'Home', icon: 'ti-home', href: '/student' },
@@ -14,12 +16,25 @@ const STUDENT_NAV = [
 ]
 
 export default function StudentLayout({ children }: { children: React.ReactNode }) {
+  const router = useRouter()
   const pathname = usePathname()
   const isTakePage = pathname?.includes('/take')
+  const [checked, setChecked] = useState(false)
+
+  useEffect(() => {
+    async function checkAccess() {
+      const roleRedirect = await verifyPortalRole('student')
+      if (roleRedirect) { router.push(roleRedirect); return }
+      setChecked(true)
+    }
+    checkAccess()
+  }, [router])
 
   if (isTakePage) {
     return <>{children}</>
   }
+
+  if (!checked) return null
 
   return (
     <div className="portal-layout" style={{ minHeight: "100vh" }}>

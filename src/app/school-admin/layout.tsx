@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Sidebar from '@/components/Sidebar'
 import { getMfaRedirect } from '@/lib/mfaCheck'
+import { verifyPortalRole } from '@/lib/verifyPortalRole'
 
 const SCHOOL_ADMIN_NAV = [
   { label: 'Overview', icon: 'ti-home', href: '/school-admin' },
@@ -25,12 +26,14 @@ export default function SchoolAdminLayout({ children }: { children: React.ReactN
   const [checked, setChecked] = useState(false)
 
   useEffect(() => {
-    async function checkMfa() {
-      const redirect = await getMfaRedirect('admin')
-      if (redirect) { router.push(redirect); return }
+    async function checkAccess() {
+      const roleRedirect = await verifyPortalRole('admin')
+      if (roleRedirect) { router.push(roleRedirect); return }
+      const mfaRedirect = await getMfaRedirect('admin')
+      if (mfaRedirect) { router.push(mfaRedirect); return }
       setChecked(true)
     }
-    checkMfa()
+    checkAccess()
   }, [router])
 
   if (!checked) return null

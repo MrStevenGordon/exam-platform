@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Sidebar from '@/components/Sidebar'
 import { supabase } from '@/lib/supabase'
 import { getMfaRedirect } from '@/lib/mfaCheck'
+import { verifyPortalRole } from '@/lib/verifyPortalRole'
 
 const BASE_NAV = [
   { label: 'Home', icon: 'ti-home', href: '/teacher' },
@@ -30,12 +31,14 @@ export default function TeacherLayout({ children }: { children: React.ReactNode 
   const [mfaChecked, setMfaChecked] = useState(false)
 
   useEffect(() => {
-    async function checkMfa() {
-      const redirect = await getMfaRedirect('teacher')
-      if (redirect) { router.push(redirect); return }
+    async function checkAccess() {
+      const roleRedirect = await verifyPortalRole('teacher')
+      if (roleRedirect) { router.push(roleRedirect); return }
+      const mfaRedirect = await getMfaRedirect('teacher')
+      if (mfaRedirect) { router.push(mfaRedirect); return }
       setMfaChecked(true)
     }
-    checkMfa()
+    checkAccess()
   }, [router])
 
   useEffect(() => {
