@@ -12,6 +12,7 @@
     "electron:build": "electron-builder"
   },
   "dependencies": {
+    "@sentry/nextjs": "^10.69.0",
     "@supabase/ssr": "^0.12.0",
     "@supabase/supabase-js": "^2.108.2",
     "@types/pg": "^8.20.3",
