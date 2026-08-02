@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Sidebar from '@/components/Sidebar'
+import PageTransition from '@/components/PageTransition'
 import { supabase } from '@/lib/supabase'
 import { getMfaRedirect } from '@/lib/mfaCheck'
 import { verifyPortalRole } from '@/lib/verifyPortalRole'
@@ -85,7 +86,7 @@ export default function TeacherLayout({ children }: { children: React.ReactNode 
 
   return (
     <div className="portal-layout" style={{ minHeight: "100vh" }}>
-      <main className="portal-content">{children}</main>
+      <main className="portal-content"><PageTransition>{children}</PageTransition></main>
       <Sidebar navItems={navItems} portalLabel="Teacher Portal" />
     </div>
   )

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
+import EmptyState from '@/components/EmptyState'
 
 type DraftExam = { id: string; title: string; subject: string; status: string; created_at: string; profiles: { full_name: string } | null }
 
@@ -37,7 +38,7 @@ export default function SupervisorSubmissionsPage() {
       <p className="portal-page-sub">All teacher exam submissions</p>
       <input type="text" placeholder="Search by title, subject or teacher…" value={search} onChange={(e) => setSearch(e.target.value)} style={{ width: '100%', marginBottom: 16 }} />
       {filtered.length === 0 && (
-        <div className="card"><p style={{ color: 'var(--text-secondary)' }}>No submissions found.</p></div>
+        <EmptyState icon="📥" title="No submissions found" description="Try a different search, or check back once teachers submit exams for review." />
       )}
 
       {filtered.length > 0 && (() => {

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
+import EmptyState from '@/components/EmptyState'
 
 type BankQuestion = {
   id: string
@@ -127,8 +128,8 @@ export default function AddFromBankPage() {
 
       {errorMsg && <p className="banner banner-danger" style={{ marginTop: 16 }}>{errorMsg}</p>}
       {bankQuestions.length === 0 && !errorMsg && (
-        <div className="card" style={{ marginTop: 20 }}>
-          <p style={{ color: 'var(--text-secondary)' }}>No saved questions in your bank yet. Check "Save to bank" when creating a question to build one up.</p>
+        <div style={{ marginTop: 20 }}>
+          <EmptyState icon="🏦" title="Your question bank is empty" description={'Check "Save to bank" when creating a question elsewhere to build one up over time.'} />
         </div>
       )}
 

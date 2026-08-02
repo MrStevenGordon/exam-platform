@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
+import EmptyState from '@/components/EmptyState'
 
 type Student = { id: string; full_name: string }
 type Group = { id: string; name: string; members: Student[] }
@@ -166,9 +167,7 @@ export default function ManageGroupsPage() {
       ))}
 
       {groups.length === 0 && (
-        <div className="card">
-          <p style={{ color: 'var(--text-secondary)' }}>No groups yet. Add one above to get started.</p>
-        </div>
+        <EmptyState icon="👥" title="No groups yet" description="Add a group above to get students organized for this project." />
       )}
     </div>
   )

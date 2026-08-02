@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
+import EmptyState from '@/components/EmptyState'
 
 type Exam = { id: string; title: string; subject: string; exam_kind: string; duration_minutes: number; profiles?: { full_name: string } | null }
 
@@ -49,7 +50,7 @@ export default function StudentTasksPage() {
     <div>
       <p className="portal-page-title">Tasks</p>
       <p className="portal-page-sub">Homework and assignments</p>
-      {exams.length === 0 && <div className="card"><p style={{ color: 'var(--text-secondary)' }}>No tasks available yet.</p></div>}
+      {exams.length === 0 && <EmptyState icon="📝" title="No tasks available yet" description="Homework, assignments, and group projects from your teachers will show up here." />}
       {TASK_KINDS.map((kind) => {
         const items = grouped[kind]
         if (!items?.length) return null

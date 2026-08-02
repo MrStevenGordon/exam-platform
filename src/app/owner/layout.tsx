@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
+import PageTransition from '@/components/PageTransition'
 
 const OWNER_NAV = [
   { label: 'School requests', href: '/owner/school-requests' },
@@ -73,7 +74,7 @@ export default function OwnerLayout({ children }: { children: React.ReactNode })
         <button onClick={handleLogout} className="btn btn-ghost">Log out</button>
       </div>
       <div style={{ maxWidth: 1000, margin: '0 auto', padding: 24 }}>
-        {children}
+        <PageTransition>{children}</PageTransition>
       </div>
     </div>
   )

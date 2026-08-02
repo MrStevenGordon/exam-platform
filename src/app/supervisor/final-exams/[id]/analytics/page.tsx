@@ -5,6 +5,7 @@ import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts'
+import EmptyState from '@/components/EmptyState'
 
 type SessionResult = {
   total_score: number
@@ -140,8 +141,8 @@ export default function ExamAnalyticsPage() {
       </p>
 
       {sessions.length === 0 && (
-        <div className="card" style={{ marginTop: 20 }}>
-          <p style={{ color: 'var(--text-secondary)' }}>No fully-graded sessions yet.</p>
+        <div style={{ marginTop: 20 }}>
+          <EmptyState icon="📊" title="No fully-graded sessions yet" description="Analytics will appear here once students' exams have been graded." />
         </div>
       )}
 

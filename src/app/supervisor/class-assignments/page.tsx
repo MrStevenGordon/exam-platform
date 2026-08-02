@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import EmptyState from '@/components/EmptyState'
 
 type ClassGroup = { id: string; name: string; year_grade: string }
 type Teacher = { id: string; full_name: string }
@@ -176,8 +177,8 @@ export default function ClassAssignmentsPage() {
       {errorMsg && <div className="banner banner-danger" style={{ marginTop: 12 }}>{errorMsg}</div>}
 
       {teachers.length === 0 && !errorMsg && (
-        <div className="card" style={{ marginTop: 20 }}>
-          <p style={{ color: 'var(--text-secondary)' }}>No teachers found in your department yet.</p>
+        <div style={{ marginTop: 20 }}>
+          <EmptyState icon="🧑‍🏫" title="No teachers found in your department yet" />
         </div>
       )}
 

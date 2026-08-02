@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
+import EmptyState from '@/components/EmptyState'
 
 type FinalExam = { id: string; title: string; subject: string; status: string }
 
@@ -30,7 +31,7 @@ export default function SupervisorAnalyticsPage() {
       <p className="portal-page-title">Analytics</p>
       <p className="portal-page-sub">Published exams</p>
       {exams.length === 0 && (
-        <div className="card"><p style={{ color: 'var(--text-secondary)' }}>No published exams with results yet.</p></div>
+        <EmptyState icon="📈" title="No published exams with results yet" />
       )}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {exams.map((exam) => (

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
+import EmptyState from '@/components/EmptyState'
 
 type Session = {
   id: string
@@ -102,9 +103,7 @@ export default function ExamSessionsPage() {
       {errorMsg && <div className="banner banner-danger" style={{ marginBottom: 16 }}>{errorMsg}</div>}
 
       {sessions.length === 0 && (
-        <div className="card" style={{ textAlign: 'center', padding: 32 }}>
-          <p style={{ color: 'var(--text-secondary)' }}>No students have started this exam yet.</p>
-        </div>
+        <EmptyState icon="🕒" title="No students have started this exam yet" description="Sessions will appear here as soon as a student begins." />
       )}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
+import EmptyState from '@/components/EmptyState'
 
 type Exam = { id: string; title: string; subject: string; exam_kind: string; duration_minutes: number; profiles?: { full_name: string } | null }
 
@@ -47,7 +48,7 @@ export default function StudentTestsPage() {
     <div>
       <p className="portal-page-title">Tests</p>
       <p className="portal-page-sub">Pop quizzes, midterms, and direct teacher assessments</p>
-      {exams.length === 0 && <div className="card"><p style={{ color: 'var(--text-secondary)' }}>No tests available yet.</p></div>}
+      {exams.length === 0 && <EmptyState icon="✏️" title="No tests available yet" description="Pop quizzes, midterms, and direct teacher assessments will show up here once assigned." />}
       {['pop_quiz', 'class_test', 'weekly_test', 'midterm', 'end_of_year'].map((kind) => {
         const items = grouped[kind]
         if (!items?.length) return null

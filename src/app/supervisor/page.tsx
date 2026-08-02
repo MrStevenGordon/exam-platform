@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
+import EmptyState from '@/components/EmptyState'
 
 type DraftExam = {
   id: string
@@ -107,11 +108,9 @@ export default function SupervisorHome() {
       />
 
       {filtered.length === 0 && (
-        <div className="card">
-          <p style={{ color: 'var(--text-secondary)', fontSize: 13 }}>
-            {submissions.length === 0 ? 'No submissions awaiting review.' : 'No results match your search.'}
-          </p>
-        </div>
+        submissions.length === 0
+          ? <EmptyState icon="📥" title="No submissions awaiting review" description="Exams your department's teachers submit for review will show up here." />
+          : <EmptyState icon="🔍" title="No results match your search" />
       )}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>

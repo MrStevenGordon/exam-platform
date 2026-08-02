@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
+import EmptyState from '@/components/EmptyState'
 
 type ResetRequest = {
   id: string
@@ -72,11 +73,9 @@ export default function PasswordRequestsPage() {
       </div>
 
       {visible.length === 0 && (
-        <div className="card" style={{ textAlign: 'center', padding: 32 }}>
-          <p style={{ color: 'var(--text-secondary)' }}>
-            {showResolved ? 'No resolved requests yet.' : 'No pending requests. 🎉'}
-          </p>
-        </div>
+        showResolved
+          ? <EmptyState icon="📋" title="No resolved requests yet" />
+          : <EmptyState icon="🎉" title="No pending requests" description="You're all caught up." />
       )}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>

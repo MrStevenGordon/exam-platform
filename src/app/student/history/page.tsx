@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts'
+import EmptyState from '@/components/EmptyState'
 
 type ScoreEntry = {
   title: string
@@ -87,8 +88,8 @@ export default function ScoreHistoryPage() {
       <p style={{ color: 'var(--text-secondary)', marginTop: 4 }}>{entries.length} released results</p>
 
       {entries.length === 0 && (
-        <div className="card" style={{ marginTop: 20 }}>
-          <p style={{ color: 'var(--text-secondary)' }}>No released results yet. Complete and have some exams graded first.</p>
+        <div style={{ marginTop: 20 }}>
+          <EmptyState icon="📈" title="No results to show yet" description="Complete some exams and have them graded — your progress over time will show up here." />
         </div>
       )}
 

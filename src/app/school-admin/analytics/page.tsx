@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell } from 'recharts'
+import EmptyState from '@/components/EmptyState'
 
 type SessionRow = {
   total_score: number
@@ -140,8 +141,8 @@ export default function SchoolAnalyticsPage() {
       <p className="portal-page-sub">Performance across all graded exams</p>
 
       {totalGraded === 0 ? (
-        <div className="card" style={{ textAlign: 'center', padding: 32, marginTop: 20 }}>
-          <p style={{ color: 'var(--text-secondary)' }}>No fully-graded exam sessions yet. Data will appear here once exams are completed and graded.</p>
+        <div style={{ marginTop: 20 }}>
+          <EmptyState icon="📊" title="No fully-graded exam sessions yet" description="Data will appear here once exams are completed and graded." />
         </div>
       ) : (
         <>

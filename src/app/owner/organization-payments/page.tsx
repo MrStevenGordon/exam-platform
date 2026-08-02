@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import EmptyState from '@/components/EmptyState'
 
 type Payment = {
   id: string
@@ -240,9 +241,9 @@ export default function OrganizationPaymentsPage() {
       </div>
 
       {visiblePayments.length === 0 && (
-        <div className="card" style={{ textAlign: 'center', padding: 32 }}>
-          <p style={{ color: 'var(--text-secondary)' }}>{showResolved ? 'No resolved payments yet.' : 'No pending submissions.'}</p>
-        </div>
+        showResolved
+          ? <EmptyState icon="📋" title="No resolved payments yet" />
+          : <EmptyState icon="💳" title="No pending submissions" description="Bank transfer confirmations organizations submit will show up here." />
       )}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>

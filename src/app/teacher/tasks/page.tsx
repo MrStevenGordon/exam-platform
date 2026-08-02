@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
+import EmptyState from '@/components/EmptyState'
 
 type DraftExam = { id: string; title: string; subject: string; status: string; exam_kind: string; direct_published: boolean; created_at: string }
 
@@ -43,7 +44,7 @@ export default function TeacherTasksPage() {
         </div>
         <Link href="/teacher/new?kind=task"><button className="btn btn-primary">+ New task</button></Link>
       </div>
-      {tasks.length === 0 && <div className="card"><p style={{ color: 'var(--text-secondary)' }}>No tasks yet.</p></div>}
+      {tasks.length === 0 && <EmptyState icon="📝" title="No tasks yet" description="Homework, assignments, and group projects you assign will show up here." action={{ label: '+ New task', href: '/teacher/new?kind=task' }} />}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {tasks.map((task) => {
           const statusLabel = task.direct_published ? 'Published' : task.status === 'submitted' ? 'Submitted' : task.status === 'approved' ? 'Approved' : 'Draft'

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
+import EmptyState from '@/components/EmptyState'
 
 type DraftExam = {
   id: string
@@ -134,9 +135,7 @@ export default function TeacherHome() {
       </div>
 
       {exams.length === 0 && (
-        <div className="card">
-          <p style={{ color: 'var(--text-secondary)', fontSize: 13 }}>No exams yet. Create your first one.</p>
-        </div>
+        <EmptyState icon="🗂️" title="No exams yet" description="Everything you create — tasks, tests, and exams — will show up here." action={{ label: '+ Create your first exam', href: '/teacher/new' }} />
       )}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>

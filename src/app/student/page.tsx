@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts'
+import EmptyState from '@/components/EmptyState'
 
 type StudentProfile = {
   full_name: string
@@ -183,7 +184,7 @@ export default function StudentHome() {
         <div>
           <div className="section-label" style={{ marginBottom: 10 }}>Recent results</div>
           {recentResults.length === 0 && (
-            <div className="card"><p style={{ color: 'var(--text-secondary)', fontSize: 13 }}>No released results yet.</p></div>
+            <EmptyState icon="📊" title="No released results yet" description="Once a teacher grades and releases an exam, your score shows up here." />
           )}
           {recentResults.map((r, i) => (
             <Link key={i} href={`/student/${r.examType === 'final' ? 'exam' : 'direct-exam'}/${r.examId}/results`} style={{ textDecoration: 'none', color: 'inherit' }}>

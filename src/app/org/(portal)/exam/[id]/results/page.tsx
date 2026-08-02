@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
+import EmptyState from '@/components/EmptyState'
 
 type FieldDef = { id: string; label: string; order_index: number }
 type ResultRow = {
@@ -118,9 +119,7 @@ export default function OrgExamResultsPage() {
       {errorMsg && <div className="banner banner-danger" style={{ marginBottom: 16 }}>{errorMsg}</div>}
 
       {rows.length === 0 ? (
-        <div className="card" style={{ textAlign: 'center', padding: 32 }}>
-          <p style={{ color: 'var(--text-secondary)' }}>No submissions yet.</p>
-        </div>
+        <EmptyState icon="🗳️" title="No submissions yet" description="Responses will show up here as respondents complete the exam." />
       ) : (
         <div className="card" style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>

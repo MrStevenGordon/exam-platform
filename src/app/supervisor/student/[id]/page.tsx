@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
+import EmptyState from '@/components/EmptyState'
 
 type StudentProfile = {
   id: string
@@ -148,9 +149,7 @@ export default function SupervisorStudentDetailPage() {
       </p>
 
       {sessions.length === 0 && (
-        <div className="card" style={{ textAlign: 'center', padding: 32 }}>
-          <p style={{ color: 'var(--text-secondary)' }}>No exam activity yet for exams you can view.</p>
-        </div>
+        <EmptyState icon="🎓" title="No exam activity yet" description="Once this student takes an exam you have access to, their activity will show up here." />
       )}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>

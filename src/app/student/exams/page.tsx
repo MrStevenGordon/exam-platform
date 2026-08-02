@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
+import EmptyState from '@/components/EmptyState'
 
 type Exam = { id: string; title: string; subject: string; duration_minutes: number; exam_category: string; profiles?: { full_name: string } | { full_name: string }[] | null }
 
@@ -35,7 +36,7 @@ export default function StudentExamsPage() {
   return (
     <div>
       <p className="portal-page-title">All Exams</p>
-      {exams.length === 0 && <div className="card"><p style={{ color: 'var(--text-secondary)' }}>No exams available yet.</p></div>}
+      {exams.length === 0 && <EmptyState icon="📚" title="No exams available yet" description="Final exams your school schedules will show up here when they're published." />}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         {exams.map((exam) => {
           const status = sessionMap[exam.id]

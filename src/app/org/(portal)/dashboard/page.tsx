@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
+import EmptyState from '@/components/EmptyState'
 
 type OrgExam = { id: string; title: string; status: string; exam_code: string; created_at: string }
 
@@ -85,9 +86,7 @@ export default function OrgDashboardPage() {
       {errorMsg && <div className="banner banner-danger" style={{ marginBottom: 16 }}>{errorMsg}</div>}
 
       {exams.length === 0 && (
-        <div className="card" style={{ textAlign: 'center', padding: 32 }}>
-          <p style={{ color: 'var(--text-secondary)' }}>No exams yet. Create your first one above.</p>
-        </div>
+        <EmptyState icon="📝" title="No exams yet" description="Create your first one above — you'll get a code and password respondents use to take it." />
       )}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>

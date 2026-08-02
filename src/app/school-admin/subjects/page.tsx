@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import EmptyState from '@/components/EmptyState'
 
 type Department = { id: string; name: string }
 type Subject = { id: string; subject: string; department_id: string }
@@ -116,9 +117,7 @@ export default function SchoolAdminSubjectsPage() {
       })}
 
       {subjects.length === 0 && (
-        <div className="card">
-          <p style={{ color: 'var(--text-secondary)' }}>No subjects added yet. Add your first subject above.</p>
-        </div>
+        <EmptyState icon="📚" title="No subjects added yet" description="Add your first subject above to get started." />
       )}
     </div>
   )

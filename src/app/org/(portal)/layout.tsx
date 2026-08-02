@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
+import PageTransition from '@/components/PageTransition'
 
 export default function OrgPortalLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
@@ -49,7 +50,7 @@ export default function OrgPortalLayout({ children }: { children: React.ReactNod
         </div>
       </div>
       <div style={{ maxWidth: 900, margin: '0 auto', padding: 24 }}>
-        {children}
+        <PageTransition>{children}</PageTransition>
       </div>
     </div>
   )
