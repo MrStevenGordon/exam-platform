@@ -78,7 +78,8 @@ export default function SchoolSetupPage() {
         <div className="card" style={{ width: '100%', maxWidth: 400, padding: '32px 28px', textAlign: 'center' }}>
           <h1 style={{ marginBottom: 8, fontSize: 18 }}>This link isn&apos;t valid</h1>
           <p style={{ color: 'var(--text-secondary)', fontSize: 13 }}>
-            It may have already been used, or the link may be incorrect. Contact us if you need a new one.
+            It may have already been used, or the link may be incorrect.{' '}
+            <a href="mailto:onboarding@smartassessja.com" style={{ color: 'var(--accent-dark)', fontWeight: 600 }}>Contact us</a> if you need a new one.
           </p>
           <Link href="/" style={{ display: 'inline-block', marginTop: 16, color: 'var(--accent-dark)', fontWeight: 600 }}>&larr; Back to home</Link>
         </div>
