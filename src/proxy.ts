@@ -1,7 +1,24 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
+// The marketing domain goes live before the app is ready for public traffic —
+// visitors there see a splash page while the existing *.vercel.app URLs
+// (used by pilot schools right now) keep working normally. Remove this
+// block once smartassessja.com is ready to serve the real app.
+const COMING_SOON_HOSTS = ['smartassessja.com', 'www.smartassessja.com']
+
 export async function proxy(request: NextRequest) {
+  const host = request.headers.get('host') || ''
+  if (COMING_SOON_HOSTS.includes(host) && request.nextUrl.pathname !== '/coming-soon') {
+    return NextResponse.rewrite(new URL('/coming-soon', request.url))
+  }
+
+  const protectedPaths = ['/dashboard']
+  const isProtectedPath = protectedPaths.some((path) =>
+    request.nextUrl.pathname.startsWith(path)
+  )
+  if (!isProtectedPath) return NextResponse.next()
+
   let response = NextResponse.next({
     request: { headers: request.headers },
   })
@@ -31,12 +48,7 @@ export async function proxy(request: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser()
 
-  const protectedPaths = ['/dashboard']
-  const isProtectedPath = protectedPaths.some((path) =>
-    request.nextUrl.pathname.startsWith(path)
-  )
-
-  if (isProtectedPath && !user) {
+  if (!user) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
@@ -44,5 +56,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/dashboard/:path*'],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)'],
 }
