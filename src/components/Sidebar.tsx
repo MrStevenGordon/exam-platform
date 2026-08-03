@@ -115,6 +115,12 @@ export default function Sidebar({ navItems, portalLabel }: SidebarProps) {
         >
           Log out
         </button>
+        <a
+          href="mailto:support@smartassessja.com"
+          style={{ display: 'block', marginTop: 8, fontSize: 11, color: 'rgba(255,255,255,0.35)', textAlign: 'center', textDecoration: 'none' }}
+        >
+          Need help? support@smartassessja.com
+        </a>
       </div>
     </div>
   )

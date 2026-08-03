@@ -48,6 +48,7 @@ export default function OrgPortalLayout({ children }: { children: React.ReactNod
         </Link>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <Link href="/org/billing" style={{ fontSize: 13, color: 'var(--text-secondary)', textDecoration: 'none', fontWeight: 600 }}>Billing</Link>
+          <a href="mailto:support@smartassessja.com" style={{ fontSize: 13, color: 'var(--text-secondary)', textDecoration: 'none', fontWeight: 600 }}>Support</a>
           <button onClick={handleLogout} className="btn btn-ghost">Log out</button>
         </div>
       </div>
