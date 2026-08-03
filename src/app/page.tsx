@@ -2,18 +2,40 @@
 
 import Link from 'next/link'
 import { useState } from 'react'
+import TurnstileWidget from '@/components/TurnstileWidget'
 
 export default function HomePage() {
   const [formData, setFormData] = useState({ name: '', org: '', email: '', message: '' })
+  const [website, setWebsite] = useState('') // honeypot — real users never see or fill this
+  const [turnstileToken, setTurnstileToken] = useState('')
   const [submitted, setSubmitted] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState('')
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
     setFormData({ ...formData, [e.target.name]: e.target.value })
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    setError('')
+    setSubmitting(true)
+
+    const res = await fetch('/api/contact/submit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...formData, honeypot: website, turnstileToken }),
+    })
+
+    if (!res.ok) {
+      const data = await res.json()
+      setError(data.error || 'Something went wrong. Please try again.')
+      setSubmitting(false)
+      return
+    }
+
     setSubmitted(true)
+    setSubmitting(false)
   }
 
   return (
@@ -231,8 +253,31 @@ export default function HomePage() {
                     style={{ width: '100%' }}
                   />
                 </div>
-                <button type="submit" className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }}>
-                  Send message
+                {/* Honeypot — visually hidden from real users, but a naive bot that
+                    autofills every field will fill this one and get silently rejected. */}
+                <div style={{ position: 'absolute', left: '-9999px', width: 1, height: 1, overflow: 'hidden' }} aria-hidden="true">
+                  <label htmlFor="website">Website</label>
+                  <input
+                    type="text"
+                    id="website"
+                    name="website"
+                    value={website}
+                    onChange={(e) => setWebsite(e.target.value)}
+                    tabIndex={-1}
+                    autoComplete="off"
+                  />
+                </div>
+
+                <TurnstileWidget onToken={setTurnstileToken} />
+
+                {error && (
+                  <div className="banner banner-danger" style={{ marginBottom: 16, fontSize: 13 }}>
+                    {error}
+                  </div>
+                )}
+
+                <button type="submit" disabled={submitting} className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }}>
+                  {submitting ? 'Sending…' : 'Send message'}
                 </button>
               </form>
             </div>

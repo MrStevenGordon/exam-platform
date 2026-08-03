@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { verifySystemAdmin, supabaseAdmin } from '@/lib/verifySystemAdmin'
-import { sendEmail } from '@/lib/email'
+import { sendEmail, EMAIL_FROM } from '@/lib/email'
 import { licenseKeyEmail } from '@/lib/emailTemplates'
 
 const PLAN_DAYS: Record<string, number> = { '3_month': 90, '6_month': 182, yearly: 365 }
@@ -76,7 +76,7 @@ export async function POST(req: NextRequest) {
 
     try {
       const { subject, html } = licenseKeyEmail(org.name, licenseKey, PLAN_LABELS[plan], currentPeriodEnd)
-      await sendEmail({ to: org.contact_email, subject, html })
+      await sendEmail({ to: org.contact_email, subject, html, from: EMAIL_FROM.billing })
     } catch (emailError) {
       console.error('license-key email failed:', emailError)
     }

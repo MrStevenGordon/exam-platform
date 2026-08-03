@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { verifySystemAdmin, supabaseAdmin } from '@/lib/verifySystemAdmin'
-import { sendEmail } from '@/lib/email'
+import { sendEmail, EMAIL_FROM } from '@/lib/email'
 import { credentialsEmail } from '@/lib/emailTemplates'
 
 // setupLink comes from scripts/provision-school-db.mjs — a one-time
@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
     // sees a clear error and can retry, rather than being silently marked
     // provisioned with no setup link ever having reached the school.
     const { subject, html } = credentialsEmail(request.school_name, request.contact_name, setupLink.trim())
-    await sendEmail({ to: request.contact_email, subject, html })
+    await sendEmail({ to: request.contact_email, subject, html, from: EMAIL_FROM.onboarding })
 
     const portalUrl = new URL(setupLink.trim()).origin
 

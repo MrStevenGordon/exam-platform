@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { verifySystemAdmin, supabaseAdmin } from '@/lib/verifySystemAdmin'
-import { sendEmail } from '@/lib/email'
+import { sendEmail, EMAIL_FROM } from '@/lib/email'
 import { acceptedEmail, rejectedEmail } from '@/lib/emailTemplates'
 
 export async function POST(req: NextRequest) {
@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
       const { subject, html } = decision === 'approved'
         ? acceptedEmail(request.school_name, request.contact_name)
         : rejectedEmail(request.school_name, request.contact_name)
-      await sendEmail({ to: request.contact_email, subject, html })
+      await sendEmail({ to: request.contact_email, subject, html, from: EMAIL_FROM.onboarding })
     } catch (emailError) {
       console.error(`${decision} email failed:`, emailError)
     }

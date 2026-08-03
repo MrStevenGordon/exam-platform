@@ -65,6 +65,21 @@ export function schoolSubscriptionActiveEmail(schoolName: string, planLabel: str
   }
 }
 
+export function contactInquiryEmail(name: string, org: string, email: string, message: string) {
+  return {
+    subject: `New inquiry from ${org}`,
+    html: wrapper(`
+      <p>New message from the homepage contact form:</p>
+      <table style="margin: 16px 0; font-size: 14px;">
+        <tr><td style="padding: 4px 12px 4px 0; color: #7A6A5A;">Name</td><td>${name}</td></tr>
+        <tr><td style="padding: 4px 12px 4px 0; color: #7A6A5A;">School / organization</td><td>${org}</td></tr>
+        <tr><td style="padding: 4px 12px 4px 0; color: #7A6A5A;">Email</td><td>${email}</td></tr>
+      </table>
+      <p style="white-space: pre-wrap;">${message}</p>
+    `),
+  }
+}
+
 export function credentialsEmail(schoolName: string, contactName: string, setupLink: string) {
   return {
     subject: `${schoolName}'s Smart Assess portal is ready`,

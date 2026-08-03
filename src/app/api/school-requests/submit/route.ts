@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/verifySystemAdmin'
-import { sendEmail } from '@/lib/email'
+import { sendEmail, EMAIL_FROM } from '@/lib/email'
 import { submissionReceivedEmail } from '@/lib/emailTemplates'
 
 export async function POST(req: NextRequest) {
@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
 
     try {
       const { subject, html } = submissionReceivedEmail(schoolName.trim(), contactName.trim())
-      await sendEmail({ to: contactEmail.trim(), subject, html })
+      await sendEmail({ to: contactEmail.trim(), subject, html, from: EMAIL_FROM.onboarding })
     } catch (emailError) {
       // The request is already saved — don't fail the whole submission over
       // a flaky email send. Surface it in logs so it can be resent manually.

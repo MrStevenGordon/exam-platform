@@ -6,7 +6,7 @@ import { supabase } from '@/lib/supabase'
 
 type BillingSettings = { bank_name: string | null; account_name: string | null; account_number: string | null; routing_or_swift: string | null; instructions: string | null }
 
-const SALES_EMAIL = process.env.NEXT_PUBLIC_SALES_EMAIL || 'sales@smartassess.ja'
+const BILLING_EMAIL = process.env.NEXT_PUBLIC_BILLING_EMAIL || 'billing@smartassessja.com'
 
 export default function BillingPage() {
   const router = useRouter()
@@ -73,7 +73,7 @@ export default function BillingPage() {
           <ol style={{ fontSize: 14, lineHeight: 1.8, paddingLeft: 20, margin: 0 }}>
             <li>Wire your payment to the account below.</li>
             <li>
-              Email proof of payment to <a href={`mailto:${SALES_EMAIL}?subject=${encodeURIComponent(`Subscription payment — ${orgName}`)}`}>{SALES_EMAIL}</a>, including your organization name (<strong>{orgName}</strong>) and which plan you paid for.
+              Email proof of payment to <a href={`mailto:${BILLING_EMAIL}?subject=${encodeURIComponent(`Subscription payment — ${orgName}`)}`}>{BILLING_EMAIL}</a>, including your organization name (<strong>{orgName}</strong>) and which plan you paid for.
             </li>
             <li>We&apos;ll verify the transfer and activate your subscription, then email you a license key.</li>
           </ol>
@@ -89,7 +89,7 @@ export default function BillingPage() {
               </div>
             ) : (
               <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: 0 }}>
-                Bank details aren&apos;t set up yet — email <a href={`mailto:${SALES_EMAIL}`}>{SALES_EMAIL}</a> and we&apos;ll send them directly.
+                Bank details aren&apos;t set up yet — email <a href={`mailto:${BILLING_EMAIL}`}>{BILLING_EMAIL}</a> and we&apos;ll send them directly.
               </p>
             )}
           </div>

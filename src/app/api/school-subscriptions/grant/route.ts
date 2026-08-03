@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { Client } from 'pg'
 import { verifySystemAdmin, supabaseAdmin } from '@/lib/verifySystemAdmin'
-import { sendEmail } from '@/lib/email'
+import { sendEmail, EMAIL_FROM } from '@/lib/email'
 import { schoolSubscriptionActiveEmail } from '@/lib/emailTemplates'
 
 const PLAN_DAYS: Record<string, number> = { '3_month': 90, '6_month': 182, yearly: 365 }
@@ -115,7 +115,7 @@ export async function POST(req: NextRequest) {
 
     try {
       const { subject, html } = schoolSubscriptionActiveEmail(resolvedName, PLAN_LABELS[plan], currentPeriodEnd)
-      await sendEmail({ to: resolvedEmail, subject, html })
+      await sendEmail({ to: resolvedEmail, subject, html, from: EMAIL_FROM.billing })
     } catch (emailError) {
       console.error('school subscription email failed:', emailError)
     }
