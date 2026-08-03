@@ -239,6 +239,11 @@ export default function BuildMySchoolPage() {
               {submitting ? 'Submitting…' : 'Submit request'}
             </button>
           </div>
+          <p style={{ fontSize: 11, color: 'var(--text-muted)', textAlign: 'center', marginTop: 12 }}>
+            By submitting, you agree to our{' '}
+            <Link href="/terms" style={{ color: 'var(--text-secondary)' }}>Terms of Service</Link> and{' '}
+            <Link href="/privacy" style={{ color: 'var(--text-secondary)' }}>Privacy Policy</Link>.
+          </p>
         </div>
       )}
     </div>

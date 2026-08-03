@@ -157,6 +157,12 @@ export default function OrgSignupPage() {
           >
             {loading ? 'Creating account…' : 'Create account'}
           </button>
+
+          <p style={{ fontSize: 11, color: 'var(--text-muted)', textAlign: 'center', marginTop: 12 }}>
+            By creating an account, you agree to our{' '}
+            <Link href="/terms" style={{ color: 'var(--text-secondary)' }}>Terms of Service</Link> and{' '}
+            <Link href="/privacy" style={{ color: 'var(--text-secondary)' }}>Privacy Policy</Link>.
+          </p>
         </form>
 
         <div style={{ textAlign: 'center', marginTop: 20, fontSize: 13, color: 'var(--text-secondary)' }}>

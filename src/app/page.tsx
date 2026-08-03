@@ -250,6 +250,8 @@ export default function HomePage() {
           <a href="#features" style={{ fontSize: 12, color: 'var(--text-secondary)', textDecoration: 'none' }}>Features</a>
           <a href="#how-it-works" style={{ fontSize: 12, color: 'var(--text-secondary)', textDecoration: 'none' }}>How it works</a>
           <a href="#contact" style={{ fontSize: 12, color: 'var(--text-secondary)', textDecoration: 'none' }}>Contact</a>
+          <Link href="/terms" style={{ fontSize: 12, color: 'var(--text-secondary)', textDecoration: 'none' }}>Terms</Link>
+          <Link href="/privacy" style={{ fontSize: 12, color: 'var(--text-secondary)', textDecoration: 'none' }}>Privacy</Link>
           <Link href="/login" style={{ fontSize: 12, color: 'var(--text-secondary)', textDecoration: 'none' }}>Log in</Link>
         </div>
         <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>© {new Date().getFullYear()} Smart Assess Ja · All rights reserved</div>
