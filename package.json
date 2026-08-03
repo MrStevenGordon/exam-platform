@@ -17,7 +17,6 @@
     "@supabase/supabase-js": "^2.108.2",
     "@types/pg": "^8.20.3",
     "dotenv": "^17.4.2",
-    "electron-updater": "^6.8.9",
     "idb": "^8.0.3",
     "katex": "^0.17.0",
     "motion": "^12.43.0",
@@ -45,11 +44,9 @@
     "appId": "ja.smartassess.desktop",
     "productName": "Smart Assess",
     "directories": {
+      "app": "electron",
       "output": "electron-dist"
     },
-    "files": [
-      "electron/**/*"
-    ],
     "mac": {
       "target": "dmg",
       "artifactName": "SmartAssess-${version}.${ext}"

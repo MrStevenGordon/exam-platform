@@ -1,0 +1,9 @@
+{
+  "name": "smart-assess-shell",
+  "version": "0.2.4",
+  "private": true,
+  "main": "main.js",
+  "dependencies": {
+    "electron-updater": "^6.8.9"
+  }
+}
