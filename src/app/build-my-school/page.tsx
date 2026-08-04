@@ -7,7 +7,7 @@ const WORKFLOW_TEMPLATES = [
   {
     value: 'direct_publish',
     title: 'Direct Publish',
-    desc: 'Teachers create and publish exams directly — no review chain. Fastest to run, best for smaller schools.',
+    desc: 'Teachers create and publish exams directly, with no review chain. Fastest to run, best for smaller schools.',
   },
   {
     value: 'department_review',
@@ -22,7 +22,7 @@ const WORKFLOW_TEMPLATES = [
   {
     value: 'other',
     title: 'Other',
-    desc: "None of these quite fit — describe how your school actually runs things below.",
+    desc: "None of these quite fit? Describe how your school actually runs things below.",
   },
 ]
 
@@ -88,7 +88,7 @@ export default function BuildMySchoolPage() {
           <div style={{ fontSize: 40, marginBottom: 12 }}>✓</div>
           <h1 style={{ marginBottom: 8 }}>Request received</h1>
           <p style={{ color: 'var(--text-secondary)' }}>
-            Thanks — we&apos;ll review your request and follow up at {contactEmail}.
+            Thanks! We&apos;ll review your request and follow up at {contactEmail}.
           </p>
           <Link href="/" style={{ display: 'inline-block', marginTop: 20, color: 'var(--accent-dark)', fontWeight: 600 }}>
             &larr; Back to home
@@ -102,7 +102,7 @@ export default function BuildMySchoolPage() {
     <div className="page-container" style={{ maxWidth: 620 }}>
       <h1>Build My School</h1>
       <p style={{ color: 'var(--text-secondary)', marginBottom: 24 }}>
-        Tell us how your school runs exams and which features you need — we&apos;ll review and set you up.
+        Tell us how your school runs exams and which features you need. We&apos;ll review and set you up.
       </p>
 
       <div style={{ display: 'flex', gap: 6, marginBottom: 20 }}>
@@ -225,7 +225,7 @@ export default function BuildMySchoolPage() {
             <div style={{ marginBottom: 8 }}><strong>{schoolName}</strong> · {contactName} ({contactEmail})</div>
             <div style={{ marginBottom: 8 }}>
               Workflow: <strong>{WORKFLOW_TEMPLATES.find((t) => t.value === workflowTemplate)?.title}</strong>
-              {workflowTemplate === 'other' && <span> — {workflowOtherDescription}</span>}
+              {workflowTemplate === 'other' && <span> ({workflowOtherDescription})</span>}
             </div>
             <div>Features: <strong>{features.length ? features.map((f) => FEATURES.find((x) => x.key === f)?.label).join(', ') : 'None selected'}</strong></div>
           </div>

@@ -146,7 +146,7 @@ export default function TeacherReviewSessionPage() {
                   Q{i + 1} · {q.question_type.replace('_', ' ')}
                 </span>
                 <span style={{ fontSize: 13, fontWeight: 700 }}>
-                  {r.points_awarded !== null ? r.points_awarded : '—'} / {q.points} pts
+                  {r.points_awarded !== null ? r.points_awarded : 'N/A'} / {q.points} pts
                 </span>
               </div>
 
@@ -174,13 +174,13 @@ export default function TeacherReviewSessionPage() {
               {integrityFlags.length > 0 && (
                 <details style={{ marginBottom: 10, background: 'var(--warning-bg)', border: '1px solid var(--warning)', borderRadius: 8, padding: '8px 12px' }}>
                   <summary style={{ fontSize: 12, fontWeight: 700, color: 'var(--warning)', cursor: 'pointer' }}>
-                    ⚠ Possible AI-assisted writing — {integrityFlags.length} signal{integrityFlags.length !== 1 ? 's' : ''}
+                    ⚠ Possible AI-assisted writing · {integrityFlags.length} signal{integrityFlags.length !== 1 ? 's' : ''}
                   </summary>
                   <ul style={{ margin: '8px 0 0', paddingLeft: 18, fontSize: 12, color: 'var(--text-secondary)' }}>
                     {integrityFlags.map((f) => <li key={f}>{INTEGRITY_FLAG_LABELS[f] || f}</li>)}
                   </ul>
                   <p style={{ marginTop: 8, marginBottom: 0, fontSize: 11, color: 'var(--text-muted)' }}>
-                    This is a heuristic signal based on how the answer was typed, not proof of misconduct — use your judgment.
+                    This is a heuristic signal based on how the answer was typed, not proof of misconduct. Use your judgment.
                   </p>
                 </details>
               )}

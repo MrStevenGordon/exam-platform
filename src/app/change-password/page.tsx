@@ -29,7 +29,7 @@ function ChangePasswordForm() {
     setError('')
     if (!newPassword || !confirmPassword) { setError('Please fill in all fields.'); return }
     if (newPassword === 'Staff.Default1' || newPassword === 'Student.Test') {
-      setError('Please choose a different password — not the default one.'); return
+      setError('Please choose a different password, not the default one.'); return
     }
     if (newPassword !== confirmPassword) { setError('Passwords do not match.'); return }
     if (newPassword.length < 8) { setError('Password must be at least 8 characters.'); return }

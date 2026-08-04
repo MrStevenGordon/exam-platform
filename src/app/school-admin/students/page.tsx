@@ -311,7 +311,7 @@ export default function StudentsPage() {
           </div>
           {importResults.filter((r) => r.status === 'failed').map((r, i) => (
             <div key={i} style={{ fontSize: 12, color: 'var(--danger)', marginBottom: 4 }}>
-              ✗ {r.name} — {r.reason}
+              ✗ {r.name} · {r.reason}
             </div>
           ))}
         </div>

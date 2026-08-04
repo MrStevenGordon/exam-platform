@@ -162,7 +162,7 @@ export default function StudentHome() {
       {/* Stats */}
       <div className="stat-grid">
         <div className={`stat-card ${avg !== null && avg >= 50 ? 'stat-card-success' : avg !== null ? 'stat-card-danger' : ''}`}>
-          <div className="stat-card-value">{avg !== null ? `${avg}%` : '—'}</div>
+          <div className="stat-card-value">{avg !== null ? `${avg}%` : 'N/A'}</div>
           <div className="stat-card-label">Overall avg</div>
         </div>
         <div className="stat-card">

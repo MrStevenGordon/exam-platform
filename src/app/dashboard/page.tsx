@@ -121,7 +121,7 @@ export default function Dashboard() {
 
     await loadGraduatingStudents()
     setPromotionResult(errors === 0
-      ? `Year promotion complete — ${totalPromoted} students moved up successfully.`
+      ? `Year promotion complete. ${totalPromoted} students moved up successfully.`
       : `Promotion finished with ${errors} error(s). Check the database.`)
     setPromoting(false)
     setConfirmPromotion(false)
@@ -158,7 +158,7 @@ export default function Dashboard() {
     <div className="page-container">
       <h1>Dashboard</h1>
       <p style={{ color: 'var(--text-secondary)', marginTop: 4 }}>
-        Welcome, {profile?.full_name} — {profile?.role}
+        Welcome, {profile?.full_name} · {profile?.role}
       </p>
 
       {profile?.role === 'admin' && (
@@ -167,7 +167,7 @@ export default function Dashboard() {
           <div className="card" style={{ marginTop: 24 }}>
             <h2>Year Promotion</h2>
             <p style={{ color: 'var(--text-secondary)', marginTop: 8, fontSize: 14 }}>
-              Run this on September 1 each year. Moves every student up one grade level and updates their class group enrollment. Grade 11 students are NOT deleted — use the graduation review below to confirm deletions separately.
+              Run this on September 1 each year. Moves every student up one grade level and updates their class group enrollment. Grade 11 students are NOT deleted. Use the graduation review below to confirm deletions separately.
             </p>
 
             {promotionResult && (

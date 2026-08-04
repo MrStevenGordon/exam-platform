@@ -159,7 +159,7 @@ export default function AddFromBankPage() {
             />
             <div>
               <div className="section-label" style={{ fontSize: 11 }}>
-                {q.question_type.replace('_', ' ')} — {q.points} pt{q.points !== 1 ? 's' : ''}
+                {q.question_type.replace('_', ' ')} · {q.points} pt{q.points !== 1 ? 's' : ''}
               </div>
               <p style={{ margin: '4px 0 0' }}>{q.question_text}</p>
             </div>

@@ -1,6 +1,6 @@
 import Link from 'next/link'
 
-export const metadata = { title: 'Terms of Service — Smart Assess' }
+export const metadata = { title: 'Terms of Service | Smart Assess' }
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -66,7 +66,7 @@ export default function TermsOfServicePage() {
         <Section title="5. Subscriptions and payment">
           <p style={{ marginBottom: 12 }}>Schools and organizations pay for Smart Assess on a subscription basis (3-month, 6-month, or
           yearly plans). Given regional payment processor limitations, payment is currently handled by bank
-          wire transfer — you send proof of payment, and we manually activate or renew your subscription
+          wire transfer: you send proof of payment, and we manually activate or renew your subscription
           once confirmed. We don&apos;t store your card or bank login details at any point.</p>
           <p>If a subscription lapses, access for that school or organization&apos;s accounts is suspended until
           it&apos;s renewed. We&apos;ll make reasonable efforts to notify you before this happens.</p>
@@ -75,13 +75,13 @@ export default function TermsOfServicePage() {
         <Section title="6. Exam integrity features">
           Timed and proctored exams use fullscreen lock, tab-switch detection, and single-device login to
           help maintain exam integrity, and log signals a teacher can review for potential academic integrity
-          concerns. These tools are aids for the school&apos;s own review process — Smart Assess never
+          concerns. These tools are aids for the school&apos;s own review process. Smart Assess never
           automatically penalizes a student based on these signals; a human always makes that call.
         </Section>
 
         <Section title="7. Availability and changes">
-          We aim to keep Smart Assess available and reliable, but we don&apos;t guarantee uninterrupted access
-          — maintenance, third-party outages, or unforeseen issues can occasionally affect availability. We
+          We aim to keep Smart Assess available and reliable, but we don&apos;t guarantee uninterrupted access:
+          maintenance, third-party outages, or unforeseen issues can occasionally affect availability. We
           may update or add features over time, and may update these terms; material changes will be
           communicated to school administrators.
         </Section>

@@ -198,7 +198,7 @@ export default function SchoolAnalyticsPage() {
 
           <div className="card" style={{ marginTop: 20 }}>
             <h2 style={{ marginBottom: 4 }}>Subjects to watch</h2>
-            <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 16 }}>Lowest pass rates first — up to 10 subjects</p>
+            <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 16 }}>Lowest pass rates first (up to 10 subjects)</p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {bySubject.map((s) => (
                 <div key={s.name} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: '1px solid var(--border)' }}>

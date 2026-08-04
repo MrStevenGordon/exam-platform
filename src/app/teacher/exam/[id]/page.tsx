@@ -294,7 +294,7 @@ export default function ExamEditorPage() {
       <div style={{ marginTop: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
           <h1 style={{ margin: 0 }}>{exam.title}</h1>
-          <p style={{ color: '#666', margin: '4px 0' }}>{exam.subject} — {kindLabels[exam.exam_kind]}</p>
+          <p style={{ color: '#666', margin: '4px 0' }}>{exam.subject} · {kindLabels[exam.exam_kind]}</p>
           {isGroupProject && (
             <Link href={`/teacher/exam/${examId}/groups`}>
               <button className="btn btn-secondary" style={{ marginTop: 6 }}>Manage Groups</button>
@@ -485,7 +485,7 @@ export default function ExamEditorPage() {
               </div>
               <div style={{ marginBottom: 10 }}>
                 <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)' }}>Section name</label>
-                <input value={newSectionName} onChange={(e) => setNewSectionName(e.target.value)} placeholder="e.g. Section A — Multiple Choice" style={{ width: '100%', marginTop: 4 }} />
+                <input value={newSectionName} onChange={(e) => setNewSectionName(e.target.value)} placeholder="e.g. Section A: Multiple Choice" style={{ width: '100%', marginTop: 4 }} />
               </div>
               <div style={{ marginBottom: 10 }}>
                 <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)' }}>Section instructions (shown to students)</label>
@@ -499,7 +499,7 @@ export default function ExamEditorPage() {
           )}
 
           {sections.length === 0 && !showSectionForm && (
-            <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '8px 0 0' }}>No sections yet — add sections to divide your exam into parts (e.g. Section A and Section B).</p>
+            <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '8px 0 0' }}>No sections yet. Add sections to divide your exam into parts (e.g. Section A and Section B).</p>
           )}
         </div>
       )}
@@ -680,7 +680,7 @@ export default function ExamEditorPage() {
                 <div className="banner banner-warning">Submitted for senior team lead vetting.</div>
               )}
               {exam.status === 'approved' && (
-                <div className="banner banner-success">Approved — awaiting supervisor to publish.</div>
+                <div className="banner banner-success">Approved. Awaiting supervisor to publish.</div>
               )}
             </div>
           ) : (

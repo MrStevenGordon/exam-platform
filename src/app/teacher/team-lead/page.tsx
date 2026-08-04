@@ -182,7 +182,7 @@ export default function TeamLeadPage() {
               <select value={selectedAppointment} onChange={(e) => setSelectedAppointment(e.target.value)} style={{ width: '100%', marginTop: 4 }}>
                 <option value="">Select…</option>
                 {appointments.map((a) => (
-                  <option key={a.id} value={a.id}>Grade {a.year_grade} — {a.subject}</option>
+                  <option key={a.id} value={a.id}>Grade {a.year_grade} · {a.subject}</option>
                 ))}
               </select>
             </div>
@@ -219,7 +219,7 @@ export default function TeamLeadPage() {
 
           <div style={{ marginBottom: 12 }}>
             <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Exam title</label>
-            <input value={title} onChange={(e) => setTitle(e.target.value)} style={{ width: '100%', marginTop: 4 }} placeholder="e.g. Grade 10 Mathematics Monthly Exam — Christmas Term 2026" />
+            <input value={title} onChange={(e) => setTitle(e.target.value)} style={{ width: '100%', marginTop: 4 }} placeholder="e.g. Grade 10 Mathematics Monthly Exam: Christmas Term 2026" />
           </div>
 
           <div style={{ marginBottom: 12 }}>

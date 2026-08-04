@@ -1,6 +1,6 @@
 import Link from 'next/link'
 
-export const metadata = { title: 'Privacy Policy — Smart Assess' }
+export const metadata = { title: 'Privacy Policy | Smart Assess' }
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -41,7 +41,7 @@ export default function PrivacyPolicyPage() {
         <Section title="What we collect">
           <p style={{ marginBottom: 12 }}><strong>Students:</strong> full name, student ID, birth date, gender, grade level,
           department/class enrollment, exam answers and scores, and integrity signals during proctored
-          exams — things like typing rhythm, fullscreen/tab-switch events, and paste attempts. We do not
+          exams: things like typing rhythm, fullscreen/tab-switch events, and paste attempts. We do not
           record keystroke content itself, only behavioral patterns used to flag possible academic
           integrity concerns for a teacher to review.</p>
           <p style={{ marginBottom: 12 }}><strong>Staff (teachers, supervisors, school admins):</strong> full name, email address, role,
@@ -49,9 +49,9 @@ export default function PrivacyPolicyPage() {
           managed by our authentication provider, Supabase, not stored by us directly).</p>
           <p style={{ marginBottom: 12 }}><strong>Organizations:</strong> organization name, contact name and email, exams and questions you
           create, whatever fields you configure to collect from your own respondents, and payment records
-          (plan, amount, and a reference note for wire transfers — we never handle card numbers or bank
+          (plan, amount, and a reference note for wire transfers; we never handle card numbers or bank
           login credentials).</p>
-          <p><strong>Everyone:</strong> basic technical data needed to run the service — session tokens (to keep you
+          <p><strong>Everyone:</strong> basic technical data needed to run the service, such as session tokens (to keep you
           logged in), and error reports sent to our error-tracking tool (Sentry) when something breaks, which
           may include technical context like the page you were on but is not used to build a profile of you.</p>
         </Section>
@@ -63,7 +63,7 @@ export default function PrivacyPolicyPage() {
         </Section>
 
         <Section title="Who we share it with">
-          <p style={{ marginBottom: 12 }}>Within a school, access is role-based and enforced at the database level — a teacher only sees
+          <p style={{ marginBottom: 12 }}>Within a school, access is role-based and enforced at the database level. A teacher only sees
           their own students and classes, a department supervisor only their own department, and so on. We
           never share student data across schools or organizations; each runs on its own isolated database.</p>
           <p>We use a small number of service providers to actually run Smart Assess, each only with the access
@@ -77,13 +77,13 @@ export default function PrivacyPolicyPage() {
           School and student data is retained for as long as your school&apos;s subscription is active, plus a
           reasonable period afterward in case of billing disputes or reinstatement. Anonymous organization
           respondent data is deleted automatically after a retention period your organization configures per
-          exam. You can request deletion of your data at any time by contacting us — see below.
+          exam. You can request deletion of your data at any time by contacting us (see below).
         </Section>
 
         <Section title="How we protect it">
           Every table in our database enforces row-level security, meaning access rules are checked by the
           database itself, not just by application code. Staff accounts require two-factor authentication.
-          All traffic is encrypted in transit (HTTPS). We do not store card or bank login details — payments
+          All traffic is encrypted in transit (HTTPS). We do not store card or bank login details. Payments
           are either handled by a third-party processor or via manual bank transfer with a reference note only.
           We also run periodic internal security reviews of the platform.
         </Section>

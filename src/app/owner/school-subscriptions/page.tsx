@@ -85,8 +85,8 @@ export default function SchoolSubscriptionsPage() {
     } else {
       setSuccessMsg(
         data.pushedToSchool
-          ? 'Subscription active — pushed directly to the school\'s own database, their accounts can log in now.'
-          : 'Subscription recorded here, but no database connection string was given, so it wasn\'t pushed to the school\'s login gate — paste it above and grant again to actually unlock their accounts.'
+          ? 'Subscription active. Pushed directly to the school\'s own database, their accounts can log in now.'
+          : 'Subscription recorded here, but no database connection string was given, so it wasn\'t pushed to the school\'s login gate. Paste it above and grant again to actually unlock their accounts.'
       )
       setManualName('')
       setManualEmail('')
@@ -102,7 +102,7 @@ export default function SchoolSubscriptionsPage() {
     <div className="page-container">
       <h1 style={{ marginBottom: 4 }}>School subscriptions</h1>
       <p style={{ color: 'var(--text-secondary)', fontSize: 13, marginBottom: 20 }}>
-        Schools pay by wire transfer and email proof of payment directly — grant or renew a subscription here once you&apos;ve verified it landed in the account. Paste that school&apos;s database connection string to push the status directly to their login gate — used once, then forgotten, never stored.
+        Schools pay by wire transfer and email proof of payment directly. Grant or renew a subscription here once you&apos;ve verified it landed in the account. Paste that school&apos;s database connection string to push the status directly to their login gate; used once, then forgotten, never stored.
       </p>
 
       {errorMsg && <div className="banner banner-danger" style={{ marginBottom: 16 }}>{errorMsg}</div>}
@@ -183,7 +183,7 @@ export default function SchoolSubscriptionsPage() {
                 <div style={{ fontWeight: 700, fontSize: 15 }}>{s.school_name}</div>
                 <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 2 }}>{s.contact_email}</div>
                 <div style={{ fontSize: 13, marginTop: 8 }}>
-                  Plan: <strong>{s.subscription_plan ? PLAN_LABELS[s.subscription_plan] : '—'}</strong>
+                  Plan: <strong>{s.subscription_plan ? PLAN_LABELS[s.subscription_plan] : 'N/A'}</strong>
                   {s.current_period_end && <> · expires {new Date(s.current_period_end).toLocaleDateString()}</>}
                 </div>
               </div>

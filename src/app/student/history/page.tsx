@@ -89,7 +89,7 @@ export default function ScoreHistoryPage() {
 
       {entries.length === 0 && (
         <div style={{ marginTop: 20 }}>
-          <EmptyState icon="📈" title="No results to show yet" description="Complete some exams and have them graded — your progress over time will show up here." />
+          <EmptyState icon="📈" title="No results to show yet" description="Complete some exams and have them graded. Your progress over time will show up here." />
         </div>
       )}
 

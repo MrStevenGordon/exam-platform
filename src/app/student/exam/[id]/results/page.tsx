@@ -53,8 +53,8 @@ export default function FinalExamResultsPage() {
     if (pct >= 90) return { text: 'Excellent work!', color: 'var(--success)' }
     if (pct >= 75) return { text: 'Very good!', color: 'var(--success)' }
     if (pct >= 60) return { text: 'Good effort.', color: 'var(--accent)' }
-    if (pct >= passMark) return { text: 'Passed — keep it up!', color: 'var(--accent)' }
-    return { text: 'Keep studying — you can do better!', color: 'var(--danger)' }
+    if (pct >= passMark) return { text: 'Passed! Keep it up!', color: 'var(--accent)' }
+    return { text: 'Keep studying, you can do better!', color: 'var(--danger)' }
   }
 
   const feedback = getFeedback(percent)

@@ -230,7 +230,7 @@ export default function SupervisorExamReviewPage() {
         <div>
           <h1 style={{ margin: 0 }}>{exam.title}</h1>
           <p style={{ color: '#666', margin: '4px 0' }}>
-            {exam.subject} — by {exam.profiles?.full_name || 'Unknown'}
+            {exam.subject}, by {exam.profiles?.full_name || 'Unknown'}
           </p>
         </div>
         <span className={`badge ${exam.status === 'submitted' ? 'badge-warning' : exam.status === 'approved' ? 'badge-success' : 'badge-default'}`}>

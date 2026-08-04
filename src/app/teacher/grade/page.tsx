@@ -134,7 +134,7 @@ export default function GradeEssaysPage() {
           <div style={{ fontSize: 32, marginBottom: 12 }}>✓</div>
           <p style={{ fontWeight: 700, margin: '0 0 6px' }}>No ungraded responses</p>
           <p style={{ color: 'var(--text-secondary)', fontSize: 13, margin: '0 0 16px' }}>
-            All caught up — or you may not have any classes assigned yet.
+            All caught up, or you may not have any classes assigned yet.
           </p>
           <a href="/teacher/profile" style={{ color: 'var(--accent-dark)', fontSize: 13, fontWeight: 700 }}>
             Set up my classes →
@@ -146,7 +146,7 @@ export default function GradeEssaysPage() {
         {items.map((item) => (
           <div key={item.response_id} className="card">
             <p className="section-label" style={{ fontSize: 11, margin: 0 }}>
-              {item.exam_title} — {item.student_name}
+              {item.exam_title} · {item.student_name}
             </p>
             <p style={{ fontWeight: 700, margin: '8px 0' }}>{item.question_text}</p>
             <div style={{ padding: 12, background: 'var(--page-bg)', borderRadius: 8, marginBottom: 12, border: '1px solid var(--border)' }}>
@@ -156,7 +156,7 @@ export default function GradeEssaysPage() {
             {item.integrityFlags.length > 0 && (
               <details style={{ marginBottom: 12, background: 'var(--warning-bg)', border: '1px solid var(--warning)', borderRadius: 8, padding: '8px 12px' }}>
                 <summary style={{ fontSize: 12, fontWeight: 700, color: 'var(--warning)', cursor: 'pointer' }}>
-                  ⚠ Possible AI-assisted writing — {item.integrityFlags.length} signal{item.integrityFlags.length !== 1 ? 's' : ''}
+                  ⚠ Possible AI-assisted writing · {item.integrityFlags.length} signal{item.integrityFlags.length !== 1 ? 's' : ''}
                 </summary>
                 <ul style={{ margin: '8px 0 0', paddingLeft: 18, fontSize: 12, color: 'var(--text-secondary)' }}>
                   {item.integrityFlags.map((f) => <li key={f}>{INTEGRITY_FLAG_LABELS[f] || f}</li>)}
@@ -175,7 +175,7 @@ export default function GradeEssaysPage() {
 
             {item.marking_points && item.marking_points.length > 0 ? (
               <div style={{ marginBottom: 12 }}>
-                <div className="section-label" style={{ marginBottom: 8 }}>Marking points — award marks per point</div>
+                <div className="section-label" style={{ marginBottom: 8 }}>Marking points: award marks per point</div>
                 {item.marking_points.map((point: any, pi: number) => {
                   const answerLower = (item.answer || '').toLowerCase()
                   const autoMatched = point.keywords?.some((kw: string) => answerLower.includes(kw.toLowerCase()))

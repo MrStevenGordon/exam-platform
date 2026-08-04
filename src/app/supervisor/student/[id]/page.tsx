@@ -51,7 +51,7 @@ export default function SupervisorStudentDetailPage() {
         .single()
 
       if (error || !studentData) {
-        setErrorMsg('Could not load this student — you may not have access, or the profile no longer exists.')
+        setErrorMsg('Could not load this student. You may not have access, or the profile no longer exists.')
         setLoading(false)
         return
       }
@@ -126,11 +126,11 @@ export default function SupervisorStudentDetailPage() {
 
       <div className="stat-grid" style={{ marginTop: 16 }}>
         <div className="stat-card">
-          <div className="stat-card-value">{student.gender || '—'}</div>
+          <div className="stat-card-value">{student.gender || 'N/A'}</div>
           <div className="stat-card-label">Gender</div>
         </div>
         <div className="stat-card">
-          <div className="stat-card-value">{student.birth_date ? new Date(student.birth_date).toLocaleDateString() : '—'}</div>
+          <div className="stat-card-value">{student.birth_date ? new Date(student.birth_date).toLocaleDateString() : 'N/A'}</div>
           <div className="stat-card-label">Date of birth</div>
         </div>
         <div className="stat-card">

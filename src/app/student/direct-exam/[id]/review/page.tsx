@@ -131,7 +131,7 @@ export default function ReviewDirectExamPage() {
     <div className="page-container" style={{ maxWidth: 640 }}>
       <Link href="/student" style={{ color: 'var(--text-secondary)', fontSize: 14 }}>&larr; Back to my exams</Link>
 
-      <h1 style={{ marginTop: 16 }}>{examTitle} — Review</h1>
+      <h1 style={{ marginTop: 16 }}>{examTitle}: Review</h1>
       <p style={{ color: 'var(--text-secondary)', marginTop: 4 }}>Score: {session.total_score} / {session.max_possible_score}</p>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginTop: 20 }}>
@@ -168,7 +168,7 @@ export default function ReviewDirectExamPage() {
                   item.points_awarded !== null ? `Score: ${item.points_awarded} / ${item.points}` : 'Not yet graded'
                 ) : (
                   <span style={{ color: isCorrect ? 'var(--success)' : 'var(--danger)' }}>
-                    {isCorrect ? 'Correct' : 'Incorrect'} — {item.points_awarded ?? 0} / {item.points} pts
+                    {isCorrect ? 'Correct' : 'Incorrect'} · {item.points_awarded ?? 0} / {item.points} pts
                   </span>
                 )}
               </p>

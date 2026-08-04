@@ -156,7 +156,7 @@ export default function SelfMockPage() {
     <div className="page-container" style={{ maxWidth: 640 }}>
       <Link href="/student/self-mock" style={{ color: 'var(--text-secondary)', fontSize: 14 }}>&larr; Generate another</Link>
 
-      <h1 style={{ marginTop: 16 }}>{subject} — Practice mock</h1>
+      <h1 style={{ marginTop: 16 }}>{subject}: Practice mock</h1>
 
       {completed && (
         <div className="card" style={{ background: 'var(--success-bg)', marginBottom: 20 }}>
@@ -217,7 +217,7 @@ export default function SelfMockPage() {
 
               {completed && (
                 <p style={{ margin: '8px 0 0', fontSize: 14, fontWeight: 700, color: isCorrect ? 'var(--success)' : 'var(--danger)' }}>
-                  {isCorrect ? 'Correct' : `Incorrect — Correct answer: ${item.correct_answer}`}
+                  {isCorrect ? 'Correct' : `Incorrect. Correct answer: ${item.correct_answer}`}
                 </p>
               )}
             </div>

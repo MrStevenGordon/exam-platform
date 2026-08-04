@@ -43,7 +43,7 @@ export default function StudentProfilePage() {
           .select('name, year_grade')
           .eq('id', enrollment.class_group_id)
           .single()
-        setClassName(cgData?.name || '—')
+        setClassName(cgData?.name || 'N/A')
       }
 
       // Get exam stats
@@ -145,11 +145,11 @@ export default function StudentProfilePage() {
             { label: 'Student ID', value: profile?.student_id },
             { label: 'Grade', value: `Grade ${profile?.grade_level}` },
             { label: 'Class', value: className },
-            { label: 'Gender', value: profile?.gender === 'M' ? 'Male' : profile?.gender === 'F' ? 'Female' : '—' },
+            { label: 'Gender', value: profile?.gender === 'M' ? 'Male' : profile?.gender === 'F' ? 'Female' : 'N/A' },
           ].map((item) => (
             <div key={item.label} style={{ padding: '10px 12px', background: 'var(--page-bg)', borderRadius: 8, border: '1px solid var(--border)' }}>
               <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: 0.4 }}>{item.label}</div>
-              <div style={{ fontSize: 14, fontWeight: 600, marginTop: 4 }}>{item.value || '—'}</div>
+              <div style={{ fontSize: 14, fontWeight: 600, marginTop: 4 }}>{item.value || 'N/A'}</div>
             </div>
           ))}
         </div>
@@ -166,7 +166,7 @@ export default function StudentProfilePage() {
           <div className="stat-card-label">Completed</div>
         </div>
         <div className="stat-card stat-card-accent">
-          <div className="stat-card-value">{stats.avgScore !== null ? `${stats.avgScore}%` : '—'}</div>
+          <div className="stat-card-value">{stats.avgScore !== null ? `${stats.avgScore}%` : 'N/A'}</div>
           <div className="stat-card-label">Average score</div>
         </div>
       </div>

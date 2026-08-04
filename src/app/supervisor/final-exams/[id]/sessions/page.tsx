@@ -100,7 +100,7 @@ export default function ExamSessionsPage() {
       <Link href="/supervisor/final-exams" style={{ color: 'var(--text-secondary)', fontSize: 14 }}>&larr; Back to final exams</Link>
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginTop: 16 }}>
-        <h1>{examTitle} — Student sessions</h1>
+        <h1>{examTitle}: Student sessions</h1>
         <div style={{ display: 'flex', gap: 8 }}>
           <Link href={`/supervisor/final-exams/${finalExamId}/analytics`}>
             <button className="btn btn-secondary">View analytics</button>
@@ -149,7 +149,7 @@ export default function ExamSessionsPage() {
             </div>
             <p style={{ margin: '4px 0 0', fontSize: 14, color: 'var(--text-secondary)' }}>
               Started: {new Date(s.started_at).toLocaleString()}
-              {s.completed_at && ` — Completed: ${new Date(s.completed_at).toLocaleString()}`}
+              {s.completed_at && ` · Completed: ${new Date(s.completed_at).toLocaleString()}`}
             </p>
             {s.status === 'completed' && (
               <p style={{ margin: '4px 0 0', fontSize: 14 }}>
@@ -159,7 +159,7 @@ export default function ExamSessionsPage() {
             )}
             {s.flagged && (
               <p style={{ margin: '8px 0 0', fontWeight: 700, color: 'var(--danger)' }}>
-                Flagged — {s.tab_switch_count} violation{s.tab_switch_count !== 1 ? 's' : ''} detected
+                Flagged: {s.tab_switch_count} violation{s.tab_switch_count !== 1 ? 's' : ''} detected
                 {s.tab_switch_count >= 3 ? ' (auto-submitted)' : ''}
               </p>
             )}

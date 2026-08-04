@@ -131,7 +131,7 @@ export default function SupervisorHome() {
 
       {awaitingPublish.length > 0 && (
         <>
-          <div className="section-label" style={{ marginTop: 24, marginBottom: 10 }}>Approved — awaiting publish</div>
+          <div className="section-label" style={{ marginTop: 24, marginBottom: 10 }}>Approved, awaiting publish</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {awaitingPublish.map((exam) => (
               <Link key={exam.id} href={`/supervisor/final-exams/${exam.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>

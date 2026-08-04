@@ -80,7 +80,7 @@ export default function SchoolFeaturesPage() {
 
     if (!res.ok) setErrorMsg(data.error || 'Something went wrong.')
     else {
-      setSuccessMsg('Saved — that school\'s app now reflects these settings.')
+      setSuccessMsg('Saved. That school\'s app now reflects these settings.')
       setTargetDatabaseUrl('')
     }
     setSaving(false)
@@ -92,7 +92,7 @@ export default function SchoolFeaturesPage() {
     <div className="page-container">
       <h1 style={{ marginBottom: 4 }}>Configure school tools</h1>
       <p style={{ color: 'var(--text-secondary)', fontSize: 13, marginBottom: 20 }}>
-        Right after provisioning a new school, paste its database connection string here (you'll have it on hand from creating its Supabase project) to set which tools it uses. This isn't stored anywhere — used once, then forgotten.
+        Right after provisioning a new school, paste its database connection string here (you'll have it on hand from creating its Supabase project) to set which tools it uses. This isn't stored anywhere; used once, then forgotten.
       </p>
 
       {errorMsg && <div className="banner banner-danger" style={{ marginBottom: 16 }}>{errorMsg}</div>}
@@ -104,7 +104,7 @@ export default function SchoolFeaturesPage() {
           <select value={selectedRequestId} onChange={(e) => setSelectedRequestId(e.target.value)} style={{ width: '100%', marginTop: 6 }}>
             <option value="">Select a provisioned school…</option>
             {requests.map((r) => (
-              <option key={r.id} value={r.id}>{r.school_name}{r.portal_url ? ` — ${r.portal_url}` : ''}</option>
+              <option key={r.id} value={r.id}>{r.school_name}{r.portal_url ? ` · ${r.portal_url}` : ''}</option>
             ))}
           </select>
         </div>

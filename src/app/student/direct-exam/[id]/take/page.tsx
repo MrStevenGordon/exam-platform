@@ -542,7 +542,7 @@ export default function TakeDirectExamPage() {
         <div style={{ fontSize: 40, marginBottom: 16 }}>📡</div>
         <h1 style={{ marginBottom: 8 }}>No internet connection</h1>
         <p style={{ color: 'var(--text-secondary)' }}>
-          Your exam has been saved on this device and submitting is locked in — it will finish submitting automatically
+          Your exam has been saved on this device and submitting is locked in. It will finish submitting automatically
           the moment you&apos;re back online. Don&apos;t close this window.
         </p>
       </div>
@@ -681,7 +681,7 @@ export default function TakeDirectExamPage() {
                     onKeyDown={(e) => capture.onKeyDown(`working:${q.id}`, e.key)}
                     rows={5}
                     style={{ width: '100%', marginTop: 6, fontFamily: 'monospace', fontSize: 14 }}
-                    placeholder="Show all your working here — steps, calculations…"
+                    placeholder="Show all your working here: steps, calculations…"
                   />
                   <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>Your working is visible to your teacher but does not affect automatic grading.</div>
                 </div>
@@ -742,7 +742,7 @@ export default function TakeDirectExamPage() {
       {isRelaxedExam && (
         <div className="card" style={{ marginTop: 20 }}>
           <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>
-            Attach a file (optional) — PDF, Word, PowerPoint, Excel, or other document
+            Attach a file (optional): PDF, Word, PowerPoint, Excel, or other document
           </label>
           <p style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 4, marginBottom: 10 }}>
             If you completed this work outside the platform, upload it here alongside (or instead of) your answers above.

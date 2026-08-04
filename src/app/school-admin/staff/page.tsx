@@ -347,7 +347,7 @@ export default function StaffPage() {
         <div className="card" style={{ marginBottom: 20 }}>
           <h2 style={{ marginBottom: 8 }}>Import staff from CSV</h2>
           <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 12 }}>
-            CSV format: <code>first_name, last_name, email, role, department, subjects</code> — separate multiple subjects with a semicolon (e.g. <code>Mathematics;Additional Mathematics</code>)
+            CSV format: <code>first_name, last_name, email, role, department, subjects</code>. Separate multiple subjects with a semicolon (e.g. <code>Mathematics;Additional Mathematics</code>)
           </p>
           <p style={{ fontSize: 12, color: 'var(--text-secondary)', marginBottom: 12 }}>
             Role values: <code>teacher</code> or <code>supervisor</code> · Department must match exactly
@@ -382,7 +382,7 @@ export default function StaffPage() {
                 <span style={{ color: 'var(--danger)', fontWeight: 700 }}>✗ {csvResults.filter(r => r.status === 'failed').length} failed</span>
               </div>
               {csvResults.filter(r => r.status === 'failed').map((r, i) => (
-                <div key={i} style={{ fontSize: 12, color: 'var(--danger)', marginBottom: 4 }}>✗ {r.name && r.name.trim() !== 'undefined undefined' ? r.name : r.email} — {r.reason}</div>
+                <div key={i} style={{ fontSize: 12, color: 'var(--danger)', marginBottom: 4 }}>✗ {r.name && r.name.trim() !== 'undefined undefined' ? r.name : r.email} · {r.reason}</div>
               ))}
             </div>
           )}
@@ -462,7 +462,7 @@ export default function StaffPage() {
                       </button>
                       <button
                         onClick={() => handleToggleActive(s.id, s.full_name, s.is_active !== false)}
-                        title={s.is_active !== false ? 'Active — click to deactivate' : 'Deactivated — click to reactivate'}
+                        title={s.is_active !== false ? 'Active: click to deactivate' : 'Deactivated: click to reactivate'}
                         style={{
                           width: 44, height: 24, borderRadius: 12, border: 'none', cursor: 'pointer',
                           background: s.is_active !== false ? 'var(--success)' : 'var(--danger)',

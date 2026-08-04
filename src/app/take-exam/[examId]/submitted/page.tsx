@@ -43,7 +43,7 @@ export default function TakeExamSubmittedPage() {
       <div className="card" style={{ textAlign: 'center', padding: 40 }}>
         <div style={{ fontSize: 40, marginBottom: 12 }}>✓</div>
         <h1 style={{ marginBottom: 8 }}>Submitted</h1>
-        <p style={{ color: 'var(--text-secondary)' }}>Thank you — your response has been recorded.</p>
+        <p style={{ color: 'var(--text-secondary)' }}>Thank you. Your response has been recorded.</p>
         {!loading && showScore && score && (
           <p style={{ marginTop: 16, fontSize: 18, fontWeight: 700 }}>
             You scored {score.total} / {score.max}

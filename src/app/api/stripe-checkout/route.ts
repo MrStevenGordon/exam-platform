@@ -17,7 +17,7 @@ const PRICE_IDS: Record<string, string | undefined> = {
 
 export async function POST(req: NextRequest) {
   if (!process.env.STRIPE_SECRET_KEY) {
-    return NextResponse.json({ error: 'Card payments are not available yet — use bank transfer instead.' }, { status: 503 })
+    return NextResponse.json({ error: 'Card payments are not available yet. Use bank transfer instead.' }, { status: 503 })
   }
 
   try {

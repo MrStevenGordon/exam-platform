@@ -150,7 +150,7 @@ export default function SettingsPage() {
           if (gradeClasses.length === 0) return null
           return (
             <div key={grade} style={{ marginBottom: 16 }}>
-              <div className="section-label" style={{ marginBottom: 8 }}>{grade} — {gradeClasses.length} classes</div>
+              <div className="section-label" style={{ marginBottom: 8 }}>{grade} · {gradeClasses.length} classes</div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                 {gradeClasses.map((cg) => (
                   <span key={cg.id} className="badge badge-default">{cg.name}</span>
@@ -262,7 +262,7 @@ function RoutingCheckSection() {
       steps.push({
         label: 'Subject assignment',
         status: 'warn',
-        detail: `More than one teacher assigned to ${className} teaches "${selectedSubject}": ${names.join(', ')}. Grading access will go to all of them — consider narrowing this if that's not intended.`,
+        detail: `More than one teacher assigned to ${className} teaches "${selectedSubject}": ${names.join(', ')}. Grading access will go to all of them. Consider narrowing this if that's not intended.`,
       })
     } else {
       steps.push({ label: 'Subject assignment', status: 'pass', detail: `${names[0]} teaches "${selectedSubject}" and is assigned to ${className}.` })

@@ -546,7 +546,7 @@ export default function TakeExamPage() {
         <div style={{ fontSize: 40, marginBottom: 16 }}>📡</div>
         <h1 style={{ marginBottom: 8 }}>No internet connection</h1>
         <p style={{ color: 'var(--text-secondary)' }}>
-          Your exam has been saved on this device and submitting is locked in — it will finish submitting automatically
+          Your exam has been saved on this device and submitting is locked in. It will finish submitting automatically
           the moment you&apos;re back online. Don&apos;t close this window.
         </p>
       </div>
@@ -712,7 +712,7 @@ export default function TakeExamPage() {
                     onChange={(e) => updateWorking(q.id, e.target.value)}
                     rows={5}
                     style={{ width: '100%', marginTop: 6, fontFamily: 'monospace', fontSize: 14 }}
-                    placeholder="Show all your working here — steps, calculations, diagrams described in words…"
+                    placeholder="Show all your working here: steps, calculations, diagrams described in words…"
                   />
                   <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>
                     Your working is visible to your teacher but does not affect automatic grading.

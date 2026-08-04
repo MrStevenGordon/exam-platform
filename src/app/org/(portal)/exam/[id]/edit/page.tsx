@@ -390,7 +390,7 @@ export default function OrgExamEditPage() {
         <>
           {subscriptionStatus !== 'active' && (
             <div className="banner" style={{ marginBottom: 10, fontSize: 13 }}>
-              An active subscription is required to publish. <Link href="/org/billing" style={{ color: 'var(--accent-dark)', fontWeight: 700 }}>Visit Billing</Link> to subscribe — you can keep building this exam in the meantime.
+              An active subscription is required to publish. <Link href="/org/billing" style={{ color: 'var(--accent-dark)', fontWeight: 700 }}>Visit Billing</Link> to subscribe. You can keep building this exam in the meantime.
             </div>
           )}
           <button onClick={handlePublish} disabled={publishing} className="btn btn-primary" style={{ width: '100%' }}>

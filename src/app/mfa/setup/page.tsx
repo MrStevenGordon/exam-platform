@@ -110,7 +110,7 @@ export default function MfaSetupPage() {
         {error && <div className="banner banner-danger" style={{ marginBottom: 16 }}>{error}</div>}
 
         <ol style={{ paddingLeft: 20, fontSize: 14, color: 'var(--text-secondary)', marginBottom: 16, lineHeight: 1.8 }}>
-          <li>Install an authenticator app if you don't have one — Google Authenticator, Microsoft Authenticator, or Authy all work</li>
+          <li>Install an authenticator app if you don't have one. Google Authenticator, Microsoft Authenticator, or Authy all work</li>
           <li>Scan the QR code below with that app</li>
           <li>Enter the 6-digit code it shows you</li>
         </ol>

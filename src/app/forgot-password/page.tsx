@@ -124,7 +124,7 @@ export default function ForgotPasswordPage() {
                   style={{ marginTop: 4 }}
                 />
                 <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>
-                  This helps your admin find your account — it's not used to log you in.
+                  This helps your admin find your account. It's not used to log you in.
                 </p>
               </div>
 

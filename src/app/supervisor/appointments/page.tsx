@@ -228,7 +228,7 @@ export default function AppointmentsPage() {
                   <option value="">Select subject…</option>
                   {deptSubjects.length > 0
                     ? deptSubjects.map((s) => <option key={s} value={s}>{s}</option>)
-                    : <option disabled>No subjects added — go to Subjects page first</option>
+                    : <option disabled>No subjects added. Go to Subjects page first</option>
                   }
                 </select>
               </div>
@@ -299,7 +299,7 @@ export default function AppointmentsPage() {
                   <option value="">Select subject…</option>
                   {deptSubjects.length > 0
                     ? deptSubjects.map((s) => <option key={s} value={s}>{s}</option>)
-                    : <option disabled>No subjects added — go to Subjects page first</option>
+                    : <option disabled>No subjects added. Go to Subjects page first</option>
                   }
                 </select>
               </div>

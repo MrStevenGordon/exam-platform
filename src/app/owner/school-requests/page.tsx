@@ -142,7 +142,7 @@ export default function SchoolRequestsPage() {
       </div>
 
       <div className="banner" style={{ marginBottom: 20, fontSize: 13 }}>
-        Approving sends an acceptance email. Actually building the school&apos;s own portal is still a separate, manual step — once it&apos;s provisioned, paste the bootstrap link below to send it.
+        Approving sends an acceptance email. Actually building the school&apos;s own portal is still a separate, manual step. Once it&apos;s provisioned, paste the bootstrap link below to send it.
       </div>
 
       {errorMsg && <div className="banner banner-danger" style={{ marginBottom: 16 }}>{errorMsg}</div>}
@@ -167,7 +167,7 @@ export default function SchoolRequestsPage() {
                 <div style={{ fontSize: 13, marginTop: 8 }}>
                   Workflow: <strong>{WORKFLOW_LABELS[r.workflow_template] || r.workflow_template}</strong>
                   {r.workflow_template === 'other' && r.workflow_other_description && (
-                    <span> — {r.workflow_other_description}</span>
+                    <span> ({r.workflow_other_description})</span>
                   )}
                 </div>
                 <div style={{ fontSize: 13, marginTop: 4 }}>

@@ -151,7 +151,7 @@ export default function GenerateSelfMockPage() {
     <div className="page-container" style={{ maxWidth: 480 }}>
       <h1>Practice mock exam</h1>
       <p style={{ color: 'var(--text-secondary)', marginTop: 4 }}>
-        Pulls real past questions for self-practice. No proctoring — this is just for you.
+        Pulls real past questions for self-practice. No proctoring, this is just for you.
       </p>
 
       {errorMsg && <p className="banner banner-danger" style={{ marginTop: 16 }}>{errorMsg}</p>}

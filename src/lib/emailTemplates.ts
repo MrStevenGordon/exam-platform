@@ -3,7 +3,7 @@ function wrapper(bodyHtml: string) {
     <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #1A0E06; max-width: 480px; margin: 0 auto;">
       <div style="font-size: 11px; font-weight: 700; letter-spacing: 1.5px; color: #7A6A5A; text-transform: uppercase;">Smart Assess Ja</div>
       ${bodyHtml}
-      <p style="font-size: 12px; color: #7A6A5A; margin-top: 32px;">— The Smart Assess team</p>
+      <p style="font-size: 12px; color: #7A6A5A; margin-top: 32px;">The Smart Assess team</p>
     </div>
   `
 }
@@ -24,7 +24,7 @@ export function acceptedEmail(schoolName: string, contactName: string) {
     subject: `${schoolName} has been accepted onto Smart Assess`,
     html: wrapper(`
       <p>Hi ${contactName},</p>
-      <p>Great news — your request for <strong>${schoolName}</strong> has been accepted.</p>
+      <p>Great news! Your request for <strong>${schoolName}</strong> has been accepted.</p>
       <p>We'll be in touch shortly to begin building your school's portal. This typically takes 2–3 weeks. Once it's ready, we'll send your login details in a follow-up email.</p>
     `),
   }
@@ -45,11 +45,11 @@ export function licenseKeyEmail(orgName: string, licenseKey: string, planLabel: 
     subject: `${orgName}'s Smart Assess subscription is active`,
     html: wrapper(`
       <p>Hi ${orgName},</p>
-      <p>Thanks for your payment — your Smart Assess subscription (${planLabel}) is now active through ${new Date(periodEnd).toLocaleDateString()}.</p>
+      <p>Thanks for your payment. Your Smart Assess subscription (${planLabel}) is now active through ${new Date(periodEnd).toLocaleDateString()}.</p>
       <table style="margin: 16px 0; font-size: 14px;">
         <tr><td style="padding: 4px 12px 4px 0; color: #7A6A5A;">License key</td><td><strong>${licenseKey}</strong></td></tr>
       </table>
-      <p>Keep this for your records. You can publish exams right away — no further action needed.</p>
+      <p>Keep this for your records. You can publish exams right away. No further action needed.</p>
     `),
   }
 }
@@ -59,8 +59,8 @@ export function schoolSubscriptionActiveEmail(schoolName: string, planLabel: str
     subject: `${schoolName}'s Smart Assess subscription is active`,
     html: wrapper(`
       <p>Hi ${schoolName},</p>
-      <p>Thanks for your payment — your Smart Assess subscription (${planLabel}) is now active through ${new Date(periodEnd).toLocaleDateString()}.</p>
-      <p>No further action needed — everyone at your school can log in normally, on the website or the desktop app, right away.</p>
+      <p>Thanks for your payment. Your Smart Assess subscription (${planLabel}) is now active through ${new Date(periodEnd).toLocaleDateString()}.</p>
+      <p>No further action needed. Everyone at your school can log in normally, on the website or the desktop app, right away.</p>
     `),
   }
 }
@@ -86,7 +86,7 @@ export function credentialsEmail(schoolName: string, contactName: string, setupL
     html: wrapper(`
       <p>Hi ${contactName},</p>
       <p><strong>${schoolName}</strong>'s Smart Assess portal is ready.</p>
-      <p>Click below to create your admin account — you'll be the first administrator for your school's portal:</p>
+      <p>Click below to create your admin account. You'll be the first administrator for your school's portal:</p>
       <p style="margin: 20px 0;"><a href="${setupLink}" style="display: inline-block; background: #D4762A; color: white; padding: 10px 20px; border-radius: 6px; text-decoration: none; font-weight: 700;">Set up my school</a></p>
       <p style="font-size: 12px; color: #7A6A5A;">This link can only be used once. If it's already been used, contact us for a new one.</p>
     `),

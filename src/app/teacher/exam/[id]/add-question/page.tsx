@@ -159,7 +159,7 @@ export default function AddQuestionPage() {
     if (!file) return
     setMediaError('')
     if (file.size > VIDEO_MAX_MB * 1024 * 1024) {
-      setMediaError(`Video file is too large (max ${VIDEO_MAX_MB}MB). Large videos slow the exam down for every student — try compressing it or trimming the clip first.`)
+      setMediaError(`Video file is too large (max ${VIDEO_MAX_MB}MB). Large videos slow the exam down for every student. Try compressing it or trimming the clip first.`)
       e.target.value = ''
       return
     }
@@ -491,7 +491,7 @@ export default function AddQuestionPage() {
               </button>
             </div>
             <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: '0 0 10px' }}>
-              Each marking point has its own mark value and keywords. Auto-grading checks if the student's answer contains any keyword — teacher can override.
+              Each marking point has its own mark value and keywords. Auto-grading checks if the student's answer contains any keyword; teacher can override.
             </p>
             {markingPoints.map((point, i) => (
               <div key={i} style={{ marginBottom: 12, padding: 10, background: 'var(--card-bg)', borderRadius: 8, border: '1px solid var(--border)' }}>
@@ -528,7 +528,7 @@ export default function AddQuestionPage() {
 
         {questionType === 'essay' && (
           <div className="banner" style={{ marginBottom: 16, background: 'var(--border)', color: 'var(--text-secondary)' }}>
-            Essay questions are graded manually by a teacher after the exam — no correct answer needed here.
+            Essay questions are graded manually by a teacher after the exam. No correct answer needed here.
           </div>
         )}
 

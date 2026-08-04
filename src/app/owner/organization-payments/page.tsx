@@ -178,11 +178,11 @@ export default function OrganizationPaymentsPage() {
     <div className="page-container">
       <h1 style={{ marginBottom: 4 }}>Subscriptions & payments</h1>
       <p style={{ color: 'var(--text-secondary)', fontSize: 13, marginBottom: 20 }}>
-        Organizations pay by wire transfer and email proof of payment directly — grant or renew their subscription here once you&apos;ve verified it landed in the account.
+        Organizations pay by wire transfer and email proof of payment directly. Grant or renew their subscription here once you&apos;ve verified it landed in the account.
       </p>
 
       {errorMsg && <div className="banner banner-danger" style={{ marginBottom: 16 }}>{errorMsg}</div>}
-      {grantedKey && <div className="banner banner-success" style={{ marginBottom: 16 }}>License key <strong>{grantedKey}</strong> — emailed to the organization.</div>}
+      {grantedKey && <div className="banner banner-success" style={{ marginBottom: 16 }}>License key <strong>{grantedKey}</strong>, emailed to the organization.</div>}
 
       <div className="card" style={{ marginBottom: 24 }}>
         <h2 style={{ marginBottom: 12 }}>Grant or renew a subscription</h2>
@@ -193,7 +193,7 @@ export default function OrganizationPaymentsPage() {
               <option value="">Select an organization…</option>
               {orgs.map((o) => (
                 <option key={o.id} value={o.id}>
-                  {o.name} ({o.contact_email}){o.subscription_status === 'active' ? ' — active' : ''}
+                  {o.name} ({o.contact_email}){o.subscription_status === 'active' ? ' (active)' : ''}
                 </option>
               ))}
             </select>

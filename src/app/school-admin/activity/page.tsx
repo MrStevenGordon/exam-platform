@@ -88,7 +88,7 @@ export default function ActivityPage() {
         {s.tab_switch_count > 0 && (
           <div style={{ marginTop: 6 }}>
             <div style={{ fontSize: 12, color: 'var(--danger)', fontWeight: 700 }}>
-              ⚠ {s.tab_switch_count} violation{s.tab_switch_count !== 1 ? 's' : ''} — {
+              ⚠ {s.tab_switch_count} violation{s.tab_switch_count !== 1 ? 's' : ''} · {
                 s.tab_switch_count >= 3
                   ? 'Exam auto-submitted'
                   : `${3 - s.tab_switch_count} warning${3 - s.tab_switch_count !== 1 ? 's' : ''} remaining`

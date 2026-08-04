@@ -122,7 +122,7 @@ export default function TeacherHome() {
           <div className="stat-card-label">Number of students</div>
         </div>
         <div className="stat-card stat-card-accent">
-          <div className="stat-card-value">{avgScore !== null ? `${avgScore}%` : '—'}</div>
+          <div className="stat-card-value">{avgScore !== null ? `${avgScore}%` : 'N/A'}</div>
           <div className="stat-card-label">Student performance</div>
         </div>
       </div>
@@ -135,7 +135,7 @@ export default function TeacherHome() {
       </div>
 
       {exams.length === 0 && (
-        <EmptyState icon="🗂️" title="No exams yet" description="Everything you create — tasks, tests, and exams — will show up here." action={{ label: '+ Create your first exam', href: '/teacher/new' }} />
+        <EmptyState icon="🗂️" title="No exams yet" description="Everything you create (tasks, tests, and exams) will show up here." action={{ label: '+ Create your first exam', href: '/teacher/new' }} />
       )}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>

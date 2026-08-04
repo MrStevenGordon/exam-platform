@@ -112,7 +112,7 @@ export default function OrgExamResultsPage() {
       <Link href="/org/dashboard" style={{ color: 'var(--text-secondary)', fontSize: 14 }}>&larr; Back to dashboard</Link>
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '16px 0 20px' }}>
-        <p className="portal-page-title" style={{ margin: 0 }}>{examTitle} — Results</p>
+        <p className="portal-page-title" style={{ margin: 0 }}>{examTitle}: Results</p>
         <button onClick={exportCsv} disabled={rows.length === 0} className="btn btn-secondary">Export CSV</button>
       </div>
 
@@ -133,8 +133,8 @@ export default function OrgExamResultsPage() {
             <tbody>
               {rows.map((r) => (
                 <tr key={r.sessionId} style={{ borderBottom: '1px solid var(--border)' }}>
-                  {fields.map((f) => <td key={f.id} style={{ padding: '8px 12px' }}>{r.values[f.id] || '—'}</td>)}
-                  <td style={{ padding: '8px 12px' }}>{r.totalScore ?? '—'} / {r.maxScore ?? '—'}</td>
+                  {fields.map((f) => <td key={f.id} style={{ padding: '8px 12px' }}>{r.values[f.id] || 'N/A'}</td>)}
+                  <td style={{ padding: '8px 12px' }}>{r.totalScore ?? 'N/A'} / {r.maxScore ?? 'N/A'}</td>
                   <td style={{ padding: '8px 12px' }}>{new Date(r.submittedAt).toLocaleString()}</td>
                 </tr>
               ))}

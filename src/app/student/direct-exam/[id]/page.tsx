@@ -147,7 +147,7 @@ export default function DirectExamFrontPage() {
       <Link href="/student" style={{ color: 'var(--text-secondary)', fontSize: 14 }}>&larr; Back to my exams</Link>
 
       <h1 style={{ marginTop: 16 }}>{exam.title}</h1>
-      <p style={{ color: 'var(--text-secondary)', marginTop: 4 }}>{exam.subject} — {kindLabels[exam.exam_kind] || exam.exam_kind}</p>
+      <p style={{ color: 'var(--text-secondary)', marginTop: 4 }}>{exam.subject} · {kindLabels[exam.exam_kind] || exam.exam_kind}</p>
 
       <div className="card" style={{ display: 'flex', gap: 32, margin: '20px 0' }}>
         <div>
@@ -158,7 +158,7 @@ export default function DirectExamFrontPage() {
 
       {isRelaxedExam ? (
         <div className="banner" style={{ marginBottom: 20 }}>
-          This is {kindLabels[exam.exam_kind]?.toLowerCase() || 'homework'} — take your time, no timer or proctoring is applied.
+          This is {kindLabels[exam.exam_kind]?.toLowerCase() || 'homework'}. Take your time, no timer or proctoring is applied.
         </div>
       ) : (
         <div className="banner banner-warning" style={{ marginBottom: 20 }}>

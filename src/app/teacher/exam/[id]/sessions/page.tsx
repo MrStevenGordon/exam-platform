@@ -116,7 +116,7 @@ export default function ExamSessionsPage() {
                 <div>
                   <div style={{ fontWeight: 700, fontSize: 15 }}>{(s.profiles as any)?.full_name || 'Unknown student'}</div>
                   <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 2 }}>
-                    ID: {(s.profiles as any)?.student_id || '—'}
+                    ID: {(s.profiles as any)?.student_id || 'N/A'}
                     {s.completed_at && ` · Submitted ${new Date(s.completed_at).toLocaleString()}`}
                   </div>
                   {s.status === 'completed' && (
@@ -135,7 +135,7 @@ export default function ExamSessionsPage() {
                   )}
                   {hasIntegrityFlag && (
                     <div style={{ marginTop: 4, fontSize: 12, color: 'var(--warning)', fontWeight: 600 }}>
-                      ⚠ Possible AI-assisted writing — see review
+                      ⚠ Possible AI-assisted writing · see review
                     </div>
                   )}
                 </div>

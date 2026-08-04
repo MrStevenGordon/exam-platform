@@ -245,7 +245,7 @@ export default function ImportPDFPage() {
       {errorMsg && <div className="banner banner-danger" style={{ marginBottom: 16 }}>{errorMsg}</div>}
 
       <div className="banner banner-warning" style={{ marginBottom: 20 }}>
-        Review each question carefully — AI extraction is not perfect. Edit any questions that need fixing before importing.
+        Review each question carefully. AI extraction is not perfect. Edit any questions that need fixing before importing.
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>

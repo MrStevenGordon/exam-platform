@@ -86,7 +86,7 @@ export default function OrgDashboardPage() {
       {errorMsg && <div className="banner banner-danger" style={{ marginBottom: 16 }}>{errorMsg}</div>}
 
       {exams.length === 0 && (
-        <EmptyState icon="📝" title="No exams yet" description="Create your first one above — you'll get a code and password respondents use to take it." />
+        <EmptyState icon="📝" title="No exams yet" description="Create your first one above. You'll get a code and password respondents use to take it." />
       )}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>

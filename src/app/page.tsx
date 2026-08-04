@@ -75,7 +75,7 @@ export default function HomePage() {
           The smarter way to run exams and assessments
         </h1>
         <p style={{ fontSize: 20, color: 'var(--text-secondary)', maxWidth: 560, margin: '0 auto 2.5rem', lineHeight: 1.6 }}>
-          One secure platform for schools and organizations across Jamaica — from pop quizzes to full final exams to one-off assessments, built around how you actually work.
+          One secure platform for schools and organizations across Jamaica, from pop quizzes to full final exams to one-off assessments, built around how you actually work.
         </p>
         <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
           <a href="#contact">
@@ -89,7 +89,7 @@ export default function HomePage() {
           </Link>
         </div>
         <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: '1.25rem' }}>
-          Organization running a one-off assessment? <Link href="/org/signup" style={{ color: 'var(--accent-dark)', fontWeight: 700 }}>Sign up here</Link> — no roster setup needed.
+          Organization running a one-off assessment? <Link href="/org/signup" style={{ color: 'var(--accent-dark)', fontWeight: 700 }}>Sign up here</Link>. No roster setup needed.
         </p>
         <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: '0.5rem' }}>
           Running a school? <Link href="/build-my-school" style={{ color: 'var(--accent-dark)', fontWeight: 700 }}>Build your school&apos;s setup</Link> and request to join.
@@ -121,13 +121,13 @@ export default function HomePage() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16, maxWidth: 820, margin: '0 auto' }}>
           {[
             { icon: '🛡️', title: 'Exam integrity built in', desc: 'Fullscreen lock, tab-switch detection, single-device login, and a dedicated desktop app with kiosk-mode lockdown during exams.' },
-            { icon: '📝', title: 'Tasks, Tests & Final Exams', desc: 'Flexible take-home tasks, timed proctored tests, and a review pipeline that adapts to your school — from a single sign-off to a full multi-stage chain.' },
-            { icon: '👥', title: 'Role-based portals', desc: 'Student, Teacher, Supervisor, and Administrator portals, each showing only what that person needs — configured to match how your school is actually structured.' },
-            { icon: '∑', title: 'Real math notation', desc: 'A proper symbol toolbar for powers, roots, fractions, Greek letters and more — plus image, audio, and video questions.' },
+            { icon: '📝', title: 'Tasks, Tests & Final Exams', desc: 'Flexible take-home tasks, timed proctored tests, and a review pipeline that adapts to your school, from a single sign-off to a full multi-stage chain.' },
+            { icon: '👥', title: 'Role-based portals', desc: 'Student, Teacher, Supervisor, and Administrator portals, each showing only what that person needs, configured to match how your school is actually structured.' },
+            { icon: '∑', title: 'Real math notation', desc: 'A proper symbol toolbar for powers, roots, fractions, Greek letters and more, plus image, audio, and video questions.' },
             { icon: '🎯', title: 'Smart grading routing', desc: 'A completed exam finds the right subject teacher automatically, based on class assignment and what they actually teach.' },
             { icon: '✨', title: 'AI-assisted authoring', desc: 'Import questions straight from a PDF exam paper, and polish rough drafts with one click.' },
-            { icon: '💻', title: 'Offline-resilient desktop app', desc: 'Answers autosave locally and sync automatically — built for spotty connections, so a dropped connection never costs a student their work.' },
-            { icon: '🏢', title: 'Built for organizations too', desc: 'Running a single assessment without a full school setup? Publish it with just a code and password — no roster required.' },
+            { icon: '💻', title: 'Offline-resilient desktop app', desc: 'Answers autosave locally and sync automatically, built for spotty connections, so a dropped connection never costs a student their work.' },
+            { icon: '🏢', title: 'Built for organizations too', desc: 'Running a single assessment without a full school setup? Publish it with just a code and password. No roster required.' },
           ].map((f) => (
             <div key={f.title} className="card">
               <div style={{ fontSize: 24, marginBottom: '0.75rem' }}>{f.icon}</div>
@@ -142,17 +142,17 @@ export default function HomePage() {
       <section id="how-it-works" style={{ padding: '5rem 3rem', background: 'var(--card-bg)' }}>
         <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
           <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase', color: 'var(--accent)', marginBottom: '0.5rem' }}>How it works</div>
-          <h2 style={{ fontSize: 30, fontWeight: 700, margin: 0, textTransform: 'none', color: 'var(--text-primary)' }}>From question to results — your way</h2>
+          <h2 style={{ fontSize: 30, fontWeight: 700, margin: 0, textTransform: 'none', color: 'var(--text-primary)' }}>From question to results, your way</h2>
           <p style={{ fontSize: 15, color: 'var(--text-secondary)', maxWidth: 480, margin: '0.75rem auto 0', lineHeight: 1.6 }}>
-            Every school reviews exams differently. Smart Assess adapts to yours — from a single supervisor sign-off to a full multi-stage review chain.
+            Every school reviews exams differently. Smart Assess adapts to yours, from a single supervisor sign-off to a full multi-stage review chain.
           </p>
         </div>
         <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 8, maxWidth: 1000, margin: '0 auto' }}>
           {[
-            { step: '1', title: 'Teacher creates', desc: 'Writes and organizes the exam into sections — pulling in questions from a shared bank, or importing straight from a PDF.', optional: false },
-            { step: '2', title: 'Reviewed', desc: 'Anywhere from no review at all to a full department-level vetting chain — set per school, once, when it’s configured.', optional: true },
-            { step: '3', title: 'Supervisor publishes', desc: 'Sets the exam window and assigns it to the right classes — students see nothing until it opens.', optional: false },
-            { step: '4', title: 'Student sits exam', desc: 'Enters the access password, answers under full proctoring — on the web or the desktop app, fullscreen and monitored.', optional: false },
+            { step: '1', title: 'Teacher creates', desc: 'Writes and organizes the exam into sections, pulling in questions from a shared bank, or importing straight from a PDF.', optional: false },
+            { step: '2', title: 'Reviewed', desc: 'Anywhere from no review at all to a full department-level vetting chain, set per school once it’s configured.', optional: true },
+            { step: '3', title: 'Supervisor publishes', desc: 'Sets the exam window and assigns it to the right classes. Students see nothing until it opens.', optional: false },
+            { step: '4', title: 'Student sits exam', desc: 'Enters the access password, answers under full proctoring, on the web or the desktop app, fullscreen and monitored.', optional: false },
             { step: '5', title: 'Teacher grades & releases', desc: 'Routed automatically to the right subject teacher, who grades and releases results.', optional: false },
           ].map((s) => (
             <div
@@ -188,9 +188,9 @@ export default function HomePage() {
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16, maxWidth: 720, margin: '0 auto' }}>
           {[
-            { icon: '🔒', title: 'Real proctoring, not just a checkbox', desc: 'Fullscreen lock, tab-switch detection, and single-device login are enforced automatically — not settings someone has to remember to turn on.' },
-            { icon: '📡', title: 'Survives a dropped connection', desc: 'Answers save locally as a student types and sync the moment connectivity returns — a lost connection doesn’t mean lost work.' },
-            { icon: '🧩', title: 'Fits your process, not the other way around', desc: 'Review workflow, exam types, and portals are configured per school — you’re not forced into someone else’s procedure.' },
+            { icon: '🔒', title: 'Real proctoring, not just a checkbox', desc: 'Fullscreen lock, tab-switch detection, and single-device login are enforced automatically, not settings someone has to remember to turn on.' },
+            { icon: '📡', title: 'Survives a dropped connection', desc: 'Answers save locally as a student types and sync the moment connectivity returns. A lost connection doesn’t mean lost work.' },
+            { icon: '🧩', title: 'Fits your process, not the other way around', desc: 'Review workflow, exam types, and portals are configured per school. You’re not forced into someone else’s procedure.' },
           ].map((f) => (
             <div key={f.title} className="card">
               <div style={{ fontSize: 24, marginBottom: '0.75rem' }}>{f.icon}</div>

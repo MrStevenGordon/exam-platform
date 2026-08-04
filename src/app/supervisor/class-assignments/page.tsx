@@ -114,7 +114,7 @@ export default function ClassAssignmentsPage() {
       if (deleteError) deleteFailed = true
     }
     if (deleteFailed) {
-      setErrorMsg('Some existing assignments could not be removed. Your changes may not be fully saved — please review before continuing.')
+      setErrorMsg('Some existing assignments could not be removed. Your changes may not be fully saved. Please review before continuing.')
       setSaving(false)
       return
     }
@@ -217,7 +217,7 @@ export default function ClassAssignmentsPage() {
                       style={{ maxWidth: 260 }}
                       disabled={teachers.length === 0}
                     >
-                      <option value="">— Unassigned —</option>
+                      <option value="">Unassigned</option>
                       {teachers.map((t) => (
                         <option key={t.id} value={t.id}>{t.full_name}</option>
                       ))}

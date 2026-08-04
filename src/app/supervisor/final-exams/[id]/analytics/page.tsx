@@ -135,7 +135,7 @@ export default function ExamAnalyticsPage() {
         &larr; Back to sessions
       </Link>
 
-      <h1 style={{ marginTop: 16 }}>{examTitle} — Analytics</h1>
+      <h1 style={{ marginTop: 16 }}>{examTitle}: Analytics</h1>
       <p style={{ color: 'var(--text-secondary)', marginTop: 4 }}>
         {sessions.length} students graded · pass mark {passMark}%
       </p>

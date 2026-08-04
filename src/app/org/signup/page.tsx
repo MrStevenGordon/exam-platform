@@ -79,7 +79,7 @@ export default function OrgSignupPage() {
       <div className="card" style={{ width: '100%', maxWidth: 400, padding: '32px 28px' }}>
         <h1 style={{ marginBottom: 4, fontSize: 18 }}>Create your organization account</h1>
         <p style={{ color: 'var(--text-secondary)', fontSize: 13, marginBottom: 24 }}>
-          Publish a one-off exam or assessment — no roster setup required.
+          Publish a one-off exam or assessment. No roster setup required.
         </p>
 
         <form onSubmit={handleSignup}>

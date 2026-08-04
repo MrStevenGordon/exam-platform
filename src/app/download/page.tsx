@@ -33,7 +33,7 @@ export default function DownloadPage() {
           Download Smart Assess
         </h1>
         <p style={{ fontSize: 17, color: 'var(--text-secondary)', maxWidth: 520, margin: '0 auto 2.5rem', lineHeight: 1.6 }}>
-          A native desktop app for exams, built for spotty connections — answers autosave locally and sync automatically once you&apos;re back online.
+          A native desktop app for exams, built for spotty connections. Answers autosave locally and sync automatically once you&apos;re back online.
         </p>
 
         <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap', marginBottom: '1rem' }}>
@@ -45,7 +45,7 @@ export default function DownloadPage() {
           </a>
         </div>
         <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-          For students and staff at schools with an active Smart Assess subscription — just log in with your normal account.
+          For students and staff at schools with an active Smart Assess subscription. Just log in with your normal account.
         </p>
       </section>
 
@@ -54,8 +54,8 @@ export default function DownloadPage() {
           <h2 style={{ fontSize: 16, marginBottom: 12 }}>Setting it up</h2>
           <ol style={{ fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.9, paddingLeft: 20, margin: 0 }}>
             <li>Download and run the installer (on Mac, drag Smart Assess into Applications).</li>
-            <li>The first time you open it, your computer may warn it&apos;s from an unidentified developer — on Mac, right-click the app and choose <strong>Open</strong>; on Windows, click <strong>More info → Run anyway</strong> on the SmartScreen prompt.</li>
-            <li>Log in with your normal Smart Assess account — the app works the same as the website from there. If your school&apos;s subscription isn&apos;t active, login will say so.</li>
+            <li>The first time you open it, your computer may warn it&apos;s from an unidentified developer. On Mac, right-click the app and choose <strong>Open</strong>; on Windows, click <strong>More info → Run anyway</strong> on the SmartScreen prompt.</li>
+            <li>Log in with your normal Smart Assess account. The app works the same as the website from there. If your school&apos;s subscription isn&apos;t active, login will say so.</li>
           </ol>
         </div>
         <p style={{ fontSize: 13, color: 'var(--text-secondary)', textAlign: 'center', marginTop: 20 }}>
