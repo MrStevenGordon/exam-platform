@@ -1,60 +1,40 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { supabase } from '@/lib/supabase'
 import TurnstileWidget from '@/components/TurnstileWidget'
 
 export default function OrgSignupPage() {
-  const router = useRouter()
-  const [name, setName] = useState('')
+  const [orgName, setOrgName] = useState('')
+  const [contactName, setContactName] = useState('')
   const [contactEmail, setContactEmail] = useState('')
-  const [password, setPassword] = useState('')
+  const [notes, setNotes] = useState('')
   const [website, setWebsite] = useState('') // honeypot — real users never see or fill this
   const [turnstileToken, setTurnstileToken] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [submitted, setSubmitted] = useState(false)
 
-  async function handleSignup(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
-    if (password.length < 8) {
-      setError('Password must be at least 8 characters.')
-      return
-    }
     setLoading(true)
 
-    const guardRes = await fetch('/api/verify-signup-guard', {
+    const res = await fetch('/api/org-requests/submit', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ honeypot: website, turnstileToken }),
+      body: JSON.stringify({ orgName, contactName, contactEmail, notes, honeypot: website, turnstileToken }),
     })
-    if (!guardRes.ok) {
-      const guardData = await guardRes.json()
-      setError(guardData.error || 'Verification failed. Please try again.')
+    const data = await res.json()
+
+    if (!res.ok) {
+      setError(data.error || 'Something went wrong. Please try again.')
       setLoading(false)
       return
     }
 
-    const { data, error: authError } = await supabase.auth.signUp({ email: contactEmail, password })
-    if (authError || !data.user) {
-      setError(authError?.message || 'Could not create your account.')
-      setLoading(false)
-      return
-    }
-
-    const { error: orgError } = await supabase
-      .from('organizations')
-      .insert({ auth_user_id: data.user.id, name: name.trim(), contact_email: contactEmail.trim() })
-
-    if (orgError) {
-      setError(orgError.message)
-      setLoading(false)
-      return
-    }
-
-    router.push('/org/dashboard')
+    setSubmitted(true)
+    setLoading(false)
   }
 
   return (
@@ -76,99 +56,122 @@ export default function OrgSignupPage() {
         </div>
       </Link>
 
-      <div className="card" style={{ width: '100%', maxWidth: 400, padding: '32px 28px' }}>
-        <h1 style={{ marginBottom: 4, fontSize: 18 }}>Create your organization account</h1>
-        <p style={{ color: 'var(--text-secondary)', fontSize: 13, marginBottom: 24 }}>
-          Publish a one-off exam or assessment. No roster setup required.
-        </p>
-
-        <form onSubmit={handleSignup}>
-          <div style={{ marginBottom: 16 }}>
-            <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: 0.5, textTransform: 'uppercase' }}>
-              Organization name
-            </label>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-              placeholder="Acme Recruiting"
-              style={{ width: '100%', marginTop: 6 }}
-            />
-          </div>
-
-          <div style={{ marginBottom: 16 }}>
-            <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: 0.5, textTransform: 'uppercase' }}>
-              Contact email
-            </label>
-            <input
-              type="email"
-              value={contactEmail}
-              onChange={(e) => setContactEmail(e.target.value)}
-              required
-              placeholder="you@organization.com"
-              style={{ width: '100%', marginTop: 6 }}
-            />
-          </div>
-
-          <div style={{ marginBottom: 20 }}>
-            <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: 0.5, textTransform: 'uppercase' }}>
-              Password
-            </label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              minLength={8}
-              placeholder="At least 8 characters"
-              style={{ width: '100%', marginTop: 6 }}
-            />
-          </div>
-
-          {/* Honeypot — visually hidden from real users, but a naive bot that
-              autofills every field will fill this one and get silently rejected. */}
-          <div style={{ position: 'absolute', left: '-9999px', width: 1, height: 1, overflow: 'hidden' }} aria-hidden="true">
-            <label htmlFor="website">Website</label>
-            <input
-              type="text"
-              id="website"
-              name="website"
-              value={website}
-              onChange={(e) => setWebsite(e.target.value)}
-              tabIndex={-1}
-              autoComplete="off"
-            />
-          </div>
-
-          <TurnstileWidget onToken={setTurnstileToken} />
-
-          {error && (
-            <div className="banner banner-danger" style={{ marginBottom: 16, fontSize: 13 }}>
-              {error}
-            </div>
-          )}
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="btn btn-primary"
-            style={{ width: '100%', justifyContent: 'center', fontSize: 14, padding: '12px 20px' }}
-          >
-            {loading ? 'Creating account…' : 'Create account'}
-          </button>
-
-          <p style={{ fontSize: 11, color: 'var(--text-muted)', textAlign: 'center', marginTop: 12 }}>
-            By creating an account, you agree to our{' '}
-            <Link href="/terms" style={{ color: 'var(--text-secondary)' }}>Terms of Service</Link> and{' '}
-            <Link href="/privacy" style={{ color: 'var(--text-secondary)' }}>Privacy Policy</Link>.
+      {submitted ? (
+        <div className="card" style={{ width: '100%', maxWidth: 400, padding: '32px 28px', textAlign: 'center' }}>
+          <div style={{ fontSize: 40, marginBottom: 12 }}>✓</div>
+          <h1 style={{ marginBottom: 8, fontSize: 18 }}>Request received</h1>
+          <p style={{ color: 'var(--text-secondary)', fontSize: 13 }}>
+            Thanks. We&apos;ll review your request and email {contactEmail} with next steps.
           </p>
-        </form>
-
-        <div style={{ textAlign: 'center', marginTop: 20, fontSize: 13, color: 'var(--text-secondary)' }}>
-          Already have an organization account? <Link href="/org/login" style={{ color: 'var(--accent-dark)', fontWeight: 600 }}>Sign in</Link>
+          <Link href="/" style={{ display: 'inline-block', marginTop: 16, color: 'var(--accent-dark)', fontWeight: 600 }}>&larr; Back to home</Link>
         </div>
-      </div>
+      ) : (
+        <div className="card" style={{ width: '100%', maxWidth: 400, padding: '32px 28px' }}>
+          <h1 style={{ marginBottom: 4, fontSize: 18 }}>Request an organization account</h1>
+          <p style={{ color: 'var(--text-secondary)', fontSize: 13, marginBottom: 24 }}>
+            Publish a one-off exam or assessment. No roster setup required. We review each request before setting up your account.
+          </p>
+
+          <form onSubmit={handleSubmit}>
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: 0.5, textTransform: 'uppercase' }}>
+                Organization name
+              </label>
+              <input
+                type="text"
+                value={orgName}
+                onChange={(e) => setOrgName(e.target.value)}
+                required
+                placeholder="Acme Recruiting"
+                style={{ width: '100%', marginTop: 6 }}
+              />
+            </div>
+
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: 0.5, textTransform: 'uppercase' }}>
+                Your name
+              </label>
+              <input
+                type="text"
+                value={contactName}
+                onChange={(e) => setContactName(e.target.value)}
+                required
+                placeholder="Jane Brown"
+                style={{ width: '100%', marginTop: 6 }}
+              />
+            </div>
+
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: 0.5, textTransform: 'uppercase' }}>
+                Contact email
+              </label>
+              <input
+                type="email"
+                value={contactEmail}
+                onChange={(e) => setContactEmail(e.target.value)}
+                required
+                placeholder="you@organization.com"
+                style={{ width: '100%', marginTop: 6 }}
+              />
+            </div>
+
+            <div style={{ marginBottom: 20 }}>
+              <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: 0.5, textTransform: 'uppercase' }}>
+                What will you use it for? (optional)
+              </label>
+              <textarea
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                rows={3}
+                placeholder="e.g. Screening assessment for job applicants"
+                style={{ width: '100%', marginTop: 6 }}
+              />
+            </div>
+
+            {/* Honeypot — visually hidden from real users, but a naive bot that
+                autofills every field will fill this one and get silently rejected. */}
+            <div style={{ position: 'absolute', left: '-9999px', width: 1, height: 1, overflow: 'hidden' }} aria-hidden="true">
+              <label htmlFor="website">Website</label>
+              <input
+                type="text"
+                id="website"
+                name="website"
+                value={website}
+                onChange={(e) => setWebsite(e.target.value)}
+                tabIndex={-1}
+                autoComplete="off"
+              />
+            </div>
+
+            <TurnstileWidget onToken={setTurnstileToken} />
+
+            {error && (
+              <div className="banner banner-danger" style={{ marginBottom: 16, fontSize: 13 }}>
+                {error}
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="btn btn-primary"
+              style={{ width: '100%', justifyContent: 'center', fontSize: 14, padding: '12px 20px' }}
+            >
+              {loading ? 'Submitting…' : 'Submit request'}
+            </button>
+
+            <p style={{ fontSize: 11, color: 'var(--text-muted)', textAlign: 'center', marginTop: 12 }}>
+              By submitting, you agree to our{' '}
+              <Link href="/terms" style={{ color: 'var(--text-secondary)' }}>Terms of Service</Link> and{' '}
+              <Link href="/privacy" style={{ color: 'var(--text-secondary)' }}>Privacy Policy</Link>.
+            </p>
+          </form>
+
+          <div style={{ textAlign: 'center', marginTop: 20, fontSize: 13, color: 'var(--text-secondary)' }}>
+            Already have an organization account? <Link href="/org/login" style={{ color: 'var(--accent-dark)', fontWeight: 600 }}>Sign in</Link>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

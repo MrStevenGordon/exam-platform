@@ -59,7 +59,7 @@ export default function DownloadPage() {
           </ol>
         </div>
         <p style={{ fontSize: 13, color: 'var(--text-secondary)', textAlign: 'center', marginTop: 20 }}>
-          Don&apos;t have a subscription yet? <a href="/build-my-school" style={{ color: 'var(--accent-dark)' }}>Get your school set up</a> or <a href="/org/signup" style={{ color: 'var(--accent-dark)' }}>sign up as an organization</a>.
+          Don&apos;t have a subscription yet? <a href="/build-my-school" style={{ color: 'var(--accent-dark)' }}>Get your school set up</a> or <a href="/org/signup" style={{ color: 'var(--accent-dark)' }}>request an organization account</a>.
         </p>
       </section>
     </div>

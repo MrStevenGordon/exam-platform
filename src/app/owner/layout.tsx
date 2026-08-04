@@ -9,6 +9,7 @@ import InactivityLogout from '@/components/InactivityLogout'
 
 const OWNER_NAV = [
   { label: 'School requests', href: '/owner/school-requests' },
+  { label: 'Org requests', href: '/owner/org-requests' },
   { label: 'Configure school tools', href: '/owner/school-features' },
   { label: 'School subscriptions', href: '/owner/school-subscriptions' },
   { label: 'Org subscriptions & payments', href: '/owner/organization-payments' },

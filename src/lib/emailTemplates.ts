@@ -80,6 +80,40 @@ export function contactInquiryEmail(name: string, org: string, email: string, me
   }
 }
 
+export function orgRequestReceivedEmail(orgName: string, contactName: string) {
+  return {
+    subject: `We've received your Smart Assess request for ${orgName}`,
+    html: wrapper(`
+      <p>Hi ${contactName},</p>
+      <p>Thanks for your interest in Smart Assess for <strong>${orgName}</strong>. Your request has been submitted and is now under review.</p>
+      <p>We'll follow up once we've had a chance to look it over.</p>
+    `),
+  }
+}
+
+export function orgRequestAcceptedEmail(orgName: string, contactName: string, setupLink: string) {
+  return {
+    subject: `${orgName} has been accepted onto Smart Assess`,
+    html: wrapper(`
+      <p>Hi ${contactName},</p>
+      <p>Great news! Your request for <strong>${orgName}</strong> has been accepted.</p>
+      <p>Click below to create your account. You'll be the administrator for your organization:</p>
+      <p style="margin: 20px 0;"><a href="${setupLink}" style="display: inline-block; background: #D4762A; color: white; padding: 10px 20px; border-radius: 6px; text-decoration: none; font-weight: 700;">Set up my organization</a></p>
+      <p style="font-size: 12px; color: #7A6A5A;">This link can only be used once. If it's already been used, contact us for a new one.</p>
+    `),
+  }
+}
+
+export function orgRequestRejectedEmail(orgName: string, contactName: string) {
+  return {
+    subject: `Update on your Smart Assess request for ${orgName}`,
+    html: wrapper(`
+      <p>Hi ${contactName},</p>
+      <p>Thank you for your interest in Smart Assess for <strong>${orgName}</strong>. After review, we're not able to move forward with this request at this time.</p>
+    `),
+  }
+}
+
 export function credentialsEmail(schoolName: string, contactName: string, setupLink: string) {
   return {
     subject: `${schoolName}'s Smart Assess portal is ready`,

@@ -109,7 +109,7 @@ export default function OrgLoginPage() {
         </form>
 
         <div style={{ textAlign: 'center', marginTop: 20, fontSize: 13, color: 'var(--text-secondary)' }}>
-          New organization? <Link href="/org/signup" style={{ color: 'var(--accent-dark)', fontWeight: 600 }}>Create an account</Link>
+          New organization? <Link href="/org/signup" style={{ color: 'var(--accent-dark)', fontWeight: 600 }}>Request access</Link>
         </div>
       </div>
     </div>

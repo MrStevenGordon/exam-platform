@@ -89,7 +89,7 @@ export default function HomePage() {
           </Link>
         </div>
         <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: '1.25rem' }}>
-          Organization running a one-off assessment? <Link href="/org/signup" style={{ color: 'var(--accent-dark)', fontWeight: 700 }}>Sign up here</Link>. No roster setup needed.
+          Organization running a one-off assessment? <Link href="/org/signup" style={{ color: 'var(--accent-dark)', fontWeight: 700 }}>Request access here</Link>. No roster setup needed.
         </p>
         <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: '0.5rem' }}>
           Running a school? <Link href="/build-my-school" style={{ color: 'var(--accent-dark)', fontWeight: 700 }}>Build your school&apos;s setup</Link> and request to join.
