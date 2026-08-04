@@ -1,8 +1,8 @@
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Smart Assess — Coming Soon',
-  description: 'Smart Assess is launching soon — online exams built for schools across Jamaica.',
+  title: 'Smart Assess: Coming Soon',
+  description: 'Smart Assess is launching soon. Online exams built for schools across Jamaica.',
 }
 
 const FEATURES = [
@@ -42,9 +42,6 @@ export default function ComingSoonPage() {
   return (
     <div className="cs-page">
       <div className="cs-topline" />
-      <div className="cs-blob cs-blob-a" />
-      <div className="cs-blob cs-blob-b" />
-      <div className="cs-blob cs-blob-c" />
 
       <main className="cs-hero">
         <div className="cs-copy">
@@ -65,8 +62,8 @@ export default function ComingSoonPage() {
           </h1>
           <p className="cs-sub cs-rise" style={{ animationDelay: '0.35s' }}>
             A modern exam and assessment platform, built from the ground up for schools
-            and organizations across Jamaica. We&apos;re putting on the finishing touches —
-            check back soon.
+            and organizations across Jamaica. We&apos;re putting on the finishing touches.
+            Check back soon.
           </p>
 
           <div className="cs-features cs-rise" style={{ animationDelay: '0.45s' }}>
@@ -85,18 +82,7 @@ export default function ComingSoonPage() {
             role="img"
             aria-label="An open book transforming into a laptop running a digital exam"
           >
-            <defs>
-              <filter id="csGlow" x="-80%" y="-80%" width="260%" height="260%">
-                <feGaussianBlur stdDeviation="30" />
-              </filter>
-              <linearGradient id="csBar" x1="0" y1="0" x2="1" y2="0">
-                <stop offset="0" stopColor="#E8924A" />
-                <stop offset="1" stopColor="#D4762A" />
-              </linearGradient>
-            </defs>
-
-            {/* ambient glow + dotted orbit */}
-            <circle cx="280" cy="236" r="118" fill="#E8924A" opacity="0.2" filter="url(#csGlow)" />
+            {/* dotted orbit */}
             <circle
               className="cs-orbit"
               cx="280"
@@ -187,7 +173,7 @@ export default function ComingSoonPage() {
 
               {/* progress bar */}
               <rect x="192" y="262" width="176" height="9" rx="4.5" fill="#F0DFC8" />
-              <rect className="cs-progress" x="192" y="262" width="176" height="9" rx="4.5" fill="url(#csBar)" />
+              <rect className="cs-progress" x="192" y="262" width="176" height="9" rx="4.5" fill="#D4762A" />
             </g>
 
             {/* open book (folds down into the hinge) */}
@@ -247,7 +233,7 @@ export default function ComingSoonPage() {
           flex-direction: column;
           align-items: center;
           overflow: hidden;
-          background: linear-gradient(160deg, #FDF8F3 0%, #FBEEDD 55%, #F8E2C4 100%);
+          background: #FDF8F3;
           font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
           padding: 32px 24px 24px;
         }
@@ -258,55 +244,7 @@ export default function ComingSoonPage() {
           left: 0;
           right: 0;
           height: 3px;
-          background: linear-gradient(90deg, #E8924A, #D4762A 45%, #A85A18);
-          opacity: 0.85;
-        }
-
-        .cs-blob {
-          position: absolute;
-          border-radius: 50%;
-          filter: blur(60px);
-          pointer-events: none;
-        }
-
-        .cs-blob-a {
-          width: 480px;
-          height: 480px;
-          background: #E8924A;
-          opacity: 0.32;
-          top: -180px;
-          left: -160px;
-          animation: cs-float-a 14s ease-in-out infinite;
-        }
-
-        .cs-blob-b {
-          width: 400px;
-          height: 400px;
           background: #D4762A;
-          opacity: 0.22;
-          bottom: -160px;
-          right: -120px;
-          animation: cs-float-b 16s ease-in-out infinite;
-        }
-
-        .cs-blob-c {
-          width: 300px;
-          height: 300px;
-          background: #F8E2C4;
-          opacity: 0.5;
-          top: 40%;
-          left: 46%;
-          animation: cs-float-a 20s ease-in-out infinite reverse;
-        }
-
-        @keyframes cs-float-a {
-          0%, 100% { transform: translate(0, 0) scale(1); }
-          50% { transform: translate(30px, 40px) scale(1.08); }
-        }
-
-        @keyframes cs-float-b {
-          0%, 100% { transform: translate(0, 0) scale(1); }
-          50% { transform: translate(-30px, -30px) scale(1.06); }
         }
 
         .cs-hero {
