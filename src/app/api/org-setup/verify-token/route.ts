@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/verifySystemAdmin'
+import { rateLimit, getClientIp } from '@/lib/rateLimit'
 
 // Checks a setup token's validity without ever exposing the token value
 // itself or the org's contact details back to the client until claimed.
 export async function GET(req: NextRequest) {
+  const limited = await rateLimit(getClientIp(req), 'org-setup-verify-token', { limit: 20, windowSeconds: 60 })
+  if (limited) return limited
+
   const token = req.nextUrl.searchParams.get('token')
   if (!token) return NextResponse.json({ valid: false }, { status: 400 })
 

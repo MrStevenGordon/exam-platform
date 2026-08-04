@@ -3,9 +3,13 @@ import { verifyTurnstile } from '@/lib/verifyTurnstile'
 import { supabaseAdmin } from '@/lib/verifySystemAdmin'
 import { sendEmail, EMAIL_FROM } from '@/lib/email'
 import { orgRequestReceivedEmail } from '@/lib/emailTemplates'
+import { rateLimit, getClientIp } from '@/lib/rateLimit'
 
 export async function POST(req: NextRequest) {
   try {
+    const limited = await rateLimit(getClientIp(req), 'org-requests-submit', { limit: 5, windowSeconds: 3600 })
+    if (limited) return limited
+
     const { orgName, contactName, contactEmail, notes, honeypot, turnstileToken } = await req.json()
 
     if (honeypot) {

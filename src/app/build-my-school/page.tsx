@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import TurnstileWidget from '@/components/TurnstileWidget'
 
 const WORKFLOW_TEMPLATES = [
   {
@@ -44,6 +45,8 @@ export default function BuildMySchoolPage() {
   const [workflowOtherDescription, setWorkflowOtherDescription] = useState('')
   const [features, setFeatures] = useState<string[]>([])
   const [notes, setNotes] = useState('')
+  const [website, setWebsite] = useState('') // honeypot — real users never see or fill this
+  const [turnstileToken, setTurnstileToken] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
   const [error, setError] = useState('')
@@ -67,6 +70,8 @@ export default function BuildMySchoolPage() {
         workflowOtherDescription,
         featureFlags: features,
         notes,
+        honeypot: website,
+        turnstileToken,
       }),
     })
     const data = await res.json()
@@ -233,6 +238,26 @@ export default function BuildMySchoolPage() {
             <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Anything else we should know? (optional)</label>
             <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} style={{ width: '100%', marginTop: 6 }} />
           </div>
+
+          {/* Honeypot — visually hidden from real users, but a naive bot that
+              autofills every field will fill this one and get silently rejected. */}
+          <div style={{ position: 'absolute', left: '-9999px', width: 1, height: 1, overflow: 'hidden' }} aria-hidden="true">
+            <label htmlFor="website">Website</label>
+            <input
+              type="text"
+              id="website"
+              name="website"
+              value={website}
+              onChange={(e) => setWebsite(e.target.value)}
+              tabIndex={-1}
+              autoComplete="off"
+            />
+          </div>
+
+          <div style={{ marginBottom: 16 }}>
+            <TurnstileWidget onToken={setTurnstileToken} />
+          </div>
+
           <div style={{ display: 'flex', gap: 10 }}>
             <button onClick={() => setStep(3)} className="btn btn-ghost">Back</button>
             <button onClick={handleSubmit} disabled={submitting} className="btn btn-primary" style={{ flex: 1 }}>

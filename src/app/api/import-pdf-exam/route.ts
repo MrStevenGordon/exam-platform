@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { rateLimit } from '@/lib/rateLimit'
 
 const MONTHLY_LIMIT = 10
 const MAX_PDF_BASE64_CHARS = 27_000_000 // ~20MB decoded
@@ -41,6 +42,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Not authorized.' }, { status: 403 })
     }
     const teacherId = userData.user.id
+
+    // Defense-in-depth on top of the monthly cap below: caps burst calls to
+    // this paid AI endpoint even from a legitimate, still-under-quota token.
+    const burstLimited = await rateLimit(teacherId, 'import-pdf-exam-burst', { limit: 3, windowSeconds: 60 })
+    if (burstLimited) return burstLimited
 
     const monthYear = new Date().toISOString().slice(0, 7)
 

@@ -44,5 +44,11 @@ export async function GET(req: NextRequest) {
     deletedCount += deleted?.length || 0
   }
 
+  // Rate-limit counters are keyed by ip/user + endpoint and self-reset per
+  // window, but rows for keys that never come back would otherwise
+  // accumulate forever — sweep anything untouched for a day.
+  const rateLimitCutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
+  await supabaseAdmin.from('rate_limits').delete().lt('window_start', rateLimitCutoff)
+
   return NextResponse.json({ deletedSessions: deletedCount })
 }

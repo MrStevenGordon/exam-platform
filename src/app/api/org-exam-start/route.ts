@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { rateLimit, getClientIp } from '@/lib/rateLimit'
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -17,6 +18,15 @@ export async function POST(req: NextRequest) {
     if (!examId || !accessToken) {
       return NextResponse.json({ error: 'Missing required fields.' }, { status: 400 })
     }
+
+    // Two limits: a tight one scoped to this exam (stops password-guessing
+    // against a single exam) and a broader one per IP across all exams
+    // (stops someone rotating through exam ids to find guessable ones).
+    const ip = getClientIp(req)
+    const perExamLimited = await rateLimit(`${ip}:${examId}`, 'org-exam-start', { limit: 8, windowSeconds: 600 })
+    if (perExamLimited) return perExamLimited
+    const perIpLimited = await rateLimit(ip, 'org-exam-start-ip', { limit: 30, windowSeconds: 3600 })
+    if (perIpLimited) return perIpLimited
 
     const { data: userData, error: userError } = await supabaseAdmin.auth.getUser(accessToken)
     if (userError || !userData.user) {

@@ -2,11 +2,15 @@ import { NextRequest, NextResponse } from 'next/server'
 import { verifyTurnstile } from '@/lib/verifyTurnstile'
 import { sendEmail, EMAIL_FROM } from '@/lib/email'
 import { contactInquiryEmail } from '@/lib/emailTemplates'
+import { rateLimit, getClientIp } from '@/lib/rateLimit'
 
 const SALES_INBOX = 'sales@smartassessja.com'
 
 export async function POST(req: NextRequest) {
   try {
+    const limited = await rateLimit(getClientIp(req), 'contact-submit', { limit: 10, windowSeconds: 3600 })
+    if (limited) return limited
+
     const { name, org, email, message, honeypot, turnstileToken } = await req.json()
 
     if (honeypot) {

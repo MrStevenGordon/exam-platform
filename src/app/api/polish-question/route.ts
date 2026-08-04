@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { rateLimit } from '@/lib/rateLimit'
 
 const MONTHLY_LIMIT = 5
 
@@ -37,6 +38,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Not authorized.' }, { status: 403 })
     }
     const teacherId = userData.user.id
+
+    // Defense-in-depth on top of the monthly cap below: caps burst calls to
+    // this paid AI endpoint even from a legitimate, still-under-quota token.
+    const burstLimited = await rateLimit(teacherId, 'polish-question-burst', { limit: 5, windowSeconds: 60 })
+    if (burstLimited) return burstLimited
 
     const monthYear = new Date().toISOString().slice(0, 7) // e.g. '2026-07'
 

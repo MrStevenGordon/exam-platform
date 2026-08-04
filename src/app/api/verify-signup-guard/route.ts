@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { verifyTurnstile } from '@/lib/verifyTurnstile'
+import { rateLimit, getClientIp } from '@/lib/rateLimit'
 
 // Checked before a public, unauthenticated signup form (org signup,
 // Build My School) proceeds with creating anything. Honeypot field first
@@ -10,6 +11,9 @@ import { verifyTurnstile } from '@/lib/verifyTurnstile'
 // floods hitting the actual form, not a fully bulletproof gate.
 export async function POST(req: NextRequest) {
   try {
+    const limited = await rateLimit(getClientIp(req), 'verify-signup-guard', { limit: 10, windowSeconds: 60 })
+    if (limited) return limited
+
     const { honeypot, turnstileToken } = await req.json()
 
     if (honeypot) {

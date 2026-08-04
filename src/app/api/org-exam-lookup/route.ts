@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { rateLimit, getClientIp } from '@/lib/rateLimit'
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -10,6 +11,11 @@ const supabaseAdmin = createClient(
 // flow. Deliberately never selects access_password — that's checked
 // separately in /api/org-exam-start, server-side only.
 export async function GET(req: NextRequest) {
+  // Rate-limited to slow down exam-code enumeration — this is the only
+  // check standing between a guessed code and confirming an exam exists.
+  const limited = await rateLimit(getClientIp(req), 'org-exam-lookup', { limit: 20, windowSeconds: 60 })
+  if (limited) return limited
+
   const code = req.nextUrl.searchParams.get('code')
   const examId = req.nextUrl.searchParams.get('examId')
 
