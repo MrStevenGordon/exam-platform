@@ -25,12 +25,6 @@ export default function TermsOfServicePage() {
         <h1 style={{ fontSize: 32, fontWeight: 800, marginBottom: 8, textTransform: 'none' }}>Terms of Service</h1>
         <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: '3rem' }}>Last updated: August 2026</p>
 
-        <div className="banner banner-warning" style={{ marginBottom: '2.5rem', fontSize: 13 }}>
-          This is a plain-language draft describing how Smart Assess is actually meant to be used. It has
-          not been reviewed by a lawyer and isn&apos;t a substitute for one if you need a formally vetted
-          contract.
-        </div>
-
         <Section title="1. Agreement to these terms">
           By creating an account, submitting a Build My School request, signing up as an organization, or
           using Smart Assess in any way, you agree to these terms. If you&apos;re agreeing on behalf of a
@@ -58,9 +52,9 @@ export default function TermsOfServicePage() {
         <Section title="4. Acceptable use">
           You agree not to: use the platform to cheat on or facilitate cheating in an exam you&apos;re taking;
           attempt to access another school&apos;s or organization&apos;s data; attempt to bypass exam integrity
-          features (fullscreen lock, tab-switch detection, single-device login); upload unlawful, harmful, or
-          infringing content; or attempt to disrupt, flood, or gain unauthorized access to the platform,
-          including through automated bots or scripts.
+          features (fullscreen lock, tab-switch detection); upload unlawful, harmful, or infringing content; or
+          attempt to disrupt, flood, or gain unauthorized access to the platform, including through automated
+          bots or scripts.
         </Section>
 
         <Section title="5. Subscriptions and payment">
@@ -73,36 +67,67 @@ export default function TermsOfServicePage() {
         </Section>
 
         <Section title="6. Exam integrity features">
-          Timed and proctored exams use fullscreen lock, tab-switch detection, and single-device login to
-          help maintain exam integrity, and log signals a teacher can review for potential academic integrity
-          concerns. These tools are aids for the school&apos;s own review process. Smart Assess never
-          automatically penalizes a student based on these signals; a human always makes that call.
+          Timed and proctored exams use fullscreen lock and tab-switch detection to help maintain exam
+          integrity, and log signals a teacher can review for potential academic integrity concerns. These
+          tools are aids for the school&apos;s own review process. Smart Assess never automatically penalizes a
+          student based on these signals; a human always makes that call.
         </Section>
 
-        <Section title="7. Availability and changes">
+        <Section title="7. Our use of AI">
+          Some features (polishing the wording of a question, extracting questions from an uploaded PDF) use a
+          third-party AI service. These features are opt-in, only process content a staff member explicitly
+          submits, and produce suggestions only — a human always reviews the output before it&apos;s used. AI
+          is never used to grade a student or make an academic integrity determination on its own.
+        </Section>
+
+        <Section title="8. Ownership of content">
+          Smart Assess owns the platform, its software, and its branding. Schools and organizations retain
+          ownership of the exam content, questions, and data they create or upload. By using the platform, you
+          grant us a limited license to host, process, and display that content solely to provide the service
+          to you. You&apos;re responsible for having the rights to any content you upload, and for not
+          uploading anything that infringes someone else&apos;s copyright or other rights.
+        </Section>
+
+        <Section title="9. Copyright complaints">
+          If you believe content on Smart Assess infringes your copyright, email{' '}
+          <a href="mailto:legal@smartassessja.com" style={{ color: 'var(--accent-dark)', fontWeight: 600 }}>legal@smartassessja.com</a>{' '}
+          with: a description of the copyrighted work, the material you believe infringes it and where to find
+          it, your contact information, and a statement that you believe in good faith the use isn&apos;t
+          authorized. We&apos;ll investigate and remove infringing content where warranted.
+        </Section>
+
+        <Section title="10. Availability and changes">
           We aim to keep Smart Assess available and reliable, but we don&apos;t guarantee uninterrupted access:
           maintenance, third-party outages, or unforeseen issues can occasionally affect availability. We
           may update or add features over time, and may update these terms; material changes will be
           communicated to school administrators.
         </Section>
 
-        <Section title="8. Limitation of liability">
+        <Section title="11. Limitation of liability">
           Smart Assess is provided on an &quot;as is&quot; basis. To the fullest extent permitted by law, we
           aren&apos;t liable for indirect or consequential damages arising from use of the platform. Nothing
           in these terms limits liability that can&apos;t be limited under Jamaican law.
         </Section>
 
-        <Section title="9. Termination">
+        <Section title="12. Termination">
           We may suspend or terminate an account that violates these terms, particularly the acceptable use
           section. Schools and organizations may cancel their subscription at any time; access continues
           through the end of the paid period.
         </Section>
 
-        <Section title="10. Governing law">
-          These terms are governed by the laws of Jamaica.
+        <Section title="13. Governing law">
+          These terms are governed by the laws of Jamaica, without regard to its conflict-of-law principles.
+          Any dispute not resolved informally may be brought before the courts of Jamaica.
         </Section>
 
-        <Section title="11. Contact">
+        <Section title="14. General">
+          If any part of these terms is found unenforceable, the rest remains in effect. These terms, together
+          with the Privacy Policy, are the entire agreement between you and Smart Assess regarding your use of
+          the platform, and supersede any prior agreements on the subject. Our failure to enforce a provision
+          isn&apos;t a waiver of it.
+        </Section>
+
+        <Section title="15. Contact">
           Questions about these terms can be sent to{' '}
           <a href="mailto:legal@smartassessja.com" style={{ color: 'var(--accent-dark)', fontWeight: 600 }}>legal@smartassessja.com</a>.
         </Section>

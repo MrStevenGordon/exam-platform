@@ -23,12 +23,35 @@ export default function PrivacyPolicyPage() {
 
       <div style={{ maxWidth: 720, margin: '0 auto', padding: '4rem 24px' }}>
         <h1 style={{ fontSize: 32, fontWeight: 800, marginBottom: 8, textTransform: 'none' }}>Privacy Policy</h1>
-        <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: '3rem' }}>Last updated: August 2026</p>
+        <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: '2.5rem' }}>Last updated: August 2026</p>
 
-        <div className="banner banner-warning" style={{ marginBottom: '2.5rem', fontSize: 13 }}>
-          This policy describes what Smart Assess actually collects and does with data, in plain terms.
-          It has not been reviewed by a lawyer. If you have specific legal or compliance questions, please
-          consult one before relying on it for a formal compliance requirement.
+        <div style={{ marginBottom: '3rem', border: '1px solid var(--border)', borderRadius: 8, overflow: 'hidden' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+            <thead>
+              <tr style={{ background: 'var(--page-bg)' }}>
+                <th style={{ textAlign: 'left', padding: '10px 14px', fontWeight: 700, color: 'var(--text-secondary)', borderBottom: '1px solid var(--border)' }}>Data category</th>
+                <th style={{ textAlign: 'left', padding: '10px 14px', fontWeight: 700, color: 'var(--text-secondary)', borderBottom: '1px solid var(--border)' }}>Collected from</th>
+                <th style={{ textAlign: 'left', padding: '10px 14px', fontWeight: 700, color: 'var(--text-secondary)', borderBottom: '1px solid var(--border)' }}>Used for</th>
+                <th style={{ textAlign: 'left', padding: '10px 14px', fontWeight: 700, color: 'var(--text-secondary)', borderBottom: '1px solid var(--border)' }}>Sold or used for ads?</th>
+              </tr>
+            </thead>
+            <tbody>
+              {[
+                ['Identity & contact', 'Students, staff, orgs', 'Login, communication, class rosters'],
+                ['Exam content & answers', 'Students, teachers, orgs', 'Delivering, grading, and reporting on exams'],
+                ['Exam integrity signals', 'Students (during proctored exams)', 'Flagging possible integrity concerns for a teacher to review'],
+                ['Payment records', 'Schools, organizations', 'Billing (plan, amount, reference note only — never card or bank login details)'],
+                ['Technical & error data', 'Everyone', 'Keeping you logged in, diagnosing bugs'],
+              ].map(([cat, from, use], i, arr) => (
+                <tr key={cat} style={{ borderBottom: i < arr.length - 1 ? '1px solid var(--border)' : 'none' }}>
+                  <td style={{ padding: '10px 14px', fontWeight: 600 }}>{cat}</td>
+                  <td style={{ padding: '10px 14px', color: 'var(--text-secondary)' }}>{from}</td>
+                  <td style={{ padding: '10px 14px', color: 'var(--text-secondary)' }}>{use}</td>
+                  <td style={{ padding: '10px 14px', color: 'var(--text-secondary)' }}>Never</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
 
         <Section title="Who this applies to">
@@ -60,6 +83,15 @@ export default function PrivacyPolicyPage() {
           Strictly to run the platform: authenticating you, delivering and grading exams, routing work to the
           right teacher, detecting technical issues, and (for organizations) billing. We do not use student or
           staff data for advertising, and we do not sell personal data to anyone, ever.
+        </Section>
+
+        <Section title="Our use of AI">
+          Two optional features use a third-party AI service (Anthropic): polishing the wording of a question a
+          teacher is writing, and extracting questions from a PDF a teacher uploads. Both are opt-in, both only
+          process content a staff member explicitly submits in that moment, and both produce suggestions only —
+          a human teacher always reviews and decides whether to use the output. We do not use AI to grade
+          students, make integrity determinations, or make any decision about a student without a human
+          reviewing it first.
         </Section>
 
         <Section title="Who we share it with">
@@ -95,17 +127,29 @@ export default function PrivacyPolicyPage() {
           or guardian consent required under its own policies and applicable law before enrolling a student.
         </Section>
 
-        <Section title="Jamaica's Data Protection Act">
-          We aim to handle personal data consistent with Jamaica&apos;s Data Protection Act, 2020, including
-          using data only for the purpose it was collected for, keeping it secure, and not retaining it
-          longer than necessary. If you believe your data has been mishandled, you may also contact the
-          Office of the Information Commissioner of Jamaica.
+        <Section title="Your rights under Jamaica's Data Protection Act">
+          <p style={{ marginBottom: 12 }}>We handle personal data consistent with Jamaica&apos;s Data Protection Act, 2020: we only use data
+          for the purpose it was collected for, keep it secure, and don&apos;t retain it longer than necessary.
+          As a data subject, you have the right to:</p>
+          <ul style={{ paddingLeft: 20, marginBottom: 12 }}>
+            <li style={{ marginBottom: 6 }}>Know what personal data we hold about you and why</li>
+            <li style={{ marginBottom: 6 }}>Request a copy of it</li>
+            <li style={{ marginBottom: 6 }}>Ask us to correct it if it&apos;s inaccurate</li>
+            <li style={{ marginBottom: 6 }}>Ask us to delete it, subject to any legal or billing retention requirements</li>
+            <li>Withdraw consent at any time, where processing is based on consent</li>
+          </ul>
+          <p style={{ marginBottom: 12 }}>To exercise any of these, contact us at the email below. Students should generally go through
+          their school, since the school is our direct customer and the party best placed to verify the
+          request and handle guardian consent.</p>
+          <p>If we experience a data breach that affects or could affect your personal data, we will notify
+          the Office of the Information Commissioner of Jamaica and affected individuals within 72 hours of
+          becoming aware of it, as required by the Act. If you believe your data has been mishandled, you can
+          also contact the Office of the Information Commissioner of Jamaica directly.</p>
         </Section>
 
         <Section title="Cookies and local storage">
-          We use browser storage (cookies/local storage) to keep you logged in and to remember a small amount
-          of device information used to enforce single-device login for students during active sessions. The
-          desktop app stores exam answers locally on your device (using your browser or OS&apos;s built-in
+          We use browser storage (cookies/local storage) to keep you logged in. The desktop app and exam-taking
+          pages also store exam answers locally on your device (using your browser or OS&apos;s built-in
           storage) so nothing is lost if your internet connection drops, syncing to our servers once
           you&apos;re back online.
         </Section>
