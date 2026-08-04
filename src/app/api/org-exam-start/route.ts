@@ -1,11 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { z } from 'zod'
 import { rateLimit, getClientIp } from '@/lib/rateLimit'
+import { validateBody } from '@/lib/validateBody'
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   (process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY)!
 )
+
+const schema = z.object({
+  examId: z.string().uuid(),
+  password: z.string().max(200).optional(),
+  fieldValues: z.record(z.string(), z.union([z.string(), z.number(), z.boolean()])).optional(),
+  accessToken: z.string().min(1).max(4000),
+}).strict()
 
 // Verifies the exam password server-side (never exposed to the client) and
 // creates the respondent's session + field values. The caller must already
@@ -14,10 +23,9 @@ const supabaseAdmin = createClient(
 // than trusting a client-supplied id.
 export async function POST(req: NextRequest) {
   try {
-    const { examId, password, fieldValues, accessToken } = await req.json()
-    if (!examId || !accessToken) {
-      return NextResponse.json({ error: 'Missing required fields.' }, { status: 400 })
-    }
+    const parsed = await validateBody(req, schema)
+    if ('error' in parsed) return parsed.error
+    const { examId, password, fieldValues, accessToken } = parsed.data
 
     // Two limits: a tight one scoped to this exam (stops password-guessing
     // against a single exam) and a broader one per IP across all exams

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { z } from 'zod'
 import { rateLimit } from '@/lib/rateLimit'
+import { validateBody } from '@/lib/validateBody'
 
 const MONTHLY_LIMIT = 5
 
@@ -9,13 +11,18 @@ const supabaseAdmin = createClient(
   (process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY)!
 )
 
+const schema = z.object({
+  questionType: z.enum(['multiple_choice', 'true_false', 'short_answer', 'essay', 'fill_blank']).optional(),
+  questionText: z.string().trim().min(1).max(10000),
+  options: z.array(z.string().max(2000)).max(20).optional(),
+  accessToken: z.string().min(1).max(4000),
+}).strict()
+
 export async function POST(req: NextRequest) {
   try {
-    const { questionType, questionText, options, accessToken } = await req.json()
-
-    if (!questionText || questionText.trim() === '') {
-      return NextResponse.json({ error: 'Question text is required.' }, { status: 400 })
-    }
+    const bodyParsed = await validateBody(req, schema)
+    if ('error' in bodyParsed) return bodyParsed.error
+    const { questionType, questionText, options, accessToken } = bodyParsed.data
 
     // This route calls a paid AI API — teacherId used to be taken directly
     // from the request body, so anyone could claim to be any teacher (or

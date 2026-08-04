@@ -1,15 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { z } from 'zod'
 import { verifySystemAdmin, supabaseAdmin } from '@/lib/verifySystemAdmin'
 import { sendEmail, EMAIL_FROM } from '@/lib/email'
 import { acceptedEmail, rejectedEmail } from '@/lib/emailTemplates'
+import { validateBody } from '@/lib/validateBody'
+
+const schema = z.object({
+  requestId: z.string().uuid(),
+  decision: z.enum(['approved', 'rejected']),
+  accessToken: z.string().min(1).max(4000),
+}).strict()
 
 export async function POST(req: NextRequest) {
   try {
-    const { requestId, decision, accessToken } = await req.json()
-
-    if (!requestId || (decision !== 'approved' && decision !== 'rejected')) {
-      return NextResponse.json({ error: 'Invalid request.' }, { status: 400 })
-    }
+    const parsed = await validateBody(req, schema)
+    if ('error' in parsed) return parsed.error
+    const { requestId, decision, accessToken } = parsed.data
 
     const admin = await verifySystemAdmin(accessToken)
     if (!admin) {

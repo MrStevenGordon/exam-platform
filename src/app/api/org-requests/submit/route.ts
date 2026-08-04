@@ -1,23 +1,32 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { z } from 'zod'
 import { verifyTurnstile } from '@/lib/verifyTurnstile'
 import { supabaseAdmin } from '@/lib/verifySystemAdmin'
 import { sendEmail, EMAIL_FROM } from '@/lib/email'
 import { orgRequestReceivedEmail } from '@/lib/emailTemplates'
 import { rateLimit, getClientIp } from '@/lib/rateLimit'
+import { validateBody } from '@/lib/validateBody'
+
+const schema = z.object({
+  orgName: z.string().trim().min(1).max(200),
+  contactName: z.string().trim().min(1).max(200),
+  contactEmail: z.string().trim().email().max(320),
+  notes: z.string().trim().max(2000).optional(),
+  honeypot: z.string().max(500).optional(),
+  turnstileToken: z.string().max(4000).optional(),
+}).strict()
 
 export async function POST(req: NextRequest) {
   try {
     const limited = await rateLimit(getClientIp(req), 'org-requests-submit', { limit: 5, windowSeconds: 3600 })
     if (limited) return limited
 
-    const { orgName, contactName, contactEmail, notes, honeypot, turnstileToken } = await req.json()
+    const parsed = await validateBody(req, schema)
+    if ('error' in parsed) return parsed.error
+    const { orgName, contactName, contactEmail, notes, honeypot, turnstileToken } = parsed.data
 
     if (honeypot) {
       return NextResponse.json({ error: 'Something went wrong. Please try again.' }, { status: 400 })
-    }
-
-    if (!orgName?.trim() || !contactName?.trim() || !contactEmail?.trim()) {
-      return NextResponse.json({ error: 'Missing required fields.' }, { status: 400 })
     }
 
     const turnstileOk = await verifyTurnstile(turnstileToken)

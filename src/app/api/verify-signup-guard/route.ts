@@ -1,6 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { z } from 'zod'
 import { verifyTurnstile } from '@/lib/verifyTurnstile'
 import { rateLimit, getClientIp } from '@/lib/rateLimit'
+import { validateBody } from '@/lib/validateBody'
+
+const schema = z.object({
+  honeypot: z.string().max(500).optional(),
+  turnstileToken: z.string().max(4000).optional(),
+}).strict()
 
 // Checked before a public, unauthenticated signup form (org signup,
 // Build My School) proceeds with creating anything. Honeypot field first
@@ -14,7 +21,9 @@ export async function POST(req: NextRequest) {
     const limited = await rateLimit(getClientIp(req), 'verify-signup-guard', { limit: 10, windowSeconds: 60 })
     if (limited) return limited
 
-    const { honeypot, turnstileToken } = await req.json()
+    const parsed = await validateBody(req, schema)
+    if ('error' in parsed) return parsed.error
+    const { honeypot, turnstileToken } = parsed.data
 
     if (honeypot) {
       return NextResponse.json({ error: 'Something went wrong. Please try again.' }, { status: 400 })

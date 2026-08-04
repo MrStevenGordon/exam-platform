@@ -1,6 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { Client } from 'pg'
+import { z } from 'zod'
 import { verifySystemAdmin } from '@/lib/verifySystemAdmin'
+import { validateBody } from '@/lib/validateBody'
+
+const schema = z.object({
+  targetDatabaseUrl: z.string().trim().min(1).max(2000),
+  features: z.object({
+    teamLeadsEnabled: z.boolean().optional(),
+    seniorTeamLeadsEnabled: z.boolean().optional(),
+    examCategories: z.array(z.string().max(100)).max(50).optional(),
+  }).strict().optional(),
+  accessToken: z.string().min(1).max(4000),
+}).strict()
 
 // Each school runs on its own separate Supabase project, so this owner-only
 // route briefly opens a direct Postgres connection to that specific
@@ -10,15 +22,13 @@ import { verifySystemAdmin } from '@/lib/verifySystemAdmin'
 // would undermine the whole point of keeping them in separate databases.
 export async function POST(req: NextRequest) {
   try {
-    const { targetDatabaseUrl, features, accessToken } = await req.json()
+    const parsed = await validateBody(req, schema)
+    if ('error' in parsed) return parsed.error
+    const { targetDatabaseUrl, features, accessToken } = parsed.data
 
     const admin = await verifySystemAdmin(accessToken)
     if (!admin) {
       return NextResponse.json({ error: 'Not authorized.' }, { status: 403 })
-    }
-
-    if (!targetDatabaseUrl?.trim()) {
-      return NextResponse.json({ error: 'Missing target database connection string.' }, { status: 400 })
     }
 
     const config = {

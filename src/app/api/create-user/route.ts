@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { z } from 'zod'
+import { validateBody } from '@/lib/validateBody'
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -10,9 +12,35 @@ const CLASS_TO_GRADE: Record<string, number> = {
   '1': 7, '2': 8, '3': 9, '4': 10, '5': 11
 }
 
+const schema = z.object({
+  type: z.enum(['student', 'staff', 'reset-password']),
+  accessToken: z.string().min(1).max(4000),
+  data: z.object({
+    // student
+    first_name: z.string().trim().min(1).max(100).optional(),
+    middle_name: z.string().trim().max(100).optional(),
+    last_name: z.string().trim().min(1).max(100).optional(),
+    student_id: z.string().trim().min(1).max(50).optional(),
+    class_id: z.string().trim().min(1).max(50).optional(),
+    birth_date: z.string().max(20).optional(),
+    gender: z.string().max(30).optional(),
+    birth_year: z.union([z.string(), z.number()]).optional(),
+    // staff
+    email: z.string().trim().email().max(320).optional(),
+    role: z.enum(['teacher', 'supervisor', 'admin']).optional(),
+    department_id: z.string().uuid().optional(),
+    subjects: z.string().max(1000).optional(),
+    // reset-password
+    user_id: z.string().uuid().optional(),
+    password: z.string().min(8).max(200).optional(),
+  }).strict(),
+}).strict()
+
 export async function POST(req: NextRequest) {
   try {
-    const { type, data, accessToken } = await req.json()
+    const parsed = await validateBody(req, schema)
+    if ('error' in parsed) return parsed.error
+    const { type, data, accessToken } = parsed.data
 
     // This route uses the service-role key and bypasses RLS entirely —
     // creating accounts (with a well-known default password) and

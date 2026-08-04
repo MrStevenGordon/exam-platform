@@ -1,6 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
+import { z } from 'zod'
 import { supabaseAdmin } from '@/lib/verifySystemAdmin'
+import { validateBody } from '@/lib/validateBody'
+
+const schema = z.object({
+  plan: z.enum(['3_month', '6_month', 'yearly']),
+  accessToken: z.string().min(1).max(4000),
+}).strict()
 
 // Constructed lazily, not at module scope — Stripe isn't configured yet
 // (dormant pending a Jamaica-compatible provider), and building the Stripe
@@ -22,7 +29,9 @@ export async function POST(req: NextRequest) {
 
   try {
     const stripe = getStripe()
-    const { plan, accessToken } = await req.json()
+    const parsed = await validateBody(req, schema)
+    if ('error' in parsed) return parsed.error
+    const { plan, accessToken } = parsed.data
 
     const priceId = PRICE_IDS[plan]
     if (!priceId) {

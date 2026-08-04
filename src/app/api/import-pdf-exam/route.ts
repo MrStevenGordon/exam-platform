@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { z } from 'zod'
 import { rateLimit } from '@/lib/rateLimit'
+import { validateBody } from '@/lib/validateBody'
 
 const MONTHLY_LIMIT = 10
 const MAX_PDF_BASE64_CHARS = 27_000_000 // ~20MB decoded
@@ -10,16 +12,16 @@ const supabaseAdmin = createClient(
   (process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY)!
 )
 
+const schema = z.object({
+  pdfBase64: z.string().min(1).max(MAX_PDF_BASE64_CHARS),
+  accessToken: z.string().min(1).max(4000),
+}).strict()
+
 export async function POST(req: NextRequest) {
   try {
-    const { pdfBase64, accessToken } = await req.json()
-
-    if (!pdfBase64) {
-      return NextResponse.json({ error: 'PDF data is required.' }, { status: 400 })
-    }
-    if (pdfBase64.length > MAX_PDF_BASE64_CHARS) {
-      return NextResponse.json({ error: 'PDF is too large.' }, { status: 400 })
-    }
+    const bodyParsed = await validateBody(req, schema)
+    if ('error' in bodyParsed) return bodyParsed.error
+    const { pdfBase64, accessToken } = bodyParsed.data
 
     // This route calls a paid AI API with an 8000-token budget per
     // request and had no authentication or usage limit at all — anyone

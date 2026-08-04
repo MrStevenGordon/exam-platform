@@ -1,5 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { z } from 'zod'
 import { supabaseAdmin } from '@/lib/verifySystemAdmin'
+import { rateLimit, getClientIp } from '@/lib/rateLimit'
+import { validateBody } from '@/lib/validateBody'
+
+const schema = z.object({
+  token: z.string().min(1).max(200),
+  accessToken: z.string().min(1).max(4000),
+  fullName: z.string().trim().min(1).max(200),
+}).strict()
 
 // Completes bootstrap signup: the caller must already have created their own
 // auth account client-side (supabase.auth.signUp(), since admin.createUser()
@@ -8,10 +17,12 @@ import { supabaseAdmin } from '@/lib/verifySystemAdmin'
 // profile for this school, and burns the token so the link can't be reused.
 export async function POST(req: NextRequest) {
   try {
-    const { token, accessToken, fullName } = await req.json()
-    if (!token || !accessToken || !fullName?.trim()) {
-      return NextResponse.json({ error: 'Missing required fields.' }, { status: 400 })
-    }
+    const limited = await rateLimit(getClientIp(req), 'school-setup-claim', { limit: 10, windowSeconds: 60 })
+    if (limited) return limited
+
+    const parsed = await validateBody(req, schema)
+    if ('error' in parsed) return parsed.error
+    const { token, accessToken, fullName } = parsed.data
 
     const { data: settings, error: settingsError } = await supabaseAdmin
       .from('school_settings')

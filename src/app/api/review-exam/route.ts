@@ -1,14 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { z } from 'zod'
+import { validateBody } from '@/lib/validateBody'
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   (process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY)!
 )
 
+const schema = z.object({
+  examId: z.string().uuid(),
+  action: z.enum(['approve', 'request-changes']),
+  accessToken: z.string().min(1).max(4000),
+  comment: z.string().trim().max(5000).optional(),
+}).strict()
+
 export async function POST(req: NextRequest) {
   try {
-    const { examId, action, accessToken, comment } = await req.json()
+    const parsed = await validateBody(req, schema)
+    if ('error' in parsed) return parsed.error
+    const { examId, action, accessToken, comment } = parsed.data
 
     if (!accessToken) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })

@@ -1,5 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { z } from 'zod'
 import { supabaseAdmin } from '@/lib/verifySystemAdmin'
+import { rateLimit, getClientIp } from '@/lib/rateLimit'
+import { validateBody } from '@/lib/validateBody'
+
+const schema = z.object({
+  token: z.string().min(1).max(200),
+  accessToken: z.string().min(1).max(4000),
+  orgName: z.string().trim().min(1).max(200),
+}).strict()
 
 // The caller must already have created their own auth account client-side
 // (supabase.auth.signUp()). This route verifies their token is still valid
@@ -7,10 +16,12 @@ import { supabaseAdmin } from '@/lib/verifySystemAdmin'
 // link can't be replayed.
 export async function POST(req: NextRequest) {
   try {
-    const { token, accessToken, orgName } = await req.json()
-    if (!token || !accessToken || !orgName?.trim()) {
-      return NextResponse.json({ error: 'Missing required fields.' }, { status: 400 })
-    }
+    const limited = await rateLimit(getClientIp(req), 'org-setup-claim', { limit: 10, windowSeconds: 60 })
+    if (limited) return limited
+
+    const parsed = await validateBody(req, schema)
+    if ('error' in parsed) return parsed.error
+    const { token, accessToken, orgName } = parsed.data
 
     const { data: request, error: requestError } = await supabaseAdmin
       .from('org_requests')

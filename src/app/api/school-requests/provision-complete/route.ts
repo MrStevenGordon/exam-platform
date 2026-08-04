@@ -1,18 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { z } from 'zod'
 import { verifySystemAdmin, supabaseAdmin } from '@/lib/verifySystemAdmin'
 import { sendEmail, EMAIL_FROM } from '@/lib/email'
 import { credentialsEmail } from '@/lib/emailTemplates'
+import { validateBody } from '@/lib/validateBody'
+
+const schema = z.object({
+  requestId: z.string().uuid(),
+  setupLink: z.string().trim().url().max(2000),
+  accessToken: z.string().min(1).max(4000),
+}).strict()
 
 // setupLink comes from scripts/provision-school-db.mjs — a one-time
 // bootstrap link the school uses to self-register their first admin
 // account, rather than us emailing raw credentials.
 export async function POST(req: NextRequest) {
   try {
-    const { requestId, setupLink, accessToken } = await req.json()
-
-    if (!requestId || !setupLink?.trim()) {
-      return NextResponse.json({ error: 'Missing required fields.' }, { status: 400 })
-    }
+    const parsed = await validateBody(req, schema)
+    if ('error' in parsed) return parsed.error
+    const { requestId, setupLink, accessToken } = parsed.data
 
     const admin = await verifySystemAdmin(accessToken)
     if (!admin) {

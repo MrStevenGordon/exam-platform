@@ -1,11 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { Client } from 'pg'
+import { z } from 'zod'
 import { verifySystemAdmin, supabaseAdmin } from '@/lib/verifySystemAdmin'
 import { sendEmail, EMAIL_FROM } from '@/lib/email'
 import { schoolSubscriptionActiveEmail } from '@/lib/emailTemplates'
+import { validateBody } from '@/lib/validateBody'
 
 const PLAN_DAYS: Record<string, number> = { '3_month': 90, '6_month': 182, yearly: 365 }
 const PLAN_LABELS: Record<string, string> = { '3_month': '3 Months', '6_month': '6 Months', yearly: 'Yearly' }
+
+const schema = z.object({
+  subscriptionId: z.string().uuid().optional(),
+  schoolRequestId: z.string().uuid().optional(),
+  schoolName: z.string().trim().min(1).max(200).optional(),
+  contactEmail: z.string().trim().email().max(320).optional(),
+  plan: z.enum(['3_month', '6_month', 'yearly']),
+  targetDatabaseUrl: z.string().trim().max(2000).optional(),
+  accessToken: z.string().min(1).max(4000),
+}).strict()
 
 // Same manual wire-transfer flow as organizations: a school wires payment
 // and a system admin grants or renews the subscription here. Unlike
@@ -22,11 +34,10 @@ const PLAN_LABELS: Record<string, string> = { '3_month': '3 Months', '6_month': 
 // immediately. The connection string is never stored.
 export async function POST(req: NextRequest) {
   try {
-    const { subscriptionId, schoolRequestId, schoolName, contactEmail, plan, targetDatabaseUrl, accessToken } = await req.json()
+    const parsed = await validateBody(req, schema)
+    if ('error' in parsed) return parsed.error
+    const { subscriptionId, schoolRequestId, schoolName, contactEmail, plan, targetDatabaseUrl, accessToken } = parsed.data
 
-    if (!PLAN_DAYS[plan]) {
-      return NextResponse.json({ error: 'Invalid plan.' }, { status: 400 })
-    }
     if (!subscriptionId && !schoolRequestId && (!schoolName || !contactEmail)) {
       return NextResponse.json({ error: 'Choose a school or provide a name and email.' }, { status: 400 })
     }

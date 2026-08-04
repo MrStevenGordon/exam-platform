@@ -1,10 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { z } from 'zod'
 import { verifySystemAdmin, supabaseAdmin } from '@/lib/verifySystemAdmin'
 import { sendEmail, EMAIL_FROM } from '@/lib/email'
 import { licenseKeyEmail } from '@/lib/emailTemplates'
+import { validateBody } from '@/lib/validateBody'
 
 const PLAN_DAYS: Record<string, number> = { '3_month': 90, '6_month': 182, yearly: 365 }
 const PLAN_LABELS: Record<string, string> = { '3_month': '3 Months', '6_month': '6 Months', yearly: 'Yearly' }
+
+const schema = z.object({
+  organizationId: z.string().uuid(),
+  plan: z.enum(['3_month', '6_month', 'yearly']),
+  paymentId: z.string().uuid().optional(),
+  accessToken: z.string().min(1).max(4000),
+}).strict()
 
 function generateLicenseKey() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
@@ -18,11 +27,9 @@ function generateLicenseKey() {
 // existing pending organization_payments row (paymentId is optional).
 export async function POST(req: NextRequest) {
   try {
-    const { organizationId, plan, paymentId, accessToken } = await req.json()
-
-    if (!organizationId || !PLAN_DAYS[plan]) {
-      return NextResponse.json({ error: 'Invalid request.' }, { status: 400 })
-    }
+    const parsed = await validateBody(req, schema)
+    if ('error' in parsed) return parsed.error
+    const { organizationId, plan, paymentId, accessToken } = parsed.data
 
     const admin = await verifySystemAdmin(accessToken)
     if (!admin) {
