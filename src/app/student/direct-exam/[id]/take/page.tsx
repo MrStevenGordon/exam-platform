@@ -6,6 +6,10 @@ import { supabase } from '@/lib/supabase'
 import ScientificCalculator from '@/components/ScientificCalculator'
 import { useIntegrityCapture, IntegritySignals } from '@/hooks/useIntegrityCapture'
 import { gradeAnswer as gradeAnswerShared } from '@/lib/grading'
+import {
+  initExamRecord, getExamRecord, saveAnswersLocally, markSynced,
+  setPendingSubmit as setPendingSubmitLocal, queueViolation, clearQueuedViolations, clearExamRecord,
+} from '@/lib/examOfflineStore'
 
 function mulberry32(seed: number) {
   let a = seed
@@ -91,12 +95,16 @@ export default function TakeDirectExamPage() {
   const [warningReason, setWarningReason] = useState('')
   const [confirmingSubmit, setConfirmingSubmit] = useState(false)
   const [studentProfile, setStudentProfile] = useState<{ full_name: string; student_id: string | null } | null>(null)
+  const [submitPendingOffline, setSubmitPendingOffline] = useState(false)
 
   const violationCount = useRef(0)
   const handleSubmitRef = useRef<() => void>(() => {})
   const hasBeenFullscreenRef = useRef(false)
   const submittedRef = useRef(false)
   const intentionalExitRef = useRef(false)
+  const latestAnswersRef = useRef<Record<string, string>>({})
+  const latestWorkingsRef = useRef<Record<string, string>>({})
+  const localSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const capture = useIntegrityCapture()
 
   // Homework and assignments are meant to be done at home, on the student's
@@ -201,12 +209,33 @@ export default function TakeDirectExamPage() {
 
     const { data: existingAnswers } = await supabase
       .from('responses')
-      .select('question_id, answer')
+      .select('question_id, answer, working')
       .eq('session_id', sessionData.id)
 
     const answerMap: Record<string, string> = {}
-    ;(existingAnswers || []).forEach((a) => { answerMap[a.question_id] = a.answer })
-    setAnswers(answerMap)
+    const workingMap: Record<string, string> = {}
+    ;(existingAnswers || []).forEach((a) => {
+      answerMap[a.question_id] = a.answer
+      if (a.working) workingMap[a.question_id] = a.working
+    })
+
+    // Offline resilience: the local IndexedDB record may hold edits newer
+    // than whatever last made it to the server (e.g. the app crashed before
+    // the next sync tick) — merge those in, local taking precedence.
+    const localRecord = await initExamRecord(sessionData.id, examId)
+    const mergedAnswers = { ...answerMap, ...(localRecord?.answers || {}) }
+    const mergedWorkings = { ...workingMap, ...(localRecord?.workings || {}) }
+
+    latestAnswersRef.current = mergedAnswers
+    latestWorkingsRef.current = mergedWorkings
+    setAnswers(mergedAnswers)
+    setWorkings(mergedWorkings)
+    await saveAnswersLocally(sessionData.id, mergedAnswers, mergedWorkings)
+
+    if (localRecord?.pendingSubmit) {
+      setSubmitPendingOffline(true)
+      submittedRef.current = true
+    }
 
     setLoading(false)
   }
@@ -266,8 +295,15 @@ export default function TakeDirectExamPage() {
     violationCount.current += 1
     const count = violationCount.current
     const logEntry = { reason, timestamp: new Date().toISOString(), count }
-    await supabase.rpc('append_violation_log', { session_id: session.id, entry: logEntry })
-    await supabase.from('exam_sessions').update({ tab_switch_count: count, flagged: true }).eq('id', session.id)
+    try {
+      if (!navigator.onLine) throw new Error('offline')
+      await supabase.rpc('append_violation_log', { session_id: session.id, entry: logEntry })
+      await supabase.from('exam_sessions').update({ tab_switch_count: count, flagged: true }).eq('id', session.id)
+    } catch {
+      // No connectivity — don't lose proctoring data to a dropped connection,
+      // queue it locally and flush once back online (see the effect below).
+      await queueViolation(session.id, logEntry)
+    }
     if (count >= 3) {
       setWarning(`This is violation ${count} (${reason}). Your exam is being submitted automatically.`)
       if (!submittedRef.current) { submittedRef.current = true; intentionalExitRef.current = true; handleSubmitRef.current() }
@@ -276,12 +312,72 @@ export default function TakeDirectExamPage() {
     }
   }
 
+  // Progressive server sync: pushes locally-held answers up to Supabase
+  // periodically and immediately on reconnect, so progress survives even if
+  // the *final* submit is what fails — not just a local-only safety net.
+  // Upsert rows deliberately omit points_awarded/graded_at so a sync tick
+  // never clobbers grading data; only answer/working are ever touched here.
+  const syncToServer = useCallback(async () => {
+    if (!session || questions.length === 0 || submittedRef.current) return
+    const rows = questions.map((q) => ({
+      session_id: session.id,
+      question_id: q.id,
+      answer: latestAnswersRef.current[q.id] || '',
+      working: latestWorkingsRef.current[q.id] || null,
+    }))
+    const { error } = await supabase.from('responses').upsert(rows, { onConflict: 'session_id,question_id' })
+    if (!error) await markSynced(session.id)
+  }, [session, questions])
+
+  useEffect(() => {
+    if (!session) return
+    const activeSession = session
+    const interval = setInterval(syncToServer, 15000)
+
+    async function flushQueuedViolations() {
+      const record = await getExamRecord(activeSession.id)
+      if (!record || record.queuedViolations.length === 0) return
+      for (const v of record.queuedViolations) {
+        await supabase.rpc('append_violation_log', { session_id: activeSession.id, entry: v })
+      }
+      await supabase.from('exam_sessions').update({ tab_switch_count: violationCount.current, flagged: true }).eq('id', activeSession.id)
+      await clearQueuedViolations(activeSession.id)
+    }
+
+    function handleOnline() {
+      syncToServer()
+      flushQueuedViolations()
+      if (submitPendingOffline) { setSubmitPendingOffline(false); handleSubmitRef.current() }
+    }
+
+    window.addEventListener('online', handleOnline)
+    return () => { clearInterval(interval); window.removeEventListener('online', handleOnline) }
+  }, [session, syncToServer, submitPendingOffline])
+
+  function scheduleLocalSave() {
+    if (!session) return
+    if (localSaveTimerRef.current) clearTimeout(localSaveTimerRef.current)
+    localSaveTimerRef.current = setTimeout(() => {
+      saveAnswersLocally(session.id, latestAnswersRef.current, latestWorkingsRef.current)
+    }, 2000)
+  }
+
   function updateWorking(questionId: string, value: string) {
-    setWorkings(prev => ({ ...prev, [questionId]: value }))
+    setWorkings((prev) => {
+      const next = { ...prev, [questionId]: value }
+      latestWorkingsRef.current = next
+      return next
+    })
+    scheduleLocalSave()
   }
 
   function updateAnswer(questionId: string, value: string) {
-    setAnswers((prev) => ({ ...prev, [questionId]: value }))
+    setAnswers((prev) => {
+      const next = { ...prev, [questionId]: value }
+      latestAnswersRef.current = next
+      return next
+    })
+    scheduleLocalSave()
   }
 
   function gradeAnswer(question: Question, studentAnswer: string): number | null {
@@ -321,79 +417,110 @@ export default function TakeDirectExamPage() {
 
   async function handleSubmit() {
     if (!session) return
-    setSubmitting(true)
     setErrorMsg('')
 
-    let autoScore = 0
-    let autoMax = 0
-    let hasEssay = false
-    const allIntegrityFlags = new Set<string>()
-
-    const rows = questions.map((q) => {
-      const studentAnswer = answers[q.id] || ''
-      const awarded = gradeAnswer(q, studentAnswer)
-      if (awarded === null) hasEssay = true
-      else autoScore += awarded
-      autoMax += q.points
-
-      let integritySignals: { answer?: IntegritySignals; working?: IntegritySignals } | null = null
-      if (q.question_type === 'essay') {
-        const answerSignals = capture.summarize(`answer:${q.id}`, studentAnswer)
-        integritySignals = { answer: answerSignals }
-        answerSignals.flags.forEach((f) => allIntegrityFlags.add(f))
-      }
-      if (q.question_type === 'short_answer' && q.show_working) {
-        const workingSignals = capture.summarize(`working:${q.id}`, workings[q.id] || '')
-        integritySignals = { ...integritySignals, working: workingSignals }
-        workingSignals.flags.forEach((f) => allIntegrityFlags.add(f))
-      }
-
-      return { session_id: session.id, question_id: q.id, answer: studentAnswer, working: workings[q.id] || null, points_awarded: awarded, graded_at: awarded !== null ? new Date().toISOString() : null, integrity_signals: integritySignals }
-    })
-
-    await supabase.from('responses').delete().eq('session_id', session.id)
-    if (rows.length > 0) {
-      const { error } = await supabase.from('responses').insert(rows)
-      if (error) { setErrorMsg(error.message); setSubmitting(false); return }
+    // Offline at submit time (e.g. time ran out or the student hit submit
+    // with no connection): don't even attempt the network calls — save
+    // locally, lock the UI exactly as a real submit would, and let the
+    // reconnect handler in the sync effect retry automatically.
+    if (!navigator.onLine) {
+      setSubmitting(true)
+      await saveAnswersLocally(session.id, latestAnswersRef.current, latestWorkingsRef.current)
+      await setPendingSubmitLocal(session.id, true)
+      submittedRef.current = true
+      setSubmitPendingOffline(true)
+      setSubmitting(false)
+      return
     }
 
-    const hasIntegrityFlags = allIntegrityFlags.size > 0
+    setSubmitting(true)
 
-    const { error: sessionError } = await supabase
-      .from('exam_sessions')
-      .update({
-        status: 'completed', completed_at: new Date().toISOString(), total_score: autoScore, max_possible_score: autoMax, fully_graded: !hasEssay,
-        file_submission_url: fileUrl, file_submission_name: fileName,
-        ...(hasIntegrityFlags ? { flagged: true } : {}),
+    try {
+      let autoScore = 0
+      let autoMax = 0
+      let hasEssay = false
+      const allIntegrityFlags = new Set<string>()
+
+      const rows = questions.map((q) => {
+        const studentAnswer = latestAnswersRef.current[q.id] || ''
+        const awarded = gradeAnswer(q, studentAnswer)
+        if (awarded === null) hasEssay = true
+        else autoScore += awarded
+        autoMax += q.points
+
+        let integritySignals: { answer?: IntegritySignals; working?: IntegritySignals } | null = null
+        if (q.question_type === 'essay') {
+          const answerSignals = capture.summarize(`answer:${q.id}`, studentAnswer)
+          integritySignals = { answer: answerSignals }
+          answerSignals.flags.forEach((f) => allIntegrityFlags.add(f))
+        }
+        if (q.question_type === 'short_answer' && q.show_working) {
+          const workingSignals = capture.summarize(`working:${q.id}`, latestWorkingsRef.current[q.id] || '')
+          integritySignals = { ...integritySignals, working: workingSignals }
+          workingSignals.flags.forEach((f) => allIntegrityFlags.add(f))
+        }
+
+        return { session_id: session.id, question_id: q.id, answer: studentAnswer, working: latestWorkingsRef.current[q.id] || null, points_awarded: awarded, graded_at: awarded !== null ? new Date().toISOString() : null, integrity_signals: integritySignals }
       })
-      .eq('id', session.id)
 
-    if (sessionError) { setErrorMsg(sessionError.message); setSubmitting(false); return }
+      await supabase.from('responses').delete().eq('session_id', session.id)
+      if (rows.length > 0) {
+        const { error } = await supabase.from('responses').insert(rows)
+        if (error) throw error
+      }
 
-    // Silent, teacher-only signal — no overlay/warning shown to the student and
-    // submission is never blocked, unlike the proctoring violations above.
-    if (hasIntegrityFlags) {
-      await supabase.rpc('append_violation_log', {
-        session_id: session.id,
-        entry: { type: 'integrity', reason: Array.from(allIntegrityFlags).join(', '), timestamp: new Date().toISOString() },
-      })
-    }
+      const hasIntegrityFlags = allIntegrityFlags.size > 0
 
-    const { data: { user } } = await supabase.auth.getUser()
-    if (user) {
-      const { data: stillInProgress } = await supabase
+      const { error: sessionError } = await supabase
         .from('exam_sessions')
-        .select('id')
-        .eq('student_id', user.id)
-        .eq('status', 'in_progress')
-      if (!stillInProgress || stillInProgress.length === 0) {
-        await supabase.from('profiles').update({ active_login_token: null, active_login_started_at: null }).eq('id', user.id)
-        localStorage.removeItem(`exam_lock_${user.id}`)
+        .update({
+          status: 'completed', completed_at: new Date().toISOString(), total_score: autoScore, max_possible_score: autoMax, fully_graded: !hasEssay,
+          file_submission_url: fileUrl, file_submission_name: fileName,
+          ...(hasIntegrityFlags ? { flagged: true } : {}),
+        })
+        .eq('id', session.id)
+
+      if (sessionError) throw sessionError
+
+      // Silent, teacher-only signal — no overlay/warning shown to the student and
+      // submission is never blocked, unlike the proctoring violations above.
+      if (hasIntegrityFlags) {
+        await supabase.rpc('append_violation_log', {
+          session_id: session.id,
+          entry: { type: 'integrity', reason: Array.from(allIntegrityFlags).join(', '), timestamp: new Date().toISOString() },
+        })
+      }
+
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        const { data: stillInProgress } = await supabase
+          .from('exam_sessions')
+          .select('id')
+          .eq('student_id', user.id)
+          .eq('status', 'in_progress')
+        if (!stillInProgress || stillInProgress.length === 0) {
+          await supabase.from('profiles').update({ active_login_token: null, active_login_started_at: null }).eq('id', user.id)
+          localStorage.removeItem(`exam_lock_${user.id}`)
+        }
+      }
+
+      await clearExamRecord(session.id)
+      if (document.fullscreenElement) document.exitFullscreen().catch(() => {})
+      router.push(`/student/direct-exam/${examId}/submitted`)
+    } catch (err) {
+      if (!navigator.onLine) {
+        // Connectivity dropped mid-submit — same safe path as the offline
+        // check above, not a real error to show the student.
+        await saveAnswersLocally(session.id, latestAnswersRef.current, latestWorkingsRef.current)
+        await setPendingSubmitLocal(session.id, true)
+        submittedRef.current = true
+        setSubmitPendingOffline(true)
+        setSubmitting(false)
+      } else {
+        setErrorMsg(err instanceof Error ? err.message : 'Something went wrong submitting your exam.')
+        setSubmitting(false)
       }
     }
-
-    if (document.fullscreenElement) document.exitFullscreen().catch(() => {})
-    router.push(`/student/direct-exam/${examId}/submitted`)
   }
 
   // Effect-attached event listeners (timer, fullscreen-exit, tab-switch)
@@ -408,6 +535,19 @@ export default function TakeDirectExamPage() {
   if (loading) return <div className="page-container">Loading…</div>
   if (errorMsg) return <div className="page-container"><p className="banner banner-danger">{errorMsg}</p></div>
   if (!exam || !session) return <div className="page-container">Exam not found.</div>
+
+  if (submitPendingOffline) {
+    return (
+      <div className="page-container" style={{ maxWidth: 480, textAlign: 'center', paddingTop: 60 }}>
+        <div style={{ fontSize: 40, marginBottom: 16 }}>📡</div>
+        <h1 style={{ marginBottom: 8 }}>No internet connection</h1>
+        <p style={{ color: 'var(--text-secondary)' }}>
+          Your exam has been saved on this device and submitting is locked in — it will finish submitting automatically
+          the moment you&apos;re back online. Don&apos;t close this window.
+        </p>
+      </div>
+    )
+  }
 
   const qpp = exam.questions_per_page || 10
   const totalPages = Math.ceil(questions.length / qpp)
