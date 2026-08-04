@@ -35,6 +35,7 @@ export default function OrgExamEditPage() {
   const [instructions, setInstructions] = useState('')
   const [examCode, setExamCode] = useState('')
   const [accessPassword, setAccessPassword] = useState('')
+  const [durationMinutes, setDurationMinutes] = useState(60)
   const [retentionDays, setRetentionDays] = useState(60)
   const [showScore, setShowScore] = useState(false)
   const [status, setStatus] = useState('draft')
@@ -68,7 +69,7 @@ export default function OrgExamEditPage() {
 
     const { data: exam, error } = await supabase
       .from('org_exams')
-      .select('title, instructions, exam_code, access_password, retention_days, show_score_to_respondent, status, organization_id')
+      .select('title, instructions, exam_code, access_password, duration_minutes, retention_days, show_score_to_respondent, status, organization_id')
       .eq('id', examId)
       .single()
 
@@ -85,6 +86,7 @@ export default function OrgExamEditPage() {
     setInstructions(exam.instructions || '')
     setExamCode(exam.exam_code)
     setAccessPassword(exam.access_password)
+    setDurationMinutes(exam.duration_minutes)
     setRetentionDays(exam.retention_days)
     setShowScore(exam.show_score_to_respondent)
     setStatus(exam.status)
@@ -115,6 +117,7 @@ export default function OrgExamEditPage() {
         title: title.trim() || 'Untitled exam',
         instructions: instructions.trim() || null,
         access_password: accessPassword.trim(),
+        duration_minutes: Math.max(1, durationMinutes),
         retention_days: Math.min(90, Math.max(30, retentionDays)),
         show_score_to_respondent: showScore,
       })
@@ -254,6 +257,10 @@ export default function OrgExamEditPage() {
             <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Retention (days)</label>
             <input type="number" min={30} max={90} value={retentionDays} onChange={(e) => setRetentionDays(parseInt(e.target.value) || 60)} style={{ width: 100, marginTop: 6, display: 'block' }} />
           </div>
+          <div>
+            <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Duration (minutes)</label>
+            <input type="number" min={1} value={durationMinutes} onChange={(e) => setDurationMinutes(parseInt(e.target.value) || 60)} style={{ width: 100, marginTop: 6, display: 'block' }} />
+          </div>
         </div>
 
         <div style={{ marginBottom: 14 }}>
@@ -262,6 +269,10 @@ export default function OrgExamEditPage() {
             Show score to respondent immediately after they submit
           </label>
         </div>
+
+        <p style={{ fontSize: 12, color: 'var(--text-secondary)', marginBottom: 14 }}>
+          This exam is timed and proctored: fullscreen lock, tab-switch detection, and a countdown timer are enforced automatically once a respondent begins.
+        </p>
 
         {shareLink && (
           <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginBottom: 14 }}>

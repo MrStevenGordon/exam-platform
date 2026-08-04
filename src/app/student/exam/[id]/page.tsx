@@ -249,7 +249,15 @@ export default function ExamFrontPage() {
           {errorMsg && <p className="banner banner-danger" style={{ marginBottom: 16 }}>{errorMsg}</p>}
 
           <button onClick={async () => {
-            try { await document.documentElement.requestFullscreen() } catch {}
+            // Raced against a timeout because some browsers/embedded
+            // contexts never resolve or reject this promise at all, which
+            // would otherwise hang the whole start flow indefinitely.
+            try {
+              await Promise.race([
+                document.documentElement.requestFullscreen(),
+                new Promise((_, reject) => setTimeout(() => reject(new Error('fullscreen timeout')), 1500)),
+              ])
+            } catch {}
             handleBeginExam()
           }} className="btn btn-primary" style={{ fontSize: 16, padding: '14px 28px' }}>
             {existingSession ? 'Resume exam' : 'Begin exam'}

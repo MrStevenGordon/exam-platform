@@ -37,6 +37,22 @@ export default function TakeExamStartPage() {
     setError('')
     setStarting(true)
 
+    // Must be called synchronously from the user gesture (this form submit),
+    // before any await, or browsers reject it as not user-initiated. Raced
+    // against a timeout because some browsers/embedded contexts never
+    // resolve or reject this promise at all rather than throwing — without
+    // the race, that would hang the whole start flow indefinitely instead
+    // of just skipping fullscreen and continuing.
+    try {
+      await Promise.race([
+        document.documentElement.requestFullscreen(),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('fullscreen timeout')), 1500)),
+      ])
+    } catch {
+      // The exam still works, it just won't be locked to fullscreen until
+      // the respondent enters manually.
+    }
+
     const { data: anonData, error: anonError } = await supabase.auth.signInAnonymously()
     if (anonError || !anonData.session) {
       setError('Could not start your session. Please try again.')

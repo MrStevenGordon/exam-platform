@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
 
     const { data: exam, error: examError } = await supabaseAdmin
       .from('org_exams')
-      .select('id, access_password')
+      .select('id, access_password, duration_minutes')
       .eq('id', examId)
       .eq('status', 'published')
       .maybeSingle()
@@ -52,7 +52,12 @@ export async function POST(req: NextRequest) {
 
     const { data: session, error: sessionError } = await supabaseAdmin
       .from('org_exam_sessions')
-      .insert({ org_exam_id: examId, auth_user_id: authUserId })
+      .insert({
+        org_exam_id: examId,
+        auth_user_id: authUserId,
+        time_limit_seconds: exam.duration_minutes * 60,
+        option_shuffle_seed: Math.floor(Math.random() * 1000000),
+      })
       .select('id')
       .single()
 

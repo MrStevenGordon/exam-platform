@@ -221,10 +221,16 @@ export default function DirectExamFrontPage() {
       ) : (
         <button onClick={async () => {
           // Request fullscreen first (must be from user gesture) — skip for
-          // relaxed exam types where no proctoring applies.
+          // relaxed exam types where no proctoring applies. Raced against a
+          // timeout because some browsers/embedded contexts never resolve
+          // or reject this promise at all, which would otherwise hang the
+          // whole start flow instead of just skipping fullscreen.
           if (!isRelaxedExam) {
             try {
-              await document.documentElement.requestFullscreen()
+              await Promise.race([
+                document.documentElement.requestFullscreen(),
+                new Promise((_, reject) => setTimeout(() => reject(new Error('fullscreen timeout')), 1500)),
+              ])
             } catch {}
           }
           handleBeginExam()
