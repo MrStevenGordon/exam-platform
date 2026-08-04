@@ -148,7 +148,9 @@ export default function PrivacyPolicyPage() {
         </Section>
 
         <Section title="Cookies and local storage">
-          We use browser storage (cookies/local storage) to keep you logged in. The desktop app and exam-taking
+          We use browser storage (cookies/local storage) to keep you logged in, and, for student accounts, to
+          remember a device token used to enforce single-device login (a student can only be signed in on one
+          device at a time; logging in elsewhere signs out the other session). The desktop app and exam-taking
           pages also store exam answers locally on your device (using your browser or OS&apos;s built-in
           storage) so nothing is lost if your internet connection drops, syncing to our servers once
           you&apos;re back online.

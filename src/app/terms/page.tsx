@@ -52,9 +52,9 @@ export default function TermsOfServicePage() {
         <Section title="4. Acceptable use">
           You agree not to: use the platform to cheat on or facilitate cheating in an exam you&apos;re taking;
           attempt to access another school&apos;s or organization&apos;s data; attempt to bypass exam integrity
-          features (fullscreen lock, tab-switch detection); upload unlawful, harmful, or infringing content; or
-          attempt to disrupt, flood, or gain unauthorized access to the platform, including through automated
-          bots or scripts.
+          or account security features (fullscreen lock, tab-switch detection, single-device login for
+          students); upload unlawful, harmful, or infringing content; or attempt to disrupt, flood, or gain
+          unauthorized access to the platform, including through automated bots or scripts.
         </Section>
 
         <Section title="5. Subscriptions and payment">
