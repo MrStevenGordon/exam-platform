@@ -7,7 +7,40 @@ import { NextResponse, type NextRequest } from 'next/server'
 // block once smartassessja.com is ready to serve the real app.
 const COMING_SOON_HOSTS = ['smartassessja.com', 'www.smartassessja.com']
 
+// Site-wide kill switch for planned/emergency downtime. Set MAINTENANCE_MODE
+// to a truthy value and redeploy (env var changes are snapshotted per
+// deployment, so a plain env var edit alone doesn't take effect) to gate
+// every route behind /maintenance. MAINTENANCE_BYPASS_TOKEN lets the team
+// keep working on the real site while everyone else sees the maintenance
+// page: visit any URL with ?bypass=<token> once and a cookie remembers it.
+const MAINTENANCE_MODE = ['1', 'true'].includes((process.env.MAINTENANCE_MODE || '').toLowerCase())
+const MAINTENANCE_BYPASS_TOKEN = process.env.MAINTENANCE_BYPASS_TOKEN
+const MAINTENANCE_BYPASS_COOKIE = 'maintenance_bypass'
+
 export async function proxy(request: NextRequest) {
+  if (MAINTENANCE_MODE && request.nextUrl.pathname !== '/maintenance') {
+    const queryBypass = request.nextUrl.searchParams.get('bypass')
+    const cookieBypass = request.cookies.get(MAINTENANCE_BYPASS_COOKIE)?.value
+    const bypassed = !!MAINTENANCE_BYPASS_TOKEN &&
+      (queryBypass === MAINTENANCE_BYPASS_TOKEN || cookieBypass === MAINTENANCE_BYPASS_TOKEN)
+
+    if (!bypassed) {
+      const response = NextResponse.rewrite(new URL('/maintenance', request.url))
+      response.headers.set('Retry-After', '3600')
+      return response
+    }
+
+    if (queryBypass === MAINTENANCE_BYPASS_TOKEN && !cookieBypass) {
+      const response = NextResponse.next()
+      response.cookies.set(MAINTENANCE_BYPASS_COOKIE, queryBypass, {
+        maxAge: 60 * 60 * 24,
+        httpOnly: true,
+        sameSite: 'lax',
+      })
+      return response
+    }
+  }
+
   const host = request.headers.get('host') || ''
   if (COMING_SOON_HOSTS.includes(host) && request.nextUrl.pathname !== '/coming-soon') {
     return NextResponse.rewrite(new URL('/coming-soon', request.url))
