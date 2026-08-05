@@ -101,6 +101,9 @@ export default function TeacherHome() {
   const kindLabels: Record<string, string> = {
     final_exam_submission: 'Final Exam', pop_quiz: 'Pop Quiz',
     midterm: 'Mid Term', end_of_year: 'End of Year',
+    monthly: 'Monthly Exam', end_of_term: 'End of Term',
+    class_test: 'Class Test', weekly_test: 'Weekly Test',
+    assignment: 'Assignment', homework: 'Homework', group_project: 'Group Project',
   }
 
   const submitted = exams.filter((e) => e.status === 'submitted').length

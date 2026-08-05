@@ -47,6 +47,7 @@ export default function ScoreHistoryPage() {
         class_test: 'Class test', weekly_test: 'Weekly test',
         assignment: 'Assignment', homework: 'Homework',
         monthly: 'Monthly exam', end_of_term: 'End of term',
+        group_project: 'Group project',
       }
 
       const combined: ScoreEntry[] = [

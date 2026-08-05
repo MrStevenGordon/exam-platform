@@ -77,6 +77,9 @@ export default function StudentHome() {
     const kindLabels: Record<string, string> = {
       pop_quiz: 'Pop Quiz', midterm: 'Mid Term',
       end_of_year: 'End of Year', final_exam_submission: 'End of Year',
+      monthly: 'Monthly Exam', end_of_term: 'End of Term',
+      class_test: 'Class Test', weekly_test: 'Weekly Test',
+      assignment: 'Assignment', homework: 'Homework', group_project: 'Group Project',
     }
 
     const results: RecentResult[] = [
