@@ -231,14 +231,28 @@ export default function LoginPage() {
     if (profile.role === 'student') {
       const { data: lockProfile } = await supabase
         .from('profiles')
-        .select('active_login_token')
+        .select('active_login_token, active_login_started_at')
         .eq('id', userId)
         .single()
 
       const myToken = localStorage.getItem(`device_lock_${userId}`)
       const dbToken = lockProfile?.active_login_token
 
-      if (dbToken && dbToken !== myToken) {
+      // The release above depends on that device's browser tab staying open
+      // and online long enough for its own inactivity timer to fire — if it
+      // was closed, crashed, or lost connectivity first, the lock never
+      // gets released and would otherwise stay stuck forever. A heartbeat
+      // (see InactivityLogout) keeps active_login_started_at fresh while a
+      // session is genuinely in use; if it's gone stale well past that
+      // heartbeat interval, the session behind it is dead and shouldn't be
+      // able to block a real login.
+      const STALE_LOCK_MS = 10 * 60 * 1000
+      const lockAge = lockProfile?.active_login_started_at
+        ? Date.now() - new Date(lockProfile.active_login_started_at).getTime()
+        : Infinity
+      const lockIsStale = lockAge > STALE_LOCK_MS
+
+      if (dbToken && dbToken !== myToken && !lockIsStale) {
         setError('This account is already logged in on another device. Log out there first, or ask your school admin to release your session if this isn\'t you.')
         await supabase.auth.signOut()
         setLoading(false)
