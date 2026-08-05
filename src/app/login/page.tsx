@@ -231,7 +231,7 @@ export default function LoginPage() {
     if (profile.role === 'student') {
       const { data: lockProfile } = await supabase
         .from('profiles')
-        .select('active_login_token, active_login_started_at')
+        .select('active_login_token, active_login_last_seen_at')
         .eq('id', userId)
         .single()
 
@@ -242,13 +242,15 @@ export default function LoginPage() {
       // and online long enough for its own inactivity timer to fire — if it
       // was closed, crashed, or lost connectivity first, the lock never
       // gets released and would otherwise stay stuck forever. A heartbeat
-      // (see InactivityLogout) keeps active_login_started_at fresh while a
+      // (see InactivityLogout) keeps active_login_last_seen_at fresh while a
       // session is genuinely in use; if it's gone stale well past that
       // heartbeat interval, the session behind it is dead and shouldn't be
-      // able to block a real login.
+      // able to block a real login. (Deliberately not active_login_started_at
+      // — that one is shown to school admins as "since {time}" and needs to
+      // reflect the real session start, not the last heartbeat.)
       const STALE_LOCK_MS = 10 * 60 * 1000
-      const lockAge = lockProfile?.active_login_started_at
-        ? Date.now() - new Date(lockProfile.active_login_started_at).getTime()
+      const lockAge = lockProfile?.active_login_last_seen_at
+        ? Date.now() - new Date(lockProfile.active_login_last_seen_at).getTime()
         : Infinity
       const lockIsStale = lockAge > STALE_LOCK_MS
 
@@ -259,9 +261,18 @@ export default function LoginPage() {
         return
       }
 
-      const newToken = dbToken || crypto.randomUUID()
+      // Reuse the existing token only when it's genuinely this same device
+      // resuming its own still-valid lock; a stale lock being bypassed
+      // means the device that set it is gone, so this is a fresh session
+      // and gets a fresh token rather than inheriting a dead one.
+      const newToken = dbToken && dbToken === myToken ? dbToken : crypto.randomUUID()
       localStorage.setItem(`device_lock_${userId}`, newToken)
-      await supabase.from('profiles').update({ active_login_token: newToken, active_login_started_at: new Date().toISOString() }).eq('id', userId)
+      const now = new Date().toISOString()
+      await supabase.from('profiles').update({
+        active_login_token: newToken,
+        active_login_started_at: now,
+        active_login_last_seen_at: now,
+      }).eq('id', userId)
     }
 
     // Platform owner goes to the owner portal — separate from every school's

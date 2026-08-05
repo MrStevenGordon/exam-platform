@@ -9,8 +9,15 @@ type LockedStudent = {
   full_name: string
   student_id: string | null
   active_login_started_at: string | null
+  active_login_last_seen_at: string | null
   examTitle: string
 }
+
+// Matches the staleness window InactivityLogout's heartbeat and login.tsx's
+// lock check use — a lock this old with no recent heartbeat is one the
+// system already treats as expired and would let a new login bypass, so
+// it's flagged as such rather than looking identically "active."
+const STALE_LOCK_MS = 10 * 60 * 1000
 
 export default function ActiveSessionsPage() {
   const router = useRouter()
@@ -26,7 +33,7 @@ export default function ActiveSessionsPage() {
 
     const { data: locked } = await supabase
       .from('profiles')
-      .select('id, full_name, student_id, active_login_started_at')
+      .select('id, full_name, student_id, active_login_started_at, active_login_last_seen_at')
       .eq('role', 'student')
       .not('active_login_token', 'is', null)
       .order('active_login_started_at', { ascending: true })
@@ -53,7 +60,7 @@ export default function ActiveSessionsPage() {
   async function handleRelease(studentId: string, name: string) {
     if (!confirm(`Release ${name}'s session? This lets them log in from a new device. Only do this if you're sure the original device was genuinely left logged in by mistake.`)) return
     setReleasing(studentId)
-    await supabase.from('profiles').update({ active_login_token: null, active_login_started_at: null }).eq('id', studentId)
+    await supabase.from('profiles').update({ active_login_token: null, active_login_started_at: null, active_login_last_seen_at: null }).eq('id', studentId)
     setReleasing(null)
     loadData()
   }
@@ -72,10 +79,21 @@ export default function ActiveSessionsPage() {
       )}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-        {students.map((s) => (
+        {students.map((s) => {
+          const isStale = s.active_login_last_seen_at
+            ? Date.now() - new Date(s.active_login_last_seen_at).getTime() > STALE_LOCK_MS
+            : true
+          return (
           <div key={s.id} className="card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
-              <div style={{ fontWeight: 700, fontSize: 14 }}>{s.full_name}</div>
+              <div style={{ fontWeight: 700, fontSize: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
+                {s.full_name}
+                {isStale && (
+                  <span className="badge badge-default" style={{ fontSize: 10 }} title="No activity in over 10 minutes — the system already lets this student log in elsewhere without you needing to release it">
+                    Likely inactive
+                  </span>
+                )}
+              </div>
               <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 2 }}>
                 {s.student_id && `ID: ${s.student_id} · `}
                 {s.examTitle}
@@ -90,7 +108,8 @@ export default function ActiveSessionsPage() {
               {releasing === s.id ? 'Releasing…' : 'Force logout'}
             </button>
           </div>
-        ))}
+          )
+        })}
       </div>
     </div>
   )

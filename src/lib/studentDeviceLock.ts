@@ -7,5 +7,9 @@ import { supabase } from '@/lib/supabase'
 // intervenes, which isn't the intent (the lock is meant to stop two
 // *simultaneous* sessions, not to bind a student to one device forever).
 export async function releaseDeviceLock(userId: string) {
-  await supabase.from('profiles').update({ active_login_token: null, active_login_started_at: null }).eq('id', userId)
+  await supabase.from('profiles').update({
+    active_login_token: null,
+    active_login_started_at: null,
+    active_login_last_seen_at: null,
+  }).eq('id', userId)
 }

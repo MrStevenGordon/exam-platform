@@ -1,0 +1,11 @@
+-- Separates "when did this device lock start" from "is it still alive."
+-- InactivityLogout's heartbeat (added alongside this migration) needs to
+-- refresh a timestamp periodically so login.tsx can detect an abandoned
+-- lock and self-heal — but active_login_started_at is also shown to school
+-- admins on /school-admin/active-sessions as "Since {time}" to help them
+-- judge whether a lock looks stuck. Reusing one field for both purposes
+-- would make that display always say "a few minutes ago" for any
+-- currently-active session, regardless of how long it's actually been
+-- running, defeating its purpose. Heartbeats now write here instead;
+-- active_login_started_at is untouched after the initial login.
+alter table profiles add column if not exists active_login_last_seen_at timestamptz;

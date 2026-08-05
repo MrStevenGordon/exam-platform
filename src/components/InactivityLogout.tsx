@@ -38,11 +38,17 @@ export default function InactivityLogout() {
     // both require this tab's JS to still be alive and online at that
     // moment. If it's closed, crashes, or loses connectivity first, neither
     // ever runs and the lock is stuck until an admin steps in. A periodic
-    // heartbeat keeps a timestamp fresh while a session is genuinely still
-    // around; login.tsx treats a lock as expired once that timestamp goes
-    // stale well past this interval, so a session that silently died can't
-    // permanently block a real login elsewhere. Only students carry a
-    // device lock at all, so this is skipped for every other role.
+    // heartbeat keeps active_login_last_seen_at fresh while a session is
+    // genuinely still around; login.tsx treats a lock as expired once that
+    // timestamp goes stale well past this interval, so a session that
+    // silently died can't permanently block a real login elsewhere. This
+    // deliberately writes a separate field from active_login_started_at —
+    // that one is shown to school admins on /school-admin/active-sessions
+    // as "since {time}" to help them judge whether a lock looks genuinely
+    // stuck, and bumping it every couple of minutes would make it always
+    // read "a few minutes ago" regardless of how long the lock has really
+    // been held. Only students carry a device lock at all, so this is
+    // skipped for every other role.
     let heartbeatId: ReturnType<typeof setInterval> | null = null
     async function startHeartbeatIfStudent() {
       const { data: { user } } = await supabase.auth.getUser()
@@ -53,7 +59,7 @@ export default function InactivityLogout() {
       heartbeatId = setInterval(async () => {
         const { data: { user: currentUser } } = await supabase.auth.getUser()
         if (!currentUser) return
-        await supabase.from('profiles').update({ active_login_started_at: new Date().toISOString() }).eq('id', currentUser.id)
+        await supabase.from('profiles').update({ active_login_last_seen_at: new Date().toISOString() }).eq('id', currentUser.id)
       }, HEARTBEAT_MS)
     }
     startHeartbeatIfStudent()
