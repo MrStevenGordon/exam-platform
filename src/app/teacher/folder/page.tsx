@@ -13,6 +13,7 @@ const TEST_KINDS = ['pop_quiz', 'class_test', 'weekly_test']
 const KIND_LABELS: Record<string, string> = {
   homework: 'Homework',
   assignment: 'Assignment',
+  group_project: 'Group Project',
   pop_quiz: 'Pop Quiz',
   class_test: 'Class Test',
   weekly_test: 'Weekly Test',
