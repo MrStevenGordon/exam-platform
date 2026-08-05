@@ -67,6 +67,22 @@ export default function ExamSessionsPage() {
     setLoading(false)
   }
 
+  async function notifyReleased(sessionIds: string[]) {
+    if (sessionIds.length === 0) return
+    const { data: { session } } = await supabase.auth.getSession()
+    try {
+      await fetch('/api/notify-results-released', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionIds, accessToken: session?.access_token }),
+      })
+    } catch (err) {
+      // Results are already released regardless of whether the email
+      // notification succeeds — don't block or alarm the supervisor over it.
+      console.error('notify-results-released failed:', err)
+    }
+  }
+
   async function handleReleaseAll() {
     const eligible = sessions.filter((s) => s.status === 'completed' && s.fully_graded && !s.results_released)
     if (eligible.length === 0) {
@@ -86,6 +102,7 @@ export default function ExamSessionsPage() {
     if (error) {
       alert(error.message)
     } else {
+      await notifyReleased(eligible.map((s) => s.id))
       loadData()
     }
     setReleasing(false)
