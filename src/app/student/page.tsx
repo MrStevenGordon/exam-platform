@@ -205,11 +205,11 @@ export default function StudentHome() {
           )}
         </div>
 
-        {/* Upcoming exams */}
+        {/* Upcoming exams/tasks */}
         <div>
-          <div className="section-label" style={{ marginBottom: 10 }}>Upcoming exams</div>
+          <div className="section-label" style={{ marginBottom: 10 }}>Upcoming</div>
           {upcomingExams.length === 0 && (
-            <div className="card"><p style={{ color: 'var(--text-secondary)', fontSize: 13 }}>No upcoming exams right now.</p></div>
+            <div className="card"><p style={{ color: 'var(--text-secondary)', fontSize: 13 }}>Nothing upcoming right now.</p></div>
           )}
           {upcomingExams.map((e) => (
             <Link key={e.id} href={`/student/${e.examType === 'final' ? 'exam' : 'direct-exam'}/${e.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>

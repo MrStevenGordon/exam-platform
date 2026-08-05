@@ -118,7 +118,7 @@ export default function TeacherHome() {
       <div className="stat-grid">
         <div className="stat-card">
           <div className="stat-card-value">{exams.length}</div>
-          <div className="stat-card-label">Total exams</div>
+          <div className="stat-card-label">Total items</div>
         </div>
         <div className="stat-card">
           <div className="stat-card-value">{studentCount}</div>
@@ -131,14 +131,14 @@ export default function TeacherHome() {
       </div>
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-        <div className="section-label">Recent exams</div>
+        <div className="section-label">Recent activity</div>
         <Link href="/teacher/new">
-          <button className="btn btn-primary" style={{ fontSize: 12, padding: '8px 16px' }}>+ New exam</button>
+          <button className="btn btn-primary" style={{ fontSize: 12, padding: '8px 16px' }}>+ New</button>
         </Link>
       </div>
 
       {exams.length === 0 && (
-        <EmptyState icon="🗂️" title="No exams yet" description="Everything you create (tasks, tests, and exams) will show up here." action={{ label: '+ Create your first exam', href: '/teacher/new' }} />
+        <EmptyState icon="🗂️" title="Nothing yet" description="Everything you create (tasks, tests, and exams) will show up here." action={{ label: '+ Create your first item', href: '/teacher/new' }} />
       )}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
