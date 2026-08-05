@@ -1,3 +1,15 @@
+// Only needed for templates below that interpolate free-text staff input
+// (studentNotificationEmail's message) rather than values already
+// constrained elsewhere in the app.
+function escapeHtml(text: string) {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
 function wrapper(bodyHtml: string) {
   return `
     <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #1A0E06; max-width: 480px; margin: 0 auto;">
@@ -123,6 +135,44 @@ export function credentialsEmail(schoolName: string, contactName: string, setupL
       <p>Click below to create your admin account. You'll be the first administrator for your school's portal:</p>
       <p style="margin: 20px 0;"><a href="${setupLink}" style="display: inline-block; background: #D4762A; color: white; padding: 10px 20px; border-radius: 6px; text-decoration: none; font-weight: 700;">Set up my school</a></p>
       <p style="font-size: 12px; color: #7A6A5A;">This link can only be used once. If it's already been used, contact us for a new one.</p>
+    `),
+  }
+}
+
+export function studentWelcomeEmail(fullName: string, loginId: string, tempPassword: string) {
+  return {
+    subject: `Your Smart Assess account is ready`,
+    html: wrapper(`
+      <p>Hi ${fullName},</p>
+      <p>Your Smart Assess account has been created. Use these details to log in:</p>
+      <p style="margin: 16px 0; padding: 14px 16px; background: #FEF5E4; border-radius: 8px;">
+        <strong>Login ID:</strong> ${loginId}<br />
+        <strong>Temporary password:</strong> ${tempPassword}
+      </p>
+      <p>You'll be asked to set your own password the first time you log in.</p>
+      <p style="font-size: 12px; color: #7A6A5A;">This is a notification-only address — replies to this email aren't monitored.</p>
+    `),
+  }
+}
+
+export function resultsReleasedEmail(fullName: string, examTitle: string) {
+  return {
+    subject: `Your results for ${examTitle} are available`,
+    html: wrapper(`
+      <p>Hi ${fullName},</p>
+      <p>Your results for <strong>${examTitle}</strong> have been released. Log in to Smart Assess to view them.</p>
+      <p style="font-size: 12px; color: #7A6A5A;">This is a notification-only address — replies to this email aren't monitored.</p>
+    `),
+  }
+}
+
+export function studentNotificationEmail(fullName: string, senderName: string, subject: string, message: string) {
+  return {
+    subject,
+    html: wrapper(`
+      <p>Hi ${escapeHtml(fullName)},</p>
+      <p style="white-space: pre-wrap;">${escapeHtml(message)}</p>
+      <p style="font-size: 12px; color: #7A6A5A; margin-top: 24px;">Sent by ${escapeHtml(senderName)} via Smart Assess. This is a notification-only address — replies to this email aren't monitored.</p>
     `),
   }
 }

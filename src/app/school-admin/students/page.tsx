@@ -10,6 +10,7 @@ type Student = {
   student_id: string | null
   grade_level: number | null
   class_name?: string
+  school_email: string | null
 }
 
 type ImportResult = {
@@ -17,6 +18,8 @@ type ImportResult = {
   email: string
   status: 'success' | 'failed'
   reason?: string
+  schoolEmail?: string | null
+  schoolEmailWarning?: string | null
 }
 
 const SCHOOL_DOMAIN = 'mhs.smartassess'
@@ -62,7 +65,7 @@ export default function StudentsPage() {
   async function loadData() {
     const { data } = await supabase
       .from('profiles')
-      .select('id, full_name, student_id, grade_level, enrollments(class_groups(name))')
+      .select('id, full_name, student_id, grade_level, school_email, enrollments(class_groups(name))')
       .eq('role', 'student')
       .order('grade_level', { ascending: true })
 
@@ -72,6 +75,7 @@ export default function StudentsPage() {
       student_id: s.student_id,
       grade_level: s.grade_level,
       class_name: s.enrollments?.[0]?.class_groups?.name || null,
+      school_email: s.school_email,
     }))
     setStudents(mapped)
     setLoading(false)
@@ -161,19 +165,21 @@ export default function StudentsPage() {
     for (const row of rows) {
       const fullName = [row.first_name, row.middle_name, row.last_name].filter(Boolean).join(' ')
       const email = `${row.student_id}@${SCHOOL_DOMAIN}`
+      const { email: rowSchoolEmail, ...rowRest } = row
+      const payload = { ...rowRest, school_email: rowSchoolEmail || undefined }
 
       try {
         const res = await fetch('/api/create-user', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ type: 'student', data: row, accessToken: session?.access_token }),
+          body: JSON.stringify({ type: 'student', data: payload, accessToken: session?.access_token }),
         })
         const result = await res.json()
         console.log('Create user result:', res.status, JSON.stringify(result))
         if (!res.ok || result.error) {
           results.push({ name: fullName, email, status: 'failed', reason: result.error })
         } else {
-          results.push({ name: fullName, email, status: 'success' })
+          results.push({ name: fullName, email, status: 'success', schoolEmail: result.schoolEmail, schoolEmailWarning: result.schoolEmailWarning })
         }
       } catch (err: any) {
         results.push({ name: fullName, email, status: 'failed', reason: err.message })
@@ -245,7 +251,12 @@ export default function StudentsPage() {
         <div className="card" style={{ marginBottom: 20 }}>
           <h2 style={{ marginBottom: 8 }}>Import students from CSV</h2>
           <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 16 }}>
-            CSV format: <code>first_name, middle_name, last_name, student_id, class_id, birth_date, gender, birth_year</code>
+            CSV format: <code>first_name, middle_name, last_name, student_id, class_id, birth_date, gender, birth_year, email</code>
+            <br />
+            <code>email</code> is optional — the student&apos;s real school inbox (e.g. john.doe@stu.mhs.edu.jm), used to send
+            them notifications. Their Smart Assess login is always their ID number, separately. Leave the column blank to
+            auto-generate one from their name; if that would collide with another student&apos;s, it&apos;s left blank for
+            you to add manually.
           </p>
 
           <input ref={fileRef} type="file" accept=".csv" onChange={handleFileChange} style={{ marginBottom: 12 }} />
@@ -312,6 +323,11 @@ export default function StudentsPage() {
           {importResults.filter((r) => r.status === 'failed').map((r, i) => (
             <div key={i} style={{ fontSize: 12, color: 'var(--danger)', marginBottom: 4 }}>
               ✗ {r.name} · {r.reason}
+            </div>
+          ))}
+          {importResults.filter((r) => r.schoolEmailWarning).map((r, i) => (
+            <div key={i} style={{ fontSize: 12, color: 'var(--warning)', marginBottom: 4 }}>
+              ⚠ {r.name} · {r.schoolEmailWarning}
             </div>
           ))}
         </div>
@@ -483,7 +499,10 @@ export default function StudentsPage() {
                             <div key={s.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', background: 'var(--card-bg)', borderRadius: 8, border: '1px solid var(--border)' }}>
                               <div>
                                 <div style={{ fontWeight: 600, fontSize: 13 }}>{s.full_name}</div>
-                                <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 2 }}>ID: {s.student_id}</div>
+                                <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 2 }}>
+                                  ID: {s.student_id}
+                                  {s.school_email ? ` · ${s.school_email}` : ' · No school email on file'}
+                                </div>
                               </div>
                               <button onClick={() => handleResetStudentPassword(s.id, s.full_name)} className="btn btn-ghost" style={{ fontSize: 11 }}>
                                 Reset password

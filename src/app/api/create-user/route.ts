@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { z } from 'zod'
 import { validateBody } from '@/lib/validateBody'
+import { sendEmail, EMAIL_FROM } from '@/lib/email'
+import { studentWelcomeEmail } from '@/lib/emailTemplates'
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -10,6 +12,17 @@ const supabaseAdmin = createClient(
 
 const CLASS_TO_GRADE: Record<string, number> = {
   '1': 7, '2': 8, '3': 9, '4': 10, '5': 11
+}
+
+// The student's real school inbox (e.g. john.doe@stu.mhs.edu.jm) — separate
+// from their id#@mhs.smartassess login, which was never a real address.
+// Used to send them actual notifications. Auto-derived from their name when
+// not supplied explicitly in the CSV; see deriveSchoolEmail below.
+const SCHOOL_EMAIL_DOMAIN = 'stu.mhs.edu.jm'
+
+function deriveSchoolEmail(firstName: string, lastName: string): string {
+  const normalize = (s: string) => s.toLowerCase().trim().replace(/[^a-z]/g, '')
+  return `${normalize(firstName)}.${normalize(lastName)}@${SCHOOL_EMAIL_DOMAIN}`
 }
 
 const schema = z.object({
@@ -25,6 +38,7 @@ const schema = z.object({
     birth_date: z.string().max(20).optional(),
     gender: z.string().max(30).optional(),
     birth_year: z.union([z.string(), z.number()]).optional(),
+    school_email: z.union([z.string().trim().email().max(320), z.literal('')]).optional(),
     // staff
     email: z.string().trim().email().max(320).optional(),
     role: z.enum(['teacher', 'supervisor', 'admin']).optional(),
@@ -79,7 +93,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (type === 'student') {
-      const { first_name, middle_name, last_name, student_id, class_id, birth_date, gender, birth_year } = data
+      const { first_name, middle_name, last_name, student_id, class_id, birth_date, gender, birth_year, school_email: providedSchoolEmail } = data
       const email = `${student_id}@mhs.smartassess`
       const fullName = [first_name, middle_name, last_name].filter(Boolean).join(' ')
       const gradePrefix = class_id?.split('-')[0]
@@ -94,6 +108,27 @@ export async function POST(req: NextRequest) {
 
       if (!classGroup) {
         return NextResponse.json({ error: `Class ${class_id} not found` }, { status: 400 })
+      }
+
+      // Resolve the student's real school inbox: use what the CSV supplied,
+      // or derive it from their name. If a derived guess collides with an
+      // existing student's address, leave it blank rather than silently
+      // sending someone else's real notifications to the wrong person —
+      // the caller can add it manually afterward.
+      let schoolEmail: string | null = providedSchoolEmail?.trim() || null
+      let schoolEmailWarning: string | null = null
+      if (!schoolEmail && first_name && last_name) {
+        const derived = deriveSchoolEmail(first_name, last_name)
+        const { data: existingEmail } = await supabaseAdmin
+          .from('profiles')
+          .select('id')
+          .eq('school_email', derived)
+          .maybeSingle()
+        if (existingEmail) {
+          schoolEmailWarning = `Auto-generated school email "${derived}" is already used by another student — left blank, add it manually.`
+        } else {
+          schoolEmail = derived
+        }
       }
 
       // Create auth user
@@ -119,6 +154,7 @@ export async function POST(req: NextRequest) {
         birth_year: birth_year ? parseInt(birth_year) : null,
         grade_level: gradeLevel,
         must_change_password: true,
+        school_email: schoolEmail,
       })
 
       if (profileError) {
@@ -135,7 +171,18 @@ export async function POST(req: NextRequest) {
 
       if (enrollError) console.error('Enroll error:', enrollError)
 
-      return NextResponse.json({ success: true, email })
+      // Best-effort — a flaky send shouldn't fail an otherwise-successful
+      // account creation.
+      if (schoolEmail) {
+        try {
+          const { subject, html } = studentWelcomeEmail(fullName, email, 'Student.Test')
+          await sendEmail({ to: schoolEmail, subject, html, from: EMAIL_FROM.notifications })
+        } catch (emailError) {
+          console.error('student welcome email failed:', emailError)
+        }
+      }
+
+      return NextResponse.json({ success: true, email, schoolEmail, schoolEmailWarning })
     }
 
     if (type === 'staff') {

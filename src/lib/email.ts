@@ -8,6 +8,7 @@ export const EMAIL_FROM = {
   onboarding: process.env.EMAIL_FROM_ONBOARDING || DEFAULT_FROM,
   billing: process.env.EMAIL_FROM_BILLING || DEFAULT_FROM,
   sales: process.env.EMAIL_FROM_SALES || DEFAULT_FROM,
+  notifications: process.env.EMAIL_FROM_NOTIFICATIONS || DEFAULT_FROM,
 }
 
 export async function sendEmail({ to, subject, html, from, replyTo }: { to: string; subject: string; html: string; from?: string; replyTo?: string }) {
