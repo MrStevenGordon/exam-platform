@@ -28,6 +28,18 @@ const SENIOR_TL_NAV = [
   { label: 'Vetting', icon: 'ti-shield-check', href: '/teacher/vetting' },
 ]
 
+// /teacher/new?kind=task|test is a shared creation page outside both
+// /teacher/tasks and /teacher/tests, so it needs an explicit mapping back
+// to whichever section it was launched from.
+function resolveActivePathname(pathname: string, searchParams: URLSearchParams) {
+  if (pathname === '/teacher/new') {
+    const kind = searchParams.get('kind')
+    if (kind === 'task') return '/teacher/tasks'
+    if (kind === 'test') return '/teacher/tests'
+  }
+  return pathname
+}
+
 export default function TeacherLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const [navItems, setNavItems] = useState(BASE_NAV)
@@ -89,7 +101,7 @@ export default function TeacherLayout({ children }: { children: React.ReactNode 
     <div className="portal-layout" style={{ minHeight: "100vh" }}>
       <InactivityLogout />
       <main className="portal-content"><PageTransition>{children}</PageTransition></main>
-      <Sidebar navItems={navItems} portalLabel="Teacher Portal" />
+      <Sidebar navItems={navItems} portalLabel="Teacher Portal" resolveActivePathname={resolveActivePathname} />
     </div>
   )
 }

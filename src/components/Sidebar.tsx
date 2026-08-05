@@ -1,17 +1,42 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { useRouter, usePathname } from 'next/navigation'
+import { Suspense, useEffect, useState } from 'react'
+import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { releaseDeviceLock } from '@/lib/studentDeviceLock'
 
 type NavItem = { label: string; icon: string; href: string }
-type SidebarProps = { navItems: NavItem[]; portalLabel: string }
+type SidebarProps = {
+  navItems: NavItem[]
+  portalLabel: string
+  // Some pages (e.g. a shared "create" page reached via a query param, like
+  // /teacher/new?kind=task) don't live under the nav item's own href, so
+  // path-prefix matching alone can't tell which section they belong to —
+  // without this, they fall through to matching Home instead, since every
+  // portal path starts with the Home item's own href. Return the href that
+  // should be treated as active for cases like that; return the pathname
+  // unchanged otherwise.
+  resolveActivePathname?: (pathname: string, searchParams: URLSearchParams) => string
+}
 
-export default function Sidebar({ navItems, portalLabel }: SidebarProps) {
+// useSearchParams() needs a Suspense boundary in this Next.js version (it
+// opts the tree into client-side-only rendering otherwise) — this wrapper
+// keeps that requirement contained to Sidebar itself rather than pushing it
+// onto every portal layout that renders one.
+export default function Sidebar(props: SidebarProps) {
+  return (
+    <Suspense fallback={null}>
+      <SidebarInner {...props} />
+    </Suspense>
+  )
+}
+
+function SidebarInner({ navItems, portalLabel, resolveActivePathname }: SidebarProps) {
   const router = useRouter()
   const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const activePathname = resolveActivePathname ? resolveActivePathname(pathname || '', searchParams) : pathname
   const [profile, setProfile] = useState<{ full_name: string; role: string; student_id?: string | null; grade_level?: number | null; departments?: { name: string } | null } | null>(null)
   const [mobileOpen, setMobileOpen] = useState(false)
   const [schoolLogoUrl, setSchoolLogoUrl] = useState<string | null>(null)
@@ -68,9 +93,9 @@ export default function Sidebar({ navItems, portalLabel }: SidebarProps) {
       {/* Nav */}
       <nav style={{ flex: 1, padding: '12px 10px', display: 'flex', flexDirection: 'column', gap: 2, overflowY: 'auto' }}>
         {(() => {
-          const hasExactMatch = navItems.some((i) => i.href === pathname)
+          const hasExactMatch = navItems.some((i) => i.href === activePathname)
           return navItems.map((item) => {
-            const isActive = hasExactMatch ? item.href === pathname : (item.href !== '/' && pathname?.startsWith(item.href))
+            const isActive = hasExactMatch ? item.href === activePathname : (item.href !== '/' && activePathname?.startsWith(item.href))
             return (
               <Link key={item.href} href={item.href} onClick={() => setMobileOpen(false)} style={{ textDecoration: 'none' }}>
                 <div style={{
