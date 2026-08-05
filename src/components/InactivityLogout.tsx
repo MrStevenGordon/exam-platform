@@ -100,7 +100,7 @@ export default function InactivityLogout() {
       style={{
         position: 'fixed',
         bottom: 20,
-        right: 20,
+        left: 20,
         zIndex: 9999,
         background: 'var(--card-bg, white)',
         border: '1.5px solid var(--warning, #D4762A)',
