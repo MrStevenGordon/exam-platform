@@ -1,11 +1,12 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { releaseDeviceLock } from '@/lib/studentDeviceLock'
 
 const TIMEOUT_MS = 5 * 60 * 1000
+const WARNING_MS = 15 * 1000
 const HEARTBEAT_MS = 2 * 60 * 1000
 const ACTIVITY_EVENTS = ['mousemove', 'mousedown', 'keydown', 'scroll', 'touchstart'] as const
 
@@ -18,10 +19,30 @@ const ACTIVITY_EVENTS = ['mousemove', 'mousedown', 'keydown', 'scroll', 'touchst
 export default function InactivityLogout() {
   const router = useRouter()
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const warningTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const [secondsLeft, setSecondsLeft] = useState<number | null>(null)
 
   useEffect(() => {
-    function reset() {
+    function clearAllTimers() {
       if (timerRef.current) clearTimeout(timerRef.current)
+      if (warningTimerRef.current) clearTimeout(warningTimerRef.current)
+      if (countdownRef.current) clearInterval(countdownRef.current)
+    }
+
+    function reset() {
+      clearAllTimers()
+      setSecondsLeft(null)
+
+      // Surface a visible countdown for the last WARNING_MS of the timeout,
+      // rather than logging a student out with no notice at all.
+      warningTimerRef.current = setTimeout(() => {
+        setSecondsLeft(Math.round(WARNING_MS / 1000))
+        countdownRef.current = setInterval(() => {
+          setSecondsLeft((s) => (s !== null ? Math.max(s - 1, 0) : s))
+        }, 1000)
+      }, TIMEOUT_MS - WARNING_MS)
+
       timerRef.current = setTimeout(async () => {
         const { data: { user } } = await supabase.auth.getUser()
         if (user) await releaseDeviceLock(user.id)
@@ -66,10 +87,37 @@ export default function InactivityLogout() {
 
     return () => {
       ACTIVITY_EVENTS.forEach((event) => window.removeEventListener(event, reset))
-      if (timerRef.current) clearTimeout(timerRef.current)
+      clearAllTimers()
       if (heartbeatId) clearInterval(heartbeatId)
     }
   }, [router])
 
-  return null
+  if (secondsLeft === null) return null
+
+  return (
+    <div
+      role="alert"
+      style={{
+        position: 'fixed',
+        bottom: 20,
+        right: 20,
+        zIndex: 9999,
+        background: 'var(--card-bg, white)',
+        border: '1.5px solid var(--warning, #D4762A)',
+        borderRadius: 10,
+        padding: '12px 16px',
+        boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
+        fontSize: 13,
+        maxWidth: 280,
+        display: 'flex',
+        alignItems: 'center',
+        gap: 10,
+      }}
+    >
+      <span style={{ fontSize: 20 }}>⏱️</span>
+      <span>
+        You&apos;ll be logged out in <strong>{secondsLeft}s</strong> due to inactivity. Move your mouse or press a key to stay signed in.
+      </span>
+    </div>
+  )
 }
