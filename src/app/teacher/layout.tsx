@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import Sidebar from '@/components/Sidebar'
 import PageTransition from '@/components/PageTransition'
 import InactivityLogout from '@/components/InactivityLogout'
@@ -42,6 +42,7 @@ function resolveActivePathname(pathname: string, searchParams: URLSearchParams) 
 
 export default function TeacherLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
+  const pathname = usePathname()
   const [navItems, setNavItems] = useState(BASE_NAV)
   const [mfaChecked, setMfaChecked] = useState(false)
 
@@ -50,11 +51,11 @@ export default function TeacherLayout({ children }: { children: React.ReactNode 
       const roleRedirect = await verifyPortalRole('teacher')
       if (roleRedirect) { router.push(roleRedirect); return }
       const mfaRedirect = await getMfaRedirect('teacher')
-      if (mfaRedirect) { router.push(mfaRedirect); return }
+      if (mfaRedirect) { router.push(`${mfaRedirect}?from=${encodeURIComponent(pathname)}`); return }
       setMfaChecked(true)
     }
     checkAccess()
-  }, [router])
+  }, [router, pathname])
 
   useEffect(() => {
     if (!mfaChecked) return
