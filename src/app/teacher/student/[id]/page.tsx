@@ -5,6 +5,7 @@ import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import EmptyState from '@/components/EmptyState'
+import NotifyStudentButton from '@/components/NotifyStudentButton'
 
 type StudentProfile = {
   id: string
@@ -114,7 +115,7 @@ export default function TeacherStudentDetailPage() {
         <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'var(--accent-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 700, color: 'var(--accent-dark)', flexShrink: 0 }}>
           {initials}
         </div>
-        <div>
+        <div style={{ flex: 1 }}>
           <h1 style={{ margin: 0 }}>{student.full_name}</h1>
           <p style={{ color: 'var(--text-secondary)', margin: '4px 0 0', fontSize: 13 }}>
             {student.student_id && `ID: ${student.student_id}`}
@@ -122,6 +123,7 @@ export default function TeacherStudentDetailPage() {
             {className && ` · Class ${className}`}
           </p>
         </div>
+        <NotifyStudentButton studentId={studentId} studentName={student.full_name} />
       </div>
 
       <div className="stat-grid" style={{ marginTop: 16 }}>

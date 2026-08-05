@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import NotifyStudentButton from '@/components/NotifyStudentButton'
 
 type Student = {
   id: string
@@ -504,9 +505,12 @@ export default function StudentsPage() {
                                   {s.school_email ? ` · ${s.school_email}` : ' · No school email on file'}
                                 </div>
                               </div>
-                              <button onClick={() => handleResetStudentPassword(s.id, s.full_name)} className="btn btn-ghost" style={{ fontSize: 11 }}>
-                                Reset password
-                              </button>
+                              <div style={{ display: 'flex', gap: 6 }}>
+                                <NotifyStudentButton studentId={s.id} studentName={s.full_name} />
+                                <button onClick={() => handleResetStudentPassword(s.id, s.full_name)} className="btn btn-ghost" style={{ fontSize: 11 }}>
+                                  Reset password
+                                </button>
+                              </div>
                             </div>
                           ))}
                         </div>
