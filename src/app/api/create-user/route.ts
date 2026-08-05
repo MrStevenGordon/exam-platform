@@ -118,6 +118,7 @@ export async function POST(req: NextRequest) {
         gender: gender || null,
         birth_year: birth_year ? parseInt(birth_year) : null,
         grade_level: gradeLevel,
+        must_change_password: true,
       })
 
       if (profileError) {
@@ -156,6 +157,7 @@ export async function POST(req: NextRequest) {
         last_name,
         role: role || 'teacher',
         department_id: department_id || null,
+        must_change_password: true,
       })
 
       if (profileError) {
@@ -204,6 +206,10 @@ export async function POST(req: NextRequest) {
       const { user_id, password } = data
       const { error } = await supabaseAdmin.auth.admin.updateUserById(user_id, { password })
       if (error) return NextResponse.json({ error: error.message }, { status: 400 })
+      // The admin chose this password, so they know it too — require the
+      // account holder to set their own on next login, same as a fresh
+      // account creation.
+      await supabaseAdmin.from('profiles').update({ must_change_password: true }).eq('id', user_id)
       return NextResponse.json({ success: true })
     }
 

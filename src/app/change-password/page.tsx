@@ -35,8 +35,12 @@ function ChangePasswordForm() {
     if (newPassword.length < 8) { setError('Password must be at least 8 characters.'); return }
 
     setSaving(true)
-    const { error: updateError } = await supabase.auth.updateUser({ password: newPassword })
+    const { error: updateError, data: { user } } = await supabase.auth.updateUser({ password: newPassword })
     if (updateError) { setError(updateError.message); setSaving(false); return }
+
+    if (user) {
+      await supabase.from('profiles').update({ must_change_password: false }).eq('id', user.id)
+    }
 
     // Redirect to correct portal
     if (profile?.is_system_admin) { router.push('/school-admin'); return }

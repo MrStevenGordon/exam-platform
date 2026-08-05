@@ -18,11 +18,17 @@ export async function verifyPortalRole(expectedRole: 'admin' | 'teacher' | 'supe
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('role, is_system_admin, is_active')
+    .select('role, is_system_admin, is_active, must_change_password')
     .eq('id', user.id)
     .single()
 
   if (!profile || profile.is_active === false) return '/login'
+
+  // Login only redirects here once, at the moment of sign-in — without a
+  // check on every portal page load too, a user could just navigate
+  // straight past that redirect and keep using a still-shared default
+  // password indefinitely.
+  if (profile.must_change_password) return '/change-password?first=true'
 
   // The platform owner's row carries role='admin' too (the DB check
   // constraint has no 'owner' value) but must never land in a school's own
