@@ -5,7 +5,7 @@
   "main": "electron/main.js",
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "TURBOPACK=1 next build",
     "start": "next start",
     "lint": "eslint",
     "electron:dev": "SMART_ASSESS_URL=http://localhost:3000 electron electron/main.js",
