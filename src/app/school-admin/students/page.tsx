@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import NotifyStudentButton from '@/components/NotifyStudentButton'
+import AccommodationsToggle from '@/components/AccommodationsToggle'
 
 type Student = {
   id: string
@@ -12,6 +13,7 @@ type Student = {
   grade_level: number | null
   class_name?: string
   school_email: string | null
+  accommodations: string[]
 }
 
 type ImportResult = {
@@ -66,7 +68,7 @@ export default function StudentsPage() {
   async function loadData() {
     const { data } = await supabase
       .from('profiles')
-      .select('id, full_name, student_id, grade_level, school_email, enrollments(class_groups(name))')
+      .select('id, full_name, student_id, grade_level, school_email, accommodations, enrollments(class_groups(name))')
       .eq('role', 'student')
       .order('grade_level', { ascending: true })
 
@@ -77,6 +79,7 @@ export default function StudentsPage() {
       grade_level: s.grade_level,
       class_name: s.enrollments?.[0]?.class_groups?.name || null,
       school_email: s.school_email,
+      accommodations: Array.isArray(s.accommodations) ? s.accommodations : [],
     }))
     setStudents(mapped)
     setLoading(false)
@@ -506,6 +509,7 @@ export default function StudentsPage() {
                                 </div>
                               </div>
                               <div style={{ display: 'flex', gap: 6 }}>
+                                <AccommodationsToggle studentId={s.id} initialEnabled={s.accommodations.includes('text_to_speech')} />
                                 <NotifyStudentButton studentId={s.id} studentName={s.full_name} />
                                 <button onClick={() => handleResetStudentPassword(s.id, s.full_name)} className="btn btn-ghost" style={{ fontSize: 11 }}>
                                   Reset password

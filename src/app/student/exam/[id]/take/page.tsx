@@ -4,6 +4,7 @@ import { useEffect, useState, useRef, useCallback } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import ScientificCalculator from '@/components/ScientificCalculator'
+import ReadAloudButton from '@/components/ReadAloudButton'
 import {
   initExamRecord, getExamRecord, saveAnswersLocally, markSynced,
   setPendingSubmit as setPendingSubmitLocal, queueViolation, clearQueuedViolations, clearExamRecord,
@@ -92,6 +93,7 @@ export default function TakeExamPage() {
   const [warningReason, setWarningReason] = useState('')
   const [confirmingSubmit, setConfirmingSubmit] = useState(false)
   const [studentProfile, setStudentProfile] = useState<{ full_name: string; student_id: string | null } | null>(null)
+  const [textToSpeechEnabled, setTextToSpeechEnabled] = useState(false)
   const [calculatorEnabled, setCalculatorEnabled] = useState(false)
 
   const violationCount = useRef(0)
@@ -116,10 +118,11 @@ export default function TakeExamPage() {
 
     const { data: profileData } = await supabase
       .from('profiles')
-      .select('full_name, student_id')
+      .select('full_name, student_id, accommodations')
       .eq('id', user.id)
       .single()
     if (profileData) setStudentProfile(profileData)
+    setTextToSpeechEnabled(Array.isArray(profileData?.accommodations) && profileData.accommodations.includes('text_to_speech'))
 
     const { data: sessionData, error: sessionError } = await supabase
       .from('exam_sessions')
@@ -653,9 +656,17 @@ export default function TakeExamPage() {
                 </div>
               )}
             <div className="card">
-              <p style={{ fontWeight: 700, marginBottom: q.image_url ? 8 : 12, fontSize: 15 }}>
-                {globalIndex + 1}. {q.question_text}
-              </p>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, marginBottom: q.image_url ? 8 : 12 }}>
+                <p style={{ fontWeight: 700, fontSize: 15, margin: 0 }}>
+                  {globalIndex + 1}. {q.question_text}
+                </p>
+                {textToSpeechEnabled && (
+                  <ReadAloudButton
+                    questionText={`Question ${globalIndex + 1}. ${q.question_text}`}
+                    options={q.question_type === 'multiple_choice' ? q.options : undefined}
+                  />
+                )}
+              </div>
 
               {(q as any).image_url && (
                 <div style={{ marginBottom: 12 }}>

@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import EmptyState from '@/components/EmptyState'
 import NotifyStudentButton from '@/components/NotifyStudentButton'
+import AccommodationsToggle from '@/components/AccommodationsToggle'
 
 type StudentProfile = {
   id: string
@@ -14,6 +15,7 @@ type StudentProfile = {
   grade_level: number | null
   birth_date: string | null
   gender: string | null
+  accommodations: string[]
 }
 
 type SessionRow = {
@@ -47,7 +49,7 @@ export default function SupervisorStudentDetailPage() {
 
       const { data: studentData, error } = await supabase
         .from('profiles')
-        .select('id, full_name, student_id, grade_level, birth_date, gender')
+        .select('id, full_name, student_id, grade_level, birth_date, gender, accommodations')
         .eq('id', studentId)
         .single()
 
@@ -56,7 +58,7 @@ export default function SupervisorStudentDetailPage() {
         setLoading(false)
         return
       }
-      setStudent(studentData)
+      setStudent({ ...studentData, accommodations: Array.isArray(studentData.accommodations) ? studentData.accommodations : [] })
 
       const { data: enrollment } = await supabase
         .from('enrollments')
@@ -123,7 +125,10 @@ export default function SupervisorStudentDetailPage() {
             {className && ` · Class ${className}`}
           </p>
         </div>
-        <NotifyStudentButton studentId={studentId} studentName={student.full_name} />
+        <div style={{ display: 'flex', gap: 8 }}>
+          <AccommodationsToggle studentId={studentId} initialEnabled={student.accommodations.includes('text_to_speech')} />
+          <NotifyStudentButton studentId={studentId} studentName={student.full_name} />
+        </div>
       </div>
 
       <div className="stat-grid" style={{ marginTop: 16 }}>
