@@ -78,9 +78,9 @@ export default function HomePage() {
           One secure platform for schools and organizations across Jamaica, from pop quizzes to full final exams to one-off assessments, built around how you actually work.
         </p>
         <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
-          <a href="#contact">
-            <button className="btn btn-primary" style={{ fontSize: 15, padding: '14px 32px' }}>Get started</button>
-          </a>
+          <Link href="/build-my-school">
+            <button className="btn btn-primary" style={{ fontSize: 15, padding: '14px 32px' }}>Request a Demo</button>
+          </Link>
           <Link href="/login">
             <button className="btn btn-secondary" style={{ fontSize: 15, padding: '14px 32px' }}>Log in</button>
           </Link>
@@ -89,10 +89,10 @@ export default function HomePage() {
           </Link>
         </div>
         <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: '1.25rem' }}>
-          Organization running a one-off assessment? <Link href="/org/signup" style={{ color: 'var(--accent-dark)', fontWeight: 700 }}>Request access here</Link>. No roster setup needed.
+          Free to request, no commitment. We&apos;ll walk you through the platform personally.
         </p>
         <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: '0.5rem' }}>
-          Running a school? <Link href="/build-my-school" style={{ color: 'var(--accent-dark)', fontWeight: 700 }}>Build your school&apos;s setup</Link> and request to join.
+          Organization running a one-off assessment? <Link href="/org/signup" style={{ color: 'var(--accent-dark)', fontWeight: 700 }}>Request access here</Link>. No roster setup needed.
         </p>
       </section>
 

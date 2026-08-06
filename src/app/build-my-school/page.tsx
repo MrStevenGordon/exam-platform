@@ -103,23 +103,52 @@ export default function BuildMySchoolPage() {
     )
   }
 
-  return (
-    <div className="page-container" style={{ maxWidth: 620 }}>
-      <h1>Build My School</h1>
-      <p style={{ color: 'var(--text-secondary)', marginBottom: 24 }}>
-        Tell us how your school runs exams and which features you need. We&apos;ll review and set you up.
-      </p>
+  const STEP_LABELS = ['Your school', 'Workflow', 'Features', 'Review']
 
-      <div style={{ display: 'flex', gap: 6, marginBottom: 20 }}>
-        {[1, 2, 3, 4].map((n) => (
-          <div key={n} style={{ flex: 1, height: 4, borderRadius: 2, background: n <= step ? 'var(--accent)' : 'var(--border)' }} />
-        ))}
+  return (
+    <div className="page-container" style={{ maxWidth: 640 }}>
+      <div style={{ textAlign: 'center', marginBottom: 8 }}>
+        <h1 style={{ marginBottom: 8 }}>Build My School</h1>
+        <p style={{ color: 'var(--text-secondary)', maxWidth: 480, margin: '0 auto' }}>
+          Tell us how your school runs exams and which features you need. We&apos;ll review and set you up.
+        </p>
+      </div>
+
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'center', gap: 4, margin: '32px 0' }}>
+        {STEP_LABELS.map((label, i) => {
+          const n = i + 1
+          const isDone = n < step
+          const isCurrent = n === step
+          return (
+            <div key={label} style={{ display: 'flex', alignItems: 'center', flex: i < STEP_LABELS.length - 1 ? 1 : undefined }}>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+                <div
+                  style={{
+                    width: 34, height: 34, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 14, fontWeight: 700, flexShrink: 0,
+                    border: `2px solid ${isDone || isCurrent ? 'var(--accent)' : 'var(--border-strong)'}`,
+                    background: isDone ? 'var(--accent)' : isCurrent ? 'var(--accent-light)' : 'var(--card-bg)',
+                    color: isDone ? '#fff' : isCurrent ? 'var(--accent-dark)' : 'var(--text-secondary)',
+                  }}
+                >
+                  {isDone ? '✓' : n}
+                </div>
+                <div style={{ fontSize: 12, fontWeight: isCurrent ? 700 : 500, color: isCurrent ? 'var(--text-primary)' : 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
+                  {label}
+                </div>
+              </div>
+              {i < STEP_LABELS.length - 1 && (
+                <div style={{ flex: 1, height: 2, marginBottom: 20, background: n < step ? 'var(--accent)' : 'var(--border)' }} />
+              )}
+            </div>
+          )
+        })}
       </div>
 
       {error && <div className="banner banner-danger" style={{ marginBottom: 16 }}>{error}</div>}
 
       {step === 1 && (
-        <div className="card">
+        <div className="card" style={{ padding: '28px 28px' }}>
           <h2 style={{ marginBottom: 12 }}>Your school</h2>
           <div style={{ marginBottom: 14 }}>
             <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>School name</label>
@@ -145,7 +174,7 @@ export default function BuildMySchoolPage() {
       )}
 
       {step === 2 && (
-        <div className="card">
+        <div className="card" style={{ padding: '28px 28px' }}>
           <h2 style={{ marginBottom: 12 }}>How does your school run exams?</h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {WORKFLOW_TEMPLATES.map((t) => (
@@ -196,7 +225,7 @@ export default function BuildMySchoolPage() {
       )}
 
       {step === 3 && (
-        <div className="card">
+        <div className="card" style={{ padding: '28px 28px' }}>
           <h2 style={{ marginBottom: 12 }}>Which features do you need?</h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {FEATURES.map((f) => (
@@ -224,7 +253,7 @@ export default function BuildMySchoolPage() {
       )}
 
       {step === 4 && (
-        <div className="card">
+        <div className="card" style={{ padding: '28px 28px' }}>
           <h2 style={{ marginBottom: 12 }}>Review & submit</h2>
           <div style={{ fontSize: 14, marginBottom: 16 }}>
             <div style={{ marginBottom: 8 }}><strong>{schoolName}</strong> · {contactName} ({contactEmail})</div>
