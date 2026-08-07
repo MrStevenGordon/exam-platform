@@ -46,6 +46,15 @@ function saveLastRoute(pathname) {
 // blocking the shortcuts that would otherwise switch away or quit) — it's
 // only engaged for the exam-taking route, not the app's resting state.
 const KIOSK_ROUTE_PATTERN = /^\/student\/(exam|direct-exam)\/[^/]+\/take/
+
+// This shell is for logging in and using the app, not for browsing the
+// public marketing site — there's no back/forward chrome the way a real
+// browser has, so landing on one of these (e.g. via the login page's own
+// logo, which links to "/" like it should on the actual website) is a
+// dead end with no way back in. Blocked at the shell level rather than by
+// patching individual links, since any future stray link to one of these
+// would cause the exact same dead end otherwise.
+const MARKETING_ONLY_ROUTES = ['/', '/build-my-school', '/org/signup', '/download', '/coming-soon']
 const EXAM_BLOCKED_SHORTCUTS = [
   'CommandOrControl+Tab', 'CommandOrControl+Q', 'CommandOrControl+W',
   'CommandOrControl+M', 'CommandOrControl+H', 'CommandOrControl+Space',
@@ -112,6 +121,18 @@ function createWindow() {
       const parsed = new URL(url)
       if (parsed.origin !== new URL(APP_URL).origin) return
 
+      // Most in-app navigation (including the login page's own logo link)
+      // is Next.js client-side routing via history.pushState, not a real
+      // page load — Electron's will-navigate never sees it, only
+      // did-navigate-in-page does, and only after the transition already
+      // happened. There's no earlier point to intercept it at, so this
+      // catches it here and bounces straight back rather than leaving the
+      // marketing site loaded with no way back to the app.
+      if (MARKETING_ONLY_ROUTES.includes(parsed.pathname)) {
+        win.loadURL(new URL('/login', APP_URL).toString())
+        return
+      }
+
       saveLastRoute(parsed.pathname + parsed.search)
 
       if (KIOSK_ROUTE_PATTERN.test(parsed.pathname)) {
@@ -126,6 +147,29 @@ function createWindow() {
 
   win.webContents.on('did-navigate', trackNavigation)
   win.webContents.on('did-navigate-in-page', trackNavigation)
+
+  // Defense in depth for the less common case of an actual full page
+  // navigation (not a Next.js client-side transition) landing on one of
+  // these — this one fires early enough to prevent it outright rather
+  // than redirecting after the fact.
+  win.webContents.on('will-navigate', (event, url) => {
+    try {
+      const parsed = new URL(url)
+      if (parsed.origin !== new URL(APP_URL).origin) return
+      if (MARKETING_ONLY_ROUTES.includes(parsed.pathname)) {
+        event.preventDefault()
+        win.loadURL(new URL('/login', APP_URL).toString())
+      }
+    } catch {
+      // Non-http(s) URL — nothing to guard.
+    }
+  })
+
+  // Links that would otherwise open a brand-new, completely unrestricted
+  // window (target="_blank") are an even bigger escape hatch than
+  // navigating the existing one — deny them outright rather than trying
+  // to apply the same route guard to a second window.
+  win.webContents.setWindowOpenHandler(() => ({ action: 'deny' }))
 
   return win
 }
