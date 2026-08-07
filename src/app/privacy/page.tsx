@@ -41,7 +41,7 @@ export default function PrivacyPolicyPage() {
                 ['Exam content & answers', 'Students, teachers, orgs', 'Delivering, grading, and reporting on exams'],
                 ['Exam integrity signals', 'Students (during proctored exams)', 'Flagging possible integrity concerns for a teacher to review'],
                 ['Payment records', 'Schools, organizations', 'Billing (plan, amount, reference note only — never card or bank login details)'],
-                ['Technical & error data', 'Everyone', 'Keeping you logged in, diagnosing bugs'],
+                ['Technical & error data', 'Everyone', 'Keeping you logged in, diagnosing bugs (including short screen replays and click-frustration signals to help us find and fix problems)'],
               ].map(([cat, from, use], i, arr) => (
                 <tr key={cat} style={{ borderBottom: i < arr.length - 1 ? '1px solid var(--border)' : 'none' }}>
                   <td style={{ padding: '10px 14px', fontWeight: 600 }}>{cat}</td>
@@ -63,10 +63,12 @@ export default function PrivacyPolicyPage() {
 
         <Section title="What we collect">
           <p style={{ marginBottom: 12 }}><strong>Students:</strong> full name, student ID, birth date, gender, grade level,
-          department/class enrollment, exam answers and scores, and integrity signals during proctored
-          exams: things like typing rhythm, fullscreen/tab-switch events, and paste attempts. We do not
-          record keystroke content itself, only behavioral patterns used to flag possible academic
-          integrity concerns for a teacher to review.</p>
+          department/class enrollment, a school email address (used for notifications like results being
+          released, kept separate from the ID used to log in), exam answers and scores, and integrity
+          signals during proctored exams: things like typing rhythm, fullscreen/tab-switch events, and
+          paste attempts. We do not record keystroke content itself, only behavioral patterns used to flag
+          possible academic integrity concerns for a teacher to review. If a teacher, supervisor, or school
+          admin enables a text-to-speech accommodation for you, that setting is stored on your profile.</p>
           <p style={{ marginBottom: 12 }}><strong>Staff (teachers, supervisors, school admins):</strong> full name, email address, role,
           department, and two-factor authentication enrollment status (the actual authenticator secret is
           managed by our authentication provider, Supabase, not stored by us directly).</p>
@@ -76,7 +78,12 @@ export default function PrivacyPolicyPage() {
           login credentials).</p>
           <p><strong>Everyone:</strong> basic technical data needed to run the service, such as session tokens (to keep you
           logged in), and error reports sent to our error-tracking tool (Sentry) when something breaks, which
-          may include technical context like the page you were on but is not used to build a profile of you.</p>
+          may include technical context like the page you were on but is not used to build a profile of you.
+          When an error happens, Sentry also captures a short visual replay (roughly the 60 seconds leading up
+          to it) of what was on screen, to help us understand and fix the problem; text and media are masked
+          by default so exam content isn&apos;t captured in the clear. We also detect repeated frustrated
+          clicking on something that isn&apos;t responding (a &quot;rage click&quot;) and report it the same
+          way, with the page and element involved, so we can find and fix broken interactions.</p>
         </Section>
 
         <Section title="Why we collect it">
@@ -101,8 +108,10 @@ export default function PrivacyPolicyPage() {
           <p>We use a small number of service providers to actually run Smart Assess, each only with the access
           they need to do their specific job: Supabase (database, authentication, and file storage), Vercel
           (hosting), Resend (sending transactional email like password resets and notifications), Anthropic
-          (processing exam questions you explicitly submit for AI-assisted polishing or PDF import), and
-          Sentry (error monitoring). None of these providers can use your data for their own purposes.</p>
+          (processing exam questions you explicitly submit for AI-assisted polishing or PDF import), Sentry
+          (error monitoring and the session replay described above), and Cloudflare Turnstile (verifying that
+          submissions to public forms, like contact and signup requests, aren&apos;t automated bots). None of
+          these providers can use your data for their own purposes.</p>
         </Section>
 
         <Section title="How long we keep it">
