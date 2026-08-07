@@ -45,6 +45,7 @@ export default function LoginPage() {
   const [mfaCode, setMfaCode] = useState('')
   const [desktopVersion, setDesktopVersion] = useState('')
   const [inactivityNotice, setInactivityNotice] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
 
   useEffect(() => {
     const electronAPI = (window as unknown as { electronAPI?: { getAppVersion: () => Promise<string> } }).electronAPI
@@ -412,14 +413,28 @@ export default function LoginPage() {
             <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: 0.5, textTransform: 'uppercase' }}>
               Password
             </label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              placeholder="••••••••"
-              style={{ width: '100%', marginTop: 6 }}
-            />
+            <div style={{ position: 'relative', marginTop: 6 }}>
+              <input
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                placeholder="••••••••"
+                style={{ width: '100%', paddingRight: 56 }}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((v) => !v)}
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+                style={{
+                  position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)',
+                  background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 700,
+                  color: 'var(--text-secondary)', padding: '4px 6px',
+                }}
+              >
+                {showPassword ? 'Hide' : 'Show'}
+              </button>
+            </div>
           </div>
 
           {error && (
