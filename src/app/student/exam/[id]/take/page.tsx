@@ -267,6 +267,21 @@ export default function TakeExamPage() {
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
   }, [session])
 
+  // Desktop app only: Alt+Tab (and similar OS-level shortcuts) can't
+  // reliably be blocked — see electron/main.js — so this is the backstop.
+  // The main process detects the OS handing focus to a different app and
+  // notifies here even when visibilitychange doesn't fire the same way it
+  // would for a browser tab.
+  useEffect(() => {
+    if (!session) return
+    const electronAPI = (window as unknown as { electronAPI?: { onExamFocusLost?: (cb: () => void) => () => void } }).electronAPI
+    if (!electronAPI?.onExamFocusLost) return
+    const unsubscribe = electronAPI.onExamFocusLost(() => {
+      if (!submittedRef.current && !intentionalExitRef.current) registerViolation('switched away from the app')
+    })
+    return unsubscribe
+  }, [session])
+
   // Always hide sidebar on take page
   useEffect(() => {
     const sidebar = document.querySelector('.portal-layout > *:first-child') as HTMLElement

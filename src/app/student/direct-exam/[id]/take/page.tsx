@@ -293,6 +293,25 @@ export default function TakeDirectExamPage() {
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
   }, [session, isRelaxedExam])
 
+  // Desktop app only: Alt+Tab (and similar OS-level shortcuts) can't
+  // reliably be blocked — see electron/main.js — so this is the backstop.
+  // The main process detects the OS handing focus to a different app and
+  // notifies here even when visibilitychange doesn't fire the same way it
+  // would for a browser tab.
+  useEffect(() => {
+    if (!session || isRelaxedExam) return
+    const electronAPI = (window as unknown as { electronAPI?: { onExamFocusLost?: (cb: () => void) => () => void } }).electronAPI
+    if (!electronAPI?.onExamFocusLost) return
+    const unsubscribe = electronAPI.onExamFocusLost(() => {
+      if (!submittedRef.current && !intentionalExitRef.current) {
+        setWarningReason('You switched away from the app.')
+        setShowWarningOverlay(true)
+        registerViolation('switched away from the app')
+      }
+    })
+    return unsubscribe
+  }, [session, isRelaxedExam])
+
   async function registerViolation(reason: string) {
     if (!session) return
     violationCount.current += 1

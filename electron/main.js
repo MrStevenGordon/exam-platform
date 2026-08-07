@@ -53,7 +53,18 @@ const EXAM_BLOCKED_SHORTCUTS = [
 ]
 
 let inExamLockdown = false
+let examBlurListener = null
 
+// Alt+Tab (and some other combos) are OS-reserved on Windows — the shell's
+// own task-switcher intercepts them before any app's globalShortcut
+// registration ever sees them, so the block attempt below is genuinely
+// best-effort and can silently fail to prevent the switch. The window
+// 'blur' listener is the backstop: Electron always knows when the OS gives
+// focus to a different app, regardless of which shortcut caused it, so it
+// can't be evaded the way the key-combo block can. This mirrors the
+// tab-switch detection the web app already does via visibilitychange —
+// same idea, just triggered by a signal specific to a real OS window
+// rather than a browser tab.
 function enterExamLockdown(win) {
   if (inExamLockdown) return
   inExamLockdown = true
@@ -63,6 +74,11 @@ function enterExamLockdown(win) {
       // Some combos are OS-reserved and can't be intercepted — best effort.
     }
   }
+  examBlurListener = () => {
+    if (!inExamLockdown) return
+    win.webContents.send('exam:focus-lost')
+  }
+  win.on('blur', examBlurListener)
 }
 
 function exitExamLockdown(win) {
@@ -70,6 +86,10 @@ function exitExamLockdown(win) {
   inExamLockdown = false
   win.setKiosk(false)
   globalShortcut.unregisterAll()
+  if (examBlurListener) {
+    win.off('blur', examBlurListener)
+    examBlurListener = null
+  }
 }
 
 function createWindow() {
