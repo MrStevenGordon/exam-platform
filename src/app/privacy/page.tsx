@@ -42,6 +42,7 @@ export default function PrivacyPolicyPage() {
                 ['Exam integrity signals', 'Students (during proctored exams)', 'Flagging possible integrity concerns for a teacher to review'],
                 ['Payment records', 'Schools, organizations', 'Billing (plan, amount, reference note only — never card or bank login details)'],
                 ['Technical & error data', 'Everyone', 'Keeping you logged in, diagnosing bugs (including short screen replays and click-frustration signals to help us find and fix problems)'],
+                ['Chat assistant messages', 'Everyone (site visitors and logged-in users)', 'Answering questions and reviewing/improving the assistant’s answers'],
               ].map(([cat, from, use], i, arr) => (
                 <tr key={cat} style={{ borderBottom: i < arr.length - 1 ? '1px solid var(--border)' : 'none' }}>
                   <td style={{ padding: '10px 14px', fontWeight: 600 }}>{cat}</td>
@@ -76,7 +77,7 @@ export default function PrivacyPolicyPage() {
           create, whatever fields you configure to collect from your own respondents, and payment records
           (plan, amount, and a reference note for wire transfers; we never handle card numbers or bank
           login credentials).</p>
-          <p><strong>Everyone:</strong> basic technical data needed to run the service, such as session tokens (to keep you
+          <p style={{ marginBottom: 12 }}><strong>Everyone:</strong> basic technical data needed to run the service, such as session tokens (to keep you
           logged in), and error reports sent to our error-tracking tool (Sentry) when something breaks, which
           may include technical context like the page you were on but is not used to build a profile of you.
           When an error happens, Sentry also captures a short visual replay (roughly the 60 seconds leading up
@@ -84,6 +85,11 @@ export default function PrivacyPolicyPage() {
           by default so exam content isn&apos;t captured in the clear. We also detect repeated frustrated
           clicking on something that isn&apos;t responding (a &quot;rage click&quot;) and report it the same
           way, with the page and element involved, so we can find and fix broken interactions.</p>
+          <p>If you use the chat assistant (the &quot;?&quot; icon), we store the messages you send it and its
+          replies, so we can review and improve its answers. If you&apos;re logged in when you use it, we also
+          store your role (e.g. teacher, student) at the time, so we know what kind of question it was
+          answering — the assistant itself is never given access to your actual account data, exam results,
+          or session status, only general information about how the platform works.</p>
         </Section>
 
         <Section title="Why we collect it">
@@ -93,12 +99,15 @@ export default function PrivacyPolicyPage() {
         </Section>
 
         <Section title="Our use of AI">
-          Two optional features use a third-party AI service (Anthropic): polishing the wording of a question a
+          <p style={{ marginBottom: 12 }}>Two optional features use a third-party AI service (Anthropic): polishing the wording of a question a
           teacher is writing, and extracting questions from a PDF a teacher uploads. Both are opt-in, both only
           process content a staff member explicitly submits in that moment, and both produce suggestions only —
-          a human teacher always reviews and decides whether to use the output. We do not use AI to grade
-          students, make integrity determinations, or make any decision about a student without a human
-          reviewing it first.
+          a human teacher always reviews and decides whether to use the output.</p>
+          <p>The chat assistant (the &quot;?&quot; icon) also uses Anthropic to generate its replies. It only answers
+          general questions about how the platform works, using information we&apos;ve given it — it has no access
+          to your account, your data, or anyone else&apos;s, and is instructed to say so and point you to a real
+          person rather than guess if you ask it something account-specific. We do not use AI to grade students,
+          make integrity determinations, or make any decision about a student without a human reviewing it first.</p>
         </Section>
 
         <Section title="Who we share it with">
@@ -108,10 +117,11 @@ export default function PrivacyPolicyPage() {
           <p>We use a small number of service providers to actually run Smart Assess, each only with the access
           they need to do their specific job: Supabase (database, authentication, and file storage), Vercel
           (hosting), Resend (sending transactional email like password resets and notifications), Anthropic
-          (processing exam questions you explicitly submit for AI-assisted polishing or PDF import), Sentry
-          (error monitoring and the session replay described above), and Cloudflare Turnstile (verifying that
-          submissions to public forms, like contact and signup requests, aren&apos;t automated bots). None of
-          these providers can use your data for their own purposes.</p>
+          (processing exam questions you explicitly submit for AI-assisted polishing or PDF import, and
+          generating chat assistant replies), Sentry (error monitoring and the session replay described above),
+          and Cloudflare Turnstile (verifying that submissions to public forms, like contact and signup
+          requests, aren&apos;t automated bots). None of these providers can use your data for their own
+          purposes.</p>
         </Section>
 
         <Section title="How long we keep it">
