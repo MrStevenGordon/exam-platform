@@ -50,11 +50,11 @@
     },
     "mac": {
       "target": "dmg",
-      "artifactName": "SmartAssess-${version}.${ext}"
+      "artifactName": "SmartAssess.${ext}"
     },
     "win": {
       "target": "nsis",
-      "artifactName": "SmartAssess-Setup-${version}.${ext}"
+      "artifactName": "SmartAssess-Setup.${ext}"
     },
     "publish": {
       "provider": "github",

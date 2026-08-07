@@ -6,8 +6,15 @@ import Link from 'next/link'
 // source repo is private, and GitHub Release assets on a private repo
 // aren't publicly downloadable. GitHub also sanitizes filenames: spaces
 // become dots.
-const MAC_DOWNLOAD_URL = 'https://github.com/MrStevenGordon/exam-platform-releases/releases/download/desktop-v0.2.4/SmartAssess-0.2.4.dmg'
-const WIN_DOWNLOAD_URL = 'https://github.com/MrStevenGordon/exam-platform-releases/releases/download/desktop-v0.2.4/SmartAssess-Setup-0.2.4.exe'
+//
+// Uses GitHub's "latest" redirect rather than a version-pinned tag, so
+// this page never goes stale again — it previously pointed straight at
+// desktop-v0.2.4 and kept serving that exact file through several later
+// releases. Artifact filenames are version-agnostic on purpose (see
+// package.json's build.mac/win.artifactName) so this URL keeps resolving
+// correctly no matter what version is actually latest.
+const MAC_DOWNLOAD_URL = 'https://github.com/MrStevenGordon/exam-platform-releases/releases/latest/download/SmartAssess.dmg'
+const WIN_DOWNLOAD_URL = 'https://github.com/MrStevenGordon/exam-platform-releases/releases/latest/download/SmartAssess-Setup.exe'
 
 export default function DownloadPage() {
   return (
