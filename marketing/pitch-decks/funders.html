@@ -1,0 +1,533 @@
+<style>
+  :root {
+    --ink: #0E1210;
+    --emerald: #0F3D2E;
+    --emerald-deep: #0A2A20;
+    --gold: #C9A227;
+    --gold-bright: #E4C25C;
+    --paper: #F4F6F3;
+    --paper-alt: #EAEEE9;
+    --paper-ink: #121815;
+    --paper-muted: #55605A;
+    --paper-faint: #8A9389;
+    --line-on-dark: rgba(244,246,243,0.16);
+    --line-on-light: #D9DED6;
+    --white: #FFFFFF;
+
+    --display: "Neue Haas Grotesk Display", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    --serif: Georgia, "Times New Roman", Times, serif;
+    --body: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0; background: var(--ink); font-family: var(--body);
+    overflow: hidden; height: 100%;
+  }
+  ::selection { background: var(--gold); color: var(--emerald-deep); }
+
+  .deck {
+    display: flex; height: 100vh; width: 100vw; overflow-x: auto; overflow-y: hidden;
+    scroll-snap-type: x mandatory; scroll-behavior: smooth; -webkit-overflow-scrolling: touch;
+  }
+  .deck::-webkit-scrollbar { display: none; }
+
+  .slide {
+    flex: 0 0 100vw; height: 100vh; scroll-snap-align: start;
+    display: flex; flex-direction: column; justify-content: center; position: relative;
+    padding: clamp(28px, 6vw, 90px) clamp(28px, 8vw, 120px); overflow: hidden;
+  }
+  .slide.dark { background: var(--emerald); color: var(--paper); }
+  .slide.deep { background: var(--emerald-deep); color: var(--paper); }
+  .slide.light { background: var(--paper); color: var(--paper-ink); }
+
+  .slide-inner { max-width: 1180px; margin: 0 auto; width: 100%; }
+
+  .kicker {
+    font-family: var(--mono); font-size: clamp(10px, 1vw, 12px); letter-spacing: 0.14em;
+    text-transform: uppercase; margin-bottom: 18px; display: flex; align-items: center; gap: 10px;
+  }
+  .dark .kicker, .deep .kicker { color: var(--gold-bright); }
+  .light .kicker { color: var(--emerald); }
+  .kicker::before { content: ""; width: 22px; height: 1px; background: currentColor; opacity: 0.7; }
+
+  h1.headline {
+    font-family: var(--display); font-weight: 800; letter-spacing: -0.02em;
+    line-height: 1.03; margin: 0 0 20px; text-wrap: balance; font-size: clamp(34px, 5.4vw, 74px);
+  }
+  h2.headline {
+    font-family: var(--display); font-weight: 800; letter-spacing: -0.015em;
+    line-height: 1.08; margin: 0 0 16px; text-wrap: balance; font-size: clamp(25px, 3.4vw, 44px);
+  }
+  .dark h1, .dark h2, .deep h1, .deep h2 { color: var(--white); }
+  .light h1, .light h2 { color: var(--paper-ink); }
+
+  .lede {
+    font-family: var(--body); font-weight: 400; line-height: 1.55;
+    font-size: clamp(15px, 1.5vw, 19px); max-width: 64ch; margin: 0;
+  }
+  .dark .lede, .deep .lede { color: rgba(244,246,243,0.82); }
+  .light .lede { color: var(--paper-muted); }
+
+  .serif-line {
+    font-family: var(--serif); font-style: italic; font-weight: 400;
+    font-size: clamp(20px, 2.4vw, 30px); line-height: 1.4; text-wrap: balance;
+  }
+  .dark .serif-line, .deep .serif-line { color: var(--gold-bright); }
+  .light .serif-line { color: var(--emerald); }
+
+  .grid { display: grid; gap: 18px; margin-top: 34px; }
+  .grid.cols-2 { grid-template-columns: repeat(2, 1fr); }
+  .grid.cols-3 { grid-template-columns: repeat(3, 1fr); }
+  .grid.cols-4 { grid-template-columns: repeat(4, 1fr); }
+  @media (max-width: 860px) {
+    .grid.cols-2, .grid.cols-3, .grid.cols-4 { grid-template-columns: 1fr; }
+  }
+
+  .card { border-radius: 12px; padding: 20px 22px; display: flex; flex-direction: column; gap: 9px; }
+  .dark .card, .deep .card { background: rgba(244,246,243,0.06); border: 1px solid var(--line-on-dark); }
+  .light .card { background: var(--white); border: 1px solid var(--line-on-light); }
+
+  .card-icon { width: 28px; height: 28px; flex: none; margin-bottom: 2px; }
+  .dark .card-icon svg, .deep .card-icon svg { stroke: var(--gold-bright); }
+  .light .card-icon svg { stroke: var(--emerald); }
+
+  .card-title { font-family: var(--display); font-weight: 700; font-size: 15.5px; letter-spacing: -0.005em; }
+  .dark .card-title, .deep .card-title { color: var(--white); }
+  .light .card-title { color: var(--paper-ink); }
+
+  .card-body { font-size: 13px; line-height: 1.55; }
+  .dark .card-body, .deep .card-body { color: rgba(244,246,243,0.72); }
+  .light .card-body { color: var(--paper-muted); }
+
+  .stat-row { display: flex; gap: 44px; margin-top: 34px; flex-wrap: wrap; }
+  .stat { display: flex; flex-direction: column; gap: 6px; }
+  .stat-value { font-family: var(--mono); font-weight: 600; font-size: clamp(24px, 2.8vw, 34px); font-variant-numeric: tabular-nums; }
+  .light .stat-value { color: var(--emerald); }
+  .dark .stat-value, .deep .stat-value { color: var(--gold-bright); }
+  .stat-label { font-size: 12.5px; max-width: 22ch; line-height: 1.4; }
+  .dark .stat-label, .deep .stat-label { color: rgba(244,246,243,0.68); }
+  .light .stat-label { color: var(--paper-muted); }
+
+  .pill {
+    display: inline-flex; align-items: center; gap: 6px; font-family: var(--mono); font-size: 11px;
+    padding: 5px 12px; border-radius: 20px; letter-spacing: 0.04em; text-transform: uppercase; font-weight: 600;
+  }
+  .dark .pill, .deep .pill { background: rgba(201,162,39,0.18); color: var(--gold-bright); border: 1px solid rgba(201,162,39,0.35); }
+  .light .pill { background: var(--emerald); color: var(--white); }
+  .pill.dev { background: rgba(201,162,39,0.15); color: var(--gold); border: 1px solid rgba(201,162,39,0.4); }
+
+  .flow { display: flex; align-items: center; gap: 0; margin-top: 30px; flex-wrap: wrap; }
+  .flow-step { flex: 1; min-width: 150px; padding: 16px 18px; border-radius: 10px; font-size: 13px; line-height: 1.5; }
+  .light .flow-step { background: var(--white); border: 1px solid var(--line-on-light); color: var(--paper-ink); }
+  .flow-step strong { display: block; font-family: var(--display); font-size: 14px; margin-bottom: 4px; }
+  .flow-arrow { font-family: var(--mono); font-size: 18px; padding: 0 10px; color: var(--paper-faint); flex: none; }
+  @media (max-width: 860px) { .flow { flex-direction: column; align-items: stretch; } .flow-arrow { display: none; } }
+
+  .role-strip { display: flex; gap: 10px; margin-top: 28px; flex-wrap: wrap; }
+  .role-chip { font-family: var(--mono); font-size: 12px; padding: 8px 16px; border-radius: 8px; }
+  .light .role-chip { background: var(--emerald); color: var(--white); }
+  .dark .role-chip, .deep .role-chip { background: rgba(244,246,243,0.1); color: var(--paper); border: 1px solid var(--line-on-dark); }
+
+  .divider { height: 1px; margin: 26px 0; }
+  .dark .divider, .deep .divider { background: var(--line-on-dark); }
+  .light .divider { background: var(--line-on-light); }
+
+  .price-table { margin-top: 24px; border-radius: 12px; overflow: hidden; border: 1px solid var(--line-on-light); }
+  .price-row { display: grid; grid-template-columns: 1.4fr 1fr 1.6fr; gap: 12px; padding: 13px 20px; align-items: center; }
+  .price-row.head { background: var(--emerald); color: var(--white); font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; }
+  .price-row:not(.head) { background: var(--white); border-top: 1px solid var(--line-on-light); font-size: 13.5px; }
+  .price-row .num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+  .price-row.highlight { background: var(--paper-alt); }
+
+  .margin-bars { display: flex; flex-direction: column; gap: 9px; margin-top: 22px; }
+  .margin-row { display: grid; grid-template-columns: 90px 1fr 60px; align-items: center; gap: 12px; }
+  .margin-label { font-family: var(--mono); font-size: 11.5px; color: var(--paper-muted); text-align: right; }
+  .margin-track { height: 14px; background: var(--paper-alt); border-radius: 4px; overflow: hidden; }
+  .margin-fill { height: 100%; background: linear-gradient(90deg, var(--emerald), var(--gold)); border-radius: 4px; }
+  .margin-pct { font-family: var(--mono); font-size: 12px; text-align: right; color: var(--paper-ink); }
+
+  .note-box { margin-top: 22px; padding: 15px 18px; border-radius: 10px; font-size: 12.5px; line-height: 1.6; }
+  .light .note-box { background: var(--paper-alt); border: 1px dashed var(--paper-faint); color: var(--paper-muted); }
+  .dark .note-box, .deep .note-box { background: rgba(244,246,243,0.07); border: 1px dashed var(--line-on-dark); color: rgba(244,246,243,0.75); }
+  .note-box .note-label { font-family: var(--mono); font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--gold); display: block; margin-bottom: 6px; }
+  .light .note-box .note-label { color: var(--emerald); }
+
+  .fillin-box { margin-top: 22px; padding: 22px 24px; border-radius: 12px; border: 1.5px dashed var(--gold); background: rgba(201,162,39,0.06); }
+  .light .fillin-box { border-color: var(--emerald); background: rgba(15,61,46,0.05); }
+  .fillin-label { font-family: var(--mono); font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--gold-bright); display: block; margin-bottom: 10px; }
+  .light .fillin-label { color: var(--emerald); }
+  .fillin-line { font-size: 14px; line-height: 1.8; }
+  .dark .fillin-line, .deep .fillin-line { color: rgba(244,246,243,0.8); }
+  .light .fillin-line { color: var(--paper-muted); }
+
+  .cover-mark { display: flex; align-items: center; gap: 14px; margin-bottom: 50px; }
+  .cover-badge { width: 46px; height: 46px; border-radius: 10px; background: var(--gold); display: flex; align-items: center; justify-content: center; flex: none; }
+  .cover-badge svg { width: 24px; height: 24px; stroke: var(--emerald-deep); }
+  .cover-eyebrow { font-family: var(--mono); font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: rgba(244,246,243,0.6); }
+  .cover-name { font-family: var(--display); font-weight: 800; font-size: 19px; color: var(--white); }
+  .cover-title { font-family: var(--display); font-weight: 800; letter-spacing: -0.025em; line-height: 0.98; color: var(--white); font-size: clamp(44px, 7.2vw, 96px); margin: 0; text-wrap: balance; }
+  .cover-sub { font-family: var(--serif); font-style: italic; color: var(--gold-bright); font-size: clamp(18px, 2.2vw, 25px); margin-top: 22px; max-width: 48ch; }
+  .cover-foot { position: absolute; bottom: clamp(24px, 5vh, 56px); left: clamp(28px, 8vw, 120px); right: clamp(28px, 8vw, 120px); display: flex; justify-content: space-between; align-items: flex-end; font-family: var(--mono); font-size: 11.5px; color: rgba(244,246,243,0.55); }
+  .cover-graphic { position: absolute; right: clamp(20px, 6vw, 90px); top: 50%; transform: translateY(-50%); width: clamp(140px, 20vw, 260px); height: clamp(140px, 20vw, 260px); opacity: 0.9; }
+  .cover-graphic svg { width: 100%; height: 100%; stroke: rgba(228,194,92,0.35); }
+
+  .toc-list { margin-top: 40px; display: grid; grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(6, auto); grid-auto-flow: column; gap: 4px 40px; }
+  .toc-item { display: flex; align-items: baseline; gap: 14px; padding: 11px 0; border-bottom: 1px solid var(--line-on-light); }
+  .toc-num { font-family: var(--mono); font-size: 12px; color: var(--emerald); flex: none; width: 22px; }
+  .toc-label { font-family: var(--display); font-weight: 600; font-size: 15px; color: var(--paper-ink); }
+  @media (max-width: 860px) { .toc-list { grid-template-columns: 1fr; grid-template-rows: none; grid-auto-flow: row; } }
+
+  .closing-title { font-family: var(--display); font-weight: 800; font-size: clamp(34px, 5vw, 60px); color: var(--white); letter-spacing: -0.02em; line-height: 1.05; text-wrap: balance; margin: 0 0 30px; }
+  .contact-grid { display: flex; gap: 56px; flex-wrap: wrap; margin-top: 10px; }
+  .contact-item { display: flex; flex-direction: column; gap: 4px; }
+  .contact-label { font-family: var(--mono); font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--gold-bright); }
+  .contact-value { font-family: var(--display); font-weight: 600; font-size: 18px; color: var(--white); }
+
+  .page-index {
+    position: fixed; top: 20px; right: clamp(18px, 4vw, 36px); z-index: 50;
+    font-family: var(--mono); font-size: 11px; letter-spacing: 0.06em;
+    background: rgba(14,18,16,0.78); color: var(--paper); padding: 5px 12px; border-radius: 20px;
+    border: 1px solid rgba(244,246,243,0.14);
+  }
+  .nav-controls {
+    position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%);
+    display: flex; align-items: center; gap: 14px; z-index: 50;
+    background: rgba(14,18,16,0.78); backdrop-filter: blur(6px);
+    padding: 8px 14px; border-radius: 30px; border: 1px solid rgba(244,246,243,0.15);
+  }
+  .nav-btn { width: 30px; height: 30px; border-radius: 50%; border: none; cursor: pointer; background: rgba(244,246,243,0.14); color: var(--paper); display: flex; align-items: center; justify-content: center; font-size: 15px; transition: background 0.15s ease; }
+  .nav-btn:hover { background: var(--gold); color: var(--emerald-deep); }
+  .nav-btn:focus-visible { outline: 2px solid var(--gold-bright); outline-offset: 2px; }
+  .nav-count { font-family: var(--mono); font-size: 12px; color: var(--paper); letter-spacing: 0.05em; min-width: 44px; text-align: center; }
+
+  @media (prefers-reduced-motion: reduce) { .deck { scroll-behavior: auto; } }
+</style>
+
+<div class="deck" id="deck">
+
+  <section class="slide deep" data-title="Cover">
+    <div class="cover-graphic">
+      <svg viewBox="0 0 100 100" fill="none" stroke-width="1"><circle cx="50" cy="50" r="48"/><circle cx="50" cy="50" r="34"/><path d="M35 51l10 10 20-20"/></svg>
+    </div>
+    <div class="slide-inner">
+      <div class="cover-mark">
+        <div class="cover-badge"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div>
+        <div><div class="cover-eyebrow">Introducing</div><div class="cover-name">Smart Assess Ja</div></div>
+      </div>
+      <h1 class="cover-title">The exam<br>infrastructure<br>Jamaica actually<br>needs.</h1>
+      <p class="cover-sub">Secure, affordable assessment infrastructure for a market international platforms have priced themselves out of.</p>
+    </div>
+    <div class="cover-foot"><span>smartassessja.com</span><span>For Partners & Funders</span></div>
+  </section>
+
+  <section class="slide light" data-title="Contents">
+    <div class="slide-inner">
+      <div class="kicker">Contents</div>
+      <h2 class="headline">What's in this deck.</h2>
+      <div class="toc-list">
+        <div class="toc-item"><span class="toc-num">01</span><span class="toc-label">The Problem</span></div>
+        <div class="toc-item"><span class="toc-num">02</span><span class="toc-label">The Solution</span></div>
+        <div class="toc-item"><span class="toc-num">03</span><span class="toc-label">Product Overview</span></div>
+        <div class="toc-item"><span class="toc-num">04</span><span class="toc-label">Exam Integrity & Trust</span></div>
+        <div class="toc-item"><span class="toc-num">05</span><span class="toc-label">AI, Used Responsibly</span></div>
+        <div class="toc-item"><span class="toc-num">06</span><span class="toc-label">Market Opportunity</span></div>
+        <div class="toc-item"><span class="toc-num">07</span><span class="toc-label">Business Model & Unit Economics</span></div>
+        <div class="toc-item"><span class="toc-num">08</span><span class="toc-label">Revenue Expansion</span></div>
+        <div class="toc-item"><span class="toc-num">09</span><span class="toc-label">Product Roadmap</span></div>
+        <div class="toc-item"><span class="toc-num">10</span><span class="toc-label">Team</span></div>
+        <div class="toc-item"><span class="toc-num">11</span><span class="toc-label">The Ask</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="slide light" data-title="The Problem">
+    <div class="slide-inner">
+      <div class="kicker">The problem</div>
+      <h2 class="headline">Exams still run on paper, manual marking, and hope for early grades.</h2>
+      <p class="lede">Every term, schools rebuild the same fragile process from scratch: creating, reviewing, printing, securing, and storing paper scripts, tracking results by hand, and trusting that integrity is upheld.</p>
+      <div class="grid cols-4">
+        <div class="card">
+          <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/></svg></div>
+          <div class="card-title">Paper, start to finish</div>
+          <div class="card-body">Creating, reviewing, printing, securing, and storing scripts by hand. Every step is slow and easy to get wrong.</div>
+        </div>
+        <div class="card">
+          <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M2 12h20"/></svg></div>
+          <div class="card-title">Priced for markets that are not the Caribbean</div>
+          <div class="card-body">International platforms charge in the neighborhood of $25 per student. Most Jamaican schools do not need to budget for that.</div>
+        </div>
+        <div class="card">
+          <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/></svg></div>
+          <div class="card-title">Online tools with no real integrity tooling</div>
+          <div class="card-body">Most online test tools do little to stop a student from switching tabs, pasting an answer, or signing in from two devices at once.</div>
+        </div>
+        <div class="card">
+          <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></div>
+          <div class="card-title">No built-in accommodation</div>
+          <div class="card-body">Students who need extra support, like text to speech, are often left to manual, inconsistent workarounds.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="slide dark" data-title="The Solution">
+    <div class="slide-inner">
+      <div class="kicker">The solution</div>
+      <h2 class="headline">One platform. Every kind of assessment. Priced for the market it actually serves.</h2>
+      <p class="serif-line">From a five minute pop quiz to a full formal end of year exam, Smart Assess Ja carries every assessment a school gives, on one secure, affordable platform, built specifically for the Caribbean.</p>
+      <div class="grid cols-4">
+        <div class="card">
+          <div class="card-title">One digital record, start to finish</div>
+          <div class="card-body">Every exam created, reviewed, delivered, and stored in one system. No printing, no lost scripts.</div>
+        </div>
+        <div class="card">
+          <div class="card-title">Priced for the region it serves</div>
+          <div class="card-body">A fraction of the cost of comparable international platforms, structured to get cheaper per student as a school grows.</div>
+        </div>
+        <div class="card">
+          <div class="card-title">Integrity tooling built in</div>
+          <div class="card-body">Fullscreen lock, tab-switch detection, single-device login, and kiosk mode. Included, not an add-on.</div>
+        </div>
+        <div class="card">
+          <div class="card-title">Accessible by design</div>
+          <div class="card-body">A text-to-speech accommodation any teacher can turn on, no separate software or extra spend.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="slide light" data-title="Product Overview">
+    <div class="slide-inner">
+      <div class="kicker">Product overview</div>
+      <h2 class="headline">A complete platform, not a single feature.</h2>
+      <p class="lede">Five role types, a configurable review workflow, every common assessment format, self-service student practice built from a student's own completed exams, and a native desktop app with exam-lab kiosk mode. Built and operating end to end, not a prototype.</p>
+      <div class="role-strip">
+        <div class="role-chip">Student</div>
+        <div class="role-chip">Teacher</div>
+        <div class="role-chip">Supervisor / Head of Department</div>
+        <div class="role-chip">School Administrator</div>
+        <div class="role-chip">Organization Administrator</div>
+      </div>
+      <div class="divider"></div>
+      <div class="flow">
+        <div class="flow-step"><strong>Direct Publish</strong>A teacher writes an exam and publishes it straight to their class.</div>
+        <div class="flow-arrow">or</div>
+        <div class="flow-step"><strong>Department Review</strong>A supervisor reviews and publishes on the teacher's behalf.</div>
+        <div class="flow-arrow">or</div>
+        <div class="flow-step"><strong>Full Multi-Stage Review</strong>Team lead creates, senior lead vets, supervisor publishes.</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="slide deep" data-title="Exam Integrity & Trust">
+    <div class="slide-inner">
+      <div class="kicker">Integrity and trust, the actual moat</div>
+      <h2 class="headline">The tooling a generic quiz app does not have.</h2>
+      <div class="grid cols-4" style="margin-top: 36px;">
+        <div class="card">
+          <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/></svg></div>
+          <div class="card-title">Fullscreen & tab-switch detection</div>
+          <div class="card-body">The exam knows the moment a student leaves the window.</div>
+        </div>
+        <div class="card">
+          <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+          <div class="card-title">Single-device login</div>
+          <div class="card-body">Signing in elsewhere signs out the other session.</div>
+        </div>
+        <div class="card">
+          <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="14" rx="2"/><path d="M2 18h20"/><path d="M8 22h8"/></svg></div>
+          <div class="card-title">Desktop kiosk mode</div>
+          <div class="card-body">Detects an attempt to switch away even where the OS itself cannot fully prevent it.</div>
+        </div>
+        <div class="card">
+          <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+          <div class="card-title">Row-level security</div>
+          <div class="card-body">Access rules are enforced by the database itself, not just application code.</div>
+        </div>
+      </div>
+      <div class="note-box">
+        <span class="note-label">Why this matters to the business</span>
+        Integrity and data protection are the hardest parts of this product to copy well, and the reason a school trusts a platform with a real exam in the first place. It is also aligned with Jamaica's Data Protection Act, and each school's data is isolated in its own environment.
+      </div>
+    </div>
+  </section>
+
+  <section class="slide light" data-title="AI, Used Responsibly">
+    <div class="slide-inner">
+      <div class="kicker">Artificial intelligence, used responsibly and cheaply</div>
+      <h2 class="headline">A real product differentiator, run on a disciplined budget.</h2>
+      <p class="lede">Teachers use AI to polish question wording and import questions straight from a PDF exam paper. A live help assistant answers questions for visitors and logged-in users. Every suggestion is reviewed by a human before it is used. AI never grades a student and never makes an integrity decision on its own.</p>
+      <div class="stat-row">
+        <div class="stat"><div class="stat-value">$15 to $30</div><div class="stat-label">Estimated AI spend per school, per year</div></div>
+        <div class="stat"><div class="stat-value">0</div><div class="stat-label">Autonomous grading or integrity decisions made by AI</div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="slide light" data-title="Market Opportunity">
+    <div class="slide-inner">
+      <div class="kicker">Market opportunity</div>
+      <h2 class="headline">A real, recurring market with no Caribbean-built competitor.</h2>
+      <p class="lede">Jamaica's schools sit inside a strong existing exam culture, anchored by the region's own CSEC and CAPE examinations, so the habit of formal assessment is already there. What is missing is affordable, purpose-built software behind it. International platforms like exam.net price around $25 per student, well outside what most local schools can budget.</p>
+      <div class="fillin-box">
+        <span class="fillin-label">Needs your input</span>
+        <div class="fillin-line">Total number of secondary schools in Jamaica, and in the wider Caribbean if relevant to your expansion plans.</div>
+        <div class="fillin-line">Approximate total student population across those schools (your addressable market).</div>
+        <div class="fillin-line">Any named competitors you are aware of beyond exam.net, and how you are positioned against them.</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="slide dark" data-title="Business Model & Unit Economics">
+    <div class="slide-inner">
+      <div class="kicker">Business model and unit economics</div>
+      <h2 class="headline">Margin improves with every school you add.</h2>
+      <div class="price-table">
+        <div class="price-row head"><span>Item</span><span>Rate</span><span>Notes</span></div>
+        <div class="price-row"><span>Onboarding</span><span class="num">$500 one-time</span><span>Covers setup and first-year provisioning</span></div>
+        <div class="price-row"><span>1 to 500 students</span><span class="num">$10.00 / student / yr</span><span>&nbsp;</span></div>
+        <div class="price-row"><span>501 to 1,000 students</span><span class="num">$7.25 / student / yr</span><span>&nbsp;</span></div>
+        <div class="price-row"><span>1,000+ students</span><span class="num">$5.75 / student / yr</span><span>&nbsp;</span></div>
+        <div class="price-row highlight"><span>Minimum annual fee</span><span class="num">$1,250 / yr</span><span>Protects margin below 125 students</span></div>
+      </div>
+      <div class="margin-bars">
+        <div class="margin-row"><div class="margin-label">50 students</div><div class="margin-track"><div class="margin-fill" style="width:72%"></div></div><div class="margin-pct">72%</div></div>
+        <div class="margin-row"><div class="margin-label">250</div><div class="margin-track"><div class="margin-fill" style="width:86%"></div></div><div class="margin-pct">86%</div></div>
+        <div class="margin-row"><div class="margin-label">1,000</div><div class="margin-track"><div class="margin-fill" style="width:96%"></div></div><div class="margin-pct">96%</div></div>
+        <div class="margin-row"><div class="margin-label">2,000</div><div class="margin-track"><div class="margin-fill" style="width:97.6%"></div></div><div class="margin-pct">97.6%</div></div>
+      </div>
+      <div class="note-box">
+        <span class="note-label">The one true marginal cost</span>
+        Real infrastructure cost per school runs roughly $330 to $390 per year today, driven almost entirely by one line item (a per-school database), and converges toward roughly $325 as more schools come on. AI spend is a rounding error against that. This is a business that gets structurally more profitable per customer as it scales, not less.
+      </div>
+    </div>
+  </section>
+
+  <section class="slide light" data-title="Revenue Expansion">
+    <div class="slide-inner">
+      <div class="kicker">Revenue expansion</div>
+      <h2 class="headline">More than one line of revenue.</h2>
+      <div class="grid cols-3" style="margin-top: 36px;">
+        <div class="card">
+          <div class="card-title">Core per-student subscription</div>
+          <div class="card-body">The base of the business, described on the previous slide.</div>
+        </div>
+        <div class="card">
+          <div class="card-title">Priority support</div>
+          <div class="card-body">A paid tier with a real cost behind it, human time, not AI, and a natural add-on as schools scale.</div>
+        </div>
+        <div class="card">
+          <div class="card-title">Organizations</div>
+          <div class="card-body">A second customer type entirely: certification bodies and associations running one-off assessments, on the same infrastructure.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="slide light" data-title="Product Roadmap">
+    <div class="slide-inner">
+      <div class="kicker">Product roadmap</div>
+      <h2 class="headline">Built to increase engagement and retention, not just add features.</h2>
+      <div class="grid cols-2" style="margin-top: 36px;">
+        <div class="card">
+          <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2z"/></svg></div>
+          <div class="card-title">Learning game modes</div>
+          <div class="card-body">Jeopardy-style review games and crossword puzzles built from a teacher's own question bank, driving daily use beyond exam days.</div>
+        </div>
+        <div class="card">
+          <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+          <div class="card-title">Multiplayer study sessions</div>
+          <div class="card-body">Students quiz each other live, extending platform time beyond the exam itself.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="slide light" data-title="Team">
+    <div class="slide-inner">
+      <div class="kicker">Team</div>
+      <h2 class="headline">Built by someone who ships.</h2>
+      <div class="fillin-box">
+        <span class="fillin-label">Needs your input</span>
+        <div class="fillin-line">Your background and relevant experience.</div>
+        <div class="fillin-line">Why you started this, in a sentence or two.</div>
+        <div class="fillin-line">Anyone else on the team, and their role.</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="slide deep" data-title="The Ask">
+    <div class="slide-inner">
+      <div class="kicker">The ask</div>
+      <h2 class="headline">What we are raising, and what it unlocks.</h2>
+      <div class="fillin-box">
+        <span class="fillin-label">Needs your input before this goes out</span>
+        <div class="fillin-line">Funding amount you are raising.</div>
+        <div class="fillin-line">What it specifically covers (examples already known from this deck: Apple Developer signing, moving off Vercel's free tier, scaling infrastructure per new school, sales and onboarding capacity, wider Jamaica or Caribbean rollout).</div>
+        <div class="fillin-line">The timeline or milestone it gets you to.</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="slide deep" data-title="Contact">
+    <div class="slide-inner">
+      <h2 class="closing-title">Let's build the exam infrastructure the Caribbean has been priced out of.</h2>
+      <div class="contact-grid">
+        <div class="contact-item"><span class="contact-label">Website</span><span class="contact-value">smartassessja.com</span></div>
+        <div class="contact-item"><span class="contact-label">Sales</span><span class="contact-value">sales@smartassessja.com</span></div>
+        <div class="contact-item"><span class="contact-label">Support</span><span class="contact-value">support@smartassessja.com</span></div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<div class="page-index" id="slideIndex">01 / 13</div>
+<div class="nav-controls">
+  <button class="nav-btn" id="prevBtn" aria-label="Previous slide">&#8592;</button>
+  <span class="nav-count" id="navCount">1 / 13</span>
+  <button class="nav-btn" id="nextBtn" aria-label="Next slide">&#8594;</button>
+</div>
+
+<script>
+(function () {
+  var deck = document.getElementById('deck');
+  var slides = Array.prototype.slice.call(deck.children);
+  var total = slides.length;
+  var current = 0;
+
+  function update() {
+    var label = String(current + 1).padStart(2, '0') + ' / ' + String(total).padStart(2, '0');
+    document.getElementById('slideIndex').textContent = label;
+    document.getElementById('navCount').textContent = (current + 1) + ' / ' + total;
+  }
+
+  function goTo(i) {
+    current = Math.max(0, Math.min(total - 1, i));
+    slides[current].scrollIntoView({ behavior: 'smooth', inline: 'start', block: 'nearest' });
+    update();
+  }
+
+  document.getElementById('prevBtn').addEventListener('click', function () { goTo(current - 1); });
+  document.getElementById('nextBtn').addEventListener('click', function () { goTo(current + 1); });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowRight' || e.key === 'PageDown') { goTo(current + 1); }
+    if (e.key === 'ArrowLeft' || e.key === 'PageUp') { goTo(current - 1); }
+  });
+
+  var scrollTimeout;
+  deck.addEventListener('scroll', function () {
+    clearTimeout(scrollTimeout);
+    scrollTimeout = setTimeout(function () {
+      var idx = Math.round(deck.scrollLeft / window.innerWidth);
+      current = Math.max(0, Math.min(total - 1, idx));
+      update();
+    }, 80);
+  });
+
+  update();
+})();
+</script>
