@@ -1,5 +1,5 @@
-// Creates two fully isolated sets of school-section test accounts, one per
-// tester, so two people can run demo/QA tests simultaneously without
+// Creates fully isolated sets of school-section test accounts, one per
+// tester, so multiple people can run demo/QA tests simultaneously without
 // stepping on each other's data. Each set gets its own department + class
 // group and: 1 Teacher, 1 Supervisor, 1 Team Lead, 1 Demo Team Lead, 5
 // Students. No fake exam history is pre-seeded — accounts are wired up
@@ -7,7 +7,9 @@
 // review/publish exams live and exercise the real workflow end to end.
 //
 // Usage:
-//   node scripts/create-qa-test-accounts.mjs
+//   node scripts/create-qa-test-accounts.mjs        # sets 1 and 2 (default)
+//   node scripts/create-qa-test-accounts.mjs 3       # just set 3
+//   node scripts/create-qa-test-accounts.mjs 3 4     # sets 3 and 4
 //
 // Safe to re-run: looks up existing accounts/records before creating.
 
@@ -165,17 +167,22 @@ async function createSet(setNumber) {
 }
 
 async function run() {
-  console.log('Creating QA test accounts (2 isolated sets)...\n')
+  const setNumbers = process.argv.slice(2).map(Number).filter((n) => Number.isInteger(n) && n > 0)
+  const sets = setNumbers.length > 0 ? setNumbers : [1, 2]
 
-  const set1 = await createSet(1)
-  console.log('✓ Set 1 ready')
-  const set2 = await createSet(2)
-  console.log('✓ Set 2 ready')
+  console.log(`Creating QA test accounts (sets: ${sets.join(', ')})...\n`)
+
+  const results = []
+  for (const n of sets) {
+    const accounts = await createSet(n)
+    console.log(`✓ Set ${n} ready`)
+    results.push([n, accounts])
+  }
 
   console.log('\n--- Done ---')
   console.log(`Password for every account: ${PASSWORD}\n`)
-  for (const [label, accounts] of [['Tester 1', set1], ['Tester 2', set2]]) {
-    console.log(`${label}:`)
+  for (const [n, accounts] of results) {
+    console.log(`Tester ${n}:`)
     console.log(`  Teacher            ${accounts.teacher}`)
     console.log(`  Supervisor         ${accounts.supervisor}`)
     console.log(`  Team Lead          ${accounts.teamLead}  (log in as Teacher, then visit /teacher/team-lead)`)
