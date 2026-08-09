@@ -31,6 +31,16 @@ type SessionRow = {
   subject: string
 }
 
+type MockRow = {
+  id: string
+  subject: string
+  question_count: number
+  created_at: string
+  completed_at: string | null
+  total_score: number | null
+  max_possible_score: number | null
+}
+
 export default function TeacherStudentDetailPage() {
   const router = useRouter()
   const params = useParams()
@@ -39,6 +49,7 @@ export default function TeacherStudentDetailPage() {
   const [student, setStudent] = useState<StudentProfile | null>(null)
   const [className, setClassName] = useState<string | null>(null)
   const [sessions, setSessions] = useState<SessionRow[]>([])
+  const [mocks, setMocks] = useState<MockRow[]>([])
   const [loading, setLoading] = useState(true)
   const [errorMsg, setErrorMsg] = useState('')
 
@@ -98,6 +109,18 @@ export default function TeacherStudentDetailPage() {
       ].sort((a, b) => new Date(b.started_at).getTime() - new Date(a.started_at).getTime())
 
       setSessions(combined)
+
+      // Self-mock practice history — only visible if RLS allows it (a
+      // teacher of this student's class), same "is this my student" check
+      // as everything else on this page. Purely informational: this is
+      // the student's own practice, not an official record.
+      const { data: mockData } = await supabase
+        .from('self_mocks')
+        .select('id, subject, question_count, created_at, completed_at, total_score, max_possible_score')
+        .eq('student_id', studentId)
+        .order('created_at', { ascending: false })
+      setMocks((mockData as MockRow[]) || [])
+
       setLoading(false)
     }
     load()
@@ -184,6 +207,37 @@ export default function TeacherStudentDetailPage() {
           )
         })}
       </div>
+
+      {mocks.length > 0 && (
+        <>
+          <h2 style={{ marginTop: 24 }}>Mock exam practice</h2>
+          <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: -4, marginBottom: 12 }}>
+            Self-directed practice, not an official record. Shown here for your reference only.
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {mocks.map((m) => {
+              const pct = m.completed_at && m.max_possible_score ? Math.round(((m.total_score || 0) / m.max_possible_score) * 100) : null
+              return (
+                <div key={m.id} className="card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div>
+                    <div style={{ fontWeight: 700, fontSize: 14 }}>{m.subject}</div>
+                    <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 2 }}>
+                      {m.question_count} questions · {m.completed_at ? `Completed ${new Date(m.completed_at).toLocaleDateString()}` : 'In progress'}
+                    </div>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    {pct !== null ? (
+                      <span className={`badge ${pct >= 50 ? 'badge-success' : 'badge-danger'}`}>{pct}%</span>
+                    ) : (
+                      <span className="badge badge-warning">In progress</span>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </>
+      )}
     </div>
   )
 }

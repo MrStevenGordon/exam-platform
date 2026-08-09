@@ -4,19 +4,25 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 
-// Only questions from exams the current student has personally completed
-// are eligible for self-mock practice. This intentionally does NOT use
-// "published" as the bar — a published-but-not-yet-taken exam would let a
-// student preview real questions before sitting it. Completion is checked
-// per exam type since direct exams and final exams use different linking:
-// direct exams via exam_sessions.draft_exam_id -> questions.draft_exam_id,
-// final exams via exam_sessions.final_exam_id -> final_exam_questions.
+// Only questions from exams the current student has personally completed,
+// with results released, are eligible for self-mock practice. This
+// intentionally does NOT use "published" as the bar — a published-but-not-
+// yet-taken exam would let a student preview real questions before sitting
+// it, and an unreleased result would leak its correct answers before the
+// teacher meant to share them (same bar student/history/page.tsx uses for
+// this same data). The database enforces this too (see migration 022) —
+// this client-side filter is just so the UI doesn't offer a subject that
+// would fail server-side. Completion is checked per exam type since direct
+// exams and final exams use different linking: direct exams via
+// exam_sessions.draft_exam_id -> questions.draft_exam_id, final exams via
+// exam_sessions.final_exam_id -> final_exam_questions.
 async function getEligibleQuestions(userId: string) {
   const { data: directSessions } = await supabase
     .from('exam_sessions')
     .select('draft_exam_id')
     .eq('student_id', userId)
     .eq('status', 'completed')
+    .eq('results_released', true)
     .not('draft_exam_id', 'is', null)
   const completedDraftIds = Array.from(new Set((directSessions || []).map((s: any) => s.draft_exam_id)))
 
@@ -25,6 +31,7 @@ async function getEligibleQuestions(userId: string) {
     .select('final_exam_id')
     .eq('student_id', userId)
     .eq('status', 'completed')
+    .eq('results_released', true)
     .not('final_exam_id', 'is', null)
   const completedFinalIds = Array.from(new Set((finalSessions || []).map((s: any) => s.final_exam_id)))
 
