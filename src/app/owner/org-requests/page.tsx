@@ -14,6 +14,7 @@ type OrgRequest = {
   submitted_at: string
   reviewed_at: string | null
   setup_token_used_at: string | null
+  ai_draft: string | null
 }
 
 const STATUS_BADGES: Record<string, string> = {
@@ -42,7 +43,7 @@ export default function OrgRequestsPage() {
 
     const { data } = await supabase
       .from('org_requests')
-      .select('id, org_name, contact_name, contact_email, notes, status, submitted_at, reviewed_at, setup_token_used_at')
+      .select('id, org_name, contact_name, contact_email, notes, status, submitted_at, reviewed_at, setup_token_used_at, ai_draft')
       .order('submitted_at', { ascending: false })
 
     setRequests((data as OrgRequest[]) || [])
@@ -109,6 +110,14 @@ export default function OrgRequestsPage() {
                 <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 2 }}>
                   {r.contact_name} · {r.contact_email}
                 </div>
+                {r.ai_draft && (
+                  <div style={{ marginTop: 10, padding: '10px 12px', background: 'var(--accent-light)', borderRadius: 8, maxWidth: 480 }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--accent-dark)', marginBottom: 4 }}>
+                      AI draft — review before deciding
+                    </div>
+                    <div style={{ fontSize: 12.5, color: 'var(--text-primary)', whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>{r.ai_draft}</div>
+                  </div>
+                )}
                 {r.notes && <div style={{ fontSize: 13, marginTop: 8, color: 'var(--text-secondary)' }}>{r.notes}</div>}
                 <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 6 }}>
                   Submitted {new Date(r.submitted_at).toLocaleString()}

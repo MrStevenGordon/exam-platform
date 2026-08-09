@@ -18,6 +18,7 @@ type SchoolRequest = {
   reviewed_at: string | null
   provisioned_at: string | null
   portal_url: string | null
+  ai_draft: string | null
 }
 
 type CredentialsForm = { setupLink: string }
@@ -66,7 +67,7 @@ export default function SchoolRequestsPage() {
 
     const { data } = await supabase
       .from('school_requests')
-      .select('id, school_name, contact_name, contact_email, workflow_template, workflow_other_description, feature_flags, notes, status, submitted_at, reviewed_at, provisioned_at, portal_url')
+      .select('id, school_name, contact_name, contact_email, workflow_template, workflow_other_description, feature_flags, notes, status, submitted_at, reviewed_at, provisioned_at, portal_url, ai_draft')
       .order('submitted_at', { ascending: false })
 
     setRequests((data as SchoolRequest[]) || [])
@@ -164,6 +165,14 @@ export default function SchoolRequestsPage() {
                 <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 2 }}>
                   {r.contact_name} · {r.contact_email}
                 </div>
+                {r.ai_draft && (
+                  <div style={{ marginTop: 10, padding: '10px 12px', background: 'var(--accent-light)', borderRadius: 8, maxWidth: 480 }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--accent-dark)', marginBottom: 4 }}>
+                      AI draft — review before deciding
+                    </div>
+                    <div style={{ fontSize: 12.5, color: 'var(--text-primary)', whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>{r.ai_draft}</div>
+                  </div>
+                )}
                 <div style={{ fontSize: 13, marginTop: 8 }}>
                   Workflow: <strong>{WORKFLOW_LABELS[r.workflow_template] || r.workflow_template}</strong>
                   {r.workflow_template === 'other' && r.workflow_other_description && (

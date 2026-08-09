@@ -92,6 +92,34 @@ export function contactInquiryEmail(name: string, org: string, email: string, me
   }
 }
 
+export function newSchoolRequestStaffEmail(schoolName: string, contactName: string, contactEmail: string, reviewUrl: string) {
+  return {
+    subject: `New school request: ${schoolName}`,
+    html: wrapper(`
+      <p>A new school request needs review:</p>
+      <table style="margin: 16px 0; font-size: 14px;">
+        <tr><td style="padding: 4px 12px 4px 0; color: #7A6A5A;">School</td><td>${schoolName}</td></tr>
+        <tr><td style="padding: 4px 12px 4px 0; color: #7A6A5A;">Contact</td><td>${contactName} (${contactEmail})</td></tr>
+      </table>
+      <p style="margin: 20px 0;"><a href="${reviewUrl}" style="display: inline-block; background: #D4762A; color: white; padding: 10px 20px; border-radius: 6px; text-decoration: none; font-weight: 700;">Review request</a></p>
+    `),
+  }
+}
+
+export function newOrgRequestStaffEmail(orgName: string, contactName: string, contactEmail: string, reviewUrl: string) {
+  return {
+    subject: `New organization request: ${orgName}`,
+    html: wrapper(`
+      <p>A new organization request needs review:</p>
+      <table style="margin: 16px 0; font-size: 14px;">
+        <tr><td style="padding: 4px 12px 4px 0; color: #7A6A5A;">Organization</td><td>${orgName}</td></tr>
+        <tr><td style="padding: 4px 12px 4px 0; color: #7A6A5A;">Contact</td><td>${contactName} (${contactEmail})</td></tr>
+      </table>
+      <p style="margin: 20px 0;"><a href="${reviewUrl}" style="display: inline-block; background: #D4762A; color: white; padding: 10px 20px; border-radius: 6px; text-decoration: none; font-weight: 700;">Review request</a></p>
+    `),
+  }
+}
+
 export function orgRequestReceivedEmail(orgName: string, contactName: string) {
   return {
     subject: `We've received your Smart Assess request for ${orgName}`,

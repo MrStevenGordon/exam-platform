@@ -2,10 +2,13 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { supabaseAdmin } from '@/lib/verifySystemAdmin'
 import { sendEmail, EMAIL_FROM } from '@/lib/email'
-import { submissionReceivedEmail } from '@/lib/emailTemplates'
+import { submissionReceivedEmail, newSchoolRequestStaffEmail } from '@/lib/emailTemplates'
 import { verifyTurnstile } from '@/lib/verifyTurnstile'
 import { rateLimit, getClientIp } from '@/lib/rateLimit'
 import { validateBody } from '@/lib/validateBody'
+import { generateRequestDraft } from '@/lib/draftRequestSummary'
+
+const SALES_INBOX = 'sales@smartassessja.com'
 
 const schema = z.object({
   schoolName: z.string().trim().min(1).max(200),
@@ -37,7 +40,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Verification failed. Please try again.' }, { status: 400 })
     }
 
-    const { error: insertError } = await supabaseAdmin.from('school_requests').insert({
+    const { data: inserted, error: insertError } = await supabaseAdmin.from('school_requests').insert({
       school_name: schoolName.trim(),
       contact_name: contactName.trim(),
       contact_email: contactEmail.trim(),
@@ -45,10 +48,10 @@ export async function POST(req: NextRequest) {
       workflow_other_description: workflowTemplate === 'other' ? (workflowOtherDescription || '').trim() : null,
       feature_flags: featureFlags || [],
       notes: notes?.trim() || null,
-    })
+    }).select('id').single()
 
-    if (insertError) {
-      return NextResponse.json({ error: insertError.message }, { status: 400 })
+    if (insertError || !inserted) {
+      return NextResponse.json({ error: insertError?.message || 'Could not save request.' }, { status: 400 })
     }
 
     try {
@@ -58,6 +61,35 @@ export async function POST(req: NextRequest) {
       // The request is already saved — don't fail the whole submission over
       // a flaky email send. Surface it in logs so it can be resent manually.
       console.error('submission-received email failed:', emailError)
+    }
+
+    try {
+      const origin = req.headers.get('origin') || process.env.NEXT_PUBLIC_SITE_URL || ''
+      const { subject, html } = newSchoolRequestStaffEmail(schoolName.trim(), contactName.trim(), contactEmail.trim(), `${origin}/owner/school-requests`)
+      await sendEmail({ to: SALES_INBOX, subject, html, from: EMAIL_FROM.sales, replyTo: contactEmail.trim() })
+    } catch (emailError) {
+      console.error('new-school-request staff notification failed:', emailError)
+    }
+
+    // Best-effort and awaited (not fire-and-forget) — on Vercel's serverless
+    // runtime an un-awaited promise can be killed the instant the response
+    // is sent, so a missing draft just means the reviewer sees the raw
+    // fields with no summary, same as before this feature existed.
+    try {
+      const draft = await generateRequestDraft('school', {
+        'School name': schoolName.trim(),
+        'Contact name': contactName.trim(),
+        'Contact email': contactEmail.trim(),
+        'Workflow template': workflowTemplate,
+        ...(workflowOtherDescription ? { 'Workflow (other)': workflowOtherDescription.trim() } : {}),
+        'Feature flags requested': (featureFlags || []).join(', '),
+        'Notes': notes?.trim() || '',
+      })
+      if (draft) {
+        await supabaseAdmin.from('school_requests').update({ ai_draft: draft, ai_draft_generated_at: new Date().toISOString() }).eq('id', inserted.id)
+      }
+    } catch (draftError) {
+      console.error('school request AI draft failed:', draftError)
     }
 
     return NextResponse.json({ success: true })

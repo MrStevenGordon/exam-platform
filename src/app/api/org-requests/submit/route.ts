@@ -3,9 +3,12 @@ import { z } from 'zod'
 import { verifyTurnstile } from '@/lib/verifyTurnstile'
 import { supabaseAdmin } from '@/lib/verifySystemAdmin'
 import { sendEmail, EMAIL_FROM } from '@/lib/email'
-import { orgRequestReceivedEmail } from '@/lib/emailTemplates'
+import { orgRequestReceivedEmail, newOrgRequestStaffEmail } from '@/lib/emailTemplates'
 import { rateLimit, getClientIp } from '@/lib/rateLimit'
 import { validateBody } from '@/lib/validateBody'
+import { generateRequestDraft } from '@/lib/draftRequestSummary'
+
+const SALES_INBOX = 'sales@smartassessja.com'
 
 const schema = z.object({
   orgName: z.string().trim().min(1).max(200),
@@ -34,15 +37,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Verification failed. Please try again.' }, { status: 400 })
     }
 
-    const { error: insertError } = await supabaseAdmin.from('org_requests').insert({
+    const { data: inserted, error: insertError } = await supabaseAdmin.from('org_requests').insert({
       org_name: orgName.trim(),
       contact_name: contactName.trim(),
       contact_email: contactEmail.trim(),
       notes: notes?.trim() || null,
-    })
+    }).select('id').single()
 
-    if (insertError) {
-      return NextResponse.json({ error: insertError.message }, { status: 400 })
+    if (insertError || !inserted) {
+      return NextResponse.json({ error: insertError?.message || 'Could not save request.' }, { status: 400 })
     }
 
     try {
@@ -52,6 +55,28 @@ export async function POST(req: NextRequest) {
       // The request is already saved — don't fail the whole submission over
       // a flaky email send.
       console.error('org-request-received email failed:', emailError)
+    }
+
+    try {
+      const origin = req.headers.get('origin') || process.env.NEXT_PUBLIC_SITE_URL || ''
+      const { subject, html } = newOrgRequestStaffEmail(orgName.trim(), contactName.trim(), contactEmail.trim(), `${origin}/owner/org-requests`)
+      await sendEmail({ to: SALES_INBOX, subject, html, from: EMAIL_FROM.sales, replyTo: contactEmail.trim() })
+    } catch (emailError) {
+      console.error('new-org-request staff notification failed:', emailError)
+    }
+
+    try {
+      const draft = await generateRequestDraft('org', {
+        'Organization name': orgName.trim(),
+        'Contact name': contactName.trim(),
+        'Contact email': contactEmail.trim(),
+        'Notes': notes?.trim() || '',
+      })
+      if (draft) {
+        await supabaseAdmin.from('org_requests').update({ ai_draft: draft, ai_draft_generated_at: new Date().toISOString() }).eq('id', inserted.id)
+      }
+    } catch (draftError) {
+      console.error('org request AI draft failed:', draftError)
     }
 
     return NextResponse.json({ success: true })

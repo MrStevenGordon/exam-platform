@@ -103,11 +103,15 @@ export default function PrivacyPolicyPage() {
           teacher is writing, and extracting questions from a PDF a teacher uploads. Both are opt-in, both only
           process content a staff member explicitly submits in that moment, and both produce suggestions only —
           a human teacher always reviews and decides whether to use the output.</p>
-          <p>The chat assistant (the &quot;?&quot; icon) also uses Anthropic to generate its replies. It only answers
+          <p style={{ marginBottom: 12 }}>The chat assistant (the &quot;?&quot; icon) also uses Anthropic to generate its replies. It only answers
           general questions about how the platform works, using information we&apos;ve given it — it has no access
           to your account, your data, or anyone else&apos;s, and is instructed to say so and point you to a real
-          person rather than guess if you ask it something account-specific. We do not use AI to grade students,
-          make integrity determinations, or make any decision about a student without a human reviewing it first.</p>
+          person rather than guess if you ask it something account-specific.</p>
+          <p>When a school or organization submits a sign-up request, we also use Anthropic to draft a short
+          internal summary of that request for our own staff to review — it&apos;s never shown to the requester,
+          never changes what you submitted, and never approves or rejects anything on its own; a person always
+          makes that decision. We do not use AI to grade students, make integrity determinations, or make any
+          decision about a student without a human reviewing it first.</p>
         </Section>
 
         <Section title="Who we share it with">
@@ -117,8 +121,9 @@ export default function PrivacyPolicyPage() {
           <p>We use a small number of service providers to actually run Smart Assess, each only with the access
           they need to do their specific job: Supabase (database, authentication, and file storage), Vercel
           (hosting), Resend (sending transactional email like password resets and notifications), Anthropic
-          (processing exam questions you explicitly submit for AI-assisted polishing or PDF import, and
-          generating chat assistant replies), Sentry (error monitoring and the session replay described above),
+          (processing exam questions you explicitly submit for AI-assisted polishing or PDF import,
+          generating chat assistant replies, and drafting an internal summary of a new school/organization
+          sign-up request for our staff), Sentry (error monitoring and the session replay described above),
           and Cloudflare Turnstile (verifying that submissions to public forms, like contact and signup
           requests, aren&apos;t automated bots). None of these providers can use your data for their own
           purposes.</p>
