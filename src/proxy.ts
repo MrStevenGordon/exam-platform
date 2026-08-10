@@ -7,6 +7,10 @@ import { NextResponse, type NextRequest } from 'next/server'
 // block once smartassessja.com is ready to serve the real app.
 const COMING_SOON_HOSTS = ['smartassessja.com', 'www.smartassessja.com']
 
+// Dedicated subdomain serving the schools/organizations pitch deck as a static
+// file, standing in for a live site while the main domain stays gated above.
+const PITCH_HOST = 'pitch.smartassessja.com'
+
 // Site-wide kill switch for planned/emergency downtime. Set MAINTENANCE_MODE
 // to a truthy value and redeploy (env var changes are snapshotted per
 // deployment, so a plain env var edit alone doesn't take effect) to gate
@@ -44,6 +48,10 @@ export async function proxy(request: NextRequest) {
   const host = request.headers.get('host') || ''
   if (COMING_SOON_HOSTS.includes(host) && request.nextUrl.pathname !== '/coming-soon') {
     return NextResponse.rewrite(new URL('/coming-soon', request.url))
+  }
+
+  if (host === PITCH_HOST && request.nextUrl.pathname === '/') {
+    return NextResponse.rewrite(new URL('/pitch/schools.html', request.url))
   }
 
   const protectedPaths = ['/dashboard']
