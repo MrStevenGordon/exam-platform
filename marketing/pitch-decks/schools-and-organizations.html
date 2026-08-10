@@ -23,20 +23,25 @@
   * { box-sizing: border-box; }
   html, body {
     margin: 0; padding: 0; background: var(--ink); font-family: var(--body);
-    overflow: hidden; height: 100%;
+    overflow: hidden; height: 100%; width: 100%;
   }
+  body { display: flex; align-items: center; justify-content: center; }
   ::selection { background: var(--gold); color: var(--emerald-deep); }
 
+  /* Fixed-size canvas, scaled as one unit to fit the window (see script at
+     the bottom) instead of reflowing -- so content never shifts on resize. */
+  .stage { width: 1600px; height: 900px; flex: none; position: relative; transform-origin: center center; }
+
   .deck {
-    display: flex; height: 100vh; width: 100vw; overflow-x: auto; overflow-y: hidden;
+    display: flex; height: 900px; width: 1600px; overflow-x: auto; overflow-y: hidden;
     scroll-snap-type: x mandatory; scroll-behavior: smooth; -webkit-overflow-scrolling: touch;
   }
   .deck::-webkit-scrollbar { display: none; }
 
   .slide {
-    flex: 0 0 100vw; height: 100vh; scroll-snap-align: start;
+    flex: 0 0 1600px; width: 1600px; height: 900px; scroll-snap-align: start;
     display: flex; flex-direction: column; justify-content: center; position: relative;
-    padding: clamp(28px, 6vw, 90px) clamp(28px, 8vw, 120px); overflow: hidden;
+    padding: 90px 120px; overflow: hidden;
   }
   .slide.dark { background: var(--emerald); color: var(--paper); }
   .slide.deep { background: var(--emerald-deep); color: var(--paper); }
@@ -45,7 +50,7 @@
   .slide-inner { max-width: 1180px; margin: 0 auto; width: 100%; }
 
   .kicker {
-    font-family: var(--mono); font-size: clamp(11px, 1vw, 13px); letter-spacing: 0.14em;
+    font-family: var(--mono); font-size: 13px; letter-spacing: 0.14em;
     text-transform: uppercase; margin-bottom: 18px; display: flex; align-items: center; gap: 10px;
   }
   .dark .kicker, .deep .kicker { color: var(--gold-bright); }
@@ -54,25 +59,25 @@
 
   h1.headline {
     font-family: var(--display); font-weight: 800; letter-spacing: -0.02em;
-    line-height: 1.03; margin: 0 0 20px; text-wrap: balance; font-size: clamp(35px, 5.4vw, 75px);
+    line-height: 1.03; margin: 0 0 20px; text-wrap: balance; font-size: 75px;
   }
   h2.headline {
     font-family: var(--display); font-weight: 800; letter-spacing: -0.015em;
-    line-height: 1.08; margin: 0 0 16px; text-wrap: balance; font-size: clamp(26px, 3.4vw, 45px);
+    line-height: 1.08; margin: 0 0 16px; text-wrap: balance; font-size: 45px;
   }
   .dark h1, .dark h2, .deep h1, .deep h2 { color: var(--white); }
   .light h1, .light h2 { color: var(--paper-ink); }
 
   .lede {
     font-family: var(--body); font-weight: 400; line-height: 1.55;
-    font-size: clamp(16px, 1.5vw, 20px); max-width: 64ch; margin: 0;
+    font-size: 20px; max-width: 64ch; margin: 0;
   }
   .dark .lede, .deep .lede { color: rgba(244,246,243,0.82); }
   .light .lede { color: var(--paper-muted); }
 
   .serif-line {
     font-family: var(--serif); font-style: italic; font-weight: 400;
-    font-size: clamp(21px, 2.4vw, 31px); line-height: 1.4; text-wrap: balance;
+    font-size: 31px; line-height: 1.4; text-wrap: balance;
   }
   .dark .serif-line, .deep .serif-line { color: var(--gold-bright); }
   .light .serif-line { color: var(--emerald); }
@@ -81,9 +86,6 @@
   .grid.cols-2 { grid-template-columns: repeat(2, 1fr); }
   .grid.cols-3 { grid-template-columns: repeat(3, 1fr); }
   .grid.cols-4 { grid-template-columns: repeat(4, 1fr); }
-  @media (max-width: 860px) {
-    .grid.cols-2, .grid.cols-3, .grid.cols-4 { grid-template-columns: 1fr; }
-  }
 
   .card { border-radius: 12px; padding: 20px 22px; display: flex; flex-direction: column; gap: 9px; }
   .dark .card, .deep .card { background: rgba(244,246,243,0.06); border: 1px solid var(--line-on-dark); }
@@ -126,7 +128,6 @@
   .light .flow-step { background: var(--white); border: 1px solid var(--line-on-light); color: var(--paper-ink); }
   .flow-step strong { display: block; font-family: var(--display); font-size: 16.5px; margin-bottom: 4px; }
   .flow-arrow { font-family: var(--mono); font-size: 19px; padding: 0 10px; color: var(--paper-faint); flex: none; }
-  @media (max-width: 860px) { .flow { flex-direction: column; align-items: stretch; } .flow-arrow { display: none; } }
 
   .role-strip { display: flex; gap: 10px; margin-top: 28px; flex-wrap: wrap; }
   .role-chip { font-family: var(--mono); font-size: 13px; padding: 8px 16px; border-radius: 8px; }
@@ -177,19 +178,18 @@
   .cover-badge svg { width: 24px; height: 24px; stroke: var(--emerald-deep); }
   .cover-eyebrow { font-family: var(--mono); font-size: 12px; letter-spacing: 0.16em; text-transform: uppercase; color: rgba(244,246,243,0.6); }
   .cover-name { font-family: var(--display); font-weight: 800; font-size: 20px; color: var(--white); }
-  .cover-title { font-family: var(--display); font-weight: 800; letter-spacing: -0.025em; line-height: 0.98; color: var(--white); font-size: clamp(45px, 7.2vw, 97px); margin: 0; text-wrap: balance; }
-  .cover-sub { font-family: var(--serif); font-style: italic; color: var(--gold-bright); font-size: clamp(19px, 2.2vw, 26px); margin-top: 22px; max-width: 48ch; }
-  .cover-foot { position: absolute; bottom: clamp(24px, 5vh, 56px); left: clamp(28px, 8vw, 120px); right: clamp(28px, 8vw, 120px); display: flex; justify-content: space-between; align-items: flex-end; font-family: var(--mono); font-size: 12.5px; color: rgba(244,246,243,0.55); }
-  .cover-graphic { position: absolute; right: clamp(20px, 6vw, 90px); top: 50%; transform: translateY(-50%); width: clamp(140px, 20vw, 260px); height: clamp(140px, 20vw, 260px); opacity: 0.9; }
+  .cover-title { font-family: var(--display); font-weight: 800; letter-spacing: -0.025em; line-height: 0.98; color: var(--white); font-size: 97px; margin: 0; text-wrap: balance; }
+  .cover-sub { font-family: var(--serif); font-style: italic; color: var(--gold-bright); font-size: 26px; margin-top: 22px; max-width: 48ch; }
+  .cover-foot { position: absolute; bottom: 56px; left: 120px; right: 120px; display: flex; justify-content: space-between; align-items: flex-end; font-family: var(--mono); font-size: 12.5px; color: rgba(244,246,243,0.55); }
+  .cover-graphic { position: absolute; right: 90px; top: 50%; transform: translateY(-50%); width: 260px; height: 260px; opacity: 0.9; }
   .cover-graphic svg { width: 100%; height: 100%; stroke: rgba(228,194,92,0.35); }
 
   .toc-list { margin-top: 40px; display: grid; grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(8, auto); grid-auto-flow: column; gap: 4px 40px; }
   .toc-item { display: flex; align-items: baseline; gap: 14px; padding: 11px 0; border-bottom: 1px solid var(--line-on-light); cursor: pointer; }
   .toc-num { font-family: var(--mono); font-size: 13px; color: var(--emerald); flex: none; width: 22px; }
   .toc-label { font-family: var(--display); font-weight: 600; font-size: 17.5px; color: var(--paper-ink); }
-  @media (max-width: 860px) { .toc-list { grid-template-columns: 1fr; grid-template-rows: none; grid-auto-flow: row; } }
 
-  .closing-title { font-family: var(--display); font-weight: 800; font-size: clamp(35px, 5vw, 61px); color: var(--white); letter-spacing: -0.02em; line-height: 1.05; text-wrap: balance; margin: 0 0 30px; }
+  .closing-title { font-family: var(--display); font-weight: 800; font-size: 61px; color: var(--white); letter-spacing: -0.02em; line-height: 1.05; text-wrap: balance; margin: 0 0 30px; }
   .contact-grid { display: flex; gap: 56px; flex-wrap: wrap; margin-top: 10px; }
   .contact-item { display: flex; flex-direction: column; gap: 4px; }
   .contact-label { font-family: var(--mono); font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--gold-bright); }
@@ -217,7 +217,10 @@
   @media print {
     * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }
     .nav-controls { display: none !important; }
-    html, body { overflow: visible !important; height: auto !important; width: auto !important; background: #fff !important; }
+    html, body { overflow: visible !important; height: auto !important; width: auto !important; background: #fff !important; display: block !important; }
+    .stage {
+      transform: none !important; width: auto !important; height: auto !important; position: static !important;
+    }
     .deck {
       display: block !important; overflow: visible !important; height: auto !important;
       width: auto !important; scroll-snap-type: none !important;
@@ -250,12 +253,10 @@
       grid-auto-flow: column !important;
     }
 
-    /* Every text size above is a vw-relative clamp(), which shrinks toward
-       its minimum whenever the effective layout width is narrow -- true
-       both for a cramped browser/artifact panel and, worse, for Chrome's
-       print engine (it computes vw against the page's short edge even in
-       landscape). Pin every one to a fixed print size so nothing collapses
-       to its smallest end. */
+    /* The screen sizes above are fixed to a 1600x900 canvas, scaled as a
+       whole for display (see the fit-to-window script). Print doesn't get
+       that scaling, and the print page is smaller than the canvas, so every
+       size gets its own fixed print-only value here instead. */
     .kicker { font-size: 13px !important; }
     h1.headline { font-size: 47px !important; }
     h2.headline { font-size: 31px !important; }
@@ -268,6 +269,7 @@
   }
 </style>
 
+<div class="stage" id="stage">
 <div class="deck" id="deck">
 
   <section class="slide deep" data-title="Cover">
@@ -673,6 +675,7 @@
   </section>
 
 </div>
+</div>
 
 <div class="nav-controls">
   <button class="nav-btn" id="prevBtn" aria-label="Previous slide">&#8592;</button>
@@ -682,6 +685,16 @@
 
 <script>
 (function () {
+  var CANVAS_W = 1600, CANVAS_H = 900;
+  var stage = document.getElementById('stage');
+
+  function fitStage() {
+    var scale = Math.min(window.innerWidth / CANVAS_W, window.innerHeight / CANVAS_H);
+    stage.style.transform = 'scale(' + scale + ')';
+  }
+  fitStage();
+  window.addEventListener('resize', fitStage);
+
   var deck = document.getElementById('deck');
   var slides = Array.prototype.slice.call(deck.children);
   var total = slides.length;
@@ -709,7 +722,7 @@
   deck.addEventListener('scroll', function () {
     clearTimeout(scrollTimeout);
     scrollTimeout = setTimeout(function () {
-      var idx = Math.round(deck.scrollLeft / window.innerWidth);
+      var idx = Math.round(deck.scrollLeft / CANVAS_W);
       current = Math.max(0, Math.min(total - 1, idx));
       update();
     }, 80);
