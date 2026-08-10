@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import WaitlistForm from '@/components/WaitlistForm'
 
 export const metadata: Metadata = {
   title: 'Smart Assess: Coming Soon',
@@ -221,6 +222,8 @@ export default function ComingSoonPage() {
           </svg>
         </div>
       </main>
+
+      <WaitlistForm />
 
       <footer className="cs-footer">&copy; 2026 Smart Assess Ja</footer>
 

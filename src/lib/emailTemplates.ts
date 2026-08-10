@@ -92,6 +92,30 @@ export function contactInquiryEmail(name: string, org: string, email: string, me
   }
 }
 
+export function waitlistJoinedEmail(email: string) {
+  return {
+    subject: `You're on the Smart Assess Ja waitlist`,
+    html: wrapper(`
+      <p>Hi there,</p>
+      <p>Thanks for signing up with <strong>${email}</strong>. We'll email you as soon as Smart Assess Ja is ready for schools.</p>
+    `),
+  }
+}
+
+export function newWaitlistSignupStaffEmail(email: string, name: string, schoolName: string) {
+  return {
+    subject: `New waitlist signup: ${email}`,
+    html: wrapper(`
+      <p>A new waitlist signup came in from the coming-soon page:</p>
+      <table style="margin: 16px 0; font-size: 14px;">
+        <tr><td style="padding: 4px 12px 4px 0; color: #7A6A5A;">Email</td><td>${email}</td></tr>
+        ${name ? `<tr><td style="padding: 4px 12px 4px 0; color: #7A6A5A;">Name</td><td>${name}</td></tr>` : ''}
+        ${schoolName ? `<tr><td style="padding: 4px 12px 4px 0; color: #7A6A5A;">School</td><td>${schoolName}</td></tr>` : ''}
+      </table>
+    `),
+  }
+}
+
 export function newSchoolRequestStaffEmail(schoolName: string, contactName: string, contactEmail: string, reviewUrl: string) {
   return {
     subject: `New school request: ${schoolName}`,
