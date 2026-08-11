@@ -7,7 +7,7 @@ import { verifyTurnstile } from '@/lib/verifyTurnstile'
 import { rateLimit, getClientIp } from '@/lib/rateLimit'
 import { validateBody } from '@/lib/validateBody'
 
-const SALES_INBOX = 'sales@smartassessja.com'
+const SALES_INBOX = 'smartassessja@gmail.com'
 
 const schema = z.object({
   email: z.string().trim().email().max(320),
@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
 
     try {
       const { subject, html } = newWaitlistSignupStaffEmail(email.trim(), name?.trim() || '', schoolName?.trim() || '')
-      await sendEmail({ to: SALES_INBOX, subject, html, from: EMAIL_FROM.sales })
+      await sendEmail({ to: SALES_INBOX, subject, html, from: EMAIL_FROM.sales, replyTo: email.trim() })
     } catch (emailError) {
       console.error('new-waitlist-signup staff notification failed:', emailError)
     }

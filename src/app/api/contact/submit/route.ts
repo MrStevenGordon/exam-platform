@@ -6,7 +6,7 @@ import { contactInquiryEmail } from '@/lib/emailTemplates'
 import { rateLimit, getClientIp } from '@/lib/rateLimit'
 import { validateBody } from '@/lib/validateBody'
 
-const SALES_INBOX = 'sales@smartassessja.com'
+const SALES_INBOX = 'smartassessja@gmail.com'
 
 const schema = z.object({
   name: z.string().trim().min(1).max(200),

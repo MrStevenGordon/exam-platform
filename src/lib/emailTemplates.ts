@@ -102,6 +102,21 @@ export function waitlistJoinedEmail(email: string) {
   }
 }
 
+export function newPitchNdaAcceptanceStaffEmail(deck: string, name: string, organization: string, email: string) {
+  return {
+    subject: `NDA accepted: ${organization} (${deck} deck)`,
+    html: wrapper(`
+      <p>Someone just agreed to the NDA and viewed the pitch deck:</p>
+      <table style="margin: 16px 0; font-size: 14px;">
+        <tr><td style="padding: 4px 12px 4px 0; color: #7A6A5A;">Deck</td><td>${deck}</td></tr>
+        <tr><td style="padding: 4px 12px 4px 0; color: #7A6A5A;">Name</td><td>${name}</td></tr>
+        <tr><td style="padding: 4px 12px 4px 0; color: #7A6A5A;">Organization</td><td>${organization}</td></tr>
+        <tr><td style="padding: 4px 12px 4px 0; color: #7A6A5A;">Email</td><td>${email}</td></tr>
+      </table>
+    `),
+  }
+}
+
 export function newWaitlistSignupStaffEmail(email: string, name: string, schoolName: string) {
   return {
     subject: `New waitlist signup: ${email}`,

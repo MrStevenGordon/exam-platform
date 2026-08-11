@@ -8,7 +8,7 @@ import { rateLimit, getClientIp } from '@/lib/rateLimit'
 import { validateBody } from '@/lib/validateBody'
 import { generateRequestDraft } from '@/lib/draftRequestSummary'
 
-const SALES_INBOX = 'sales@smartassessja.com'
+const SALES_INBOX = 'smartassessja@gmail.com'
 
 const schema = z.object({
   orgName: z.string().trim().min(1).max(200),

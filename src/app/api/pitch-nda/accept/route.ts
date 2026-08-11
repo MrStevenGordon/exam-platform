@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { supabaseAdmin } from '@/lib/verifySystemAdmin'
+import { sendEmail, EMAIL_FROM } from '@/lib/email'
+import { newPitchNdaAcceptanceStaffEmail } from '@/lib/emailTemplates'
 import { rateLimit, getClientIp } from '@/lib/rateLimit'
 import { validateBody } from '@/lib/validateBody'
+
+const NOTIFY_INBOX = 'smartassessja@gmail.com'
 
 const schema = z.object({
   deck: z.string().trim().min(1).max(100),
@@ -37,6 +41,13 @@ export async function POST(req: NextRequest) {
 
     if (insertError) {
       return NextResponse.json({ error: insertError.message || 'Could not record acceptance.' }, { status: 400 })
+    }
+
+    try {
+      const { subject, html } = newPitchNdaAcceptanceStaffEmail(deck.trim(), name.trim(), organization.trim(), email.trim())
+      await sendEmail({ to: NOTIFY_INBOX, subject, html, from: EMAIL_FROM.sales, replyTo: email.trim() })
+    } catch (emailError) {
+      console.error('pitch-nda-acceptance staff notification failed:', emailError)
     }
 
     return NextResponse.json({ success: true })
