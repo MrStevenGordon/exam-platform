@@ -7,6 +7,7 @@ import { validateBody } from '@/lib/validateBody'
 const schema = z.object({
   deck: z.string().trim().min(1).max(100),
   name: z.string().trim().min(1).max(200),
+  organization: z.string().trim().min(1).max(200),
   email: z.string().trim().email().max(320),
   honeypot: z.string().max(500).optional(),
 }).strict()
@@ -19,7 +20,7 @@ export async function POST(req: NextRequest) {
 
     const parsed = await validateBody(req, schema)
     if ('error' in parsed) return parsed.error
-    const { deck, name, email, honeypot } = parsed.data
+    const { deck, name, organization, email, honeypot } = parsed.data
 
     if (honeypot) {
       return NextResponse.json({ error: 'Something went wrong. Please try again.' }, { status: 400 })
@@ -28,6 +29,7 @@ export async function POST(req: NextRequest) {
     const { error: insertError } = await supabaseAdmin.from('pitch_nda_acceptances').insert({
       deck: deck.trim(),
       name: name.trim(),
+      organization: organization.trim(),
       email: email.trim().toLowerCase(),
       ip,
       user_agent: req.headers.get('user-agent') || null,

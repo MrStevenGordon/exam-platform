@@ -353,6 +353,7 @@
     </div>
     <div class="nda-fields">
       <input type="text" id="ndaName" class="nda-input" placeholder="Full name" autocomplete="name">
+      <input type="text" id="ndaOrg" class="nda-input" placeholder="School / company / organization" autocomplete="organization">
       <input type="email" id="ndaEmail" class="nda-input" placeholder="Email address" autocomplete="email">
       <div style="position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden;" aria-hidden="true">
         <input type="text" id="ndaWebsite" tabindex="-1" autocomplete="off">
@@ -784,6 +785,7 @@
 <script>
 (function () {
   var ndaName = document.getElementById('ndaName');
+  var ndaOrg = document.getElementById('ndaOrg');
   var ndaEmail = document.getElementById('ndaEmail');
   var ndaCheckbox = document.getElementById('ndaCheckbox');
   var ndaSubmit = document.getElementById('ndaSubmit');
@@ -791,10 +793,11 @@
   var ndaWebsite = document.getElementById('ndaWebsite');
 
   function ndaReady() {
-    return ndaName.value.trim() && /\S+@\S+\.\S+/.test(ndaEmail.value.trim()) && ndaCheckbox.checked;
+    return ndaName.value.trim() && ndaOrg.value.trim() && /\S+@\S+\.\S+/.test(ndaEmail.value.trim()) && ndaCheckbox.checked;
   }
   function ndaUpdate() { ndaSubmit.disabled = !ndaReady(); }
   ndaName.addEventListener('input', ndaUpdate);
+  ndaOrg.addEventListener('input', ndaUpdate);
   ndaEmail.addEventListener('input', ndaUpdate);
   ndaCheckbox.addEventListener('change', ndaUpdate);
 
@@ -810,6 +813,7 @@
       body: JSON.stringify({
         deck: 'schools',
         name: ndaName.value.trim(),
+        organization: ndaOrg.value.trim(),
         email: ndaEmail.value.trim(),
         honeypot: ndaWebsite.value,
       }),
