@@ -228,6 +228,47 @@
   .nav-btn:focus-visible { outline: 2px solid var(--gold-bright); outline-offset: 2px; }
   .nav-count { font-family: var(--mono); font-size: 12px; color: var(--paper); letter-spacing: 0.05em; min-width: 44px; text-align: center; }
 
+  /* NDA gate: deck and nav stay hidden until body gets .nda-accepted (set
+     either from a stored prior acceptance, or after a successful submit). */
+  .stage, .nav-controls { display: none; }
+  body.nda-accepted .stage { display: block; }
+  body.nda-accepted .nav-controls { display: flex; }
+
+  .nda-overlay {
+    position: fixed; inset: 0; z-index: 200; background: var(--emerald-deep);
+    display: flex; align-items: center; justify-content: center; padding: 40px;
+  }
+  body.nda-accepted .nda-overlay { display: none; }
+  .nda-card {
+    width: 100%; max-width: 560px; background: var(--emerald); border: 1px solid var(--line-on-dark);
+    border-radius: 16px; padding: 40px 44px; color: var(--paper);
+  }
+  .nda-kicker { font-family: var(--mono); font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--gold-bright); margin-bottom: 14px; }
+  .nda-title { font-family: var(--display); font-weight: 800; font-size: 26px; letter-spacing: -0.01em; margin: 0 0 16px; color: var(--white); }
+  .nda-text {
+    max-height: 220px; overflow-y: auto; font-size: 13.5px; line-height: 1.6; color: rgba(244,246,243,0.82);
+    background: rgba(14,18,16,0.35); border: 1px solid var(--line-on-dark); border-radius: 10px; padding: 16px 18px; margin-bottom: 20px;
+  }
+  .nda-text p { margin: 0 0 12px; }
+  .nda-text p:last-child { margin-bottom: 0; }
+  .nda-text ol { margin: 0 0 12px; padding-left: 18px; }
+  .nda-text li { margin-bottom: 6px; }
+  .nda-fields { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
+  .nda-input {
+    font-family: var(--body); font-size: 14px; padding: 11px 14px; border-radius: 8px;
+    border: 1px solid var(--line-on-dark); background: rgba(244,246,243,0.06); color: var(--white);
+  }
+  .nda-input::placeholder { color: rgba(244,246,243,0.4); }
+  .nda-input:focus { outline: 2px solid var(--gold-bright); outline-offset: 1px; }
+  .nda-agree { display: flex; align-items: flex-start; gap: 10px; font-size: 13px; line-height: 1.5; color: rgba(244,246,243,0.82); margin-bottom: 20px; }
+  .nda-agree input { margin-top: 3px; flex: none; }
+  .nda-submit {
+    width: 100%; font-family: var(--body); font-size: 14.5px; font-weight: 700; padding: 13px 20px;
+    border-radius: 8px; border: none; background: var(--gold); color: var(--emerald-deep); cursor: pointer; transition: background 0.15s ease;
+  }
+  .nda-submit:hover:not(:disabled) { background: var(--gold-bright); }
+  .nda-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+  .nda-error { font-size: 12.5px; color: #F0A896; margin-top: 12px; }
 
   @media (prefers-reduced-motion: reduce) { .deck { scroll-behavior: auto; } }
 
@@ -292,6 +333,39 @@
 </style>
 </head>
 <body>
+
+<script>
+  if (localStorage.getItem('sa_pitch_nda_schools') === '1') { document.body.className += ' nda-accepted'; }
+</script>
+
+<div class="nda-overlay" id="ndaOverlay">
+  <div class="nda-card">
+    <div class="nda-kicker">Confidential</div>
+    <h2 class="nda-title">Before you view this deck</h2>
+    <div class="nda-text">
+      <p>This presentation and all accompanying materials (the "Materials") are confidential and proprietary to Smart Assess Ja (the "Company"). By entering your details and continuing, you agree that you will:</p>
+      <ol>
+        <li>Not copy, reproduce, distribute, or share the Materials, in whole or in part, with any third party without the Company's prior written consent.</li>
+        <li>Use the Materials solely to evaluate a potential relationship with the Company, and for no other purpose.</li>
+        <li>Keep all financial, strategic, technical, and business information contained in the Materials confidential.</li>
+      </ol>
+      <p>This does not grant you any license or ownership rights in the Materials. This acknowledgment is recorded against the name and email you provide below.</p>
+    </div>
+    <div class="nda-fields">
+      <input type="text" id="ndaName" class="nda-input" placeholder="Full name" autocomplete="name">
+      <input type="email" id="ndaEmail" class="nda-input" placeholder="Email address" autocomplete="email">
+      <div style="position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden;" aria-hidden="true">
+        <input type="text" id="ndaWebsite" tabindex="-1" autocomplete="off">
+      </div>
+    </div>
+    <label class="nda-agree">
+      <input type="checkbox" id="ndaCheckbox">
+      <span>I have read and agree to the confidentiality terms above.</span>
+    </label>
+    <button class="nda-submit" id="ndaSubmit" disabled>I Agree &amp; Continue</button>
+    <div class="nda-error" id="ndaError" style="display: none;"></div>
+  </div>
+</div>
 
 <div class="stage" id="stage">
 <div class="deck" id="deck">
@@ -709,6 +783,57 @@
 
 <script>
 (function () {
+  var ndaName = document.getElementById('ndaName');
+  var ndaEmail = document.getElementById('ndaEmail');
+  var ndaCheckbox = document.getElementById('ndaCheckbox');
+  var ndaSubmit = document.getElementById('ndaSubmit');
+  var ndaError = document.getElementById('ndaError');
+  var ndaWebsite = document.getElementById('ndaWebsite');
+
+  function ndaReady() {
+    return ndaName.value.trim() && /\S+@\S+\.\S+/.test(ndaEmail.value.trim()) && ndaCheckbox.checked;
+  }
+  function ndaUpdate() { ndaSubmit.disabled = !ndaReady(); }
+  ndaName.addEventListener('input', ndaUpdate);
+  ndaEmail.addEventListener('input', ndaUpdate);
+  ndaCheckbox.addEventListener('change', ndaUpdate);
+
+  ndaSubmit.addEventListener('click', function () {
+    if (!ndaReady()) return;
+    ndaSubmit.disabled = true;
+    ndaSubmit.textContent = 'Submitting…';
+    ndaError.style.display = 'none';
+
+    fetch('/api/pitch-nda/accept', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        deck: 'schools',
+        name: ndaName.value.trim(),
+        email: ndaEmail.value.trim(),
+        honeypot: ndaWebsite.value,
+      }),
+    })
+      .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data }; }); })
+      .then(function (result) {
+        if (!result.ok) {
+          ndaError.textContent = result.data.error || 'Something went wrong. Please try again.';
+          ndaError.style.display = 'block';
+          ndaSubmit.disabled = false;
+          ndaSubmit.textContent = 'I Agree & Continue';
+          return;
+        }
+        localStorage.setItem('sa_pitch_nda_schools', '1');
+        document.body.className += ' nda-accepted';
+      })
+      .catch(function () {
+        ndaError.textContent = 'Something went wrong. Please check your connection and try again.';
+        ndaError.style.display = 'block';
+        ndaSubmit.disabled = false;
+        ndaSubmit.textContent = 'I Agree & Continue';
+      });
+  });
+
   var CANVAS_W = 1600, CANVAS_H = 900;
   var stage = document.getElementById('stage');
 
