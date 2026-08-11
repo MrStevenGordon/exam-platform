@@ -1,9 +1,29 @@
 import type { Metadata } from 'next'
 import WaitlistForm from '@/components/WaitlistForm'
 
+const TITLE = 'Smart Assess Ja: Coming Soon'
+const DESCRIPTION = 'A modern exam and assessment platform, built from the ground up for schools and organizations across Jamaica. Join the waitlist to be first to know when we launch.'
+const URL = 'https://smartassessja.com'
+const IMAGE = `${URL}/og/coming-soon.png`
+
 export const metadata: Metadata = {
-  title: 'Smart Assess: Coming Soon',
-  description: 'Smart Assess is launching soon. Online exams built for schools across Jamaica.',
+  title: TITLE,
+  description: DESCRIPTION,
+  openGraph: {
+    title: TITLE,
+    description: DESCRIPTION,
+    url: URL,
+    siteName: 'Smart Assess Ja',
+    type: 'website',
+    locale: 'en_JM',
+    images: [{ url: IMAGE, width: 1200, height: 630, alt: 'Smart Assess Ja — Something great is on its way.' }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: TITLE,
+    description: DESCRIPTION,
+    images: [IMAGE],
+  },
 }
 
 const FEATURES = [
