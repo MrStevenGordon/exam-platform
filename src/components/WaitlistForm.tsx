@@ -73,7 +73,7 @@ export default function WaitlistForm() {
 
         {/* Honeypot — visually hidden from real users, but a naive bot that
             autofills every field will fill this one and get silently rejected. */}
-        <div style={{ position: 'absolute', left: '-9999px', width: 1, height: 1, overflow: 'hidden' }} aria-hidden="true">
+        <div style={{ display: 'none' }} aria-hidden="true">
           <label htmlFor="wl-website">Website</label>
           <input
             type="text"
