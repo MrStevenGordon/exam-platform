@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import WaitlistForm from '@/components/WaitlistForm'
+import InvestorForm from '@/components/InvestorForm'
 
 const TITLE = 'Smart Assess Ja: Coming Soon'
 const DESCRIPTION = 'A modern exam and assessment platform, built from the ground up for schools and organizations across Jamaica. Join the waitlist to be first to know when we launch.'
@@ -244,6 +245,7 @@ export default function ComingSoonPage() {
       </main>
 
       <WaitlistForm />
+      <InvestorForm />
 
       <footer className="cs-footer">&copy; 2026 Smart Assess Ja</footer>
 

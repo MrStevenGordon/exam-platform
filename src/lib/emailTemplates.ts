@@ -174,6 +174,32 @@ export function waitlistJoinedEmail(email: string) {
   }
 }
 
+export function investorInquiryReceivedEmail(name: string) {
+  return {
+    subject: `Thanks for your interest in Smart Assess Ja`,
+    html: wrapper(`
+      ${badge('Received')}
+      <p>Hi ${name},</p>
+      <p>Thanks for reaching out about Smart Assess Ja. We've received your details and someone from our team will follow up directly.</p>
+    `),
+  }
+}
+
+export function newInvestorInquiryStaffEmail(name: string, email: string, firm: string, note: string) {
+  return {
+    subject: `New investor inquiry: ${name}${firm ? ` (${firm})` : ''}`,
+    html: wrapper(`
+      <p>A new investor inquiry came in from the coming-soon page:</p>
+      ${infoBox([
+        ['Name', name],
+        ['Email', email],
+        ...(firm ? [['Firm', firm] as [string, string]] : []),
+      ])}
+      ${note ? `<p style="white-space: pre-wrap; padding: 14px 18px; background: ${COLOR.pageBg}; border-left: 3px solid ${COLOR.accent}; border-radius: 4px;">${note}</p>` : ''}
+    `),
+  }
+}
+
 export function newPitchNdaAcceptanceStaffEmail(deck: string, name: string, organization: string, email: string) {
   return {
     subject: `NDA accepted: ${organization} (${deck} deck)`,
