@@ -121,6 +121,34 @@ export default function DemoExam() {
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange)
   }, [step, showToast])
 
+  // Same in-page shortcut blocking the real exam uses. Note what this can
+  // and can't do: it can stop the browser's own copy/paste, right-click,
+  // and closing/opening tabs from inside the page. It cannot stop the
+  // operating system's own app switcher (Cmd+Tab on macOS, Alt+Tab on
+  // Windows) — the OS intercepts that keystroke before any webpage ever
+  // sees it, on every browser, by design. No website can block that.
+  useEffect(() => {
+    if (step !== 'exam') return
+    function handleKeyDown(e: KeyboardEvent) {
+      if ((e.metaKey || e.altKey) && e.key === 'Tab') { e.preventDefault(); return }
+      if ((e.metaKey || e.ctrlKey) && (e.key === 'w' || e.key === 'q')) { e.preventDefault(); return }
+      if ((e.metaKey || e.ctrlKey) && (e.key === 'n' || e.key === 't')) { e.preventDefault(); return }
+      if (e.key === 'F11') { e.preventDefault(); return }
+      if (e.key === 'Escape') { e.preventDefault(); return }
+      if ((e.metaKey || e.ctrlKey) && (e.key === 'c' || e.key === 'v' || e.key === 'a' || e.key === 'x')) { e.preventDefault(); return }
+    }
+    function handleContextMenu(e: MouseEvent) { e.preventDefault() }
+    function handleSelectStart(e: Event) { e.preventDefault() }
+    document.addEventListener('keydown', handleKeyDown)
+    document.addEventListener('contextmenu', handleContextMenu)
+    document.addEventListener('selectstart', handleSelectStart)
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown)
+      document.removeEventListener('contextmenu', handleContextMenu)
+      document.removeEventListener('selectstart', handleSelectStart)
+    }
+  }, [step])
+
   function updateAnswer(id: string, value: string) {
     setAnswers((prev) => ({ ...prev, [id]: value }))
   }
