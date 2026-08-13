@@ -39,7 +39,7 @@ export default function WaitlistForm() {
   if (submitted) {
     return (
       <div className="wl-wrap">
-        <p className="wl-done">You&apos;re on the list — we&apos;ll email you when we launch.</p>
+        <p className="wl-done">You&apos;re on the list. We&apos;ll email you when we launch.</p>
         <Link href="/demo-exam" className="wl-demo-link">Try a demo exam &rarr;</Link>
         <style>{waitlistStyles}</style>
       </div>

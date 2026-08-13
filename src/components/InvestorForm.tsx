@@ -40,7 +40,7 @@ export default function InvestorForm() {
   if (submitted) {
     return (
       <div className="inv-wrap">
-        <p className="inv-done">Thanks — we&apos;ll be in touch directly.</p>
+        <p className="inv-done">Thanks. We&apos;ll be in touch directly.</p>
         <Link href="/demo-exam" className="inv-demo-link">Try a demo exam &rarr;</Link>
         <style>{investorStyles}</style>
       </div>

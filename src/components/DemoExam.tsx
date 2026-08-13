@@ -101,7 +101,7 @@ export default function DemoExam() {
     if (step !== 'exam') return
     function handleVisibilityChange() {
       if (document.hidden) {
-        showToast("👀 We noticed that — in a real exam, switching away gets logged and flagged for teacher review.")
+        showToast("👀 We noticed that. In a real exam, switching away gets logged and flagged for teacher review.")
       }
     }
     document.addEventListener('visibilitychange', handleVisibilityChange)
@@ -114,16 +114,12 @@ export default function DemoExam() {
       setInFullscreen(isFull)
       if (isFull) hasBeenFullscreenRef.current = true
       if (!isFull && hasBeenFullscreenRef.current && step === 'exam') {
-        showToast('🔒 Exiting fullscreen mid-exam would also be flagged — this is what real exam integrity monitoring looks like.')
+        showToast('🔒 Exiting fullscreen mid-exam would also be flagged. This is what real exam integrity monitoring looks like.')
       }
     }
     document.addEventListener('fullscreenchange', handleFullscreenChange)
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange)
   }, [step, showToast])
-
-  function enterFullscreen() {
-    document.documentElement.requestFullscreen?.().catch(() => {})
-  }
 
   function updateAnswer(id: string, value: string) {
     setAnswers((prev) => ({ ...prev, [id]: value }))
@@ -133,6 +129,7 @@ export default function DemoExam() {
     setStep('exam')
     setSecondsLeft(DEMO_SECONDS)
     finishedRef.current = false
+    document.documentElement.requestFullscreen?.().catch(() => {})
   }
 
   function tryAgain() {
@@ -155,8 +152,8 @@ export default function DemoExam() {
         </div>
         <h1 style={{ marginBottom: 12 }}>See the platform, not just read about it.</h1>
         <p style={{ color: 'var(--text-secondary)', marginBottom: 28 }}>
-          Five sample questions — the same question types, math rendering, and timer real students see.
-          Nothing here is saved or scored anywhere, and this page doesn&apos;t need an account.
+          Five sample questions, the same question types, math rendering, and timer real students see.
+          This opens in fullscreen, just like a real exam. Nothing here is saved or scored anywhere, and this page doesn&apos;t need an account.
         </p>
         <button onClick={startDemo} className="btn btn-primary" style={{ padding: '13px 28px', fontSize: 15 }}>
           Start the demo
@@ -209,11 +206,7 @@ export default function DemoExam() {
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 8 }}>
           <span style={{ fontSize: 12, color: 'var(--success)', fontWeight: 600 }}>🔒 Integrity monitoring active (demo)</span>
-          {!inFullscreen && (
-            <button onClick={enterFullscreen} className="btn btn-secondary" style={{ padding: '4px 10px', fontSize: 12 }}>
-              Try fullscreen lock
-            </button>
-          )}
+          {!inFullscreen && <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>Fullscreen was blocked or exited.</span>}
         </div>
       </div>
 

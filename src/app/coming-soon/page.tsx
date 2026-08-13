@@ -17,7 +17,7 @@ export const metadata: Metadata = {
     siteName: 'Smart Assess Ja',
     type: 'website',
     locale: 'en_JM',
-    images: [{ url: IMAGE, width: 1200, height: 630, alt: 'Smart Assess Ja — Something great is on its way.' }],
+    images: [{ url: IMAGE, width: 1200, height: 630, alt: 'Smart Assess Ja: Something great is on its way.' }],
   },
   twitter: {
     card: 'summary_large_image',
