@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import TurnstileWidget from '@/components/TurnstileWidget'
 
 export default function InvestorForm() {
@@ -40,6 +41,7 @@ export default function InvestorForm() {
     return (
       <div className="inv-wrap">
         <p className="inv-done">Thanks — we&apos;ll be in touch directly.</p>
+        <Link href="/demo-exam" className="inv-demo-link">Try a demo exam &rarr;</Link>
         <style>{investorStyles}</style>
       </div>
     )
@@ -198,6 +200,17 @@ const investorStyles = `
     font-weight: 600;
     color: #A85A18;
   }
+
+  .inv-demo-link {
+    display: inline-block;
+    margin-top: 12px;
+    font-size: 14px;
+    font-weight: 700;
+    color: #D4762A;
+    text-decoration: none;
+    border-bottom: 1.5px solid #E8924A;
+  }
+  .inv-demo-link:hover { color: #A85A18; border-color: #A85A18; }
 
   @media (max-width: 900px) {
     .inv-wrap { text-align: center; }

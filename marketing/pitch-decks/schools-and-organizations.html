@@ -227,6 +227,8 @@
   .nav-btn:hover { background: var(--gold); color: var(--emerald-deep); }
   .nav-btn:focus-visible { outline: 2px solid var(--gold-bright); outline-offset: 2px; }
   .nav-count { font-family: var(--mono); font-size: 12px; color: var(--paper); letter-spacing: 0.05em; min-width: 44px; text-align: center; }
+  .nav-demo-link { font-family: var(--mono); font-size: 12px; color: var(--gold-bright); text-decoration: none; border-left: 1px solid rgba(244,246,243,0.2); padding-left: 14px; white-space: nowrap; }
+  .nav-demo-link:hover { color: var(--white); }
 
   /* NDA gate: deck and nav stay hidden until body gets .nda-accepted (set
      either from a stored prior acceptance, or after a successful submit). */
@@ -780,6 +782,7 @@
   <button class="nav-btn" id="prevBtn" aria-label="Previous slide">&#8592;</button>
   <span class="nav-count" id="navCount">1 / 18</span>
   <button class="nav-btn" id="nextBtn" aria-label="Next slide">&#8594;</button>
+  <a class="nav-demo-link" href="/demo-exam">Try a demo exam</a>
 </div>
 
 <script>

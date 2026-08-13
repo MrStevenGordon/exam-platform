@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
+import 'katex/dist/katex.min.css'
 
 interface MathRendererProps {
   text: string

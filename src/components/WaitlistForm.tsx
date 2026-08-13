@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import TurnstileWidget from '@/components/TurnstileWidget'
 
 export default function WaitlistForm() {
@@ -39,6 +40,7 @@ export default function WaitlistForm() {
     return (
       <div className="wl-wrap">
         <p className="wl-done">You&apos;re on the list — we&apos;ll email you when we launch.</p>
+        <Link href="/demo-exam" className="wl-demo-link">Try a demo exam &rarr;</Link>
         <style>{waitlistStyles}</style>
       </div>
     )
@@ -166,6 +168,17 @@ const waitlistStyles = `
     font-weight: 600;
     color: #A85A18;
   }
+
+  .wl-demo-link {
+    display: inline-block;
+    margin-top: 12px;
+    font-size: 14px;
+    font-weight: 700;
+    color: #D4762A;
+    text-decoration: none;
+    border-bottom: 1.5px solid #E8924A;
+  }
+  .wl-demo-link:hover { color: #A85A18; border-color: #A85A18; }
 
   @media (max-width: 900px) {
     .wl-wrap { text-align: center; }
