@@ -244,8 +244,10 @@ export default function ComingSoonPage() {
         </div>
       </main>
 
-      <WaitlistForm />
-      <InvestorForm />
+      <div className="cs-forms-row">
+        <WaitlistForm />
+        <InvestorForm />
+      </div>
 
       <footer className="cs-footer">&copy; 2026 Smart Assess Ja</footer>
 
@@ -513,6 +515,18 @@ export default function ComingSoonPage() {
           50% { transform: translateY(1px); opacity: 0.13; }
         }
 
+        .cs-forms-row {
+          position: relative;
+          z-index: 1;
+          margin-top: 40px;
+          padding-top: 32px;
+          border-top: 1px solid #EAD9C4;
+          width: 100%;
+          max-width: 1060px;
+          display: flex;
+          gap: 56px;
+        }
+
         .cs-footer {
           position: relative;
           z-index: 1;
@@ -545,6 +559,11 @@ export default function ComingSoonPage() {
             width: 100%;
             max-width: 420px;
             margin-top: 4px;
+          }
+
+          .cs-forms-row {
+            flex-direction: column;
+            gap: 32px;
           }
         }
 
