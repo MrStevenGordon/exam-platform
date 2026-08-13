@@ -115,8 +115,11 @@ const investorStyles = `
   .inv-wrap {
     position: relative;
     z-index: 1;
-    flex: 1 1 300px;
-    min-width: 280px;
+    margin-top: 32px;
+    padding-top: 32px;
+    border-top: 1px solid #EAD9C4;
+    width: 100%;
+    max-width: 1060px;
   }
 
   .inv-label {
