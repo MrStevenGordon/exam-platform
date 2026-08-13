@@ -1,24 +1,17 @@
 import { useRef, useCallback } from 'react'
+import { IntegritySignals } from '@/lib/essayIntegrity'
 
-export type IntegritySignals = {
-  v: 1
-  keystrokes: number
-  backspaces: number
-  pasteAttempts: number
-  maxJumpChars: number
-  typedChars: number
-  finalChars: number
-  durationMs: number
-  intervalMeanMs: number
-  intervalStdMs: number
-  flags: string[]
-}
+export type { IntegritySignals }
 
 const MAX_INTERVAL_SAMPLES = 500
 const UNIFORM_CADENCE_MIN_SAMPLES = 30
 const UNIFORM_CADENCE_MAX_CV = 0.15
 const NO_CORRECTIONS_MIN_CHARS = 300
 const UNTYPED_JUMP_MIN_CHARS = 25
+const EXCESSIVE_SPEED_MIN_CHARS = 200
+const EXCESSIVE_SPEED_CHARS_PER_SEC = 12
+const LOW_KEYSTROKE_RATIO_MIN_CHARS = 100
+const LOW_KEYSTROKE_RATIO_MAX = 0.5
 
 type CaptureState = {
   lastKeyAt: number | null
@@ -117,6 +110,19 @@ export function useIntegrityCapture() {
     if (s.pasteAttempts > 0) {
       flags.push('paste_attempted')
     }
+    // durationMs can be 0 on a single bulk onValueChange event, making this
+    // ratio Infinity -- that's the correct outcome (instant bulk-fill), not
+    // a bug, and will typically co-fire with untyped_content_jump.
+    if (finalChars > EXCESSIVE_SPEED_MIN_CHARS && (finalChars / (durationMs / 1000)) > EXCESSIVE_SPEED_CHARS_PER_SEC) {
+      flags.push('excessive_typing_speed')
+    }
+    // typedChars accumulates on every positive keystroke delta (including
+    // retypes after a backspace), so under genuine typing it tracks >=
+    // finalChars. This only fires when content bypassed the tracked
+    // onChange path entirely (autofill/IME/some paste-block bypass).
+    if (finalChars > LOW_KEYSTROKE_RATIO_MIN_CHARS && s.typedChars < finalChars * LOW_KEYSTROKE_RATIO_MAX) {
+      flags.push('low_keystroke_ratio')
+    }
 
     return {
       v: 1,
@@ -136,9 +142,4 @@ export function useIntegrityCapture() {
   return { onKeyDown, onPasteAttempt, onValueChange, summarize }
 }
 
-export const INTEGRITY_FLAG_LABELS: Record<string, string> = {
-  uniform_typing_cadence: 'Typed with unusually uniform timing (may indicate automated/simulated typing)',
-  no_corrections: 'Long answer with zero corrections or backspaces',
-  untyped_content_jump: 'Text appeared in a jump too large for a single keystroke (possible paste-block bypass)',
-  paste_attempted: 'Student attempted to paste into this field',
-}
+export { INTEGRITY_FLAG_LABELS } from '@/lib/essayIntegrity'

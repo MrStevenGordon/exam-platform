@@ -3,7 +3,9 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import { IntegritySignals, INTEGRITY_FLAG_LABELS } from '@/hooks/useIntegrityCapture'
+import { INTEGRITY_FLAG_LABELS } from '@/hooks/useIntegrityCapture'
+import { mergeIntegrityFlags, AiReview } from '@/lib/essayIntegrity'
+import AiOpinionButton from '@/components/AiOpinionButton'
 
 type UngradedResponse = {
   overrideScore?: number
@@ -18,6 +20,7 @@ type UngradedResponse = {
   marking_points?: any[] | null
   total_marks?: number | null
   integrityFlags: string[]
+  aiReview: AiReview | null
 }
 
 export default function GradeEssaysPage() {
@@ -42,7 +45,7 @@ export default function GradeEssaysPage() {
     const { data, error } = await supabase
       .from('responses')
       .select(`
-        id, answer, working, session_id, points_awarded, integrity_signals,
+        id, answer, working, session_id, points_awarded, integrity_signals, ai_review,
         questions(question_text, points, question_type, marking_points),
         exam_sessions(profiles!exam_sessions_student_id_fkey(full_name), final_exams(title), draft_exams(title))
       `)
@@ -66,7 +69,8 @@ export default function GradeEssaysPage() {
         points: r.questions.points,
         student_name: r.exam_sessions?.profiles?.full_name || 'Unknown',
         exam_title: r.exam_sessions?.final_exams?.title || r.exam_sessions?.draft_exams?.title || 'Unknown exam',
-        integrityFlags: (r.integrity_signals as { answer?: IntegritySignals } | null)?.answer?.flags || [],
+        integrityFlags: mergeIntegrityFlags(r.integrity_signals),
+        aiReview: r.ai_review || null,
       }))
 
     setItems(essayOnly)
@@ -161,6 +165,10 @@ export default function GradeEssaysPage() {
                 <ul style={{ margin: '8px 0 0', paddingLeft: 18, fontSize: 12, color: 'var(--text-secondary)' }}>
                   {item.integrityFlags.map((f) => <li key={f}>{INTEGRITY_FLAG_LABELS[f] || f}</li>)}
                 </ul>
+                <p style={{ marginTop: 8, marginBottom: 0, fontSize: 11, color: 'var(--text-muted)' }}>
+                  This is a heuristic signal based on how the answer was typed, not proof of misconduct. Use your judgment.
+                </p>
+                <AiOpinionButton responseId={item.response_id} initialReview={item.aiReview} />
               </details>
             )}
 

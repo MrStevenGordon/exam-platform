@@ -5,6 +5,8 @@ import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { IntegritySignals, INTEGRITY_FLAG_LABELS } from '@/hooks/useIntegrityCapture'
+import { mergeIntegrityFlags, AiReview } from '@/lib/essayIntegrity'
+import AiOpinionButton from '@/components/AiOpinionButton'
 
 type Response = {
   id: string
@@ -13,6 +15,7 @@ type Response = {
   working: string | null
   points_awarded: number | null
   integrity_signals: { answer?: IntegritySignals; working?: IntegritySignals } | null
+  ai_review: AiReview | null
   questions: {
     question_text: string
     question_type: string
@@ -63,7 +66,7 @@ export default function TeacherReviewSessionPage() {
 
     const { data: responseData } = await supabase
       .from('responses')
-      .select('id, question_id, answer, working, points_awarded, integrity_signals, questions(question_text, question_type, correct_answer, points, options, marking_points, show_working)')
+      .select('id, question_id, answer, working, points_awarded, integrity_signals, ai_review, questions(question_text, question_type, correct_answer, points, options, marking_points, show_working)')
       .eq('session_id', sessionId)
       .order('question_id')
 
@@ -134,10 +137,7 @@ export default function TeacherReviewSessionPage() {
             ? r.answer?.toLowerCase() === q.correct_answer?.toLowerCase()
             : null
           const needsManualGrade = q.question_type === 'essay' || (q.question_type === 'short_answer' && q.show_working)
-          const integrityFlags = Array.from(new Set([
-            ...(r.integrity_signals?.answer?.flags || []),
-            ...(r.integrity_signals?.working?.flags || []),
-          ]))
+          const integrityFlags = mergeIntegrityFlags(r.integrity_signals)
 
           return (
             <div key={r.id} className="card" style={{ borderLeft: `3px solid ${isCorrect === true ? 'var(--success)' : isCorrect === false ? 'var(--danger)' : 'var(--border)'}` }}>
@@ -182,6 +182,7 @@ export default function TeacherReviewSessionPage() {
                   <p style={{ marginTop: 8, marginBottom: 0, fontSize: 11, color: 'var(--text-muted)' }}>
                     This is a heuristic signal based on how the answer was typed, not proof of misconduct. Use your judgment.
                   </p>
+                  <AiOpinionButton responseId={r.id} initialReview={r.ai_review} />
                 </details>
               )}
 

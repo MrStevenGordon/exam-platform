@@ -20,6 +20,7 @@ const SUPERVISOR_NAV = [
   { label: 'Subjects', icon: 'ti-books', href: '/supervisor/subjects' },
   { label: 'Timetable', icon: 'ti-calendar', href: '/supervisor/timetable' },
   { label: 'Report Cards', icon: 'ti-report', href: '/supervisor/report-cards' },
+  { label: 'Integrity', icon: 'ti-shield-exclamation', href: '/supervisor/integrity' },
   { label: 'Analytics', icon: 'ti-chart-bar', href: '/supervisor/analytics' },
   { label: 'Messages', icon: 'ti-message-circle', href: '/supervisor/messages' },
   { label: 'My Profile', icon: 'ti-user', href: '/supervisor/profile' },
