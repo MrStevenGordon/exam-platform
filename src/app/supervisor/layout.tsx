@@ -18,6 +18,7 @@ const SUPERVISOR_NAV = [
   { label: 'Students', icon: 'ti-school', href: '/supervisor/students' },
   { label: 'Class Assignments', icon: 'ti-user-check', href: '/supervisor/class-assignments' },
   { label: 'Subjects', icon: 'ti-books', href: '/supervisor/subjects' },
+  { label: 'Timetable', icon: 'ti-calendar', href: '/supervisor/timetable' },
   { label: 'Analytics', icon: 'ti-chart-bar', href: '/supervisor/analytics' },
   { label: 'Messages', icon: 'ti-message-circle', href: '/supervisor/messages' },
   { label: 'My Profile', icon: 'ti-user', href: '/supervisor/profile' },

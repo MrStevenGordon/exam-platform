@@ -13,6 +13,7 @@ const STUDENT_NAV = [
   { label: 'Tests', icon: 'ti-pencil', href: '/student/tests' },
   { label: 'Tasks', icon: 'ti-clipboard-list', href: '/student/tasks' },
   { label: 'Mock Exams', icon: 'ti-books', href: '/student/self-mock' },
+  { label: 'Timetable', icon: 'ti-calendar', href: '/student/timetable' },
   { label: 'My Progress', icon: 'ti-chart-line', href: '/student/history' },
   { label: 'My Profile', icon: 'ti-user', href: '/student/profile' },
 ]
