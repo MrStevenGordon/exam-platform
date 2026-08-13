@@ -18,6 +18,7 @@ const BASE_NAV = [
   { label: 'Question Bank', icon: 'ti-database', href: '/teacher/bank' },
   { label: 'My Classes', icon: 'ti-users', href: '/teacher/classes' },
   { label: 'Timetable', icon: 'ti-calendar', href: '/teacher/timetable' },
+  { label: 'Report Cards', icon: 'ti-report', href: '/teacher/report-cards' },
   { label: 'Messages', icon: 'ti-message-circle', href: '/teacher/messages' },
   { label: 'My Profile', icon: 'ti-user', href: '/teacher/profile' },
 ]

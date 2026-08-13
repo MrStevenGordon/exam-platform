@@ -18,6 +18,7 @@ const SCHOOL_ADMIN_NAV = [
   { label: 'Students', icon: 'ti-school', href: '/school-admin/students' },
   { label: 'Password requests', icon: 'ti-key', href: '/school-admin/password-requests' },
   { label: 'Analytics', icon: 'ti-chart-bar', href: '/school-admin/analytics' },
+  { label: 'Report Cards', icon: 'ti-report', href: '/school-admin/report-cards' },
   { label: 'Activity', icon: 'ti-activity', href: '/school-admin/activity' },
   { label: 'Year Promotion', icon: 'ti-arrow-up-circle', href: '/dashboard' },
   { label: 'Messages', icon: 'ti-message-circle', href: '/school-admin/messages' },
