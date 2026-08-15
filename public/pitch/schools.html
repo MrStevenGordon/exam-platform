@@ -52,6 +52,19 @@
      the bottom) instead of reflowing -- so content never shifts on resize. */
   .stage { width: 1600px; height: 900px; flex: none; position: relative; transform-origin: center center; }
 
+  /* On a narrow/portrait phone, fitting this fixed 16:9 stage to width
+     leaves a large empty gap below the content -- centering it splits that
+     gap evenly top and bottom, which reads as a rendering glitch rather
+     than a deliberate letterbox. Top-aligning keeps the gap in one place,
+     at the bottom only, so it reads as intentional. This does not make the
+     deck itself larger on a phone -- that would need a real per-slide
+     mobile layout, a separate project, not a one-line fix. Placed after the
+     base .stage rule above so it wins the cascade at equal specificity. */
+  @media (max-width: 700px), (max-aspect-ratio: 4/5) {
+    body { align-items: flex-start; }
+    .stage { transform-origin: top center; }
+  }
+
   .deck {
     display: flex; height: 900px; width: 1600px; overflow-x: auto; overflow-y: hidden;
     scroll-snap-type: x mandatory; scroll-behavior: smooth; -webkit-overflow-scrolling: touch;
