@@ -134,6 +134,15 @@
   .dark .divider, .deep .divider { background: var(--line-on-dark); }
   .light .divider { background: var(--line-on-light); }
 
+  .bio-row { display: flex; gap: 26px; align-items: flex-start; margin-top: 36px; max-width: 640px; }
+  .bio-badge { width: 64px; height: 64px; border-radius: 50%; background: var(--gold); color: var(--emerald-deep); font-family: var(--display); font-weight: 800; font-size: 23px; display: flex; align-items: center; justify-content: center; flex: none; }
+  .bio-name { font-family: var(--display); font-weight: 800; font-size: 23px; }
+  .light .bio-name { color: var(--paper-ink); }
+  .dark .bio-name, .deep .bio-name { color: var(--white); }
+  .bio-role { font-family: var(--mono); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; margin-top: 3px; }
+  .light .bio-role { color: var(--emerald); }
+  .dark .bio-role, .deep .bio-role { color: var(--gold-bright); }
+
   .price-table { margin-top: 24px; border-radius: 12px; overflow: hidden; border: 1px solid var(--line-on-light); }
   .price-row { display: grid; grid-template-columns: 1.4fr 1fr 1.6fr; gap: 12px; padding: 13px 20px; align-items: center; }
   .price-row.head { background: var(--emerald); color: var(--white); font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; }
@@ -455,11 +464,26 @@
     <div class="slide-inner">
       <div class="kicker">Team</div>
       <h2 class="headline">Built by someone who ships.</h2>
-      <div class="fillin-box">
+      <div class="bio-row">
+        <div class="bio-badge">SG</div>
+        <div>
+          <div class="bio-name">Steven Gordon</div>
+          <div class="bio-role">Founder</div>
+          <p class="lede" style="margin-top: 12px;">A mix of technical, business, and problem-solving. Steven saw a real gap in how Jamaican schools run exams, informed by a computer science background and a genuine love of building software, and has been building Smart Assess Ja full time for the past few months.</p>
+          <p class="lede" style="margin-top: 12px;"><strong style="color: var(--paper-ink);">Why Jamaica.</strong> Jamaica already has the examination culture, the educational infrastructure, and the growing digital readiness to lead in modern assessment technology. Smart Assess Ja is being built locally, for the realities of Jamaican schools.</p>
+          <a href="https://www.linkedin.com/in/steven-gordon-5272841a5/" style="display: inline-flex; align-items: center; gap: 7px; margin-top: 16px; font-family: var(--mono); font-size: 13.5px; color: var(--emerald); text-decoration: none; font-weight: 600;">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor"><path d="M20.45 20.45h-3.56v-5.57c0-1.33-.02-3.04-1.85-3.04-1.85 0-2.14 1.45-2.14 2.94v5.67H9.34V9h3.41v1.56h.05c.48-.9 1.64-1.85 3.38-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28zM5.34 7.43a2.06 2.06 0 1 1 0-4.12 2.06 2.06 0 0 1 0 4.12zM7.12 20.45H3.56V9h3.56v11.45z"/></svg>
+            Steven Gordon
+          </a>
+        </div>
+      </div>
+      <div class="note-box" style="max-width: 640px;">
+        <span class="note-label">Extended review team</span>
+        Three independent software engineers, based in Jamaica, the United States, and Canada, one with 8+ years of experience and two with just over three years each, ran full tests across the platform and shaped several items now on the roadmap. Not employees, but real outside technical validation on a pre-revenue product.
+      </div>
+      <div class="fillin-box" style="max-width: 640px;">
         <span class="fillin-label">Needs your input</span>
-        <div class="fillin-line">Your background and relevant experience.</div>
-        <div class="fillin-line">Why you started this, in a sentence or two.</div>
-        <div class="fillin-line">Anyone else on the team, and their role.</div>
+        <div class="fillin-line">Anyone else formally on the team (co-founder, advisor, contractor), and their role, if applicable.</div>
       </div>
     </div>
   </section>
