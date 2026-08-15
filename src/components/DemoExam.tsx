@@ -67,6 +67,7 @@ type DemoExamProps = {
   introKicker?: string
   introHeadline?: string
   introBody?: string
+  introPoints?: string[]
   examTitle?: string
   enforceStrikes?: boolean
   revealAnswers?: boolean
@@ -82,6 +83,7 @@ export default function DemoExam({
   introKicker = 'Demo exam',
   introHeadline = 'See the platform, not just read about it.',
   introBody = "Five sample questions, the same question types, math rendering, and timer real students see. This opens in fullscreen, just like a real exam. Nothing here is saved or scored anywhere, and this page doesn't need an account.",
+  introPoints,
   examTitle = 'Demo Exam',
   enforceStrikes = false,
   revealAnswers = false,
@@ -274,9 +276,19 @@ export default function DemoExam({
           {introKicker}
         </div>
         <h1 style={{ marginBottom: 12 }}>{introHeadline}</h1>
-        <p style={{ color: 'var(--text-secondary)', marginBottom: 28 }}>
+        <p style={{ color: 'var(--text-secondary)', marginBottom: introPoints ? 20 : 28 }}>
           {introBody}
         </p>
+        {introPoints && (
+          <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 28px', display: 'flex', flexDirection: 'column', gap: 10, textAlign: 'left' }}>
+            {introPoints.map((point, i) => (
+              <li key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', color: 'var(--text-secondary)', fontSize: 14.5, lineHeight: 1.5 }}>
+                <span style={{ color: 'var(--accent)', flex: 'none' }}>✓</span>
+                <span>{point}</span>
+              </li>
+            ))}
+          </ul>
+        )}
         <button onClick={startDemo} className="btn btn-primary" style={{ padding: '13px 28px', fontSize: 15 }}>
           Start the demo
         </button>

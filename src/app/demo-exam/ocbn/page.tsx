@@ -93,7 +93,12 @@ export default function OcbnDemoExamPage() {
       examTitle="OCBN Demo Exam"
       introKicker="Smart Assess Ja × OCBN"
       introHeadline="How well do you know the One Caribbean Business Network?"
-      introBody="Ten questions about OCBN itself, built on Smart Assess Ja — the same integrity monitoring a real exam uses. Switch tabs or exit fullscreen three times and this exam auto-submits, exactly like a real one would. Your answers are revealed at the end. Nothing here is saved, and this page doesn't need an account."
+      introBody="Ten questions about OCBN itself, built on Smart Assess Ja."
+      introPoints={[
+        'Real integrity monitoring — switch tabs or exit fullscreen 3 times and it auto-submits, just like a real exam.',
+        'Your answers are revealed at the end.',
+        "No account needed, and nothing here is saved.",
+      ]}
       enforceStrikes
       revealAnswers
       passcode="JAOCBN26"
