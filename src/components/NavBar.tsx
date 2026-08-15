@@ -12,7 +12,7 @@ export default function NavBar() {
   const [role, setRole] = useState('')
   const portalPrefixes = ['/student', '/teacher', '/supervisor', '/dashboard', '/school-admin', '/org', '/owner', '/school-setup', '/take-exam', '/build-my-school']
   const shouldHideForPortal = portalPrefixes.some((p) => pathname.startsWith(p))
-  const shouldHide = ['/login', '/', '/coming-soon', '/maintenance', '/terms', '/privacy', '/demo-exam', '/download', '/it-resources'].includes(pathname) || shouldHideForPortal
+  const shouldHide = ['/login', '/', '/coming-soon', '/maintenance', '/terms', '/privacy', '/demo-exam', '/download', '/it-resources'].includes(pathname) || pathname.startsWith('/demo-exam/') || shouldHideForPortal
 
   useEffect(() => {
     async function loadUser() {

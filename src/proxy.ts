@@ -50,6 +50,7 @@ export async function proxy(request: NextRequest) {
     COMING_SOON_HOSTS.includes(host) &&
     request.nextUrl.pathname !== '/coming-soon' &&
     request.nextUrl.pathname !== '/demo-exam' &&
+    !request.nextUrl.pathname.startsWith('/demo-exam/') &&
     !request.nextUrl.pathname.startsWith('/api/')
   ) {
     return NextResponse.rewrite(new URL('/coming-soon', request.url))
