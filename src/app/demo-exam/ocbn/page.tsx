@@ -96,6 +96,7 @@ export default function OcbnDemoExamPage() {
       introBody="Ten questions about OCBN itself, built on Smart Assess Ja — the same integrity monitoring a real exam uses. Switch tabs or exit fullscreen three times and this exam auto-submits, exactly like a real one would. Your answers are revealed at the end. Nothing here is saved, and this page doesn't need an account."
       enforceStrikes
       revealAnswers
+      passcode="JAOCBN26"
       ctaHref="/build-my-school"
       ctaLabel="Get Smart Assess Ja for your school"
     />

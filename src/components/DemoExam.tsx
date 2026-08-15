@@ -72,6 +72,7 @@ type DemoExamProps = {
   revealAnswers?: boolean
   ctaHref?: string
   ctaLabel?: string
+  passcode?: string
 }
 
 const MAX_VIOLATIONS = 3
@@ -86,8 +87,12 @@ export default function DemoExam({
   revealAnswers = false,
   ctaHref = '/build-my-school',
   ctaLabel = 'Get started',
+  passcode,
 }: DemoExamProps = {}) {
-  const [step, setStep] = useState<'intro' | 'exam' | 'done'>('intro')
+  const storageKey = passcode ? `demoExamUnlock:${examTitle}` : ''
+  const [step, setStep] = useState<'gate' | 'intro' | 'exam' | 'done'>(passcode ? 'gate' : 'intro')
+  const [passcodeInput, setPasscodeInput] = useState('')
+  const [passcodeError, setPasscodeError] = useState(false)
   const [answers, setAnswers] = useState<Record<string, string>>({})
   const [secondsLeft, setSecondsLeft] = useState(DEMO_SECONDS)
   const [toast, setToast] = useState('')
@@ -98,6 +103,22 @@ export default function DemoExam({
   const hasBeenFullscreenRef = useRef(false)
   const finishedRef = useRef(false)
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    if (!passcode) return
+    if (window.localStorage.getItem(storageKey) === 'true') setStep('intro')
+  }, [passcode, storageKey])
+
+  function submitPasscode(e: React.FormEvent) {
+    e.preventDefault()
+    if (passcode && passcodeInput.trim().toLowerCase() === passcode.trim().toLowerCase()) {
+      window.localStorage.setItem(storageKey, 'true')
+      setPasscodeError(false)
+      setStep('intro')
+    } else {
+      setPasscodeError(true)
+    }
+  }
 
   const showToast = useCallback((message: string) => {
     setToast(message)
@@ -218,6 +239,33 @@ export default function DemoExam({
   const seconds = secondsLeft % 60
   const timeLow = secondsLeft < 30
   const score = questions.filter((q) => gradeDemo(q, answers[q.id] || '')).length
+
+  if (step === 'gate') {
+    return (
+      <div className="page-container" style={{ maxWidth: 400, textAlign: 'center', paddingTop: 80 }}>
+        <div style={{ fontSize: 28, marginBottom: 12 }}>🔒</div>
+        <h1 style={{ marginBottom: 8, fontSize: 22 }}>This demo requires a passcode</h1>
+        <p style={{ color: 'var(--text-secondary)', marginBottom: 24, fontSize: 14 }}>
+          Enter the passcode you were given to continue.
+        </p>
+        <form onSubmit={submitPasscode} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <input
+            value={passcodeInput}
+            onChange={(e) => { setPasscodeInput(e.target.value); setPasscodeError(false) }}
+            placeholder="Passcode"
+            autoFocus
+            style={{ width: '100%', textAlign: 'center', letterSpacing: 1 }}
+          />
+          {passcodeError && (
+            <div style={{ color: 'var(--danger)', fontSize: 13 }}>That passcode isn&apos;t right. Try again.</div>
+          )}
+          <button type="submit" className="btn btn-primary" style={{ padding: '11px 24px' }}>
+            Continue
+          </button>
+        </form>
+      </div>
+    )
+  }
 
   if (step === 'intro') {
     return (
