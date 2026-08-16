@@ -10,6 +10,7 @@ const schema = z.object({
     teamLeadsEnabled: z.boolean().optional(),
     seniorTeamLeadsEnabled: z.boolean().optional(),
     examCategories: z.array(z.string().max(100)).max(50).optional(),
+    lessonPlanLibraryEnabled: z.boolean().optional(),
   }).strict().optional(),
   accessToken: z.string().min(1).max(4000),
 }).strict()
@@ -35,6 +36,7 @@ export async function POST(req: NextRequest) {
       team_leads_enabled: !!features?.teamLeadsEnabled,
       senior_team_leads_enabled: !!features?.seniorTeamLeadsEnabled,
       exam_categories: Array.isArray(features?.examCategories) ? features.examCategories : [],
+      lesson_plan_library_enabled: !!features?.lessonPlanLibraryEnabled,
     }
 
     const client = new Client({ connectionString: targetDatabaseUrl.trim(), ssl: { rejectUnauthorized: false } })

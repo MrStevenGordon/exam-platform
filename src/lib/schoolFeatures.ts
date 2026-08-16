@@ -7,16 +7,22 @@ export type SchoolFeatures = {
   teamLeadsEnabled: boolean
   seniorTeamLeadsEnabled: boolean
   examCategories: ExamCategory[]
+  lessonPlanLibraryEnabled: boolean
 }
 
 // The full set every school effectively had before this config existed —
 // the default whenever enabled_features is null (unconfigured) or a field
 // within it is missing, so schools that predate this column, or a
 // partially-filled-in config, never silently lose functionality.
+//
+// lessonPlanLibraryEnabled defaults to false, unlike the other flags — it's
+// a new paid add-on, not a pre-existing capability, so a school only gets
+// it once the owner explicitly turns it on.
 const DEFAULT_FEATURES: SchoolFeatures = {
   teamLeadsEnabled: true,
   seniorTeamLeadsEnabled: true,
   examCategories: [...ALL_EXAM_CATEGORIES],
+  lessonPlanLibraryEnabled: false,
 }
 
 export async function getSchoolFeatures(): Promise<SchoolFeatures> {
@@ -25,6 +31,7 @@ export async function getSchoolFeatures(): Promise<SchoolFeatures> {
     team_leads_enabled: boolean
     senior_team_leads_enabled: boolean
     exam_categories: string[]
+    lesson_plan_library_enabled: boolean
   }> | null
 
   if (!raw) return DEFAULT_FEATURES
@@ -33,5 +40,6 @@ export async function getSchoolFeatures(): Promise<SchoolFeatures> {
     teamLeadsEnabled: raw.team_leads_enabled ?? DEFAULT_FEATURES.teamLeadsEnabled,
     seniorTeamLeadsEnabled: raw.senior_team_leads_enabled ?? DEFAULT_FEATURES.seniorTeamLeadsEnabled,
     examCategories: (raw.exam_categories as ExamCategory[] | undefined) ?? DEFAULT_FEATURES.examCategories,
+    lessonPlanLibraryEnabled: raw.lesson_plan_library_enabled ?? DEFAULT_FEATURES.lessonPlanLibraryEnabled,
   }
 }

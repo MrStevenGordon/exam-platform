@@ -23,6 +23,10 @@ const BASE_NAV = [
   { label: 'My Profile', icon: 'ti-user', href: '/teacher/profile' },
 ]
 
+const LESSON_PLANS_NAV = [
+  { label: 'Lesson Plans', icon: 'ti-notebook', href: '/teacher/lesson-plans' },
+]
+
 const TEAM_LEAD_NAV = [
   { label: 'Team Lead Exams', icon: 'ti-crown', href: '/teacher/team-lead' },
 ]
@@ -93,6 +97,7 @@ export default function TeacherLayout({ children }: { children: React.ReactNode 
 
       const nav = [...BASE_NAV]
       if (tlData && tlData.length > 0) nav.splice(4, 0, ...TEAM_LEAD_NAV)
+      if (features.lessonPlanLibraryEnabled) nav.splice(nav.indexOf(BASE_NAV[7]) + 1, 0, ...LESSON_PLANS_NAV)
       if (stlData && stlData.length > 0) nav.splice(nav.length - 1, 0, ...SENIOR_TL_NAV)
       setNavItems(nav)
     }

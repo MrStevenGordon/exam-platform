@@ -28,6 +28,7 @@ export default function SchoolFeaturesPage() {
   const [teamLeadsEnabled, setTeamLeadsEnabled] = useState(true)
   const [seniorTeamLeadsEnabled, setSeniorTeamLeadsEnabled] = useState(true)
   const [examCategories, setExamCategories] = useState<Set<ExamCategory>>(new Set(ALL_EXAM_CATEGORIES))
+  const [lessonPlanLibraryEnabled, setLessonPlanLibraryEnabled] = useState(false)
 
   useEffect(() => { loadData() }, [])
 
@@ -72,6 +73,7 @@ export default function SchoolFeaturesPage() {
           teamLeadsEnabled,
           seniorTeamLeadsEnabled,
           examCategories: Array.from(examCategories),
+          lessonPlanLibraryEnabled,
         },
         accessToken: session?.access_token,
       }),
@@ -129,6 +131,14 @@ export default function SchoolFeaturesPage() {
           <label style={{ fontSize: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
             <input type="checkbox" checked={seniorTeamLeadsEnabled} onChange={(e) => setSeniorTeamLeadsEnabled(e.target.checked)} />
             Senior team leads (cross-department vetting)
+          </label>
+        </div>
+
+        <div style={{ marginBottom: 20 }}>
+          <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', display: 'block', marginBottom: 8 }}>Add-ons</label>
+          <label style={{ fontSize: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <input type="checkbox" checked={lessonPlanLibraryEnabled} onChange={(e) => setLessonPlanLibraryEnabled(e.target.checked)} />
+            Lesson Plan Library ($12.00/teacher/yr)
           </label>
         </div>
 
