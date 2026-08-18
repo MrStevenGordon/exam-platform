@@ -95,7 +95,7 @@ export default function OcbnDemoExamPage() {
       introHeadline="How well do you know the One Caribbean Business Network?"
       introBody="Ten questions about OCBN itself, built on Smart Assess Ja."
       introPoints={[
-        'Real integrity monitoring — switch tabs or exit fullscreen 3 times and it auto-submits, just like a real exam.',
+        'Real integrity monitoring. Switch tabs or exit fullscreen 3 times and it auto-submits, just like a real exam.',
         'Your answers are revealed at the end, and your score joins the live leaderboard.',
         "No account needed, and nothing here is saved beyond your name and score.",
       ]}

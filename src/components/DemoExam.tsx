@@ -72,7 +72,7 @@ type LeaderboardEntry = {
 function scoreLabel(score: number, total: number): string {
   const pct = total > 0 ? score / total : 0
   if (pct === 1) return 'OCBN Insider'
-  if (pct >= 0.7) return 'Sharp — well done'
+  if (pct >= 0.7) return 'Sharp, well done'
   if (pct >= 0.4) return 'Getting there'
   return 'Time to read the newsletter'
 }
@@ -517,7 +517,7 @@ export default function DemoExam({
         {showConfetti && <ConfettiBurst />}
         {autoSubmitted && (
           <div style={{ background: 'rgba(220,38,38,0.08)', border: '1px solid var(--danger)', color: 'var(--danger)', padding: '10px 16px', borderRadius: 8, fontSize: 13, fontWeight: 600, marginBottom: 20, textAlign: 'left' }}>
-            🚫 This exam was auto-submitted after {MAX_VIOLATIONS} integrity violations — exactly what happens on a real exam.
+            🚫 This exam was auto-submitted after {MAX_VIOLATIONS} integrity violations, exactly what happens on a real exam.
           </div>
         )}
         <div style={{ fontSize: 40, marginBottom: 12 }}>{score === questions.length ? '🏆' : '✓'}</div>
@@ -634,7 +634,7 @@ export default function DemoExam({
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 8, flexWrap: 'wrap' }}>
           <span style={{ fontSize: 12, color: 'var(--success)', fontWeight: 600 }}>
-            🔒 Integrity monitoring active{enforceStrikes ? ` — ${violationCount}/${MAX_VIOLATIONS} violations` : ' (demo)'}
+            🔒 Integrity monitoring active{enforceStrikes ? ` · ${violationCount}/${MAX_VIOLATIONS} violations` : ' (demo)'}
           </span>
           {!inFullscreen && <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>Fullscreen was blocked or exited.</span>}
         </div>
