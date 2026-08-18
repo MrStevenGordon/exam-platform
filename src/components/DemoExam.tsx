@@ -113,6 +113,61 @@ function ConfettiBurst() {
   )
 }
 
+const ICE_BREAK_MS = 900
+
+// Plays once over the exam screen the instant it mounts, shattering to
+// reveal the real content underneath -- literal enough to earn the pun.
+// step is already 'exam' and the fullscreen/timer are already running by
+// the time this renders, so nothing here delays the actual start.
+function IceBreakOverlay() {
+  const shards = Array.from({ length: 16 }, (_, i) => i)
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 100, pointerEvents: 'none' }} aria-hidden="true">
+      <style>{`
+        @keyframes ice-shard-fly {
+          0% { transform: translate(0, 0) rotate(0deg) scale(1); opacity: 1; }
+          100% { transform: translate(var(--tx), var(--ty)) rotate(var(--rot)) scale(0.4); opacity: 0; }
+        }
+        @keyframes ice-caption-fade {
+          0%, 45% { opacity: 1; transform: scale(1); }
+          100% { opacity: 0; transform: scale(1.08); }
+        }
+      `}</style>
+      <div style={{ position: 'absolute', inset: 0, display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gridTemplateRows: 'repeat(4, 1fr)' }}>
+        {shards.map((i) => {
+          const row = Math.floor(i / 4)
+          const col = i % 4
+          const angle = (i * 47) % 360
+          const dist = 55 + (i % 5) * 16
+          const tx = `${Math.cos((angle * Math.PI) / 180) * dist}vw`
+          const ty = `${Math.sin((angle * Math.PI) / 180) * dist}vh`
+          const rot = `${(i % 2 === 0 ? 1 : -1) * (130 + i * 11)}deg`
+          const delay = 90 + (row + col) * 28
+          return (
+            <div
+              key={i}
+              style={{
+                background: 'linear-gradient(135deg, rgba(220,238,247,0.96), rgba(163,204,224,0.88))',
+                borderRight: col < 3 ? '1px solid rgba(255,255,255,0.55)' : 'none',
+                borderBottom: row < 3 ? '1px solid rgba(255,255,255,0.55)' : 'none',
+                animation: `ice-shard-fly 600ms ease-in ${delay}ms forwards`,
+                ['--tx' as string]: tx,
+                ['--ty' as string]: ty,
+                ['--rot' as string]: rot,
+              } as React.CSSProperties}
+            />
+          )
+        })}
+      </div>
+      <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', animation: 'ice-caption-fade 650ms ease-out forwards' }}>
+        <div style={{ fontSize: 22, fontWeight: 800, color: '#1E1208', letterSpacing: 0.3 }}>
+          🧊 Breaking the ice…
+        </div>
+      </div>
+    </div>
+  )
+}
+
 const NAME_PATTERN = /^[\p{L}\p{M}\s'-]{1,24}$/u
 
 type DemoExamProps = {
@@ -164,6 +219,7 @@ export default function DemoExam({
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([])
   const [leaderboardLoading, setLeaderboardLoading] = useState(false)
   const [showConfetti, setShowConfetti] = useState(false)
+  const [showIceBreak, setShowIceBreak] = useState(false)
 
   const hasBeenFullscreenRef = useRef(false)
   const finishedRef = useRef(false)
@@ -285,13 +341,20 @@ export default function DemoExam({
   }
 
   function startDemo() {
+    // requestFullscreen must fire synchronously in this click handler or
+    // the browser drops it for losing the user-gesture window -- so it goes
+    // first, before anything else, animation included.
+    document.documentElement.requestFullscreen?.().catch(() => {})
     setStep('exam')
     setSecondsLeft(DEMO_SECONDS)
     setViolationCount(0)
     setAutoSubmitted(false)
     finishedRef.current = false
     hasBeenFullscreenRef.current = false
-    document.documentElement.requestFullscreen?.().catch(() => {})
+    if (leaderboardEnabled && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      setShowIceBreak(true)
+      setTimeout(() => setShowIceBreak(false), ICE_BREAK_MS)
+    }
   }
 
   function tryAgain() {
@@ -548,6 +611,7 @@ export default function DemoExam({
 
   return (
     <div className="page-container" style={{ maxWidth: 640, position: 'relative' }}>
+      {showIceBreak && <IceBreakOverlay />}
       {toast && (
         <div style={{
           position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)', zIndex: 50,
