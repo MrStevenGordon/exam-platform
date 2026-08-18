@@ -96,12 +96,14 @@ export default function OcbnDemoExamPage() {
       introBody="Ten questions about OCBN itself, built on Smart Assess Ja."
       introPoints={[
         'Real integrity monitoring — switch tabs or exit fullscreen 3 times and it auto-submits, just like a real exam.',
-        'Your answers are revealed at the end.',
-        "No account needed, and nothing here is saved.",
+        'Your answers are revealed at the end, and your score joins the live leaderboard.',
+        "No account needed, and nothing here is saved beyond your name and score.",
       ]}
       enforceStrikes
       revealAnswers
       passcode="JAOCBN26"
+      leaderboardEnabled
+      leaderboardEventKey="ocbn-2026-meetup"
       ctaHref="/build-my-school"
       ctaLabel="Get Smart Assess Ja for your school"
     />

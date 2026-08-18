@@ -62,6 +62,59 @@ function gradeDemo(question: Question, answer: string): boolean {
   return answer.trim().toLowerCase() === question.correct.trim().toLowerCase()
 }
 
+type LeaderboardEntry = {
+  firstName: string
+  score: number
+  totalQuestions: number
+  timeSeconds: number
+}
+
+function scoreLabel(score: number, total: number): string {
+  const pct = total > 0 ? score / total : 0
+  if (pct === 1) return 'OCBN Insider'
+  if (pct >= 0.7) return 'Sharp — well done'
+  if (pct >= 0.4) return 'Getting there'
+  return 'Time to read the newsletter'
+}
+
+const CONFETTI_COLORS = ['var(--accent)', '#D4762A', '#8C6020', '#3D7A5B', '#1E1208']
+
+// A one-shot burst on a strong score. Pieces animate to a resting, faded-out
+// state and stay mounted there (animation-fill-mode: forwards) rather than
+// looping, so it reads as a moment, not a decoration.
+function ConfettiBurst() {
+  const pieces = Array.from({ length: 28 }, (_, i) => i)
+  return (
+    <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none', zIndex: 5 }} aria-hidden="true">
+      <style>{`
+        @keyframes demo-confetti-fall {
+          0% { transform: translateY(-20px) rotate(0deg); opacity: 1; }
+          100% { transform: translateY(340px) rotate(540deg); opacity: 0; }
+        }
+      `}</style>
+      {pieces.map((i) => {
+        const left = (i * 37) % 100
+        const delay = (i % 7) * 0.08
+        const duration = 1.6 + (i % 5) * 0.15
+        const size = 6 + (i % 3) * 3
+        const color = CONFETTI_COLORS[i % CONFETTI_COLORS.length]
+        return (
+          <span
+            key={i}
+            style={{
+              position: 'absolute', top: 0, left: `${left}%`, width: size, height: size * 0.4,
+              background: color, borderRadius: 2,
+              animation: `demo-confetti-fall ${duration}s ease-in ${delay}s forwards`,
+            }}
+          />
+        )
+      })}
+    </div>
+  )
+}
+
+const NAME_PATTERN = /^[\p{L}\p{M}\s'-]{1,24}$/u
+
 type DemoExamProps = {
   questions?: Question[]
   introKicker?: string
@@ -74,9 +127,12 @@ type DemoExamProps = {
   ctaHref?: string
   ctaLabel?: string
   passcode?: string
+  leaderboardEnabled?: boolean
+  leaderboardEventKey?: string
 }
 
 const MAX_VIOLATIONS = 3
+const LEADERBOARD_POLL_MS = 5000
 
 export default function DemoExam({
   questions = DEFAULT_QUESTIONS,
@@ -90,6 +146,8 @@ export default function DemoExam({
   ctaHref = '/build-my-school',
   ctaLabel = 'Get started',
   passcode,
+  leaderboardEnabled = false,
+  leaderboardEventKey = 'ocbn-2026',
 }: DemoExamProps = {}) {
   const storageKey = passcode ? `demoExamUnlock:${examTitle}` : ''
   const [step, setStep] = useState<'gate' | 'intro' | 'exam' | 'done'>(passcode ? 'gate' : 'intro')
@@ -101,10 +159,16 @@ export default function DemoExam({
   const [inFullscreen, setInFullscreen] = useState(false)
   const [violationCount, setViolationCount] = useState(0)
   const [autoSubmitted, setAutoSubmitted] = useState(false)
+  const [firstName, setFirstName] = useState('')
+  const [nameTouched, setNameTouched] = useState(false)
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([])
+  const [leaderboardLoading, setLeaderboardLoading] = useState(false)
+  const [showConfetti, setShowConfetti] = useState(false)
 
   const hasBeenFullscreenRef = useRef(false)
   const finishedRef = useRef(false)
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const leaderboardSubmittedRef = useRef(false)
 
   useEffect(() => {
     if (!passcode) return
@@ -233,6 +297,8 @@ export default function DemoExam({
   function tryAgain() {
     setAnswers({})
     setToast('')
+    leaderboardSubmittedRef.current = false
+    setShowConfetti(false)
     startDemo()
   }
 
@@ -241,6 +307,63 @@ export default function DemoExam({
   const seconds = secondsLeft % 60
   const timeLow = secondsLeft < 30
   const score = questions.filter((q) => gradeDemo(q, answers[q.id] || '')).length
+
+  // Submit this attempt's score once the exam ends, then poll the shared
+  // leaderboard so it visibly moves while people are still finishing at the
+  // event -- this only runs once per attempt (leaderboardSubmittedRef),
+  // reset by tryAgain() below for a fresh attempt.
+  useEffect(() => {
+    if (step !== 'done' || !leaderboardEnabled || leaderboardSubmittedRef.current) return
+    leaderboardSubmittedRef.current = true
+
+    const elapsedSeconds = DEMO_SECONDS - secondsLeft
+    const name = firstName.trim()
+
+    async function submitAndPoll() {
+      if (name && NAME_PATTERN.test(name)) {
+        try {
+          await fetch('/api/ocbn-demo/leaderboard', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              eventKey: leaderboardEventKey,
+              firstName: name,
+              score,
+              totalQuestions: questions.length,
+              timeSeconds: elapsedSeconds,
+            }),
+          })
+        } catch {
+          // Leaderboard is a bonus, not the point of the demo -- a failed
+          // submit shouldn't block or alarm anyone at a live event.
+        }
+      }
+
+      if (questions.length > 0 && score / questions.length >= 0.8 && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        setShowConfetti(true)
+      }
+
+      await refreshLeaderboard()
+    }
+
+    async function refreshLeaderboard() {
+      setLeaderboardLoading(true)
+      try {
+        const res = await fetch(`/api/ocbn-demo/leaderboard?eventKey=${encodeURIComponent(leaderboardEventKey)}`)
+        const data = await res.json()
+        if (Array.isArray(data.entries)) setLeaderboard(data.entries)
+      } catch {
+        // Leave whatever leaderboard state we already had.
+      } finally {
+        setLeaderboardLoading(false)
+      }
+    }
+
+    submitAndPoll()
+    const interval = setInterval(refreshLeaderboard, LEADERBOARD_POLL_MS)
+    return () => clearInterval(interval)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step, leaderboardEnabled])
 
   if (step === 'gate') {
     return (
@@ -289,7 +412,33 @@ export default function DemoExam({
             ))}
           </ul>
         )}
-        <button onClick={startDemo} className="btn btn-primary" style={{ padding: '13px 28px', fontSize: 15 }}>
+        {leaderboardEnabled && (
+          <div style={{ marginBottom: 20, maxWidth: 280, marginLeft: 'auto', marginRight: 'auto', textAlign: 'left' }}>
+            <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 0.5, display: 'block', marginBottom: 6 }}>
+              Your first name, for the leaderboard
+            </label>
+            <input
+              value={firstName}
+              onChange={(e) => setFirstName(e.target.value)}
+              onBlur={() => setNameTouched(true)}
+              placeholder="e.g. Steven"
+              maxLength={24}
+              autoFocus
+              style={{ width: '100%' }}
+            />
+            {nameTouched && !NAME_PATTERN.test(firstName.trim()) && (
+              <div style={{ color: 'var(--danger)', fontSize: 12.5, marginTop: 5 }}>
+                Enter your first name to join the leaderboard.
+              </div>
+            )}
+          </div>
+        )}
+        <button
+          onClick={startDemo}
+          className="btn btn-primary"
+          style={{ padding: '13px 28px', fontSize: 15 }}
+          disabled={leaderboardEnabled && !NAME_PATTERN.test(firstName.trim())}
+        >
           Start the demo
         </button>
         <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 16 }}>
@@ -301,18 +450,63 @@ export default function DemoExam({
 
   if (step === 'done') {
     return (
-      <div className="page-container" style={{ maxWidth: 560, textAlign: 'center', paddingTop: 60 }}>
+      <div className="page-container" style={{ maxWidth: 560, textAlign: 'center', paddingTop: 60, position: 'relative' }}>
+        {showConfetti && <ConfettiBurst />}
         {autoSubmitted && (
           <div style={{ background: 'rgba(220,38,38,0.08)', border: '1px solid var(--danger)', color: 'var(--danger)', padding: '10px 16px', borderRadius: 8, fontSize: 13, fontWeight: 600, marginBottom: 20, textAlign: 'left' }}>
             🚫 This exam was auto-submitted after {MAX_VIOLATIONS} integrity violations — exactly what happens on a real exam.
           </div>
         )}
         <div style={{ fontSize: 40, marginBottom: 12 }}>{score === questions.length ? '🏆' : '✓'}</div>
-        <h1 style={{ marginBottom: 8 }}>You scored {score} / {questions.length}</h1>
+        <h1 style={{ marginBottom: 4 }}>You scored {score} / {questions.length}</h1>
+        {leaderboardEnabled && (
+          <p style={{ color: 'var(--accent)', fontWeight: 600, fontSize: 14.5, marginBottom: 8 }}>
+            {scoreLabel(score, questions.length)}
+          </p>
+        )}
         <p style={{ color: 'var(--text-secondary)', marginBottom: 28 }}>
           That&apos;s the exam-taking experience end to end. The real platform adds question banks, review
           workflows, results and reporting, and the integrity monitoring you just saw a taste of.
         </p>
+
+        {leaderboardEnabled && (
+          <div className="card" style={{ textAlign: 'left', marginBottom: 28 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 0.6 }}>
+                Live leaderboard
+              </div>
+              {leaderboardLoading && <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>Updating…</div>}
+            </div>
+            {leaderboard.length === 0 ? (
+              <div style={{ fontSize: 13.5, color: 'var(--text-secondary)' }}>
+                Be the first one on the board.
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {leaderboard.map((entry, i) => {
+                  const isMe = entry.firstName.trim().toLowerCase() === firstName.trim().toLowerCase() && entry.score === score
+                  return (
+                    <div key={`${entry.firstName}-${i}`} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 10px', borderRadius: 8, background: isMe ? 'var(--accent-light)' : 'transparent' }}>
+                      <span style={{ width: 20, fontSize: 13, fontWeight: 700, color: 'var(--text-muted)', fontVariantNumeric: 'tabular-nums' }}>
+                        {i + 1}
+                      </span>
+                      <span style={{ flex: 1, fontSize: 14, fontWeight: isMe ? 700 : 500 }}>
+                        {entry.firstName}{isMe ? ' (you)' : ''}
+                      </span>
+                      <span style={{ fontSize: 13.5, fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>
+                        {entry.score}/{entry.totalQuestions}
+                      </span>
+                      <span style={{ fontSize: 12, color: 'var(--text-muted)', fontVariantNumeric: 'tabular-nums', width: 34, textAlign: 'right' }}>
+                        {entry.timeSeconds}s
+                      </span>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
         <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap', marginBottom: revealAnswers ? 32 : 0 }}>
           <button onClick={tryAgain} className="btn btn-secondary">Try again</button>
           <Link href={ctaHref} className="btn btn-primary">{ctaLabel}</Link>
