@@ -168,6 +168,54 @@ function IceBreakOverlay() {
   )
 }
 
+// Shared between the intro-screen peek and the results screen -- the only
+// difference is whether there's a "you" row to highlight yet.
+function LeaderboardPanel({ entries, loading, highlight }: {
+  entries: LeaderboardEntry[]
+  loading: boolean
+  highlight?: { name: string; score: number }
+}) {
+  return (
+    <div className="card" style={{ textAlign: 'left' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+        <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 0.6 }}>
+          Live leaderboard
+        </div>
+        {loading && <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>Updating…</div>}
+      </div>
+      {entries.length === 0 ? (
+        <div style={{ fontSize: 13.5, color: 'var(--text-secondary)' }}>
+          Be the first one on the board.
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {entries.map((entry, i) => {
+            const isMe = !!highlight
+              && entry.firstName.trim().toLowerCase() === highlight.name.trim().toLowerCase()
+              && entry.score === highlight.score
+            return (
+              <div key={`${entry.firstName}-${i}`} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 10px', borderRadius: 8, background: isMe ? 'var(--accent-light)' : 'transparent' }}>
+                <span style={{ width: 20, fontSize: 13, fontWeight: 700, color: 'var(--text-muted)', fontVariantNumeric: 'tabular-nums' }}>
+                  {i + 1}
+                </span>
+                <span style={{ flex: 1, fontSize: 14, fontWeight: isMe ? 700 : 500 }}>
+                  {entry.firstName}{isMe ? ' (you)' : ''}
+                </span>
+                <span style={{ fontSize: 13.5, fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>
+                  {entry.score}/{entry.totalQuestions}
+                </span>
+                <span style={{ fontSize: 12, color: 'var(--text-muted)', fontVariantNumeric: 'tabular-nums', width: 34, textAlign: 'right' }}>
+                  {entry.timeSeconds}s
+                </span>
+              </div>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
+
 const NAME_PATTERN = /^[\p{L}\p{M}\s'-]{1,24}$/u
 
 type DemoExamProps = {
@@ -220,6 +268,7 @@ export default function DemoExam({
   const [leaderboardLoading, setLeaderboardLoading] = useState(false)
   const [showConfetti, setShowConfetti] = useState(false)
   const [showIceBreak, setShowIceBreak] = useState(false)
+  const [showIntroLeaderboard, setShowIntroLeaderboard] = useState(false)
 
   const hasBeenFullscreenRef = useRef(false)
   const finishedRef = useRef(false)
@@ -230,6 +279,28 @@ export default function DemoExam({
     if (!passcode) return
     if (window.localStorage.getItem(storageKey) === 'true') setStep('intro')
   }, [passcode, storageKey])
+
+  const refreshLeaderboard = useCallback(async () => {
+    setLeaderboardLoading(true)
+    try {
+      const res = await fetch(`/api/ocbn-demo/leaderboard?eventKey=${encodeURIComponent(leaderboardEventKey)}`)
+      const data = await res.json()
+      if (Array.isArray(data.entries)) setLeaderboard(data.entries)
+    } catch {
+      // Leave whatever leaderboard state we already had.
+    } finally {
+      setLeaderboardLoading(false)
+    }
+  }, [leaderboardEventKey])
+
+  // Lets people peek at the board from the intro screen, before playing --
+  // click to reveal, polls only while it's actually open.
+  useEffect(() => {
+    if (!showIntroLeaderboard) return
+    refreshLeaderboard()
+    const interval = setInterval(refreshLeaderboard, LEADERBOARD_POLL_MS)
+    return () => clearInterval(interval)
+  }, [showIntroLeaderboard, refreshLeaderboard])
 
   function submitPasscode(e: React.FormEvent) {
     e.preventDefault()
@@ -409,19 +480,6 @@ export default function DemoExam({
       await refreshLeaderboard()
     }
 
-    async function refreshLeaderboard() {
-      setLeaderboardLoading(true)
-      try {
-        const res = await fetch(`/api/ocbn-demo/leaderboard?eventKey=${encodeURIComponent(leaderboardEventKey)}`)
-        const data = await res.json()
-        if (Array.isArray(data.entries)) setLeaderboard(data.entries)
-      } catch {
-        // Leave whatever leaderboard state we already had.
-      } finally {
-        setLeaderboardLoading(false)
-      }
-    }
-
     submitAndPoll()
     const interval = setInterval(refreshLeaderboard, LEADERBOARD_POLL_MS)
     return () => clearInterval(interval)
@@ -496,6 +554,23 @@ export default function DemoExam({
             )}
           </div>
         )}
+        {leaderboardEnabled && (
+          <div style={{ maxWidth: 360, marginLeft: 'auto', marginRight: 'auto', marginBottom: 24 }}>
+            <button
+              type="button"
+              onClick={() => setShowIntroLeaderboard((v) => !v)}
+              className="btn btn-secondary"
+              style={{ fontSize: 13, padding: '8px 16px' }}
+            >
+              🏆 {showIntroLeaderboard ? 'Hide leaderboard' : 'View live leaderboard'}
+            </button>
+            {showIntroLeaderboard && (
+              <div style={{ marginTop: 12 }}>
+                <LeaderboardPanel entries={leaderboard} loading={leaderboardLoading} />
+              </div>
+            )}
+          </div>
+        )}
         <button
           onClick={startDemo}
           className="btn btn-primary"
@@ -533,40 +608,8 @@ export default function DemoExam({
         </p>
 
         {leaderboardEnabled && (
-          <div className="card" style={{ textAlign: 'left', marginBottom: 28 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 0.6 }}>
-                Live leaderboard
-              </div>
-              {leaderboardLoading && <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>Updating…</div>}
-            </div>
-            {leaderboard.length === 0 ? (
-              <div style={{ fontSize: 13.5, color: 'var(--text-secondary)' }}>
-                Be the first one on the board.
-              </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                {leaderboard.map((entry, i) => {
-                  const isMe = entry.firstName.trim().toLowerCase() === firstName.trim().toLowerCase() && entry.score === score
-                  return (
-                    <div key={`${entry.firstName}-${i}`} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 10px', borderRadius: 8, background: isMe ? 'var(--accent-light)' : 'transparent' }}>
-                      <span style={{ width: 20, fontSize: 13, fontWeight: 700, color: 'var(--text-muted)', fontVariantNumeric: 'tabular-nums' }}>
-                        {i + 1}
-                      </span>
-                      <span style={{ flex: 1, fontSize: 14, fontWeight: isMe ? 700 : 500 }}>
-                        {entry.firstName}{isMe ? ' (you)' : ''}
-                      </span>
-                      <span style={{ fontSize: 13.5, fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>
-                        {entry.score}/{entry.totalQuestions}
-                      </span>
-                      <span style={{ fontSize: 12, color: 'var(--text-muted)', fontVariantNumeric: 'tabular-nums', width: 34, textAlign: 'right' }}>
-                        {entry.timeSeconds}s
-                      </span>
-                    </div>
-                  )
-                })}
-              </div>
-            )}
+          <div style={{ marginBottom: 28 }}>
+            <LeaderboardPanel entries={leaderboard} loading={leaderboardLoading} highlight={{ name: firstName, score }} />
           </div>
         )}
 
