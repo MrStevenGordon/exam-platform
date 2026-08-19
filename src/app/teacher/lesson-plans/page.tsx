@@ -29,6 +29,32 @@ type LessonPlan = {
   created_at: string
 }
 
+type SharedPlan = {
+  id: string
+  school_name: string
+  teacher_name: string | null
+  subject: string
+  grade: string
+  term: string | null
+  unit_theme: string | null
+  focus_strand: string | null
+  topic: string
+  focus_question: string | null
+  duration: string | null
+  attainment_target: string | null
+  specific_objective: string | null
+  skills: string | null
+  prior_learning: string | null
+  materials: string | null
+  engage: string | null
+  explore: string | null
+  explain: string | null
+  elaborate: string | null
+  evaluate: string | null
+  success_criteria: string | null
+  published_at: string
+}
+
 const BODY_FIELDS: { key: keyof LessonPlan; label: string }[] = [
   { key: 'specific_objective', label: 'Specific Objective' },
   { key: 'skills', label: 'Skills' },
@@ -65,6 +91,14 @@ export default function LessonPlansPage() {
   const [errorMsg, setErrorMsg] = useState('')
   const [generating, setGenerating] = useState(false)
   const [generateError, setGenerateError] = useState('')
+  const [libraryPlans, setLibraryPlans] = useState<SharedPlan[]>([])
+  const [libraryLoading, setLibraryLoading] = useState(false)
+  const [libraryError, setLibraryError] = useState('')
+  const [libraryLoaded, setLibraryLoaded] = useState(false)
+  const [librarySearch, setLibrarySearch] = useState('')
+  const [viewingPlan, setViewingPlan] = useState<SharedPlan | null>(null)
+  const [publishingId, setPublishingId] = useState<string | null>(null)
+  const [publishedId, setPublishedId] = useState<string | null>(null)
 
   useEffect(() => {
     async function checkAccess() {
@@ -188,6 +222,85 @@ export default function LessonPlansPage() {
     loadPlans()
   }
 
+  async function loadLibrary(search?: string) {
+    setLibraryLoading(true)
+    setLibraryError('')
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      const params = new URLSearchParams({ accessToken: session?.access_token || '' })
+      if (search?.trim()) params.set('search', search.trim())
+      const res = await fetch(`/api/lesson-plans/library?${params.toString()}`)
+      const data = await res.json()
+      if (!res.ok) {
+        setLibraryError(data.error || 'Could not load the library.')
+        setLibraryPlans([])
+      } else {
+        setLibraryPlans(data.plans || [])
+      }
+    } catch {
+      setLibraryError('Could not load the library.')
+    } finally {
+      setLibraryLoading(false)
+      setLibraryLoaded(true)
+    }
+  }
+
+  function openBrowse() {
+    setTab('browse')
+    if (!libraryLoaded) loadLibrary()
+  }
+
+  function copyToMyPlans(plan: SharedPlan) {
+    setEditingId(null)
+    setForm({
+      subject: plan.subject, grade: plan.grade, term: plan.term || '', unit_theme: plan.unit_theme || '',
+      focus_strand: plan.focus_strand || '', topic: plan.topic, focus_question: plan.focus_question || '',
+      duration: plan.duration || '', attainment_target: plan.attainment_target || '',
+      specific_objective: plan.specific_objective || '', skills: plan.skills || '',
+      prior_learning: plan.prior_learning || '', materials: plan.materials || '',
+      engage: plan.engage || '', explore: plan.explore || '', explain: plan.explain || '',
+      elaborate: plan.elaborate || '', evaluate: plan.evaluate || '', success_criteria: plan.success_criteria || '',
+    })
+    setViewingPlan(null)
+    setGenerateError('')
+    setErrorMsg('')
+    setTab('my-plans')
+    setView('form')
+  }
+
+  async function handlePublish(plan: LessonPlan) {
+    setPublishingId(plan.id)
+    setPublishedId(null)
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      const res = await fetch('/api/lesson-plans/library/publish', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          accessToken: session?.access_token,
+          subject: plan.subject, grade: plan.grade, term: plan.term || undefined,
+          unitTheme: plan.unit_theme || undefined, focusStrand: plan.focus_strand || undefined,
+          topic: plan.topic, focusQuestion: plan.focus_question || undefined,
+          duration: plan.duration || undefined, attainmentTarget: plan.attainment_target || undefined,
+          specificObjective: plan.specific_objective || undefined, skills: plan.skills || undefined,
+          priorLearning: plan.prior_learning || undefined, materials: plan.materials || undefined,
+          engage: plan.engage || undefined, explore: plan.explore || undefined, explain: plan.explain || undefined,
+          elaborate: plan.elaborate || undefined, evaluate: plan.evaluate || undefined,
+          successCriteria: plan.success_criteria || undefined,
+        }),
+      })
+      const data = await res.json()
+      if (res.ok) {
+        setPublishedId(plan.id)
+        setLibraryLoaded(false)
+      } else {
+        setErrorMsg(data.error || 'Could not publish this plan.')
+      }
+    } finally {
+      setPublishingId(null)
+    }
+  }
+
   if (checkingAccess) return <div className="page-container">Loading…</div>
   if (!hasAccess) return null
 
@@ -207,7 +320,7 @@ export default function LessonPlansPage() {
           My Plans
         </button>
         <button
-          onClick={() => setTab('browse')}
+          onClick={openBrowse}
           className="btn btn-ghost"
           style={{ borderBottom: tab === 'browse' ? '2px solid var(--accent)' : '2px solid transparent', borderRadius: 0 }}
         >
@@ -215,9 +328,76 @@ export default function LessonPlansPage() {
         </button>
       </div>
 
-      {tab === 'browse' && (
-        <div className="card" style={{ textAlign: 'center', padding: '40px 24px', color: 'var(--text-secondary)' }}>
-          Cross-school browsing is being wired up next. Plans you build in My Plans are saved and ready to publish once it's live.
+      {tab === 'browse' && !viewingPlan && (
+        <>
+          <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
+            <input
+              value={librarySearch}
+              onChange={(e) => setLibrarySearch(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') loadLibrary(librarySearch) }}
+              placeholder="Search by topic…"
+              style={{ flex: 1 }}
+            />
+            <button onClick={() => loadLibrary(librarySearch)} className="btn btn-secondary">Search</button>
+          </div>
+
+          {libraryLoading ? (
+            <p style={{ color: 'var(--text-secondary)' }}>Loading…</p>
+          ) : libraryError ? (
+            <div className="card" style={{ textAlign: 'center', padding: '40px 24px', color: 'var(--text-secondary)' }}>
+              {libraryError}
+            </div>
+          ) : libraryPlans.length === 0 ? (
+            <div className="card" style={{ textAlign: 'center', padding: '40px 24px', color: 'var(--text-secondary)' }}>
+              No plans shared yet. Publish one of your own from My Plans to get the library started.
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {libraryPlans.map((plan) => (
+                <div key={plan.id} className="card" style={{ cursor: 'pointer' }} onClick={() => setViewingPlan(plan)}>
+                  <div style={{ fontWeight: 600 }}>{plan.topic}</div>
+                  <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 2 }}>
+                    {plan.subject} · {plan.grade}{plan.term ? ` · ${plan.term}` : ''}
+                  </div>
+                  <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 6 }}>
+                    Shared by {plan.school_name}{plan.teacher_name ? ` · ${plan.teacher_name}` : ''}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </>
+      )}
+
+      {tab === 'browse' && viewingPlan && (
+        <div>
+          <button type="button" onClick={() => setViewingPlan(null)} className="btn btn-ghost" style={{ marginBottom: 16, padding: 0 }}>
+            &larr; Back to Browse Library
+          </button>
+          <div className="card" style={{ marginBottom: 16 }}>
+            <div style={{ fontWeight: 700, fontSize: 18, marginBottom: 4 }}>{viewingPlan.topic}</div>
+            <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 4 }}>
+              {viewingPlan.subject} · {viewingPlan.grade}{viewingPlan.term ? ` · ${viewingPlan.term}` : ''}{viewingPlan.duration ? ` · ${viewingPlan.duration}` : ''}
+            </div>
+            <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+              Shared by {viewingPlan.school_name}{viewingPlan.teacher_name ? ` · ${viewingPlan.teacher_name}` : ''}
+            </div>
+          </div>
+          <div className="card" style={{ marginBottom: 16 }}>
+            {BODY_FIELDS.map(({ key, label }) => {
+              const value = viewingPlan[key as keyof SharedPlan]
+              if (!value) return null
+              return (
+                <div key={key} style={{ marginBottom: 14 }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)' }}>{label}</div>
+                  <div style={{ fontSize: 14, marginTop: 4, whiteSpace: 'pre-wrap' }}>{String(value)}</div>
+                </div>
+              )
+            })}
+          </div>
+          <button onClick={() => copyToMyPlans(viewingPlan)} className="btn btn-primary">
+            Copy to My Plans
+          </button>
         </div>
       )}
 
@@ -243,6 +423,15 @@ export default function LessonPlansPage() {
                         {plan.subject} · {plan.grade}{plan.term ? ` · ${plan.term}` : ''}
                       </div>
                     </div>
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); handlePublish(plan) }}
+                      disabled={publishingId === plan.id}
+                      className="btn btn-secondary"
+                      style={{ fontSize: 12.5, flex: 'none' }}
+                    >
+                      {publishingId === plan.id ? 'Publishing…' : publishedId === plan.id ? '✓ Published' : 'Publish to Library'}
+                    </button>
                   </div>
                 </div>
               ))}
