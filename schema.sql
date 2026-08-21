@@ -52,7 +52,7 @@ $$;
 --
 
 CREATE FUNCTION public.is_admin() RETURNS boolean
-    LANGUAGE sql SECURITY DEFINER
+    LANGUAGE sql STABLE SECURITY DEFINER
     SET search_path TO 'public'
     AS $$
   select exists (
@@ -107,7 +107,7 @@ $$;
 --
 
 CREATE FUNCTION public.is_direct_published(check_draft_exam_id uuid) RETURNS boolean
-    LANGUAGE sql SECURITY DEFINER
+    LANGUAGE sql STABLE SECURITY DEFINER
     SET search_path TO 'public'
     AS $$
   select exists (
@@ -123,7 +123,7 @@ $$;
 --
 
 CREATE FUNCTION public.is_enrolled_in(check_class_group_id uuid) RETURNS boolean
-    LANGUAGE sql SECURITY DEFINER
+    LANGUAGE sql STABLE SECURITY DEFINER
     SET search_path TO 'public'
     AS $$
   select exists (
@@ -139,7 +139,7 @@ $$;
 --
 
 CREATE FUNCTION public.is_supervisor() RETURNS boolean
-    LANGUAGE sql SECURITY DEFINER
+    LANGUAGE sql STABLE SECURITY DEFINER
     SET search_path TO 'public'
     AS $$
   select exists (
@@ -172,7 +172,7 @@ $$;
 --
 
 CREATE FUNCTION public.is_system_admin() RETURNS boolean
-    LANGUAGE sql SECURITY DEFINER
+    LANGUAGE sql STABLE SECURITY DEFINER
     SET search_path TO 'public'
     AS $$
   select exists (
@@ -187,7 +187,7 @@ $$;
 --
 
 CREATE FUNCTION public.is_teacher() RETURNS boolean
-    LANGUAGE sql SECURITY DEFINER
+    LANGUAGE sql STABLE SECURITY DEFINER
     SET search_path TO 'public'
     AS $$
   select exists (
@@ -249,7 +249,7 @@ $$;
 --
 
 CREATE FUNCTION public.my_department_id() RETURNS uuid
-    LANGUAGE sql SECURITY DEFINER
+    LANGUAGE sql STABLE SECURITY DEFINER
     SET search_path TO 'public'
     AS $$
   select department_id from profiles where id = auth.uid();
@@ -261,7 +261,7 @@ $$;
 --
 
 CREATE FUNCTION public.my_profile_department_id() RETURNS uuid
-    LANGUAGE sql SECURITY DEFINER
+    LANGUAGE sql STABLE SECURITY DEFINER
     SET search_path TO 'public'
     AS $$
   select department_id from profiles where id = auth.uid()
@@ -273,7 +273,7 @@ $$;
 --
 
 CREATE FUNCTION public.my_role() RETURNS text
-    LANGUAGE sql SECURITY DEFINER
+    LANGUAGE sql STABLE SECURITY DEFINER
     SET search_path TO 'public'
     AS $$
   select role from profiles where id = auth.uid()
@@ -285,7 +285,7 @@ $$;
 --
 
 CREATE FUNCTION public.my_supervised_department() RETURNS uuid
-    LANGUAGE sql SECURITY DEFINER
+    LANGUAGE sql STABLE SECURITY DEFINER
     SET search_path TO 'public'
     AS $$
   select id from departments where head_id = auth.uid();
@@ -312,7 +312,7 @@ $$;
 --
 
 CREATE FUNCTION public.owns_draft_exam(check_draft_exam_id uuid) RETURNS boolean
-    LANGUAGE sql SECURITY DEFINER
+    LANGUAGE sql STABLE SECURITY DEFINER
     SET search_path TO 'public'
     AS $$
   select exists (
