@@ -5,7 +5,7 @@ import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { releaseDeviceLock } from '@/lib/studentDeviceLock'
-import { useUnreadMessageCount } from '@/lib/useUnreadMessages'
+import { useUnreadMessageCount, requestMessageNotificationPermission } from '@/lib/useUnreadMessages'
 
 type NavItem = { label: string; icon: string; href: string }
 type SidebarProps = {
@@ -42,6 +42,19 @@ function SidebarInner({ navItems, portalLabel, resolveActivePathname }: SidebarP
   const [mobileOpen, setMobileOpen] = useState(false)
   const [schoolLogoUrl, setSchoolLogoUrl] = useState<string | null>(null)
   const unreadMessages = useUnreadMessageCount()
+  const hasMessagesNav = navItems.some((i) => i.href.endsWith('/messages'))
+  const [notifPermission, setNotifPermission] = useState<NotificationPermission | 'unsupported'>('unsupported')
+
+  useEffect(() => {
+    if (typeof Notification !== 'undefined') setNotifPermission(Notification.permission)
+  }, [])
+
+  async function handleEnableNotifications() {
+    requestMessageNotificationPermission()
+    // requestPermission's promise result can be unreliable across browsers;
+    // Notification.permission itself is the source of truth once settled.
+    setTimeout(() => setNotifPermission(Notification.permission), 300)
+  }
 
   useEffect(() => {
     async function loadProfile() {
@@ -128,6 +141,38 @@ function SidebarInner({ navItems, portalLabel, resolveActivePathname }: SidebarP
           })
         })()}
       </nav>
+
+      {/* Message notification opt-in */}
+      {hasMessagesNav && notifPermission !== 'unsupported' && (
+        <div style={{ padding: '0 10px 10px' }}>
+          {notifPermission === 'granted' && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 12px', fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>
+              <i className="ti ti-bell-check" style={{ fontSize: 13 }} />
+              Message notifications on
+            </div>
+          )}
+          {notifPermission === 'default' && (
+            <button
+              onClick={handleEnableNotifications}
+              style={{
+                width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '7px 12px',
+                fontSize: 12, fontWeight: 600, background: 'rgba(255,255,255,0.06)',
+                border: '1px solid rgba(255,255,255,0.12)', borderRadius: 6,
+                color: 'rgba(255,255,255,0.6)', cursor: 'pointer', textAlign: 'left',
+              }}
+            >
+              <i className="ti ti-bell" style={{ fontSize: 14, flexShrink: 0 }} />
+              Enable message notifications
+            </button>
+          )}
+          {notifPermission === 'denied' && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 12px', fontSize: 11, color: 'rgba(255,255,255,0.3)' }}>
+              <i className="ti ti-bell-off" style={{ fontSize: 13 }} />
+              Notifications blocked in browser settings
+            </div>
+          )}
+        </div>
+      )}
 
       {/* User */}
       <div style={{ padding: '12px 14px', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
