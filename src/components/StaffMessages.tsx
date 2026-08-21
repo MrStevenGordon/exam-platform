@@ -65,7 +65,9 @@ export default function StaffMessages() {
         const msg = payload.new as Message
         setMessages((prev) => (prev.some((m) => m.id === msg.id) ? prev : [...prev, msg]))
         if (msg.conversation_id === selectedIdRef.current) {
-          supabase.rpc('mark_conversation_read', { conv_id: msg.conversation_id })
+          supabase.rpc('mark_conversation_read', { conv_id: msg.conversation_id }).then(() => {
+            window.dispatchEvent(new Event('unread-messages-changed'))
+          })
         }
       })
       .subscribe()
@@ -76,6 +78,7 @@ export default function StaffMessages() {
     if (!selectedId) return
     supabase.rpc('mark_conversation_read', { conv_id: selectedId }).then(() => {
       setReadState((prev) => ({ ...prev, [selectedId]: new Date().toISOString() }))
+      window.dispatchEvent(new Event('unread-messages-changed'))
     })
   }, [selectedId])
 

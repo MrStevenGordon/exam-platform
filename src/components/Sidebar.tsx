@@ -5,6 +5,7 @@ import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { releaseDeviceLock } from '@/lib/studentDeviceLock'
+import { useUnreadMessageCount } from '@/lib/useUnreadMessages'
 
 type NavItem = { label: string; icon: string; href: string }
 type SidebarProps = {
@@ -40,6 +41,7 @@ function SidebarInner({ navItems, portalLabel, resolveActivePathname }: SidebarP
   const [profile, setProfile] = useState<{ full_name: string; role: string; student_id?: string | null; grade_level?: number | null; departments?: { name: string } | null } | null>(null)
   const [mobileOpen, setMobileOpen] = useState(false)
   const [schoolLogoUrl, setSchoolLogoUrl] = useState<string | null>(null)
+  const unreadMessages = useUnreadMessageCount()
 
   useEffect(() => {
     async function loadProfile() {
@@ -96,6 +98,7 @@ function SidebarInner({ navItems, portalLabel, resolveActivePathname }: SidebarP
           const hasExactMatch = navItems.some((i) => i.href === activePathname)
           return navItems.map((item) => {
             const isActive = hasExactMatch ? item.href === activePathname : (item.href !== '/' && activePathname?.startsWith(item.href))
+            const showUnreadBadge = item.href.endsWith('/messages') && unreadMessages > 0
             return (
               <Link key={item.href} href={item.href} onClick={() => setMobileOpen(false)} style={{ textDecoration: 'none' }}>
                 <div style={{
@@ -109,7 +112,16 @@ function SidebarInner({ navItems, portalLabel, resolveActivePathname }: SidebarP
                   transition: 'all 0.1s',
                 }}>
                   <i className={`ti ${item.icon}`} style={{ fontSize: 16, flexShrink: 0 }} />
-                  <span>{item.label}</span>
+                  <span style={{ flex: 1 }}>{item.label}</span>
+                  {showUnreadBadge && (
+                    <span style={{
+                      background: '#D4762A', color: '#fff', fontSize: 10, fontWeight: 700,
+                      borderRadius: 100, minWidth: 16, height: 16, padding: '0 5px',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                    }}>
+                      {unreadMessages > 9 ? '9+' : unreadMessages}
+                    </span>
+                  )}
                 </div>
               </Link>
             )
