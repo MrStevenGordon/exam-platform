@@ -15,14 +15,11 @@ export type SchoolFeatures = {
 // within it is missing, so schools that predate this column, or a
 // partially-filled-in config, never silently lose functionality.
 //
-// lessonPlanLibraryEnabled defaults to false, unlike the other flags — it's
-// a new paid add-on, not a pre-existing capability, so a school only gets
-// it once the owner explicitly turns it on.
 const DEFAULT_FEATURES: SchoolFeatures = {
   teamLeadsEnabled: true,
   seniorTeamLeadsEnabled: true,
   examCategories: [...ALL_EXAM_CATEGORIES],
-  lessonPlanLibraryEnabled: false,
+  lessonPlanLibraryEnabled: true,
 }
 
 export async function getSchoolFeatures(): Promise<SchoolFeatures> {

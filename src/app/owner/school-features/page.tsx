@@ -28,7 +28,7 @@ export default function SchoolFeaturesPage() {
   const [teamLeadsEnabled, setTeamLeadsEnabled] = useState(true)
   const [seniorTeamLeadsEnabled, setSeniorTeamLeadsEnabled] = useState(true)
   const [examCategories, setExamCategories] = useState<Set<ExamCategory>>(new Set(ALL_EXAM_CATEGORIES))
-  const [lessonPlanLibraryEnabled, setLessonPlanLibraryEnabled] = useState(false)
+  const [lessonPlanLibraryEnabled, setLessonPlanLibraryEnabled] = useState(true)
 
   useEffect(() => { loadData() }, [])
 
@@ -135,10 +135,10 @@ export default function SchoolFeaturesPage() {
         </div>
 
         <div style={{ marginBottom: 20 }}>
-          <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', display: 'block', marginBottom: 8 }}>Add-ons</label>
+          <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', display: 'block', marginBottom: 8 }}>Included tools</label>
           <label style={{ fontSize: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
             <input type="checkbox" checked={lessonPlanLibraryEnabled} onChange={(e) => setLessonPlanLibraryEnabled(e.target.checked)} />
-            Lesson Plan Library ($12.00/teacher/yr)
+            Lesson Plan Library (included automatically, no charge)
           </label>
         </div>
 
