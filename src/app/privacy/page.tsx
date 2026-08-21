@@ -40,7 +40,7 @@ export default function PrivacyPolicyPage() {
                 ['Identity & contact', 'Students, staff, orgs', 'Login, communication, class rosters'],
                 ['Exam content & answers', 'Students, teachers, orgs', 'Delivering, grading, and reporting on exams'],
                 ['Exam integrity signals', 'Students (during proctored exams)', 'Flagging possible integrity concerns for a teacher to review'],
-                ['Payment records', 'Schools, organizations', 'Billing (plan, amount, reference note only — never card or bank login details)'],
+                ['Payment records', 'Schools, organizations', 'Billing (plan, amount, reference note only, never card or bank login details)'],
                 ['Technical & error data', 'Everyone', 'Keeping you logged in, diagnosing bugs (including short screen replays and click-frustration signals to help us find and fix problems)'],
                 ['Chat assistant messages', 'Everyone (site visitors and logged-in users)', 'Answering questions and reviewing/improving the assistant’s answers'],
               ].map(([cat, from, use], i, arr) => (
@@ -88,7 +88,7 @@ export default function PrivacyPolicyPage() {
           <p>If you use the chat assistant (the &quot;?&quot; icon), we store the messages you send it and its
           replies, so we can review and improve its answers. If you&apos;re logged in when you use it, we also
           store your role (e.g. teacher, student) at the time, so we know what kind of question it was
-          answering — the assistant itself is never given access to your actual account data, exam results,
+          answering. The assistant itself is never given access to your actual account data, exam results,
           or session status, only general information about how the platform works.</p>
         </Section>
 
@@ -101,14 +101,14 @@ export default function PrivacyPolicyPage() {
         <Section title="Our use of AI">
           <p style={{ marginBottom: 12 }}>Two optional features use a third-party AI service (Anthropic): polishing the wording of a question a
           teacher is writing, and extracting questions from a PDF a teacher uploads. Both are opt-in, both only
-          process content a staff member explicitly submits in that moment, and both produce suggestions only —
-          a human teacher always reviews and decides whether to use the output.</p>
+          process content a staff member explicitly submits in that moment, and both produce suggestions only.
+          A human teacher always reviews and decides whether to use the output.</p>
           <p style={{ marginBottom: 12 }}>The chat assistant (the &quot;?&quot; icon) also uses Anthropic to generate its replies. It only answers
-          general questions about how the platform works, using information we&apos;ve given it — it has no access
+          general questions about how the platform works, using information we&apos;ve given it. It has no access
           to your account, your data, or anyone else&apos;s, and is instructed to say so and point you to a real
           person rather than guess if you ask it something account-specific.</p>
           <p>When a school or organization submits a sign-up request, we also use Anthropic to draft a short
-          internal summary of that request for our own staff to review — it&apos;s never shown to the requester,
+          internal summary of that request for our own staff to review. It&apos;s never shown to the requester,
           never changes what you submitted, and never approves or rejects anything on its own; a person always
           makes that decision. We do not use AI to grade students, make integrity determinations, or make any
           decision about a student without a human reviewing it first.</p>

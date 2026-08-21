@@ -1,0 +1,764 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Smart Assess Ja — Architecture Map</title>
+<style>
+  :root {
+    --bg: #0F0F0F; --panel: #161616; --panel-2: #1c1c1c; --border: #2a2a2a;
+    --text: #e8e8e8; --muted: #8a8a8a;
+    --client: #4ea1ff; --route: #7bd389; --service: #c792ea; --db: #ffb86b;
+    --external: #ff6b9d; --critical: #ff3860; --accent: #f5b942; --accent-2: #ff7a45;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text); font-family: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; overflow: hidden; }
+  #app { display: flex; height: 100%; }
+  #canvas-wrap { flex: 1; position: relative; overflow: hidden; background: radial-gradient(circle at 20% 20%, #141414 0%, #0a0a0a 100%); }
+  #topbar { position: absolute; top: 0; left: 0; right: 0; z-index: 10; display: flex; align-items: center; gap: 8px; padding: 12px 16px; background: linear-gradient(180deg, rgba(15,15,15,0.95), rgba(15,15,15,0.0)); flex-wrap: wrap; }
+  .title { font-weight: 700; font-size: 14px; margin-right: 12px; color: var(--text); }
+  .chip { font-size: 12px; padding: 6px 12px; border-radius: 100px; border: 1px solid var(--border); background: var(--panel); color: var(--muted); cursor: pointer; user-select: none; transition: all .15s; }
+  .chip:hover { border-color: var(--accent); color: var(--text); }
+  .chip.active { background: var(--accent); color: #1a1200; border-color: var(--accent); font-weight: 700; }
+  #zoom-controls { position: absolute; bottom: 16px; left: 16px; z-index: 10; display: flex; gap: 6px; }
+  #zoom-controls button { width: 30px; height: 30px; border-radius: 6px; border: 1px solid var(--border); background: var(--panel); color: var(--text); cursor: pointer; font-size: 15px; }
+  #zoom-controls button:hover { border-color: var(--accent); }
+  svg { width: 100%; height: 100%; cursor: grab; }
+  svg.panning { cursor: grabbing; }
+  .cluster-box { fill-opacity: 0.06; stroke-opacity: 0.35; }
+  .cluster-label { font-size: 12px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; fill: var(--muted); }
+  .node-rect { stroke-width: 1.4; cursor: pointer; transition: opacity .15s; }
+  .node-rect.critical { stroke-width: 2.2; }
+  .node-rect.dead { stroke-dasharray: 4 3; }
+  .node-label { font-size: 12.5px; font-weight: 700; fill: var(--text); pointer-events: none; }
+  .node-sub { font-size: 10.5px; fill: var(--muted); pointer-events: none; }
+  .node-sub.dead { fill: var(--critical); font-weight: 700; }
+  .node-group { transition: opacity .15s; }
+  .node-group.dimmed { opacity: 0.15; }
+  .edge-path { fill: none; transition: opacity .15s, stroke-width .15s; }
+  .edge-path.dimmed { opacity: 0.06; }
+  .edge-path.highlighted { stroke-width: 3; }
+  .edge-label { font-size: 9.5px; fill: var(--muted); pointer-events: none; transition: opacity .15s; }
+  .edge-label.dimmed { opacity: 0.08; }
+  .badge { font-size: 9px; font-weight: 800; fill: #fff; }
+  #sidebar { width: 380px; background: var(--panel); border-left: 1px solid var(--border); overflow-y: auto; padding: 20px; flex: none; }
+  #sidebar h2 { font-size: 16px; margin: 0 0 4px; }
+  #sidebar .path { font-family: ui-monospace, Menlo, monospace; font-size: 11px; color: var(--accent); word-break: break-all; margin-bottom: 14px; }
+  #sidebar .role { font-size: 13px; color: var(--text); margin-bottom: 10px; line-height: 1.5; }
+  #sidebar .plain-box { background: var(--panel-2); border: 1px solid var(--border); border-radius: 8px; padding: 12px; margin-bottom: 14px; font-size: 13px; line-height: 1.6; color: var(--text); }
+  #sidebar .plain-box .lbl { font-size: 10px; text-transform: uppercase; letter-spacing: 0.6px; color: var(--muted); font-weight: 700; margin-bottom: 6px; }
+  #sidebar ul { margin: 0 0 14px; padding-left: 18px; font-size: 12.5px; color: var(--muted); line-height: 1.7; }
+  #sidebar .section-lbl { font-size: 10px; text-transform: uppercase; letter-spacing: 0.6px; color: var(--muted); font-weight: 700; margin: 16px 0 8px; border-top: 1px solid var(--border); padding-top: 14px; }
+  #sidebar .edge-row { font-size: 12px; padding: 5px 0; color: var(--text); }
+  #sidebar .edge-row .k { color: var(--muted); }
+  .sev-high { color: var(--critical); } .sev-med { color: var(--accent-2); } .sev-low { color: var(--accent); }
+  #sidebar .finding { font-size: 12.5px; margin-bottom: 10px; padding-left: 14px; border-left: 2px solid var(--accent); line-height: 1.5; }
+  .legend-row { display: flex; align-items: center; gap: 8px; font-size: 11.5px; color: var(--muted); margin-bottom: 6px; }
+  .legend-dot { width: 10px; height: 10px; border-radius: 3px; flex: none; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="canvas-wrap">
+    <div id="topbar">
+      <span class="title">Smart Assess Ja — Architecture</span>
+      <div class="chip active" data-filter="overview">Overview</div>
+      <div class="chip" data-filter="critical">Critical path</div>
+      <div class="chip" data-filter="auth">Auth &amp; access</div>
+      <div class="chip" data-filter="ai">AI features</div>
+      <div class="chip" data-filter="lessonlib">Lesson library</div>
+      <div class="chip" data-filter="leads">Leads &amp; marketing</div>
+      <div class="chip" data-filter="all">Show all wires</div>
+      <div class="chip" data-filter="findings">Roadmap &amp; bugs</div>
+    </div>
+    <svg id="svg" viewBox="0 0 1620 1000">
+      <defs>
+        <marker id="arrow-normal" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#5a5a5a"/></marker>
+        <marker id="arrow-critical" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#ff3860"/></marker>
+        <marker id="arrow-api" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#ff7a45"/></marker>
+        <marker id="arrow-db" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#ffb86b"/></marker>
+        <marker id="arrow-mount" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#4ea1ff"/></marker>
+      </defs>
+      <g id="viewport"></g>
+    </svg>
+    <div id="zoom-controls">
+      <button id="zoom-fit" title="Fit">⤢</button>
+      <button id="zoom-in" title="Zoom in">+</button>
+      <button id="zoom-out" title="Zoom out">−</button>
+    </div>
+  </div>
+  <div id="sidebar"></div>
+</div>
+
+<script>
+const clusters = [
+  { id: 'client',   label: 'Client (React / App Router pages)', x: 30,   y: 60, w: 240, h: 900, color: '#4ea1ff' },
+  { id: 'entry',    label: 'Server entry',                      x: 300,  y: 60, w: 180, h: 320, color: '#4ea1ff' },
+  { id: 'routes',   label: 'API routes',                        x: 510,  y: 60, w: 260, h: 900, color: '#7bd389' },
+  { id: 'services', label: 'Services (src/lib)',                 x: 800,  y: 60, w: 220, h: 900, color: '#c792ea' },
+  { id: 'data',     label: 'Data (Postgres, per school)',        x: 1050, y: 60, w: 220, h: 900, color: '#ffb86b' },
+  { id: 'external', label: 'External services',                  x: 1300, y: 60, w: 290, h: 620, color: '#ff6b9d' },
+];
+
+const N = (id, cluster, label, sub, x, y, w, h, color, opts = {}) => ({
+  id, cluster, label, sub, x, y, w, h, color, ...opts
+});
+
+const nodes = [
+  // ---------------- CLIENT ----------------
+  N('home-page', 'client', 'page.tsx', 'homepage', 50, 100, 200, 56, 'client', {
+    role: 'Marketing homepage: hero, features, how-it-works, contact form.',
+    plain: 'The first page a visitor sees. Explains what Smart Assess Ja does and has a contact form and demo request buttons.',
+    path: 'src/app/page.tsx',
+    notes: ['Renders NavBar + ChatWidget globally via layout', 'Contact form posts to a lead-capture route', 'Stat strip: "9 exam formats, 6 role-based portals, 0 paper needed"'],
+    tag: ['overview', 'leads', 'all'],
+  }),
+  N('take-exam-page', 'client', 'take/page.tsx', 'student exam-taking screen', 50, 176, 200, 64, 'client', {
+    critical: true,
+    role: 'Renders exam questions, times the session, and writes answers directly to Postgres via the Supabase client (no API-route layer in between).',
+    plain: 'This is the actual screen a student sees while sitting an exam — the questions, the timer, and the "your answers are being saved" logic all live here.',
+    path: 'src/app/student/exam/[id]/take/page.tsx',
+    notes: ['Line 349: supabase.from(\'responses\').upsert() writes answers straight from the client', 'Line 364/386: exam_sessions.update() flags tab-switch violations', 'Options are shuffled with a seeded PRNG (mulberry32, lines 13-31) so shuffle order is stable per session but different per student', 'Falls back to local IndexedDB via examOfflineStore when offline'],
+    tag: ['overview', 'critical', 'auth', 'all'],
+  }),
+  N('demo-exam', 'client', 'DemoExam.tsx', 'public + OCBN demo component', 50, 252, 200, 56, 'client', {
+    role: 'Reusable prop-driven demo exam used by both the public /demo-exam page and the OCBN event page.',
+    plain: 'A generalized, "try it yourself" version of the real exam experience, used both for general marketing and for the one-off OCBN networking-event demo.',
+    path: 'src/components/DemoExam.tsx',
+    notes: ['leaderboardEnabled prop gates the OCBN-only leaderboard + ice-break effect', 'Never touches real school data — entirely self-contained'],
+    tag: ['overview', 'leads', 'all'],
+  }),
+  N('chat-widget', 'client', 'ChatWidget.tsx', 'AI help bubble', 50, 328, 200, 56, 'client', {
+    role: 'Global floating "?" chat widget rendered on every public and logged-in page except live exam-taking routes.',
+    plain: 'The little question-mark chat bubble in the corner of the screen that visitors and logged-in users can ask questions to.',
+    path: 'src/components/ChatWidget.tsx',
+    notes: ['EXAM_ROUTE_PATTERNS regex explicitly excludes exam-taking routes — a real integrity decision, not an oversight', 'Posts to /api/chat with an optional accessToken'],
+    tag: ['overview', 'ai', 'all'],
+  }),
+  N('waitlist-form', 'client', 'WaitlistForm.tsx', '+ InvestorForm.tsx', 50, 404, 200, 56, 'client', {
+    role: 'Lead-capture forms on the coming-soon page for prospective schools and investors.',
+    plain: 'The signup boxes on the "coming soon" page that let a school or an investor leave their email to be contacted.',
+    path: 'src/components/WaitlistForm.tsx',
+    notes: ['No separate marketing-consent checkbox — one submit = both a confirmation email and inclusion in the list', 'Honeypot field + Cloudflare Turnstile guard both forms'],
+    tag: ['overview', 'leads', 'all'],
+  }),
+  N('lesson-plans-page', 'client', 'lesson-plans/page.tsx', 'teacher lesson plan builder', 50, 480, 200, 64, 'client', {
+    role: 'Teacher-facing lesson-plan builder with My Plans / Browse Library tabs.',
+    plain: 'Where a teacher writes their own lesson plans, gets AI help drafting one, and can browse or copy plans other schools have shared.',
+    path: 'src/app/teacher/lesson-plans/page.tsx',
+    notes: ['Gated behind school_settings.enabled_features.lessonPlanLibraryEnabled', '"Browse Library" reads from a completely different Supabase project than "My Plans"'],
+    tag: ['overview', 'lessonlib', 'all'],
+  }),
+  N('nav-bar', 'client', 'NavBar.tsx', 'global site chrome', 50, 556, 200, 48, 'client', {
+    role: 'Global navigation bar rendered by the root layout on every route not in its shouldHide exclusion list.',
+    plain: 'The header/menu bar that appears at the top of most pages.',
+    path: 'src/components/NavBar.tsx',
+    notes: ['Fixed this session: was showing "Portal / Log out" to signed-out visitors on any unlisted route', 'Maintains its own path-exclusion list — a recurring source of bugs when new routes are added'],
+    tag: ['overview', 'all'],
+  }),
+  N('build-my-school', 'client', 'build-my-school/page.tsx', '4-step request wizard', 50, 620, 200, 56, 'client', {
+    role: 'Multi-step form where a prospective school requests onboarding.',
+    plain: 'The "sign my school up" form — asks about workflow style, features wanted, then submits for the founder to review.',
+    path: 'src/app/build-my-school/page.tsx',
+    notes: ['4 steps: school info -> workflow -> features -> review', 'No live-content copy issues found in this session\'s pass'],
+    tag: ['overview', 'leads', 'all'],
+  }),
+
+  // ---------------- ENTRY ----------------
+  N('proxy-middleware', 'entry', 'proxy.ts', 'Next.js middleware', 320, 100, 140, 64, 'client', {
+    critical: true,
+    role: 'Runs before every request: maintenance-mode gate, coming-soon domain gate, pitch subdomain rewrite, and /dashboard auth check.',
+    plain: 'A gatekeeper that runs before almost every page loads — decides whether to show the coming-soon page, redirect to a demo subdomain, or check that you\'re logged in.',
+    path: 'src/proxy.ts',
+    notes: ['Line 8: COMING_SOON_HOSTS gates the real domain, not the *.vercel.app URLs', 'Line 12: PITCH_HOST rewrites pitch.smartassessja.com -> /pitch/schools.html', 'Line 63-67: only /dashboard is actually auth-checked here; every portal route\'s auth lives in its own page instead'],
+    tag: ['overview', 'critical', 'auth', 'all'],
+  }),
+  N('root-layout', 'entry', 'layout.tsx', 'root App Router layout', 320, 200, 140, 56, 'client', {
+    role: 'Wraps every page: injects NavBar, ChatWidget, and Sentry instrumentation globally.',
+    plain: 'The outer shell every single page is rendered inside of.',
+    path: 'src/app/layout.tsx',
+    notes: ['Global mount point for NavBar + ChatWidget (see their own per-route exclusion lists)'],
+    tag: ['overview', 'all'],
+  }),
+
+  // ---------------- ROUTES (API) ----------------
+  N('api-chat', 'routes', 'api/chat/route.ts', 'POST', 530, 100, 220, 56, 'route', {
+    role: 'Builds a system prompt from a hand-maintained facts block and proxies to Claude Haiku for the help-widget chat.',
+    plain: 'The backend behind the chat bubble — takes your question, adds context about what the platform can do, and asks the AI to answer.',
+    path: 'src/app/api/chat/route.ts',
+    notes: ['Line 155: model is claude-haiku-4-5-20251001, not Sonnet', 'Line 53-69: system prompt explicitly forbids inventing prices/features and forbids account-specific answers', 'Line 96: rate-limited 20/min per user-or-IP', 'Untrusted visitor input wrapped in <visitor_message> tags (line 144) as prompt-injection defense'],
+    tag: ['overview', 'critical', 'ai', 'all'],
+  }),
+  N('api-lesson-generate', 'routes', 'lesson-plans/generate', 'POST', 530, 176, 220, 56, 'route', {
+    role: 'AI-drafts the 5E body of a lesson plan (Engage/Explore/Explain/Elaborate/Evaluate) from a subject/grade/topic.',
+    plain: 'The "help me draft this" button on the lesson-plan builder — sends your topic to the AI and gets back a full lesson-plan draft.',
+    path: 'src/app/api/lesson-plans/generate/route.ts',
+    notes: ['MONTHLY_LIMIT = 15 per teacher (line 7), tracked via ai_polish_usage table', 'model: claude-sonnet-4-6 (different model than the chat widget)'],
+    tag: ['overview', 'ai', 'lessonlib', 'all'],
+  }),
+  N('api-lesson-library', 'routes', 'lesson-plans/library', 'GET', 530, 252, 220, 56, 'route', {
+    role: 'Browses the shared cross-school lesson-plan library, verifying the caller against their own school\'s auth before querying a different, central Supabase project.',
+    plain: 'Powers "Browse Library" — checks you\'re a real logged-in teacher at your own school, then goes and fetches lesson plans other schools have shared.',
+    path: 'src/app/api/lesson-plans/library/route.ts',
+    notes: ['Two-project auth pattern: identity checked against the caller\'s own school DB, data read from a separate central DB', 'Fails gracefully (503, "not connected yet") if LIBRARY_SUPABASE_URL isn\'t set for that school'],
+    tag: ['lessonlib', 'critical', 'all'],
+  }),
+  N('api-lesson-publish', 'routes', 'lesson-plans/library/publish', 'POST', 530, 328, 220, 56, 'route', {
+    role: 'Copies one lesson plan into the central shared_lesson_plans table, attributed by a school-name env var.',
+    plain: 'The "Publish to Library" button — takes a copy of your lesson plan and makes it visible to every other school.',
+    path: 'src/app/api/lesson-plans/library/publish/route.ts',
+    notes: ['One-way copy, not a live link — editing the original afterward does not update the published copy', 'Attribution comes from NEXT_PUBLIC_SCHOOL_NAME, a per-deployment env var, not a database field'],
+    tag: ['lessonlib', 'all'],
+  }),
+  N('api-ocbn-leaderboard', 'routes', 'ocbn-demo/leaderboard', 'GET + POST', 530, 404, 220, 56, 'route', {
+    role: 'Reads/writes the live OCBN demo-exam leaderboard in the central project.',
+    plain: 'Powers the live scoreboard on the OCBN demo quiz — saves your score and fetches the current top 10.',
+    path: 'src/app/api/ocbn-demo/leaderboard/route.ts',
+    notes: ['RLS on this table is public select/insert by design — it\'s meant to be shown to anyone taking the demo', 'Rate limit is deliberately generous (60/hr) since many attendees share one venue Wi-Fi IP'],
+    tag: ['leads', 'all'],
+  }),
+  N('api-waitlist-submit', 'routes', 'waitlist/submit', 'POST', 530, 480, 220, 56, 'route', {
+    role: 'Validates and inserts a coming-soon-page waitlist signup, then sends two emails via Resend.',
+    plain: 'What actually happens when someone submits the "notify me" form on the coming-soon page.',
+    path: 'src/app/api/waitlist/submit/route.ts',
+    notes: ['Honeypot + Turnstile + 5/hr rate limit', 'Unique index on lower(email) — a duplicate signup is treated as success, not an error'],
+    tag: ['leads', 'all'],
+  }),
+  N('api-school-features', 'routes', 'school-features/configure', 'POST', 530, 556, 220, 56, 'route', {
+    role: 'Owner-only route that opens a direct Postgres connection to a specific school\'s database (from a pasted connection string) to toggle its feature flags.',
+    plain: 'How the founder turns features like the Lesson Plan Library on or off for one specific school, without storing that school\'s database password anywhere.',
+    path: 'src/app/api/school-features/configure/route.ts',
+    notes: ['The connection string is used once and never persisted — by design, per its own comment', 'Requires verifySystemAdmin() — see services cluster'],
+    tag: ['auth', 'all'],
+  }),
+  N('api-stripe-checkout', 'routes', 'stripe-checkout', 'POST', 530, 632, 220, 56, 'route', {
+    role: 'Would create a Stripe Checkout session, but returns 503 whenever STRIPE_SECRET_KEY is unset.',
+    plain: 'The route that would handle card payments — currently disabled, telling anyone who hits it to use bank transfer instead.',
+    path: 'src/app/api/stripe-checkout/route.ts',
+    notes: ['Line 27: hard-gated off — "Card payments are not available yet. Use bank transfer instead."', 'Billing is explicitly paused platform-wide right now, not just this route'],
+    tag: ['auth', 'all'],
+  }),
+  N('api-school-requests', 'routes', 'school-requests/submit', 'POST', 530, 708, 220, 56, 'route', {
+    role: 'Handles a "Build My School" submission: validates, inserts, drafts an AI review summary for staff.',
+    plain: 'What happens behind the scenes when a school finishes the "sign us up" wizard.',
+    path: 'src/app/api/school-requests/submit/route.ts',
+    notes: ['Also triggers an internal staff-notification email'],
+    tag: ['leads', 'ai', 'all'],
+  }),
+  N('direct-db-write', 'routes', '(no route — direct write)', 'client → Postgres, RLS-enforced', 530, 784, 220, 64, 'route', {
+    critical: true,
+    role: 'The exam-taking flow has no API-route layer at all: the browser\'s Supabase client writes straight to responses/exam_sessions, with row-level security as the only access-control boundary.',
+    plain: 'Unlike almost everything else on this map, saving exam answers doesn\'t go through a server-side checkpoint — the student\'s browser talks directly to the database, and the database itself is what decides what they\'re allowed to touch.',
+    path: 'src/app/student/exam/[id]/take/page.tsx:349,364,386,503,505',
+    notes: ['This is a deliberate architectural choice (lower latency for autosave), not an oversight, but it does mean RLS policies on responses/exam_sessions are the entire access-control story here', 'A documented cross-tenant isolation regression test exists to guard this — see access-control matrix doc'],
+    tag: ['overview', 'critical', 'auth', 'all'],
+  }),
+
+  // ---------------- SERVICES ----------------
+  N('lib-ratelimit', 'services', 'rateLimit.ts', '48 lines', 820, 100, 180, 48, 'service', {
+    role: 'Fixed-window IP/user rate limiter backed by a check_rate_limit() Postgres function; fails open on error.',
+    plain: 'A shared helper every public form and API route uses to stop the same person from submitting too many times too fast.',
+    path: 'src/lib/rateLimit.ts',
+    notes: ['Line 12-15: reads real client IP from x-forwarded-for, first entry only', 'Line 35-38: fails open — if the rate-limit check itself errors, the request is let through rather than blocked'],
+    tag: ['overview', 'auth', 'all'],
+  }),
+  N('lib-validatebody', 'services', 'validateBody.ts', '25 lines', 820, 168, 180, 48, 'service', {
+    role: 'Parses and zod-validates a request body, used by nearly every API route in the codebase.',
+    plain: 'A shared checker that makes sure the data sent to an API route is actually shaped the way that route expects, before anything else runs.',
+    path: 'src/lib/validateBody.ts',
+    notes: ['Schemas are expected to use .strict() so unknown fields are rejected, not silently dropped'],
+    tag: ['overview', 'auth', 'all'],
+  }),
+  N('lib-verifysystemadmin', 'services', 'verifySystemAdmin.ts', '24 lines', 820, 236, 180, 48, 'service', {
+    role: 'Re-derives caller identity from their own access token, then checks profiles.is_system_admin server-side.',
+    plain: 'The gatekeeper that confirms someone claiming to be the platform owner actually is, by checking the database rather than trusting anything the browser sends.',
+    path: 'src/lib/verifySystemAdmin.ts',
+    notes: ['Exports the shared supabaseAdmin service-role client used by most other API routes too'],
+    tag: ['auth', 'all'],
+  }),
+  N('lib-schoolfeatures', 'services', 'schoolFeatures.ts', '45 lines', 820, 304, 180, 48, 'service', {
+    role: 'Reads school_settings.enabled_features with a per-field fallback to sensible defaults.',
+    plain: 'Figures out which optional features (team leads, lesson plan library, etc.) a given school actually has turned on.',
+    path: 'src/lib/schoolFeatures.ts',
+    notes: ['Line 25: lessonPlanLibraryEnabled defaults false (paid add-on); every other flag defaults true (pre-existing capability)', 'Per-field ?? fallback (not whole-object) — a partially-configured row never silently disables an existing feature'],
+    tag: ['lessonlib', 'auth', 'all'],
+  }),
+  N('lib-librarydb', 'services', 'libraryDb.ts', '20 lines', 820, 372, 180, 48, 'service', {
+    role: 'Lazily creates a second Supabase admin client pointed at the central library project, distinct from the school\'s own client.',
+    plain: 'The connector that lets a school\'s app talk to the separate, shared lesson-plan-library database.',
+    path: 'src/lib/libraryDb.ts',
+    notes: ['Returns null (not a throw) when LIBRARY_SUPABASE_URL/KEY aren\'t set — callers are expected to handle that gracefully'],
+    tag: ['lessonlib', 'all'],
+  }),
+  N('lib-email', 'services', 'email.ts', 'Resend wrapper', 820, 440, 180, 48, 'service', {
+    role: 'Thin wrapper around the Resend REST API for outbound transactional email.',
+    plain: 'The shared function used whenever the app needs to send an email — confirmations, staff notifications, etc.',
+    path: 'src/lib/email.ts',
+    notes: ['Falls back to a Resend sandbox address in local dev if EMAIL_FROM isn\'t set'],
+    tag: ['overview', 'leads', 'all'],
+  }),
+  N('lib-supabase', 'services', 'supabase.ts', 'browser client', 820, 508, 180, 48, 'service', {
+    role: 'The single browser-side Supabase client instance imported across nearly every client component.',
+    plain: 'The one shared connection object every page uses to talk to the database and to check who\'s logged in.',
+    path: 'src/lib/supabase.ts',
+    notes: ['Uses the publishable (anon) key — safe to ship to the browser; RLS is what actually restricts it'],
+    tag: ['overview', 'auth', 'all'],
+  }),
+  N('lib-offlinestore', 'services', 'examOfflineStore.ts', '104 lines', 820, 576, 180, 56, 'service', {
+    critical: true,
+    role: 'IndexedDB-backed local cache (via idb) for exam answers, violation queue, and pending-submit state during connectivity loss.',
+    plain: 'Keeps a copy of a student\'s exam answers on their own device, so a dropped internet connection during an exam never loses their work.',
+    path: 'src/lib/examOfflineStore.ts',
+    notes: ['9 exported functions: initExamRecord, saveAnswersLocally, queueViolation, etc. (lines 42-104)', 'Used only by the take-exam page and its direct-exam-org equivalent'],
+    tag: ['overview', 'critical', 'all'],
+  }),
+  N('lib-rageclick', 'services', 'rageClickDetector.ts', 'DEAD — zero callers', 820, 644, 180, 56, 'service', {
+    role: 'Listens for 3+ rapid clicks on the same interactive element and flags it to Sentry as a UX failure.',
+    plain: 'Code that\'s supposed to notice when someone is frustratedly clicking a broken button, and quietly report it.',
+    path: 'src/lib/rageClickDetector.ts:47',
+    notes: ['initRageClickDetection() is exported but never imported or called anywhere in the codebase', 'The privacy policy (src/app/privacy/page.tsx) explicitly promises this detection is active — it currently is not', 'Confirmed via grep across every .ts/.tsx file, not just an assumption'],
+    tag: ['findings', 'all'],
+    deadCode: true,
+  }),
+
+  // ---------------- DATA ----------------
+  N('tbl-profiles', 'data', 'profiles', 'per-school table', 1070, 100, 180, 48, 'db', {
+    role: 'One row per user (student/teacher/supervisor/admin), FK to auth.users, drives role-based access everywhere.',
+    plain: 'The table that says who someone is and what kind of account they have (student, teacher, etc.) at their specific school.',
+    path: 'schema.sql (profiles table)',
+    notes: ['is_system_admin flag on this table is the actual owner-permission check, not a JWT claim'],
+    tag: ['overview', 'auth', 'all'],
+  }),
+  N('tbl-exam-sessions', 'data', 'exam_sessions', 'per-school table', 1070, 168, 180, 48, 'db', {
+    critical: true,
+    role: 'One row per student-exam attempt: status, timing, tab-switch count, flagged state.',
+    plain: 'Tracks a single student\'s attempt at a single exam — when they started, how long they have left, and whether anything suspicious happened.',
+    path: 'schema.sql (exam_sessions table)',
+    notes: ['Written directly by the client (see direct-db-write node), not via an API route'],
+    tag: ['overview', 'critical', 'all'],
+  }),
+  N('tbl-responses', 'data', 'responses', 'per-school table', 1070, 236, 180, 48, 'db', {
+    critical: true,
+    role: 'One row per question-answer pair for a session, upserted as the student types.',
+    plain: "A student's actual answers, saved question by question as they work through the exam.",
+    path: 'schema.sql (responses table)',
+    notes: ['Upserted on (session_id, question_id) — safe to write repeatedly without creating duplicates'],
+    tag: ['overview', 'critical', 'all'],
+  }),
+  N('tbl-questions', 'data', 'questions', 'per-school table', 1070, 304, 180, 48, 'db', {
+    role: 'Question bank, shared across draft exams / final exams / self-mocks for a school.',
+    plain: "A school's shared library of exam questions, reused across multiple tests and exams.",
+    path: 'schema.sql (questions table)',
+    notes: ['created_by references profiles; draft_exam_id/section_id link it into a specific exam'],
+    tag: ['overview', 'all'],
+  }),
+  N('tbl-school-settings', 'data', 'school_settings', 'per-school, 1 row', 1070, 372, 180, 48, 'db', {
+    role: 'Single-row-per-school config table holding enabled_features JSONB and subscription flags.',
+    plain: "A school's on/off switches for optional features, plus whether their subscription is active.",
+    path: 'schema.sql (school_settings table)',
+    notes: ['No school "name" column here — a school\'s display name lives in the separate central project instead (school_requests/school_subscriptions)'],
+    tag: ['lessonlib', 'auth', 'all'],
+  }),
+  N('tbl-lesson-plans', 'data', 'lesson_plans', 'per-school table', 1070, 440, 180, 48, 'db', {
+    role: "A teacher's own saved lesson plans, private to their school.",
+    plain: "One school's own teachers' lesson plans, not visible to any other school.",
+    path: 'scripts/migrations/036_lesson_plans.sql',
+    notes: ['Separate from shared_lesson_plans (central project) — easy to confuse the two'],
+    tag: ['lessonlib', 'all'],
+  }),
+  N('tbl-shared-plans', 'data', 'shared_lesson_plans', 'CENTRAL project only', 1070, 508, 180, 56, 'db', {
+    role: 'Cross-school published lesson plans, living in the central/marketing Supabase project rather than any school\'s own database.',
+    plain: 'The public shelf of lesson plans that any school can browse, stored in a shared location outside any individual school\'s own database.',
+    path: 'scripts/migrations/038_shared_lesson_plans.sql',
+    notes: ['RLS enabled with zero permissive policies — reachable only via the service-role key from server-side API routes, never directly from a browser'],
+    tag: ['lessonlib', 'critical', 'all'],
+  }),
+  N('tbl-rate-limits', 'data', 'rate_limits', 'CENTRAL project', 1070, 576, 180, 48, 'db', {
+    role: 'Backing table for check_rate_limit(), keyed by scope:identifier.',
+    plain: 'A counter table used to enforce "don\'t submit this form more than N times per hour."',
+    path: 'scripts/migrations/013_rate_limits.sql',
+    notes: [],
+    tag: ['auth', 'all'],
+  }),
+  N('tbl-waitlist', 'data', 'waitlist_signups + friends', 'investor_inquiries, school_requests', 1070, 644, 180, 56, 'db', {
+    role: 'Central-project marketing/lead tables: waitlist_signups, investor_inquiries, school_requests, pitch_nda_acceptances.',
+    plain: "The founder's actual leads list — everyone who's signed up, expressed investor interest, or requested a school pilot.",
+    path: 'schema.sql (multiple tables)',
+    notes: ['Real business data — deliberately excluded from this session\'s demo-account cleanup'],
+    tag: ['leads', 'all'],
+  }),
+
+  // ---------------- EXTERNAL ----------------
+  N('ext-anthropic', 'external', 'Anthropic API', 'Claude Haiku + Sonnet', 1320, 100, 250, 56, 'external', {
+    critical: true,
+    role: 'Called directly via fetch() to api.anthropic.com/v1/messages — no SDK.',
+    plain: "Anthropic's AI, called directly over the network rather than through a helper library.",
+    path: 'src/app/api/chat/route.ts:147, src/app/api/lesson-plans/generate/route.ts',
+    notes: ['Two different models in use: claude-haiku-4-5-20251001 for chat, claude-sonnet-4-6 for lesson-plan drafting', 'Production key currently reported exhausted of credits — chat widget returns 500 as a result'],
+    tag: ['overview', 'critical', 'ai', 'all'],
+  }),
+  N('ext-supabase-auth', 'external', 'Supabase Auth', 'session + MFA', 1320, 176, 250, 56, 'external', {
+    critical: true,
+    role: 'Handles login, session tokens, and TOTP MFA enrollment/verification for every school\'s own Supabase project.',
+    plain: 'The actual login system — who you are, whether your password is right, and whether you\'ve set up two-factor authentication.',
+    path: 'src/lib/supabase.ts, src/proxy.ts',
+    notes: ['Staff accounts require mandatory TOTP 2FA', 'Each school has its own independent Supabase Auth instance — no shared login across schools'],
+    tag: ['overview', 'critical', 'auth', 'all'],
+  }),
+  N('ext-resend', 'external', 'Resend', 'transactional email', 1320, 252, 250, 48, 'external', {
+    role: 'Outbound email API, called from src/lib/email.ts.',
+    plain: 'The service that actually sends emails on the app\'s behalf.',
+    path: 'src/lib/email.ts',
+    notes: [],
+    tag: ['leads', 'all'],
+  }),
+  N('ext-stripe', 'external', 'Stripe', 'currently disabled', 1320, 320, 250, 48, 'external', {
+    role: 'Payment processing SDK is present (stripe npm package) but STRIPE_SECRET_KEY is unset in production.',
+    plain: 'The credit-card payment system — installed in the code but switched off right now.',
+    path: 'src/app/api/stripe-checkout/route.ts',
+    notes: [],
+    tag: ['findings', 'all'],
+  }),
+  N('ext-sentry', 'external', 'Sentry', 'errors + session replay', 1320, 388, 250, 48, 'external', {
+    role: 'Error tracking with error-biased session replay and rage-click flagging.',
+    plain: 'Catches crashes and bugs automatically and records a short replay of what the screen looked like right before it happened.',
+    path: '@sentry/nextjs, src/lib/rageClickDetector.ts',
+    notes: ['Replay capture is real and wired up; the separate custom rage-click detector is not (see lib-rageclick)'],
+    tag: ['findings', 'all'],
+  }),
+  N('ext-turnstile', 'external', 'Cloudflare Turnstile', 'bot protection', 1320, 456, 250, 48, 'external', {
+    role: 'CAPTCHA-alternative bot check on public forms, no-op when unconfigured.',
+    plain: 'An invisible "prove you\'re not a robot" check on public signup forms.',
+    path: 'src/lib/verifyTurnstile.ts',
+    notes: ['Line 6: returns true (passes) whenever TURNSTILE_SECRET_KEY isn\'t set — ships inert by default, same pattern as Sentry'],
+    tag: ['leads', 'all'],
+  }),
+];
+
+const edges = [
+  // critical path: student sits an exam
+  { from: 'proxy-middleware', to: 'ext-supabase-auth', kind: 'critical', label: '/dashboard · session check', tag: ['critical', 'overview', 'all'] },
+  { from: 'take-exam-page', to: 'ext-supabase-auth', kind: 'critical', label: 'session validate', tag: ['critical', 'overview', 'auth', 'all'] },
+  { from: 'take-exam-page', to: 'lib-offlinestore', kind: 'critical', label: 'autosave · local IndexedDB', tag: ['critical', 'overview', 'all'] },
+  { from: 'take-exam-page', to: 'direct-db-write', kind: 'critical', label: 'answers + integrity events', tag: ['critical', 'overview', 'all'] },
+  { from: 'direct-db-write', to: 'tbl-responses', kind: 'critical', label: 'DB upsert · RLS-enforced', tag: ['critical', 'overview', 'all'] },
+  { from: 'direct-db-write', to: 'tbl-exam-sessions', kind: 'critical', label: 'DB update · RLS-enforced', tag: ['critical', 'overview', 'all'] },
+  { from: 'root-layout', to: 'take-exam-page', kind: 'mount', label: 'route mount', tag: ['critical', 'overview', 'all'] },
+
+  // entry / mounts
+  { from: 'proxy-middleware', to: 'home-page', kind: 'mount', label: 'coming-soon gate', tag: ['overview', 'all'] },
+  { from: 'root-layout', to: 'home-page', kind: 'mount', label: 'route mount', tag: ['overview', 'all'] },
+  { from: 'root-layout', to: 'nav-bar', kind: 'mount', label: 'global mount', tag: ['overview', 'all'] },
+  { from: 'root-layout', to: 'chat-widget', kind: 'mount', label: 'global mount', tag: ['overview', 'ai', 'all'] },
+
+  // chat widget
+  { from: 'chat-widget', to: 'api-chat', kind: 'api', label: 'POST /api/chat', tag: ['overview', 'ai', 'all'] },
+  { from: 'api-chat', to: 'ext-anthropic', kind: 'api', label: 'messages · claude-haiku-4-5', tag: ['overview', 'ai', 'critical', 'all'] },
+  { from: 'api-chat', to: 'tbl-profiles', kind: 'db', label: 'role lookup', tag: ['ai', 'all'] },
+  { from: 'api-chat', to: 'lib-ratelimit', kind: 'normal', label: '20/min per user-or-IP', tag: ['ai', 'auth', 'all'] },
+  { from: 'api-chat', to: 'lib-validatebody', kind: 'normal', label: 'zod schema', tag: ['ai', 'all'] },
+
+  // lesson plan library
+  { from: 'lesson-plans-page', to: 'api-lesson-generate', kind: 'api', label: 'POST · AI draft', tag: ['ai', 'lessonlib', 'all'] },
+  { from: 'api-lesson-generate', to: 'ext-anthropic', kind: 'api', label: 'messages · claude-sonnet-4-6', tag: ['ai', 'lessonlib', 'all'] },
+  { from: 'lesson-plans-page', to: 'api-lesson-library', kind: 'api', label: 'GET · browse', tag: ['lessonlib', 'critical', 'all'] },
+  { from: 'lesson-plans-page', to: 'api-lesson-publish', kind: 'api', label: 'POST · publish', tag: ['lessonlib', 'all'] },
+  { from: 'api-lesson-library', to: 'tbl-profiles', kind: 'db', label: 'auth check · own school', tag: ['lessonlib', 'auth', 'all'] },
+  { from: 'api-lesson-publish', to: 'tbl-profiles', kind: 'db', label: 'auth check · own school', tag: ['lessonlib', 'auth', 'all'] },
+  { from: 'api-lesson-library', to: 'lib-librarydb', kind: 'normal', label: 'central client', tag: ['lessonlib', 'critical', 'all'] },
+  { from: 'api-lesson-publish', to: 'lib-librarydb', kind: 'normal', label: 'central client', tag: ['lessonlib', 'all'] },
+  { from: 'lib-librarydb', to: 'tbl-shared-plans', kind: 'db', label: 'read / write', tag: ['lessonlib', 'critical', 'all'] },
+  { from: 'lesson-plans-page', to: 'tbl-lesson-plans', kind: 'db', label: 'My Plans · direct client read/write', tag: ['lessonlib', 'all'] },
+  { from: 'lib-schoolfeatures', to: 'tbl-school-settings', kind: 'db', label: 'read enabled_features', tag: ['lessonlib', 'auth', 'all'] },
+  { from: 'lesson-plans-page', to: 'lib-schoolfeatures', kind: 'normal', label: 'feature-flag check', tag: ['lessonlib', 'all'] },
+
+  // OCBN / demo leaderboard
+  { from: 'demo-exam', to: 'api-ocbn-leaderboard', kind: 'api', label: 'GET/POST score', tag: ['leads', 'all'] },
+  { from: 'api-ocbn-leaderboard', to: 'lib-ratelimit', kind: 'normal', label: '60/hr per IP', tag: ['leads', 'all'] },
+
+  // marketing / leads
+  { from: 'waitlist-form', to: 'api-waitlist-submit', kind: 'api', label: 'POST', tag: ['leads', 'all'] },
+  { from: 'api-waitlist-submit', to: 'tbl-waitlist', kind: 'db', label: 'insert', tag: ['leads', 'all'] },
+  { from: 'api-waitlist-submit', to: 'lib-email', kind: 'normal', label: 'confirm + staff notify', tag: ['leads', 'all'] },
+  { from: 'lib-email', to: 'ext-resend', kind: 'api', label: 'send', tag: ['leads', 'all'] },
+  { from: 'build-my-school', to: 'api-school-requests', kind: 'api', label: 'POST', tag: ['leads', 'all'] },
+  { from: 'api-school-requests', to: 'ext-anthropic', kind: 'api', label: 'AI review-summary draft', tag: ['leads', 'ai', 'all'] },
+  { from: 'api-school-requests', to: 'tbl-waitlist', kind: 'db', label: 'insert · school_requests', tag: ['leads', 'all'] },
+
+  // auth / admin
+  { from: 'api-school-features', to: 'lib-verifysystemadmin', kind: 'normal', label: 'owner-only check', tag: ['auth', 'all'] },
+  { from: 'lib-verifysystemadmin', to: 'tbl-profiles', kind: 'db', label: 'is_system_admin check', tag: ['auth', 'all'] },
+  { from: 'api-school-features', to: 'tbl-school-settings', kind: 'db', label: 'direct pg connection to target school', tag: ['auth', 'all'] },
+  { from: 'api-stripe-checkout', to: 'ext-stripe', kind: 'api', label: 'would create session (currently 503)', tag: ['findings', 'all'] },
+
+  // dead code / findings
+  { from: 'ext-sentry', to: 'lib-rageclick', kind: 'normal', label: 'intended to report to, never called', tag: ['findings', 'all'] },
+];
+
+const FIXES = {
+  'proxy-middleware': [{n: 1, t: 'Fixed a coming-soon gate bug where new nested routes needed exact-match, not prefix-match, updates'}],
+  'nav-bar': [{n: 2, t: 'Fixed NavBar showing logged-in chrome to signed-out visitors on unlisted routes'}],
+  'api-lesson-library': [{n: 3, t: 'Built cross-school library reads as a workaround for not yet having a dedicated central Supabase project'}],
+  'api-lesson-publish': [{n: 3, t: 'Built cross-school library reads as a workaround for not yet having a dedicated central Supabase project'}],
+  'lib-librarydb': [{n: 3, t: 'Built cross-school library reads as a workaround for not yet having a dedicated central Supabase project'}],
+};
+
+const KNOWN_BUGS = {
+  'lib-rageclick': [{ sev: 'low', ref: 'rageClickDetector.ts:47', t: 'initRageClickDetection() is exported but never called — dead code, and the privacy policy promises this feature is active' }],
+  'ext-stripe': [{ sev: 'med', ref: 'stripe-checkout/route.ts:27', t: 'Billing is hard-disabled in production (no STRIPE_SECRET_KEY) — no way to collect real payment yet' }],
+  'ext-anthropic': [{ sev: 'high', ref: 'production env', t: 'Production Anthropic API key reported out of credits — every AI feature (chat, lesson-plan drafting, PDF import) fails' }],
+};
+</script>
+
+<script>
+const svg = document.getElementById('svg');
+const viewport = document.getElementById('viewport');
+const sidebar = document.getElementById('sidebar');
+
+const CLUSTER_COLORS = { client: '#4ea1ff', route: '#7bd389', service: '#c792ea', db: '#ffb86b', external: '#ff6b9d' };
+
+let selectedId = null;
+let currentFilter = 'overview';
+let tx = 0, ty = 0, scale = 0.62;
+let isPanning = false, panStartX = 0, panStartY = 0, panStartTx = 0, panStartTy = 0;
+
+function nodeById(id) { return nodes.find(n => n.id === id); }
+function centerRight(n) { return { x: n.x + n.w, y: n.y + n.h / 2 }; }
+function centerLeft(n) { return { x: n.x, y: n.y + n.h / 2 }; }
+
+function edgeColor(kind) {
+  return kind === 'critical' ? '#ff3860' : kind === 'api' ? '#ff7a45' : kind === 'db' ? '#ffb86b' : kind === 'mount' ? '#4ea1ff' : '#5a5a5a';
+}
+
+function buildPath(a, b) {
+  const p1 = centerRight(a), p2 = centerLeft(b);
+  const dx = Math.max(60, (p2.x - p1.x) / 2);
+  return `M ${p1.x} ${p1.y} C ${p1.x + dx} ${p1.y}, ${p2.x - dx} ${p2.y}, ${p2.x} ${p2.y}`;
+}
+
+function render() {
+  viewport.innerHTML = '';
+
+  clusters.forEach(c => {
+    const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    g.innerHTML = `
+      <rect class="cluster-box" x="${c.x}" y="${c.y}" width="${c.w}" height="${c.h}" rx="10" fill="${c.color}" stroke="${c.color}"></rect>
+      <text class="cluster-label" x="${c.x + 12}" y="${c.y - 12}">${c.label}</text>
+    `;
+    viewport.appendChild(g);
+  });
+
+  const edgeEls = [];
+  edges.forEach((e, i) => {
+    const a = nodeById(e.from), b = nodeById(e.to);
+    if (!a || !b) return;
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('class', 'edge-path');
+    path.setAttribute('d', buildPath(a, b));
+    path.setAttribute('stroke', edgeColor(e.kind));
+    path.setAttribute('stroke-width', e.kind === 'critical' ? 2.4 : 1.4);
+    path.setAttribute('marker-end', `url(#arrow-${e.kind})`);
+    path.dataset.from = e.from; path.dataset.to = e.to; path.dataset.tag = e.tag.join(',');
+    viewport.appendChild(path);
+    edgeEls.push(path);
+
+    const mid = pathMidpoint(a, b);
+    const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    label.setAttribute('class', 'edge-label');
+    label.setAttribute('x', mid.x);
+    label.setAttribute('y', mid.y - 4 + (i % 3) * 10);
+    label.setAttribute('text-anchor', 'middle');
+    label.dataset.tag = e.tag.join(',');
+    label.textContent = e.label;
+    viewport.appendChild(label);
+  });
+
+  nodes.forEach(n => {
+    const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    g.setAttribute('class', 'node-group');
+    g.dataset.id = n.id;
+    g.dataset.tag = (n.tag || []).join(',');
+
+    const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    rect.setAttribute('class', 'node-rect' + (n.critical ? ' critical' : '') + (n.deadCode ? ' dead' : ''));
+    rect.setAttribute('x', n.x); rect.setAttribute('y', n.y);
+    rect.setAttribute('width', n.w); rect.setAttribute('height', n.h);
+    rect.setAttribute('rx', 8);
+    rect.setAttribute('fill', '#161616');
+    rect.setAttribute('stroke', CLUSTER_COLORS[n.color] || '#888');
+    g.appendChild(rect);
+
+    const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    label.setAttribute('class', 'node-label');
+    label.setAttribute('x', n.x + 10); label.setAttribute('y', n.y + 20);
+    label.textContent = n.label;
+    g.appendChild(label);
+
+    const sub = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    sub.setAttribute('class', 'node-sub' + (n.deadCode ? ' dead' : ''));
+    sub.setAttribute('x', n.x + 10); sub.setAttribute('y', n.y + 36);
+    sub.textContent = n.sub;
+    g.appendChild(sub);
+
+    const fixCount = (FIXES[n.id] || []).length;
+    const bugCount = (KNOWN_BUGS[n.id] || []).length;
+    if (fixCount) g.appendChild(badge(n.x + n.w - 34, n.y + 10, '#3ecf8e', fixCount));
+    if (bugCount) g.appendChild(badge(n.x + n.w - 14, n.y + 10, '#ff3860', bugCount));
+
+    g.addEventListener('mouseenter', () => { if (!selectedId) applyHover(n.id); });
+    g.addEventListener('mouseleave', () => { if (!selectedId) applyHover(null); });
+    g.addEventListener('click', (ev) => { ev.stopPropagation(); selectedId = n.id; applyHover(n.id); showSidebar(n.id); });
+
+    viewport.appendChild(g);
+  });
+
+  applyFilter(currentFilter);
+  showDefaultSidebar();
+}
+
+function badge(x, y, color, count) {
+  const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+  const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+  c.setAttribute('cx', x); c.setAttribute('cy', y); c.setAttribute('r', 9); c.setAttribute('fill', color);
+  const t = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+  t.setAttribute('class', 'badge'); t.setAttribute('x', x); t.setAttribute('y', y + 3); t.setAttribute('text-anchor', 'middle');
+  t.textContent = count;
+  g.appendChild(c); g.appendChild(t);
+  return g;
+}
+
+function pathMidpoint(a, b) {
+  const p1 = centerRight(a), p2 = centerLeft(b);
+  return { x: (p1.x + p2.x) / 2, y: (p1.y + p2.y) / 2 };
+}
+
+function applyHover(id) {
+  const groups = viewport.querySelectorAll('.node-group');
+  const edgePaths = viewport.querySelectorAll('.edge-path');
+  const edgeLabels = viewport.querySelectorAll('.edge-label');
+  if (!id) {
+    groups.forEach(g => g.classList.remove('dimmed'));
+    edgePaths.forEach(p => { p.classList.remove('dimmed'); p.classList.remove('highlighted'); });
+    edgeLabels.forEach(l => l.classList.remove('dimmed'));
+    applyFilter(currentFilter);
+    return;
+  }
+  const connected = new Set([id]);
+  edges.forEach(e => { if (e.from === id) connected.add(e.to); if (e.to === id) connected.add(e.from); });
+  groups.forEach(g => g.classList.toggle('dimmed', !connected.has(g.dataset.id)));
+  edgePaths.forEach(p => {
+    const relevant = p.dataset.from === id || p.dataset.to === id;
+    p.classList.toggle('dimmed', !relevant);
+    p.classList.toggle('highlighted', relevant);
+  });
+  edgeLabels.forEach((l, i) => {
+    const e = edges[i];
+    l.classList.toggle('dimmed', !(e.from === id || e.to === id));
+  });
+}
+
+function applyFilter(filter) {
+  currentFilter = filter;
+  document.querySelectorAll('.chip').forEach(c => c.classList.toggle('active', c.dataset.filter === filter));
+  if (selectedId) return;
+  const groups = viewport.querySelectorAll('.node-group');
+  const edgePaths = viewport.querySelectorAll('.edge-path');
+  const edgeLabels = viewport.querySelectorAll('.edge-label');
+  groups.forEach(g => {
+    const tags = g.dataset.tag.split(',');
+    g.classList.toggle('dimmed', !tags.includes(filter));
+  });
+  edgePaths.forEach(p => {
+    const tags = (p.dataset.tag || '').split(',');
+    p.classList.toggle('dimmed', !tags.includes(filter));
+  });
+  edgeLabels.forEach((l) => {
+    const tags = (l.dataset.tag || '').split(',');
+    l.classList.toggle('dimmed', !tags.includes(filter));
+  });
+}
+
+function showSidebar(id) {
+  const n = nodeById(id);
+  if (!n) return;
+  const incoming = edges.filter(e => e.to === id);
+  const outgoing = edges.filter(e => e.from === id);
+  const fixes = FIXES[id] || [];
+  const bugs = KNOWN_BUGS[id] || [];
+
+  sidebar.innerHTML = `
+    <h2>${n.label}</h2>
+    <div class="path">${n.path || ''}</div>
+    <div class="role">${n.role || ''}</div>
+    <div class="plain-box"><div class="lbl">In plain English</div>${n.plain || ''}</div>
+    ${n.notes && n.notes.length ? `<div class="section-lbl">Notes</div><ul>${n.notes.map(x => `<li>${x}</li>`).join('')}</ul>` : ''}
+    ${outgoing.length ? `<div class="section-lbl">Outgoing (${outgoing.length})</div>${outgoing.map(e => `<div class="edge-row"><span class="k">→ ${nodeById(e.to)?.label || e.to}</span> — ${e.label}</div>`).join('')}` : ''}
+    ${incoming.length ? `<div class="section-lbl">Incoming (${incoming.length})</div>${incoming.map(e => `<div class="edge-row"><span class="k">← ${nodeById(e.from)?.label || e.from}</span> — ${e.label}</div>`).join('')}` : ''}
+    ${fixes.length ? `<div class="section-lbl">Fixes this session</div>${fixes.map(f => `<div class="edge-row">#${f.n} ${f.t}</div>`).join('')}` : ''}
+    ${bugs.length ? `<div class="section-lbl">Known issues</div>${bugs.map(b => `<div class="edge-row sev-${b.sev === 'high' ? 'high' : b.sev === 'med' ? 'med' : 'low'}">[${b.sev.toUpperCase()}] ${b.t} <span class="k">(${b.ref})</span></div>`).join('')}` : ''}
+  `;
+}
+
+function showDefaultSidebar() {
+  sidebar.innerHTML = `
+    <h2>Smart Assess Ja</h2>
+    <div class="role">${nodes.length} nodes · ${edges.length} labeled edges. Click any node for detail, or use the filter chips above the canvas.</div>
+
+    <div class="section-lbl">Notable findings from this map</div>
+    <div class="finding"><b>Dead code, confirmed:</b> <code>initRageClickDetection()</code> in <code>rageClickDetector.ts:47</code> is exported but never called anywhere — yet the privacy policy explicitly promises rage-click detection is active. A real policy-vs-code mismatch, not just unused code.</div>
+    <div class="finding"><b>No API layer on the critical path:</b> exam answers write directly from the browser to Postgres (<code>take/page.tsx:349</code>) with row-level security as the only checkpoint — everything else in the app goes through a server-side API route first.</div>
+    <div class="finding"><b>Two different AI models in production:</b> the chat widget uses <code>claude-haiku-4-5-20251001</code>, lesson-plan drafting uses <code>claude-sonnet-4-6</code> — not documented anywhere as an intentional split, worth confirming it's deliberate.</div>
+    <div class="finding"><b>Two-database split for one feature:</b> the Lesson Plan Library spans a school's own project (<code>lesson_plans</code>) and a separate central project (<code>shared_lesson_plans</code>) — easy to forget which table you're looking at.</div>
+    <div class="finding"><b>Billing is fully wired but switched off:</b> Stripe integration exists in code (<code>stripe-checkout/route.ts</code>) but is hard-disabled without an API key — not a bug, but worth knowing before assuming payments work.</div>
+
+    <div class="section-lbl">Legend</div>
+    <div class="legend-row"><span class="legend-dot" style="background:#ff3860"></span> Critical path edge</div>
+    <div class="legend-row"><span class="legend-dot" style="background:#ff7a45"></span> External API call</div>
+    <div class="legend-row"><span class="legend-dot" style="background:#ffb86b"></span> Database read/write</div>
+    <div class="legend-row"><span class="legend-dot" style="background:#4ea1ff"></span> Route mount</div>
+    <div class="legend-row"><span class="legend-dot" style="background:#5a5a5a"></span> Normal call</div>
+  `;
+}
+
+document.querySelectorAll('.chip').forEach(chip => {
+  chip.addEventListener('click', () => { selectedId = null; applyFilter(chip.dataset.filter); showDefaultSidebar(); });
+});
+
+svg.addEventListener('click', (e) => {
+  if (e.target === svg) { selectedId = null; applyHover(null); showDefaultSidebar(); }
+});
+
+function updateTransform() { viewport.setAttribute('transform', `translate(${tx},${ty}) scale(${scale})`); }
+
+svg.addEventListener('mousedown', (e) => {
+  if (e.target.closest('.node-group')) return;
+  isPanning = true; svg.classList.add('panning');
+  panStartX = e.clientX; panStartY = e.clientY; panStartTx = tx; panStartTy = ty;
+});
+window.addEventListener('mousemove', (e) => {
+  if (!isPanning) return;
+  tx = panStartTx + (e.clientX - panStartX);
+  ty = panStartTy + (e.clientY - panStartY);
+  updateTransform();
+});
+window.addEventListener('mouseup', () => { isPanning = false; svg.classList.remove('panning'); });
+
+svg.addEventListener('wheel', (e) => {
+  e.preventDefault();
+  const rect = svg.getBoundingClientRect();
+  const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+  const worldX = (mx - tx) / scale, worldY = (my - ty) / scale;
+  const delta = e.deltaY > 0 ? 0.9 : 1.1;
+  scale = Math.min(2.5, Math.max(0.25, scale * delta));
+  tx = mx - worldX * scale; ty = my - worldY * scale;
+  updateTransform();
+}, { passive: false });
+
+document.getElementById('zoom-in').addEventListener('click', () => { scale = Math.min(2.5, scale * 1.2); updateTransform(); });
+document.getElementById('zoom-out').addEventListener('click', () => { scale = Math.max(0.25, scale * 0.8); updateTransform(); });
+document.getElementById('zoom-fit').addEventListener('click', () => { tx = 20; ty = 10; scale = 0.62; updateTransform(); });
+
+render();
+updateTransform();
+</script>
+</body>
+</html>

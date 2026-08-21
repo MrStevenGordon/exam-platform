@@ -76,7 +76,7 @@ export default function TermsOfServicePage() {
         <Section title="7. Our use of AI">
           Some features (polishing the wording of a question, extracting questions from an uploaded PDF) use a
           third-party AI service. These features are opt-in, only process content a staff member explicitly
-          submits, and produce suggestions only — a human always reviews the output before it&apos;s used. AI
+          submits, and produce suggestions only. A human always reviews the output before it&apos;s used. AI
           is never used to grade a student or make an academic integrity determination on its own.
         </Section>
 
