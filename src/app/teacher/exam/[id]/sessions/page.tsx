@@ -73,6 +73,8 @@ export default function ExamSessionsPage() {
   }
 
   async function handleReleaseOne(sessionId: string) {
+    const target = sessions.find(s => s.id === sessionId)
+    if (!target?.fully_graded) return
     setReleasing(sessionId)
     await supabase.from('exam_sessions').update({ results_released: true }).eq('id', sessionId)
     await notifyReleased([sessionId])
@@ -81,14 +83,16 @@ export default function ExamSessionsPage() {
   }
 
   async function handleReleaseAll() {
-    const eligible = sessions.filter(s => s.status === 'completed' && !s.results_released)
+    // fully_graded excludes sessions with an ungraded essay — total_score
+    // for those is only the auto-graded portion, not a real final score, so
+    // releasing it would show the student a wrong (artificially low) result.
+    const eligible = sessions.filter(s => s.status === 'completed' && !s.results_released && s.fully_graded)
     if (eligible.length === 0) { alert('No unreleased results to release.'); return }
     if (!confirm(`Release results for ${eligible.length} student(s)?`)) return
     setReleasing('all')
     await supabase.from('exam_sessions')
       .update({ results_released: true })
-      .eq('draft_exam_id', examId)
-      .eq('status', 'completed')
+      .in('id', eligible.map(s => s.id))
     await notifyReleased(eligible.map(s => s.id))
     loadData()
     setReleasing(null)
@@ -97,7 +101,7 @@ export default function ExamSessionsPage() {
   if (loading) return <div style={{ padding: 40 }}>Loading...</div>
 
   const completed = sessions.filter(s => s.status === 'completed')
-  const unreleased = completed.filter(s => !s.results_released)
+  const unreleased = completed.filter(s => !s.results_released && s.fully_graded)
   const inProgress = sessions.filter(s => s.status === 'in_progress')
 
   return (
@@ -139,9 +143,15 @@ export default function ExamSessionsPage() {
                   </div>
                   {s.status === 'completed' && (
                     <div style={{ marginTop: 6, fontSize: 14 }}>
-                      {s.total_score !== null
-                        ? <span style={{ fontWeight: 700 }}>{s.total_score} / {s.max_possible_score} ({pct}%)</span>
-                        : <span style={{ color: 'var(--text-muted)' }}>Awaiting grading</span>
+                      {!s.fully_graded
+                        // total_score at this point is only the auto-graded
+                        // portion (essays score null until graded) — showing
+                        // it here would look like a final, and likely wrong,
+                        // score. See Review responses to grade the essay.
+                        ? <span style={{ color: 'var(--warning)', fontWeight: 600 }}>Essay grading pending</span>
+                        : s.total_score !== null
+                          ? <span style={{ fontWeight: 700 }}>{s.total_score} / {s.max_possible_score} ({pct}%)</span>
+                          : <span style={{ color: 'var(--text-muted)' }}>Awaiting grading</span>
                       }
                       {s.results_released && <span style={{ marginLeft: 8, color: 'var(--success)', fontSize: 12, fontWeight: 700 }}>✓ Released</span>}
                     </div>
@@ -166,7 +176,7 @@ export default function ExamSessionsPage() {
                       <Link href={`/teacher/exam/${examId}/review/${s.id}`} style={{ fontSize: 12, color: 'var(--accent-dark)', fontWeight: 600 }}>
                         Review responses
                       </Link>
-                      {!s.results_released && (
+                      {!s.results_released && s.fully_graded && (
                         <button
                           onClick={() => handleReleaseOne(s.id)}
                           disabled={releasing === s.id}

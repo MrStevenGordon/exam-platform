@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
+import { gradeAnswer } from '@/lib/grading'
 
 type Item = {
   id: string
@@ -105,7 +106,7 @@ export default function SelfMockPage() {
 
     const { data: keyData, error: keyError } = await supabase
       .from('self_mock_questions')
-      .select('id, questions(correct_answer, points)')
+      .select('id, questions(question_type, correct_answer, points, marking_points)')
       .eq('self_mock_id', mockId)
 
     if (keyError || !keyData) {
@@ -119,9 +120,13 @@ export default function SelfMockPage() {
 
     for (const row of keyData as any[]) {
       const studentAnswer = answers[row.id] || ''
-      const correctAnswer = row.questions?.correct_answer as string | null
-      const points = row.questions?.points || 0
-      const awarded = correctAnswer && studentAnswer.trim() === correctAnswer.trim() ? points : 0
+      const question = row.questions
+      const points = question?.points || 0
+      // Shared with real exam grading (src/lib/grading.ts) so self-mock
+      // practice scores the same way a real exam would — same
+      // case-insensitive matching, and correctly handles marking_points
+      // (keyword) questions instead of always awarding 0 for them.
+      const awarded = question ? (gradeAnswer(question, studentAnswer) ?? 0) : 0
       score += awarded
       max += points
 

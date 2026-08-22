@@ -75,15 +75,30 @@ export default function TeacherReviewSessionPage() {
   }
 
   async function handleSaveOverrides() {
-    setSaving(true)
     setErrorMsg('')
+
+    // parseFloat (not parseInt) so a partial-credit score like 4.5 isn't
+    // silently truncated, and validate range/NaN before saving — this
+    // input has no native form validation (it's saved via a button click,
+    // not a submit), so min/max on the <input> alone doesn't stop a bad
+    // value from being written straight to the score.
+    for (const [responseId, pts] of Object.entries(overrides)) {
+      const response = responses.find(r => r.id === responseId)
+      const value = parseFloat(pts)
+      if (!response || isNaN(value) || value < 0 || value > response.questions.points) {
+        setErrorMsg(`Enter a valid score between 0 and ${response?.questions.points ?? '?'} for every awarded mark.`)
+        return
+      }
+    }
+
+    setSaving(true)
 
     const { data: { user } } = await supabase.auth.getUser()
 
     for (const [responseId, pts] of Object.entries(overrides)) {
       const { error } = await supabase
         .from('responses')
-        .update({ points_awarded: parseInt(pts), graded_by: user?.id, graded_at: new Date().toISOString() })
+        .update({ points_awarded: parseFloat(pts), graded_by: user?.id, graded_at: new Date().toISOString() })
         .eq('id', responseId)
       if (error) {
         setErrorMsg(`Failed to save one or more marks: ${error.message}`)

@@ -112,14 +112,25 @@ export default function GroupGradingPage() {
   }
 
   async function handleSaveAll() {
-    setSaving(true)
     setErrorMsg('')
+
+    const max = parseFloat(maxScore) || 100
+    for (const m of members) {
+      if (!m.sessionId || m.score === '') continue
+      const value = parseFloat(m.score)
+      if (isNaN(value) || value < 0 || value > max) {
+        setErrorMsg(`Enter a valid score between 0 and ${max} for every member.`)
+        return
+      }
+    }
+
+    setSaving(true)
 
     for (const m of members) {
       if (!m.sessionId || m.score === '') continue
       const { error } = await supabase
         .from('exam_sessions')
-        .update({ total_score: parseFloat(m.score), max_possible_score: parseFloat(maxScore) || 100, fully_graded: true })
+        .update({ total_score: parseFloat(m.score), max_possible_score: max, fully_graded: true })
         .eq('id', m.sessionId)
       if (error) { setErrorMsg(error.message); setSaving(false); return }
     }

@@ -259,8 +259,12 @@ export default function SupervisorExamReviewPage() {
           const assignedIds = new Set<string>()
 
           sections.forEach((s, si) => {
+            // Excludes questions already claimed by an earlier section of the
+            // same question_type — without this, two sections sharing a
+            // type (nothing currently prevents that) would each render
+            // every matching question, duplicating them.
             const sectionQuestions = s.question_type
-              ? questions.filter((q) => q.question_type === s.question_type)
+              ? questions.filter((q) => q.question_type === s.question_type && !assignedIds.has(q.id))
               : []
             sectionQuestions.forEach((q) => assignedIds.add(q.id))
 

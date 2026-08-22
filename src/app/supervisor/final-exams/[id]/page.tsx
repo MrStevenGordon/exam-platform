@@ -94,54 +94,22 @@ export default function SupervisorExamPublishPage() {
   async function handlePublish() {
     if (selectedGroups.size === 0) return
     setPublishing(true)
+    setErrorMsg('')
 
-    const { data: { user } } = await supabase.auth.getUser()
     const password = generatePassword()
 
-    // Create final exam from this draft
-    const { data: finalExam, error: feError } = await supabase
-      .from('final_exams')
-      .insert({
-        title: exam!.title,
-        subject: exam!.subject,
-        instructions: exam!.instructions,
-        duration_minutes: exam!.duration_minutes,
-        status: 'published',
-        department_id: exam!.department_id,
-        exam_category: exam!.exam_kind,
-        access_password: password,
-        published_at: new Date().toISOString(),
-        questions_per_page: exam!.questions_per_page,
-        target_grade: exam!.target_grade,
-        calculator_enabled: exam!.calculator_enabled,
-        created_by: user?.id,
-      })
-      .select()
-      .single()
+    // Creating the final exam, copying questions, linking class groups, and
+    // marking the draft published all happen in one DB transaction (see
+    // publish_final_exam in 041_atomic_final_exam_publish.sql) so a failure
+    // partway through can't leave a "published" exam with missing questions
+    // or no class-group link.
+    const { error } = await supabase.rpc('publish_final_exam', {
+      p_draft_exam_id: examId,
+      p_class_group_ids: Array.from(selectedGroups),
+      p_access_password: password,
+    })
 
-    if (feError) { setErrorMsg(feError.message); setPublishing(false); return }
-
-    // Copy questions to final_exam_questions
-    for (const q of questions) {
-      await supabase.from('final_exam_questions').insert({
-        final_exam_id: finalExam.id,
-        question_id: q.id,
-        order_index: questions.indexOf(q),
-      })
-    }
-
-    // Link class groups
-    await supabase.from('final_exam_class_groups').insert(
-      Array.from(selectedGroups).map((cgId) => ({
-        final_exam_id: finalExam.id,
-        class_group_id: cgId,
-      }))
-    )
-
-    // Mark draft as published, and store the password here too so it can be
-    // shown persistently on this page (same pattern as direct-exam publish),
-    // instead of only ever being visible in a one-time alert.
-    await supabase.from('draft_exams').update({ status: 'published', access_password: password, published_final_exam_id: finalExam.id } as any).eq('id', examId)
+    if (error) { setErrorMsg(error.message); setPublishing(false); return }
 
     setShowPublishModal(false)
     setPublishing(false)

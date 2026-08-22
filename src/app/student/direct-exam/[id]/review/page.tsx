@@ -158,7 +158,7 @@ export default function ReviewDirectExamPage() {
                   <span style={{ marginLeft: 6 }}>{item.answer}</span>
                 )}
               </div>
-              {!isEssay && item.correct_answer && item.answer !== item.correct_answer && (
+              {!isEssay && item.correct_answer && !isCorrect && (
                 <p style={{ margin: '4px 0', fontSize: 14, color: 'var(--success)' }}>
                   <strong>Correct answer:</strong> {item.correct_answer}
                 </p>

@@ -78,6 +78,10 @@ export default function TakeExamQuestionsPage() {
   const handleSubmitRef = useRef<() => void>(() => {})
   const hasBeenFullscreenRef = useRef(false)
   const submittedRef = useRef(false)
+  // Synchronous reentrancy guard for handleSubmit itself — see the matching
+  // comment in student/direct-exam/[id]/take/page.tsx for why submittedRef
+  // alone can't serve this purpose.
+  const submitInFlightRef = useRef(false)
   const intentionalExitRef = useRef(false)
   const latestAnswersRef = useRef<Record<string, string>>({})
   const localSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -305,7 +309,8 @@ export default function TakeExamQuestionsPage() {
   }
 
   async function handleSubmit() {
-    if (!session) return
+    if (!session || submitInFlightRef.current) return
+    submitInFlightRef.current = true
     setErrorMsg('')
 
     // Offline at submit time (e.g. time ran out or the respondent hit
@@ -362,6 +367,7 @@ export default function TakeExamQuestionsPage() {
       } else {
         setErrorMsg(err instanceof Error ? err.message : 'Something went wrong submitting your exam.')
         setSubmitting(false)
+        submitInFlightRef.current = false
       }
     }
   }
@@ -446,7 +452,7 @@ export default function TakeExamQuestionsPage() {
 
               {q.question_type === 'multiple_choice' && q.options && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  {seededShuffle(q.options, questionSeed(session.option_shuffle_seed || 1, q.id)).map((opt, idx) => (
+                  {seededShuffle(q.options, questionSeed(session.option_shuffle_seed ?? 1, q.id)).map((opt, idx) => (
                     <label key={idx} style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', padding: '8px 12px', borderRadius: 8, background: answers[q.id] === opt ? 'var(--accent-light)' : 'var(--page-bg)', border: `1px solid ${answers[q.id] === opt ? 'var(--accent)' : 'var(--border)'}` }}>
                       <input type="radio" name={q.id} checked={answers[q.id] === opt} onChange={() => updateAnswer(q.id, opt)} />
                       {opt}

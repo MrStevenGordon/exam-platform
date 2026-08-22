@@ -103,6 +103,15 @@ export default function TakeDirectExamPage() {
   const handleSubmitRef = useRef<() => void>(() => {})
   const hasBeenFullscreenRef = useRef(false)
   const submittedRef = useRef(false)
+  // Synchronous reentrancy guard for handleSubmit itself. submittedRef gets
+  // set to true by callers right before invoking handleSubmit (so other
+  // effects like auto-submit-on-timeout stop firing), which means checking
+  // it inside handleSubmit can't tell "already submitting" from "about to
+  // submit" — a double-click or a click racing the timer's auto-submit can
+  // still enter handleSubmit twice before React re-renders to disable the
+  // button, each doing its own delete-then-insert into responses and
+  // racing the UNIQUE(session_id, question_id) constraint.
+  const submitInFlightRef = useRef(false)
   const intentionalExitRef = useRef(false)
   const latestAnswersRef = useRef<Record<string, string>>({})
   const latestWorkingsRef = useRef<Record<string, string>>({})
@@ -438,7 +447,8 @@ export default function TakeDirectExamPage() {
   }
 
   async function handleSubmit() {
-    if (!session) return
+    if (!session || submitInFlightRef.current) return
+    submitInFlightRef.current = true
     setErrorMsg('')
 
     // Offline at submit time (e.g. time ran out or the student hit submit
@@ -541,6 +551,7 @@ export default function TakeDirectExamPage() {
       } else {
         setErrorMsg(err instanceof Error ? err.message : 'Something went wrong submitting your exam.')
         setSubmitting(false)
+        submitInFlightRef.current = false
       }
     }
   }
@@ -681,7 +692,7 @@ export default function TakeDirectExamPage() {
 
               {q.question_type === 'multiple_choice' && q.options && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                  {seededShuffle(q.options, questionSeed(session.option_shuffle_seed || 1, q.id)).map((opt, idx) => (
+                  {seededShuffle(q.options, questionSeed(session.option_shuffle_seed ?? 1, q.id)).map((opt, idx) => (
                     <label key={idx} style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', padding: '8px 12px', borderRadius: 8, background: answers[q.id] === opt ? 'var(--accent-light)' : 'var(--page-bg)', border: `1px solid ${answers[q.id] === opt ? 'var(--accent)' : 'var(--border)'}` }}>
                       <input type="radio" name={q.id} checked={answers[q.id] === opt} onChange={() => updateAnswer(q.id, opt)} style={{ accentColor: 'var(--accent)' }} />
                       {opt}

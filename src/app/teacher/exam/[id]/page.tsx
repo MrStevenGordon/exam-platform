@@ -57,7 +57,6 @@ export default function ExamEditorPage() {
   const [newSectionName, setNewSectionName] = useState('')
   const [newSectionInstructions, setNewSectionInstructions] = useState('')
   const [newSectionType, setNewSectionType] = useState('')
-  const [newSectionLetter, setNewSectionLetter] = useState('')
   const [editingSectionId, setEditingSectionId] = useState<string | null>(null)
   const [editSectionName, setEditSectionName] = useState('')
   const [editSectionType, setEditSectionType] = useState('')
@@ -160,7 +159,6 @@ export default function ExamEditorPage() {
       setNewSectionName('')
       setNewSectionInstructions('')
       setNewSectionType('')
-      setNewSectionLetter('')
       setShowSectionForm(false)
     }
   }
@@ -222,12 +220,7 @@ export default function ExamEditorPage() {
   }
 
   async function handlePublishDirect() {
-    // Auto-assign all classes in target grade if set
-    let groupsToPublish = new Set(selectedGroups)
-    if (exam?.target_grade && classGroups.length > 0) {
-      classGroups.forEach((cg) => groupsToPublish.add(cg.id))
-    }
-    if (groupsToPublish.size === 0) {
+    if (selectedGroups.size === 0) {
       alert('Select at least one class to publish to.')
       return
     }
@@ -424,40 +417,6 @@ export default function ExamEditorPage() {
           {showSectionForm && (
             <div style={{ marginTop: 12, padding: 12, background: 'var(--card-bg)', borderRadius: 8, border: '1px solid var(--border)' }}>
               <div style={{ marginBottom: 10 }}>
-                <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)' }}>Section letter</label>
-                <div style={{ display: 'flex', gap: 8, marginTop: 6, flexWrap: 'wrap' }}>
-                  {['A','B','C','D','E','F'].map((letter) => {
-                    const usedLetters = sections.map((s, sIdx) => {
-                      const match = s.name.match(/^Section ([A-F])(?::|\s)/)
-                      return match ? match[1] : null
-                    }).filter(Boolean)
-                    const isUsed = usedLetters.includes(letter)
-                    const isSelected = newSectionLetter === letter
-                    return (
-                      <button
-                        key={letter}
-                        type="button"
-                        disabled={isUsed}
-                        onClick={() => setNewSectionLetter(isSelected ? '' : letter)}
-                        style={{
-                          width: 36, height: 36, borderRadius: '50%', fontWeight: 800, fontSize: 14,
-                          border: `2px solid ${isUsed ? 'var(--border)' : isSelected ? 'var(--accent)' : 'var(--border-strong)'}`,
-                          background: isUsed ? 'var(--page-bg)' : isSelected ? 'var(--accent)' : 'var(--card-bg)',
-                          color: isUsed ? 'var(--text-muted)' : isSelected ? 'white' : 'var(--text-secondary)',
-                          cursor: isUsed ? 'not-allowed' : 'pointer',
-                          position: 'relative',
-                        }}
-                        title={isUsed ? 'Section already used' : `Section ${letter}`}
-                      >
-                        {letter}
-                        {isUsed && <span style={{ position: 'absolute', top: -2, right: -2, width: 8, height: 8, borderRadius: '50%', background: 'var(--danger)' }} />}
-                      </button>
-                    )
-                  })}
-                </div>
-                {newSectionLetter && <p style={{ fontSize: 12, color: 'var(--accent-dark)', marginTop: 6 }}>Section {newSectionLetter} selected</p>}
-              </div>
-              <div style={{ marginBottom: 10 }}>
                 <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)' }}>Question type for this section</label>
                 <select
                   value={newSectionType}
@@ -529,18 +488,23 @@ export default function ExamEditorPage() {
           return aLetter.localeCompare(bLetter)
         })
         let runningNumber = 0
+        const typedAssignedIds = new Set<string>()
         sortedSections.forEach((s, si) => {
             // If section has a question_type, group matching questions
             // Otherwise use equal distribution
             const untypedSectionIndex = untypedSections.indexOf(s as any) !== -1 ? untypedSections.indexOf(s as any) : si
             const sectionQuestions = s.question_type
-              ? questions.filter(q => q.question_type === s.question_type)
+              // Excludes questions already claimed by an earlier section of
+              // the same question_type — without this, two sections sharing
+              // a type would each render every matching question.
+              ? questions.filter(q => q.question_type === s.question_type && !typedAssignedIds.has(q.id))
               : (() => {
                   const count = baseCount + (untypedSectionIndex < remainder ? 1 : 0)
                   const slice = untypedQuestions.slice(qStart, qStart + count)
                   qStart += count
                   return slice
                 })()
+            if (s.question_type) sectionQuestions.forEach(q => typedAssignedIds.add(q.id))
 
             items.push(
               <div key={`section-${s.id}`} style={{ padding: '12px 16px', background: 'var(--accent-light)', borderRadius: 'var(--radius)', borderLeft: '4px solid var(--accent)', marginTop: si > 0 ? 16 : 0, display: 'flex', alignItems: 'center', gap: 12 }}>

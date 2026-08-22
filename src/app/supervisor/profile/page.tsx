@@ -15,8 +15,10 @@ export default function SupervisorProfilePage() {
   const [profile, setProfile] = useState<{ full_name: string; role: string; departments: { name: string } | null } | null>(null)
   const [classGroups, setClassGroups] = useState<ClassGroup[]>([])
   const [assignedIds, setAssignedIds] = useState<Set<string>>(new Set())
+  const [originalAssignedIds, setOriginalAssignedIds] = useState<Set<string>>(new Set())
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [saveError, setSaveError] = useState('')
   const [loading, setLoading] = useState(true)
   const [changingPassword, setChangingPassword] = useState(false)
   const [newPassword, setNewPassword] = useState('')
@@ -49,24 +51,35 @@ export default function SupervisorProfilePage() {
       .from('teacher_class_groups')
       .select('class_group_id')
       .eq('teacher_id', user.id)
-    setAssignedIds(new Set((assigned || []).map((a) => a.class_group_id)))
+    const loadedIds = new Set((assigned || []).map((a) => a.class_group_id))
+    setAssignedIds(loadedIds)
+    setOriginalAssignedIds(loadedIds)
 
     setLoading(false)
   }
 
   async function handleSave() {
     setSaving(true)
+    setSaveError('')
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
 
-    await supabase.from('teacher_class_groups').delete().eq('teacher_id', user.id)
+    const toRemove = Array.from(originalAssignedIds).filter((id) => !assignedIds.has(id))
+    const toAdd = Array.from(assignedIds).filter((id) => !originalAssignedIds.has(id))
 
-    if (assignedIds.size > 0) {
-      await supabase.from('teacher_class_groups').insert(
-        Array.from(assignedIds).map((cgId) => ({ teacher_id: user.id, class_group_id: cgId }))
-      )
+    if (toRemove.length > 0) {
+      const { error } = await supabase.from('teacher_class_groups').delete().eq('teacher_id', user.id).in('class_group_id', toRemove)
+      if (error) { setSaveError(error.message); setSaving(false); return }
     }
 
+    if (toAdd.length > 0) {
+      const { error } = await supabase.from('teacher_class_groups').insert(
+        toAdd.map((cgId) => ({ teacher_id: user.id, class_group_id: cgId }))
+      )
+      if (error) { setSaveError(error.message); setSaving(false); return }
+    }
+
+    setOriginalAssignedIds(new Set(assignedIds))
     setSaving(false)
     setSaved(true)
     setTimeout(() => setSaved(false), 3000)
@@ -157,6 +170,7 @@ export default function SupervisorProfilePage() {
             {saving ? 'Saving…' : 'Save my classes'}
           </button>
           {saved && <span style={{ color: 'var(--success)', fontSize: 13, fontWeight: 700 }}>✓ Saved</span>}
+          {saveError && <span style={{ color: 'var(--danger)', fontSize: 13, fontWeight: 700 }}>{saveError}</span>}
           <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
             {assignedIds.size} class{assignedIds.size !== 1 ? 'es' : ''} selected
           </span>

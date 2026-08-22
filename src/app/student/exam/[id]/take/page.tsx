@@ -9,6 +9,8 @@ import {
   initExamRecord, getExamRecord, saveAnswersLocally, markSynced,
   setPendingSubmit as setPendingSubmitLocal, queueViolation, clearQueuedViolations, clearExamRecord,
 } from '@/lib/examOfflineStore'
+import { gradeAnswer, gradeMultiPoint } from '@/lib/grading'
+import { useIntegrityCapture, IntegritySignals } from '@/hooks/useIntegrityCapture'
 
 function mulberry32(seed: number) {
   let a = seed
@@ -100,6 +102,10 @@ export default function TakeExamPage() {
   const handleSubmitRef = useRef<() => void>(() => {})
   const hasBeenFullscreenRef = useRef(false)
   const submittedRef = useRef(false)
+  // Synchronous reentrancy guard for handleSubmit itself — see the matching
+  // comment in student/direct-exam/[id]/take/page.tsx for why submittedRef
+  // alone can't serve this purpose.
+  const submitInFlightRef = useRef(false)
   const intentionalExitRef = useRef(false)
 
   // Offline resilience: refs mirror the latest answers/workings synchronously
@@ -109,6 +115,7 @@ export default function TakeExamPage() {
   const latestWorkingsRef = useRef<Record<string, string>>({})
   const localSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [submitPendingOffline, setSubmitPendingOffline] = useState(false)
+  const capture = useIntegrityCapture()
 
   useEffect(() => { loadData() }, [examId])
 
@@ -316,7 +323,11 @@ export default function TakeExamPage() {
     function handleContextMenu(e: MouseEvent) { e.preventDefault() }
     function handleSelectStart(e: Event) { e.preventDefault() }
     function handleCopy(e: ClipboardEvent) { e.preventDefault() }
-    function handlePaste(e: ClipboardEvent) { e.preventDefault() }
+    function handlePaste(e: ClipboardEvent) {
+      e.preventDefault()
+      const fieldId = (document.activeElement as HTMLElement | null)?.dataset?.integrityField
+      if (fieldId) capture.onPasteAttempt(fieldId)
+    }
 
     document.addEventListener('keydown', handleKeyDown)
     document.addEventListener('contextmenu', handleContextMenu)
@@ -423,44 +434,9 @@ export default function TakeExamPage() {
     scheduleLocalSave()
   }
 
-  function gradeMultiPoint(question: Question, answers: string[]): number {
-    if (!question.marking_points || question.marking_points.length === 0) return 0
-    let totalAwarded = 0
-    const maxMarks = question.points
-
-    for (const point of question.marking_points) {
-      if (!point.keywords || point.keywords.length === 0) continue
-      // Check each answer box against this marking point
-      const matched = answers.some((ans) => {
-        const ansLower = ans.toLowerCase().trim()
-        return point.keywords.some((kw: string) => ansLower.includes(kw.toLowerCase()))
-      })
-      if (matched) totalAwarded += point.marks
-    }
-    // Cap at question maximum marks
-    return Math.min(totalAwarded, maxMarks)
-  }
-
-  function gradeAnswer(question: Question, studentAnswer: string): number | null {
-    const autoGradable = ['multiple_choice', 'true_false', 'short_answer', 'fill_blank']
-    if (!autoGradable.includes(question.question_type)) return null
-
-    // Multi-point marking uses separate gradeMultiPoint function
-    if (question.marking_points && question.marking_points.length > 0) {
-      // For single answer box, split by newline or comma to check multiple answers
-      const answers = studentAnswer.split(/\n|,/).map(a => a.trim()).filter(Boolean)
-      if (answers.length === 0) answers.push(studentAnswer)
-      return gradeMultiPoint(question, answers)
-    }
-
-    // Single exact match — case insensitive
-    if (!question.correct_answer) return 0
-    return studentAnswer.trim().toLowerCase() === question.correct_answer.trim().toLowerCase()
-      ? question.points : 0
-  }
-
   async function handleSubmit() {
-    if (!session) return
+    if (!session || submitInFlightRef.current) return
+    submitInFlightRef.current = true
     setErrorMsg('')
 
     // Offline at submit time (e.g. time ran out or the student hit submit
@@ -483,6 +459,7 @@ export default function TakeExamPage() {
       let autoScore = 0
       let autoMax = 0
       let hasEssay = false
+      const allIntegrityFlags = new Set<string>()
 
       const rows = questions.map((q) => {
         const studentAnswer = latestAnswersRef.current[q.id] || ''
@@ -497,7 +474,20 @@ export default function TakeExamPage() {
         if (awarded === null) hasEssay = true
         else autoScore += awarded
         autoMax += q.points
-        return { session_id: session.id, question_id: q.id, answer: studentAnswer, working: latestWorkingsRef.current[q.id] || null, points_awarded: awarded, graded_at: awarded !== null ? new Date().toISOString() : null }
+
+        let integritySignals: { answer?: IntegritySignals; working?: IntegritySignals } | null = null
+        if (q.question_type === 'essay') {
+          const answerSignals = capture.summarize(`answer:${q.id}`, studentAnswer)
+          integritySignals = { answer: answerSignals }
+          answerSignals.flags.forEach((f) => allIntegrityFlags.add(f))
+        }
+        if (q.question_type === 'short_answer' && q.show_working) {
+          const workingSignals = capture.summarize(`working:${q.id}`, latestWorkingsRef.current[q.id] || '')
+          integritySignals = { ...integritySignals, working: workingSignals }
+          workingSignals.flags.forEach((f) => allIntegrityFlags.add(f))
+        }
+
+        return { session_id: session.id, question_id: q.id, answer: studentAnswer, working: latestWorkingsRef.current[q.id] || null, points_awarded: awarded, graded_at: awarded !== null ? new Date().toISOString() : null, integrity_signals: integritySignals }
       })
 
       await supabase.from('responses').delete().eq('session_id', session.id)
@@ -506,12 +496,27 @@ export default function TakeExamPage() {
         if (error) throw error
       }
 
+      const hasIntegrityFlags = allIntegrityFlags.size > 0
+
       const { error: sessionError } = await supabase
         .from('exam_sessions')
-        .update({ status: 'completed', completed_at: new Date().toISOString(), total_score: autoScore, max_possible_score: autoMax, fully_graded: !hasEssay })
+        .update({
+          status: 'completed', completed_at: new Date().toISOString(), total_score: autoScore, max_possible_score: autoMax, fully_graded: !hasEssay,
+          ...(hasIntegrityFlags ? { flagged: true } : {}),
+        })
         .eq('id', session.id)
 
       if (sessionError) throw sessionError
+
+      // Silent, teacher-only signal — no overlay/warning shown to the student
+      // and submission is never blocked, unlike the proctoring violations
+      // handled elsewhere in this file.
+      if (hasIntegrityFlags) {
+        await supabase.rpc('append_violation_log', {
+          session_id: session.id,
+          entry: { type: 'integrity', reason: Array.from(allIntegrityFlags).join(', '), timestamp: new Date().toISOString() },
+        })
+      }
 
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
@@ -541,6 +546,7 @@ export default function TakeExamPage() {
       } else {
         setErrorMsg(err instanceof Error ? err.message : 'Something went wrong submitting your exam.')
         setSubmitting(false)
+        submitInFlightRef.current = false
       }
     }
   }
@@ -708,7 +714,7 @@ export default function TakeExamPage() {
 
               {q.question_type === 'multiple_choice' && q.options && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                  {seededShuffle(q.options, questionSeed(session.option_shuffle_seed || 1, q.id)).map((opt, idx) => (
+                  {seededShuffle(q.options, questionSeed(session.option_shuffle_seed ?? 1, q.id)).map((opt, idx) => (
                     <label key={idx} style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', padding: '8px 12px', borderRadius: 8, background: answers[q.id] === opt ? 'var(--accent-light)' : 'var(--page-bg)', border: `1px solid ${answers[q.id] === opt ? 'var(--accent)' : 'var(--border)'}` }}>
                       <input type="radio" name={q.id} checked={answers[q.id] === opt} onChange={() => updateAnswer(q.id, opt)} style={{ accentColor: 'var(--accent)' }} />
                       {opt}
@@ -735,7 +741,9 @@ export default function TakeExamPage() {
                   </label>
                   <textarea
                     value={workings[q.id] || ''}
-                    onChange={(e) => updateWorking(q.id, e.target.value)}
+                    onChange={(e) => { updateWorking(q.id, e.target.value); capture.onValueChange(`working:${q.id}`, e.target.value) }}
+                    onKeyDown={(e) => capture.onKeyDown(`working:${q.id}`, e.key)}
+                    data-integrity-field={`working:${q.id}`}
                     rows={5}
                     style={{ width: '100%', marginTop: 6, fontFamily: 'monospace', fontSize: 14 }}
                     placeholder="Show all your working here: steps, calculations, diagrams described in words…"
@@ -786,7 +794,9 @@ export default function TakeExamPage() {
                 <div style={{ marginTop: 8 }}>
                   <textarea
                     value={answers[q.id] || ''}
-                    onChange={(e) => updateAnswer(q.id, e.target.value)}
+                    onChange={(e) => { updateAnswer(q.id, e.target.value); capture.onValueChange(`answer:${q.id}`, e.target.value) }}
+                    onKeyDown={(e) => capture.onKeyDown(`answer:${q.id}`, e.key)}
+                    data-integrity-field={`answer:${q.id}`}
                     rows={8}
                     style={{
                       width: '100%',
