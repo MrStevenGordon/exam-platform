@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import PageTransition from '@/components/PageTransition'
 import InactivityLogout from '@/components/InactivityLogout'
+import { getMfaRedirect } from '@/lib/mfaCheck'
 
 const OWNER_NAV = [
   { label: 'School requests', href: '/owner/school-requests' },
@@ -31,6 +32,9 @@ export default function OwnerLayout({ children }: { children: React.ReactNode })
 
       const { data: profile } = await supabase.from('profiles').select('is_system_admin').eq('id', user.id).single()
       if (!profile?.is_system_admin) { router.push('/login'); return }
+
+      const mfaRedirect = await getMfaRedirect('owner')
+      if (mfaRedirect) { router.push(`${mfaRedirect}?from=${encodeURIComponent(pathname)}`); return }
 
       setChecked(true)
     }

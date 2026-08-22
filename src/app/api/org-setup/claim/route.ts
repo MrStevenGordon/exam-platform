@@ -23,20 +23,26 @@ export async function POST(req: NextRequest) {
     if ('error' in parsed) return parsed.error
     const { token, accessToken, orgName } = parsed.data
 
+    const { data: userData, error: userError } = await supabaseAdmin.auth.getUser(accessToken)
+    if (userError || !userData.user) {
+      return NextResponse.json({ error: 'Invalid session. Please try again.' }, { status: 401 })
+    }
+
+    // Check-and-burn the token in one atomic statement — the previous
+    // version did a SELECT to check validity, then a separate UPDATE to
+    // mark it used, so two concurrent requests with the same token could
+    // both pass the check before either burned it, both creating an
+    // organization from a link meant to be used exactly once.
     const { data: request, error: requestError } = await supabaseAdmin
       .from('org_requests')
-      .select('id, contact_email')
+      .update({ setup_token_used_at: new Date().toISOString() })
       .eq('setup_token', token)
       .is('setup_token_used_at', null)
+      .select('id, contact_email')
       .maybeSingle()
 
     if (requestError || !request) {
       return NextResponse.json({ error: 'This setup link is invalid or has already been used.' }, { status: 400 })
-    }
-
-    const { data: userData, error: userError } = await supabaseAdmin.auth.getUser(accessToken)
-    if (userError || !userData.user) {
-      return NextResponse.json({ error: 'Invalid session. Please try again.' }, { status: 401 })
     }
 
     const { error: orgError } = await supabaseAdmin.from('organizations').insert({
@@ -48,9 +54,6 @@ export async function POST(req: NextRequest) {
     if (orgError) {
       return NextResponse.json({ error: orgError.message }, { status: 400 })
     }
-
-    // One-time use — clear it so this link can never be replayed.
-    await supabaseAdmin.from('org_requests').update({ setup_token_used_at: new Date().toISOString() }).eq('id', request.id)
 
     return NextResponse.json({ success: true })
   } catch (err) {

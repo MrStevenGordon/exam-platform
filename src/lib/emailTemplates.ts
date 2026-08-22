@@ -1,5 +1,6 @@
-// Only needed for templates below that interpolate free-text staff input
-// (studentNotificationEmail's message) rather than values already
+// Needed for any template below that interpolates free-text input from a
+// staff member or an unauthenticated public form (contact/investor/waitlist/
+// school/org requests, pitch NDA acceptance), rather than values already
 // constrained elsewhere in the app.
 function escapeHtml(text: string) {
   return text
@@ -154,11 +155,11 @@ export function contactInquiryEmail(name: string, org: string, email: string, me
     html: wrapper(`
       <p>New message from the homepage contact form:</p>
       ${infoBox([
-        ['Name', name],
-        ['School / organization', org],
-        ['Email', email],
+        ['Name', escapeHtml(name)],
+        ['School / organization', escapeHtml(org)],
+        ['Email', escapeHtml(email)],
       ])}
-      <p style="white-space: pre-wrap; padding: 14px 18px; background: ${COLOR.pageBg}; border-left: 3px solid ${COLOR.accent}; border-radius: 4px;">${message}</p>
+      <p style="white-space: pre-wrap; padding: 14px 18px; background: ${COLOR.pageBg}; border-left: 3px solid ${COLOR.accent}; border-radius: 4px;">${escapeHtml(message)}</p>
     `),
   }
 }
@@ -191,11 +192,11 @@ export function newInvestorInquiryStaffEmail(name: string, email: string, firm: 
     html: wrapper(`
       <p>A new investor inquiry came in from the coming-soon page:</p>
       ${infoBox([
-        ['Name', name],
-        ['Email', email],
-        ...(firm ? [['Firm', firm] as [string, string]] : []),
+        ['Name', escapeHtml(name)],
+        ['Email', escapeHtml(email)],
+        ...(firm ? [['Firm', escapeHtml(firm)] as [string, string]] : []),
       ])}
-      ${note ? `<p style="white-space: pre-wrap; padding: 14px 18px; background: ${COLOR.pageBg}; border-left: 3px solid ${COLOR.accent}; border-radius: 4px;">${note}</p>` : ''}
+      ${note ? `<p style="white-space: pre-wrap; padding: 14px 18px; background: ${COLOR.pageBg}; border-left: 3px solid ${COLOR.accent}; border-radius: 4px;">${escapeHtml(note)}</p>` : ''}
     `),
   }
 }
@@ -206,10 +207,10 @@ export function newPitchNdaAcceptanceStaffEmail(deck: string, name: string, orga
     html: wrapper(`
       <p>Someone just agreed to the NDA and viewed the pitch deck:</p>
       ${infoBox([
-        ['Deck', deck],
-        ['Name', name],
-        ['Organization', organization],
-        ['Email', email],
+        ['Deck', escapeHtml(deck)],
+        ['Name', escapeHtml(name)],
+        ['Organization', escapeHtml(organization)],
+        ['Email', escapeHtml(email)],
       ])}
     `),
   }
@@ -221,9 +222,9 @@ export function newWaitlistSignupStaffEmail(email: string, name: string, schoolN
     html: wrapper(`
       <p>A new waitlist signup came in from the coming-soon page:</p>
       ${infoBox([
-        ['Email', email],
-        ...(name ? [['Name', name] as [string, string]] : []),
-        ...(schoolName ? [['School', schoolName] as [string, string]] : []),
+        ['Email', escapeHtml(email)],
+        ...(name ? [['Name', escapeHtml(name)] as [string, string]] : []),
+        ...(schoolName ? [['School', escapeHtml(schoolName)] as [string, string]] : []),
       ])}
     `),
   }
@@ -235,8 +236,8 @@ export function newSchoolRequestStaffEmail(schoolName: string, contactName: stri
     html: wrapper(`
       <p>A new school request needs review:</p>
       ${infoBox([
-        ['School', schoolName],
-        ['Contact', `${contactName} (${contactEmail})`],
+        ['School', escapeHtml(schoolName)],
+        ['Contact', `${escapeHtml(contactName)} (${escapeHtml(contactEmail)})`],
       ])}
       ${button('Review request', reviewUrl)}
     `),
@@ -249,8 +250,8 @@ export function newOrgRequestStaffEmail(orgName: string, contactName: string, co
     html: wrapper(`
       <p>A new organization request needs review:</p>
       ${infoBox([
-        ['Organization', orgName],
-        ['Contact', `${contactName} (${contactEmail})`],
+        ['Organization', escapeHtml(orgName)],
+        ['Contact', `${escapeHtml(contactName)} (${escapeHtml(contactEmail)})`],
       ])}
       ${button('Review request', reviewUrl)}
     `),

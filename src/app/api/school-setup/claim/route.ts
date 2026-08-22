@@ -24,19 +24,25 @@ export async function POST(req: NextRequest) {
     if ('error' in parsed) return parsed.error
     const { token, accessToken, fullName } = parsed.data
 
+    const { data: userData, error: userError } = await supabaseAdmin.auth.getUser(accessToken)
+    if (userError || !userData.user) {
+      return NextResponse.json({ error: 'Invalid session. Please try signing up again.' }, { status: 401 })
+    }
+
+    // Check-and-burn the token in one atomic statement — the previous
+    // version did a SELECT to check validity, then a separate UPDATE to
+    // clear it, so two concurrent requests with the same token could both
+    // pass the check before either cleared it, both creating an admin
+    // profile from a link meant to be used exactly once.
     const { data: settings, error: settingsError } = await supabaseAdmin
       .from('school_settings')
-      .select('id')
+      .update({ setup_token: null })
       .eq('setup_token', token)
+      .select('id')
       .maybeSingle()
 
     if (settingsError || !settings) {
       return NextResponse.json({ error: 'This setup link is invalid or has already been used.' }, { status: 400 })
-    }
-
-    const { data: userData, error: userError } = await supabaseAdmin.auth.getUser(accessToken)
-    if (userError || !userData.user) {
-      return NextResponse.json({ error: 'Invalid session. Please try signing up again.' }, { status: 401 })
     }
 
     const { error: profileError } = await supabaseAdmin.from('profiles').insert({
@@ -49,9 +55,6 @@ export async function POST(req: NextRequest) {
     if (profileError) {
       return NextResponse.json({ error: profileError.message }, { status: 400 })
     }
-
-    // One-time use — clear it so this link can never be replayed.
-    await supabaseAdmin.from('school_settings').update({ setup_token: null }).eq('id', settings.id)
 
     return NextResponse.json({ success: true })
   } catch (err) {
