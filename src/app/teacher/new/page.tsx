@@ -39,7 +39,6 @@ function NewExamForm() {
   const [instructions, setInstructions] = useState('')
   const [examKind, setExamKind] = useState(options[0].value)
   const [errorMsg, setErrorMsg] = useState('')
-  const [isTeamLead, setIsTeamLead] = useState(false)
   const [targetGrade, setTargetGrade] = useState<number | ''>('')
   const [questionsPerPage, setQuestionsPerPage] = useState(10)
   const [saving, setSaving] = useState(false)

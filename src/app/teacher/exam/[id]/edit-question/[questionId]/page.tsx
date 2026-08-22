@@ -22,23 +22,29 @@ export default function EditQuestionPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [errorMsg, setErrorMsg] = useState('')
+  const [notFound, setNotFound] = useState(false)
 
   useEffect(() => {
     async function load() {
-      const { data: q } = await supabase
+      const { data: q, error } = await supabase
         .from('questions')
         .select('*')
         .eq('id', questionId)
         .single()
 
-      if (q) {
-        setQuestionType(q.question_type)
-        setQuestionText(q.question_text || '')
-        setPoints(q.points || 1)
-        setOptions(q.options || ['', '', '', ''])
-        setCorrectAnswer(q.correct_answer || '')
-        setMarkingPoints(q.marking_points || [])
+      if (error || !q) {
+        setErrorMsg(error?.message || 'Question not found.')
+        setNotFound(true)
+        setLoading(false)
+        return
       }
+
+      setQuestionType(q.question_type)
+      setQuestionText(q.question_text || '')
+      setPoints(q.points || 1)
+      setOptions(q.options || ['', '', '', ''])
+      setCorrectAnswer(q.correct_answer || '')
+      setMarkingPoints(q.marking_points || [])
       setLoading(false)
     }
     load()
@@ -54,7 +60,7 @@ export default function EditQuestionPage() {
       keywords: mp.text.toLowerCase().replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).filter(w => w.length > 2 && !stopWords.has(w))
     }))
 
-    const { error } = await supabase.from('questions').update({
+    const { data, error } = await supabase.from('questions').update({
       question_type: questionType,
       question_text: questionText.trim(),
       points,
@@ -62,13 +68,15 @@ export default function EditQuestionPage() {
       correct_answer: correctAnswer.trim() || null,
       marking_points: updatedMarkingPoints.length > 0 ? updatedMarkingPoints : null,
       total_marks: updatedMarkingPoints.length > 0 ? updatedMarkingPoints.reduce((s, mp) => s + mp.marks, 0) : null,
-    }).eq('id', questionId)
+    }).eq('id', questionId).select()
 
     if (error) { setErrorMsg(error.message); setSaving(false); return }
+    if (!data || data.length === 0) { setErrorMsg('Could not save — this question may have been removed.'); setSaving(false); return }
     router.push(`/teacher/exam/${examId}`)
   }
 
   if (loading) return <div>Loading…</div>
+  if (notFound) return <div style={{ maxWidth: 700, margin: '0 auto' }}><div className="banner banner-danger">{errorMsg}</div></div>
 
   return (
     <div style={{ maxWidth: 700, margin: '0 auto' }}>

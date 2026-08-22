@@ -42,7 +42,7 @@ export default function NavBar() {
     student: '/student',
     teacher: '/teacher',
     supervisor: '/supervisor',
-    admin: '/dashboard',
+    admin: '/school-admin',
   }
 
   if (shouldHide || !authed) return null

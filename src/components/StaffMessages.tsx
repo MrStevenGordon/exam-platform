@@ -66,6 +66,7 @@ export default function StaffMessages() {
         setMessages((prev) => (prev.some((m) => m.id === msg.id) ? prev : [...prev, msg]))
         if (msg.conversation_id === selectedIdRef.current) {
           supabase.rpc('mark_conversation_read', { conv_id: msg.conversation_id }).then(() => {
+            setReadState((prev) => ({ ...prev, [msg.conversation_id]: new Date().toISOString() }))
             window.dispatchEvent(new Event('unread-messages-changed'))
           })
         }

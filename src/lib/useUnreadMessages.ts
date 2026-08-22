@@ -78,8 +78,12 @@ export function useUnreadMessageCount() {
 
 // Browsers only honor a permission prompt triggered by a real user gesture,
 // so this is called from a click handler (see Sidebar's notification bell)
-// rather than automatically on mount.
-export function requestMessageNotificationPermission() {
-  if (typeof Notification === 'undefined') return
-  if (Notification.permission === 'default') Notification.requestPermission()
+// rather than automatically on mount. Returns the resolved permission so
+// the caller can update its UI from the real outcome instead of guessing
+// with a timeout (the native dialog can take longer than any fixed delay
+// to resolve).
+export async function requestMessageNotificationPermission(): Promise<NotificationPermission | 'unsupported'> {
+  if (typeof Notification === 'undefined') return 'unsupported'
+  if (Notification.permission !== 'default') return Notification.permission
+  return Notification.requestPermission()
 }

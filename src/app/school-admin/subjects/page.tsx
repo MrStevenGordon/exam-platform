@@ -61,7 +61,17 @@ export default function SchoolAdminSubjectsPage() {
 
   async function handleRemove(id: string) {
     if (!confirm('Remove this subject? Teachers already assigned to it will lose that assignment.')) return
-    await supabase.from('department_subjects').delete().eq('id', id)
+    const target = subjects.find((s) => s.id === id)
+    setErrorMsg('')
+    // teacher_subjects.subject is matched by department_id + free-text
+    // subject, not a foreign key — removing the catalog entry alone leaves
+    // those assignment rows behind, which contradicts what this confirm
+    // dialog just told the admin would happen.
+    if (target) {
+      await supabase.from('teacher_subjects').delete().eq('department_id', target.department_id).eq('subject', target.subject)
+    }
+    const { error } = await supabase.from('department_subjects').delete().eq('id', id)
+    if (error) { setErrorMsg(error.message); return }
     loadData()
   }
 

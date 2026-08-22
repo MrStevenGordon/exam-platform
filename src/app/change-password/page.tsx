@@ -28,7 +28,7 @@ function ChangePasswordForm() {
   async function handleSave() {
     setError('')
     if (!newPassword || !confirmPassword) { setError('Please fill in all fields.'); return }
-    if (newPassword === 'Staff.Default1' || newPassword === 'Student.Test') {
+    if (['Staff.Default1', 'Student.Test', 'Demo.Default'].includes(newPassword)) {
       setError('Please choose a different password, not the default one.'); return
     }
     if (newPassword !== confirmPassword) { setError('Passwords do not match.'); return }
@@ -43,11 +43,11 @@ function ChangePasswordForm() {
     }
 
     // Redirect to correct portal
-    if (profile?.is_system_admin) { router.push('/school-admin'); return }
+    if (profile?.is_system_admin) { router.push('/owner'); return }
     const redirects: Record<string, string> = {
-      student: '/student', teacher: '/teacher', supervisor: '/supervisor', admin: '/dashboard'
+      student: '/student', teacher: '/teacher', supervisor: '/supervisor', admin: '/school-admin'
     }
-    router.push(redirects[profile?.role] || '/dashboard')
+    router.push(redirects[profile?.role] || '/login')
   }
 
   return (

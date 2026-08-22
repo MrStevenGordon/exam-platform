@@ -50,10 +50,8 @@ function SidebarInner({ navItems, portalLabel, resolveActivePathname }: SidebarP
   }, [])
 
   async function handleEnableNotifications() {
-    requestMessageNotificationPermission()
-    // requestPermission's promise result can be unreliable across browsers;
-    // Notification.permission itself is the source of truth once settled.
-    setTimeout(() => setNotifPermission(Notification.permission), 300)
+    const result = await requestMessageNotificationPermission()
+    setNotifPermission(result)
   }
 
   useEffect(() => {

@@ -24,6 +24,21 @@ const TYPE_LABELS: Record<string, string> = {
   fill_blank: 'Fill in the Blank',
 }
 
+// The AI extraction prompt allows correct_answer to be either the full
+// answer text or just its letter (e.g. "Paris" or "A"), and options are
+// rendered letter-prefixed ("A. Paris") — comparing raw first characters
+// only ever matched the letter form, so a full-text answer never
+// highlighted anything.
+function isCorrectOption(option: string, correctAnswer: string): boolean {
+  const answer = correctAnswer.trim()
+  const optionBody = option.replace(/^[A-Za-z]\.\s*/, '').trim()
+  if (/^[A-Za-z]$/.test(answer)) {
+    const optionLetter = option.match(/^([A-Za-z])\./)?.[1]
+    return !!optionLetter && optionLetter.toLowerCase() === answer.toLowerCase()
+  }
+  return optionBody.toLowerCase() === answer.toLowerCase()
+}
+
 export default function ImportPDFPage() {
   const router = useRouter()
   const params = useParams()
@@ -310,7 +325,7 @@ export default function ImportPDFPage() {
                 {q.options && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 8 }}>
                     {q.options.map((opt, oi) => (
-                      <div key={oi} style={{ fontSize: 13, padding: '4px 8px', borderRadius: 6, background: q.correct_answer && opt.startsWith(q.correct_answer.charAt(0)) ? 'var(--success-bg)' : 'var(--page-bg)' }}>
+                      <div key={oi} style={{ fontSize: 13, padding: '4px 8px', borderRadius: 6, background: q.correct_answer && isCorrectOption(opt, q.correct_answer) ? 'var(--success-bg)' : 'var(--page-bg)' }}>
                         {opt}
                       </div>
                     ))}

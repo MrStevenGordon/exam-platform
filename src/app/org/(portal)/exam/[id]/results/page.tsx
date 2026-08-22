@@ -81,7 +81,7 @@ export default function OrgExamResultsPage() {
   }
 
   function exportCsv() {
-    const headers = [...fields.map((f) => f.label), 'Score', 'Max Score', 'Submitted At']
+    const headers = [...fields.map((f) => escapeCsv(f.label)), 'Score', 'Max Score', 'Submitted At']
     const csvRows = rows.map((r) => [
       ...fields.map((f) => escapeCsv(r.values[f.id] || '')),
       r.totalScore ?? '',

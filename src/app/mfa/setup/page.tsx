@@ -92,7 +92,7 @@ export default function MfaSetupPage() {
       teacher: '/teacher',
       supervisor: '/supervisor',
       admin: '/school-admin',
-      system_admin: '/school-admin',
+      system_admin: '/owner',
     }
     router.push(destinations[role] || '/login')
   }
@@ -130,13 +130,6 @@ export default function MfaSetupPage() {
             <summary style={{ cursor: 'pointer', color: 'var(--text-secondary)' }}>Can't scan the code?</summary>
             <p style={{ marginTop: 8 }}>Enter this key manually in your authenticator app:</p>
             <code style={{ display: 'block', padding: 10, background: 'var(--page-bg)', borderRadius: 6, wordBreak: 'break-all', fontSize: 13 }}>{secret}</code>
-          </details>
-        )}
-
-        {qrCode && (
-          <details style={{ marginBottom: 16, fontSize: 11 }}>
-            <summary style={{ cursor: 'pointer', color: 'var(--text-secondary)' }}>Debug: raw QR value (first 80 chars)</summary>
-            <code style={{ display: 'block', padding: 8, background: 'var(--page-bg)', borderRadius: 6, wordBreak: 'break-all', fontSize: 10 }}>{qrCode.slice(0, 80)}</code>
           </details>
         )}
 

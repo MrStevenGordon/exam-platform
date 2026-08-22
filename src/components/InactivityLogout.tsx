@@ -71,11 +71,18 @@ export default function InactivityLogout() {
     // been held. Only students carry a device lock at all, so this is
     // skipped for every other role.
     let heartbeatId: ReturnType<typeof setInterval> | null = null
+    let unmounted = false
     async function startHeartbeatIfStudent() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
       const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
       if (profile?.role !== 'student') return
+      // The component can unmount while this in-flight lookup was still
+      // pending (logout, navigating out of the portal) — the cleanup below
+      // would already have run and found heartbeatId still null, so without
+      // this check the interval below would start anyway and never get
+      // cleared, leaking it into an unmounted component.
+      if (unmounted) return
 
       heartbeatId = setInterval(async () => {
         const { data: { user: currentUser } } = await supabase.auth.getUser()
@@ -86,6 +93,7 @@ export default function InactivityLogout() {
     startHeartbeatIfStudent()
 
     return () => {
+      unmounted = true
       ACTIVITY_EVENTS.forEach((event) => window.removeEventListener(event, reset))
       clearAllTimers()
       if (heartbeatId) clearInterval(heartbeatId)

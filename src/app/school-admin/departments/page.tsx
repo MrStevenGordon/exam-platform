@@ -113,7 +113,15 @@ export default function DepartmentsPage() {
 
   async function handleDeleteDepartment(deptId: string, name: string) {
     if (!confirm(`Delete the ${name} department?`)) return
-    await supabase.from('departments').delete().eq('id', deptId)
+    setErrorMsg('')
+    const { error } = await supabase.from('departments').delete().eq('id', deptId)
+    if (error) {
+      // Staff still assigned to this department (or an HOD) block the
+      // delete via a foreign-key constraint — surface that instead of
+      // silently doing nothing.
+      setErrorMsg('Could not delete this department — reassign or remove its staff first.')
+      return
+    }
     loadData()
   }
 

@@ -71,7 +71,9 @@ export default function SupervisorClassesPage() {
 
   if (loading) return <div>Loading…</div>
 
-  const grades = [...new Set(classes.map((c) => c.year_grade))].sort()
+  const grades = [...new Set(classes.map((c) => c.year_grade))].sort(
+    (a, b) => parseInt(a.replace('Grade ', '')) - parseInt(b.replace('Grade ', ''))
+  )
   const totalStudents = classes.reduce((sum, c) => sum + c.students.length, 0)
 
   return (

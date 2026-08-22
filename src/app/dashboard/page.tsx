@@ -105,6 +105,7 @@ export default function Dashboard() {
       })
 
       // For each old group, move enrolled students to the corresponding new group
+      let gradeHadError = false
       for (const oldGroup of oldGroups) {
         const suffix = oldGroup.name.split('-')[1]
         const newGroupId = newGroupMap[suffix]
@@ -115,8 +116,13 @@ export default function Dashboard() {
           .update({ class_group_id: newGroupId })
           .eq('class_group_id', oldGroup.id)
 
-        if (!enrollError) totalPromoted += students.length
+        if (enrollError) gradeHadError = true
       }
+      // Counted once per grade (this grade's real student count), not once
+      // per class group successfully updated — the previous version added
+      // students.length again for every group, so a grade split across
+      // several sections reported several times its actual student count.
+      if (!gradeHadError) totalPromoted += students.length
     }
 
     await loadGraduatingStudents()
@@ -233,7 +239,11 @@ export default function Dashboard() {
                       {s.student_id && <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>ID: {s.student_id}</div>}
                     </div>
                     <button
-                      onClick={() => handleDeleteStudent(s.id)}
+                      onClick={() => {
+                        if (confirm(`Permanently delete ${s.full_name}? This removes all their data, including exam results, and cannot be undone.`)) {
+                          handleDeleteStudent(s.id)
+                        }
+                      }}
                       disabled={deletingIds.has(s.id)}
                       className="btn btn-danger"
                       style={{ fontSize: 12 }}

@@ -92,7 +92,7 @@ function MfaChallengeForm() {
       teacher: '/teacher',
       supervisor: '/supervisor',
       admin: '/school-admin',
-      system_admin: '/school-admin',
+      system_admin: '/owner',
     }
     router.push(destinations[role] || '/login')
   }

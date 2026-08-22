@@ -65,7 +65,9 @@ export default function TimetableBuilder() {
   useEffect(() => { loadData() }, [])
 
   async function loadData() {
-    const [{ data: periodData }, { data: deptData }, { data: subjectData }, { data: teacherSubData }, { data: cgData }, { data: sectionData }, { data: studentData }] = await Promise.all([
+    const { data: { user } } = await supabase.auth.getUser()
+    const [{ data: myProfile }, { data: periodData }, { data: deptData }, { data: subjectData }, { data: teacherSubData }, { data: cgData }, { data: sectionData }, { data: studentData }] = await Promise.all([
+      user ? supabase.from('profiles').select('role, department_id').eq('id', user.id).single() : Promise.resolve({ data: null }),
       supabase.from('timetable_periods').select('id, name, start_time, end_time, order_index, academic_year').eq('academic_year', academicYear).order('order_index'),
       supabase.from('departments').select('id, name').order('name'),
       supabase.from('department_subjects').select('department_id, subject'),
@@ -76,7 +78,10 @@ export default function TimetableBuilder() {
     ])
 
     setPeriods(periodData || [])
-    setDepartments(deptData || [])
+    // Supervisors can only create sections for their own department (RLS
+    // enforces this server-side; scoping the dropdown here just stops them
+    // hitting an RLS error after filling out the rest of the form).
+    setDepartments(myProfile?.role === 'supervisor' ? (deptData || []).filter((d) => d.id === myProfile.department_id) : (deptData || []))
     setAllStudents(studentData || [])
 
     const subjMap: Record<string, string[]> = {}

@@ -59,8 +59,9 @@ export default function MyClassesPage() {
       })
 
       // Sort by year grade then name
+      const gradeNum = (g: string) => parseInt(g.replace('Grade ', '')) || 0
       const sorted = Object.values(classMap).sort((a, b) => {
-        if (a.year_grade !== b.year_grade) return a.year_grade.localeCompare(b.year_grade)
+        if (a.year_grade !== b.year_grade) return gradeNum(a.year_grade) - gradeNum(b.year_grade)
         return a.name.localeCompare(b.name)
       })
 
@@ -81,7 +82,9 @@ export default function MyClassesPage() {
 
   if (loading) return <div>Loading…</div>
 
-  const grades = [...new Set(classes.map((c) => c.year_grade))].sort()
+  const grades = [...new Set(classes.map((c) => c.year_grade))].sort(
+    (a, b) => parseInt(a.replace('Grade ', '')) - parseInt(b.replace('Grade ', ''))
+  )
 
   return (
     <div>

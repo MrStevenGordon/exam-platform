@@ -56,7 +56,7 @@ export default function SchoolAdminProfilePage() {
           </div>
           <div>
             <div style={{ fontWeight: 800, fontSize: 17 }}>{profile?.full_name}</div>
-            <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 2 }}>System Administrator - Manchester High School</div>
+            <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 2 }}>Platform Admin - Manchester High School</div>
           </div>
         </div>
       </div>

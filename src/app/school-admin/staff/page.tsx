@@ -177,6 +177,12 @@ export default function StaffPage() {
     setCsvProgress({ done: 0, total: rows.length })
     for (const row of rows) {
       const deptMatch = deptList.find((d: any) => d.name.toLowerCase() === row.department?.toLowerCase())
+      // The CSV format is documented as teacher/supervisor only (see the
+      // import instructions and the "Add staff member" form's own <select>)
+      // — whitelist so a stray "admin" value in a row can't silently mint a
+      // full admin account with no confirmation.
+      const normalizedRole = row.role?.trim().toLowerCase()
+      const role = normalizedRole === 'supervisor' ? 'supervisor' : 'teacher'
       try {
         const res = await fetch('/api/create-user', {
           method: 'POST',
@@ -187,7 +193,7 @@ export default function StaffPage() {
               first_name: row.first_name,
               last_name: row.last_name,
               email: row.email,
-              role: row.role || 'teacher',
+              role,
               department_id: deptMatch?.id || null,
               subjects: row.subjects || '',
             },

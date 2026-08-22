@@ -79,7 +79,7 @@ export default function SupervisorNewExamPage() {
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 20 }}>
           <div>
             <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Duration (minutes)</label>
-            <input type="number" value={duration} onChange={(e) => setDuration(parseInt(e.target.value))} min={5} style={{ width: '100%', marginTop: 4 }} />
+            <input type="number" value={duration} onChange={(e) => setDuration(parseInt(e.target.value) || 30)} min={5} style={{ width: '100%', marginTop: 4 }} />
           </div>
           <div>
             <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Questions per page</label>
