@@ -80,13 +80,13 @@ export default function TeacherProfilePage() {
   async function handleRetakeTour() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
-    // Read-modify-write, not a blind overwrite — this profile's
+    // Read-modify-write, not a blind overwrite: this profile's
     // onboarding_tours_seen may have other roles' flags on it too (e.g. if
     // this account also holds a team-lead tour later on).
     const { data } = await supabase.from('profiles').select('onboarding_tours_seen').eq('id', user.id).single()
     const next = { ...(data?.onboarding_tours_seen || {}), teacher: false }
     await supabase.from('profiles').update({ onboarding_tours_seen: next }).eq('id', user.id)
-    // A full navigation, not router.push — /teacher/profile and /teacher
+    // A full navigation, not router.push: /teacher/profile and /teacher
     // share the same layout, which Next.js keeps mounted across
     // navigations within it, so OnboardingTour's mount-time check would
     // never re-run and the tour wouldn't actually reappear.

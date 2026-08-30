@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 
 export type TourStep = {
-  // CSS selector for the real nav item to spotlight — matched against the
+  // CSS selector for the real nav item to spotlight, matched against the
   // Sidebar's own <Link href="...">, so no extra markup is needed there.
   href: string
   title: string
@@ -21,7 +21,7 @@ type Props = {
 // Spotlight product tour: dims the page and cuts a bright hole around one
 // real nav item at a time, with a callout box explaining it. Shows once per
 // user (tracked in profiles.onboarding_tours_seen), and only on a desktop-
-// width viewport — the Sidebar collapses into a closed-by-default mobile
+// width viewport: the Sidebar collapses into a closed-by-default mobile
 // drawer below 768px (see Sidebar.tsx), so nav items aren't on screen to
 // spotlight there. On mobile the check is simply deferred, not skipped
 // permanently: nothing is marked "seen" until the tour actually runs.
@@ -101,7 +101,7 @@ export default function OnboardingTour({ tourKey, steps }: Props) {
   const pad = 8
 
   // Sidebar sits on the right on desktop (the only width this ever runs
-  // at — see the viewport gate above), so the callout opens to its left.
+  // at, see the viewport gate above), so the callout opens to its left.
   const calloutWidth = 300
   const calloutTop = Math.min(Math.max(rect.top - 8, 16), window.innerHeight - 220)
   const calloutLeft = rect.left - calloutWidth - 20
