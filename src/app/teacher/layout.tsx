@@ -5,10 +5,27 @@ import { useRouter, usePathname } from 'next/navigation'
 import Sidebar from '@/components/Sidebar'
 import PageTransition from '@/components/PageTransition'
 import InactivityLogout from '@/components/InactivityLogout'
+import OnboardingTour, { TourStep } from '@/components/OnboardingTour'
 import { supabase } from '@/lib/supabase'
 import { getMfaRedirect } from '@/lib/mfaCheck'
 import { verifyPortalRole } from '@/lib/verifyPortalRole'
 import { getSchoolFeatures } from '@/lib/schoolFeatures'
+
+// Only the highest-value stops, not every nav item — a tour that spotlights
+// all 12 possible items is a chore, not an orientation. Team Lead Exams and
+// Lesson Plans are conditional nav items (see BASE_NAV/checkAppointments
+// below); OnboardingTour itself skips any step whose target isn't actually
+// on the page for this teacher.
+const TEACHER_TOUR_STEPS: TourStep[] = [
+  { href: '/teacher', title: 'Your home base', body: "This is where you'll land every time you sign in — a quick view of what needs your attention across your classes." },
+  { href: '/teacher/tests', title: 'Create exams and quizzes', body: 'Build a pop quiz, class test, or weekly test here. It publishes straight to your classes — no approval step needed.' },
+  { href: '/teacher/bank', title: 'Question bank', body: "Save a question once and reuse it in future exams instead of writing it again — yours to draw from whenever you're building a new test." },
+  { href: '/teacher/classes', title: 'My Classes', body: 'Your rosters, grouped by grade — see who\'s enrolled in each class you teach.' },
+  { href: '/teacher/team-lead', title: 'Team Lead Exams', body: 'As a team lead, standardized exams (monthly, midterm, end of term) you create here go to your supervisor for review before publishing.' },
+  { href: '/teacher/lesson-plans', title: 'Lesson plans', body: "Draft a full lesson plan from a subject, grade, and topic with one click — included free with your account, and shareable with other teachers." },
+  { href: '/teacher/messages', title: 'Messages', body: "Message other staff directly, or the whole staff group. That badge shows how many you haven't read yet." },
+  { href: '/teacher/profile', title: "You're all set", body: 'Your profile and password live here. That covers the essentials — explore the rest as you go.' },
+]
 
 const BASE_NAV = [
   { label: 'Home', icon: 'ti-home', href: '/teacher' },
@@ -52,6 +69,7 @@ export default function TeacherLayout({ children }: { children: React.ReactNode 
   const pathname = usePathname()
   const [navItems, setNavItems] = useState(BASE_NAV)
   const [mfaChecked, setMfaChecked] = useState(false)
+  const [navReady, setNavReady] = useState(false)
 
   useEffect(() => {
     async function checkAccess() {
@@ -100,6 +118,7 @@ export default function TeacherLayout({ children }: { children: React.ReactNode 
       if (features.lessonPlanLibraryEnabled) nav.splice(nav.indexOf(BASE_NAV[7]) + 1, 0, ...LESSON_PLANS_NAV)
       if (stlData && stlData.length > 0) nav.splice(nav.length - 1, 0, ...SENIOR_TL_NAV)
       setNavItems(nav)
+      setNavReady(true)
     }
     checkAppointments()
   }, [mfaChecked])
@@ -111,6 +130,7 @@ export default function TeacherLayout({ children }: { children: React.ReactNode 
       <InactivityLogout />
       <main className="portal-content"><PageTransition>{children}</PageTransition></main>
       <Sidebar navItems={navItems} portalLabel="Teacher Portal" resolveActivePathname={resolveActivePathname} />
+      {navReady && <OnboardingTour tourKey="teacher" steps={TEACHER_TOUR_STEPS} />}
     </div>
   )
 }
