@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { usePathname } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 
@@ -39,6 +39,27 @@ export function useUnreadMessageCount() {
   const pathname = usePathname()
   const [count, setCount] = useState(0)
 
+  // The realtime handler below needs the *current* path (to know whether a
+  // new message's conversation is already on screen), but the path
+  // shouldn't be a dependency of the effect that opens the channel --
+  // recreating the whole WebSocket subscription on every navigation was
+  // pure overhead (this hook runs on every page, in every portal, so that
+  // meant a full connection teardown/reopen on every single route change).
+  // A ref lets the closure read the latest value without resubscribing.
+  const pathnameRef = useRef(pathname)
+  useEffect(() => { pathnameRef.current = pathname }, [pathname])
+
+  // Refetch on every route change: this is what actually clears the badge
+  // right after the Messages page marks a conversation read, without
+  // needing the channel itself to be recreated.
+  useEffect(() => {
+    let cancelled = false
+    supabase.rpc('get_unread_message_count').then(({ data }) => {
+      if (!cancelled) setCount(data || 0)
+    })
+    return () => { cancelled = true }
+  }, [pathname])
+
   useEffect(() => {
     let cancelled = false
 
@@ -46,22 +67,20 @@ export function useUnreadMessageCount() {
       const { data } = await supabase.rpc('get_unread_message_count')
       if (!cancelled) setCount(data || 0)
     }
-    refresh()
-
-    const messagesHref = '/' + (pathname?.split('/')[1] || '') + '/messages'
 
     const channel = supabase
       .channel('unread-message-badge')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, async (payload) => {
         refresh()
         const { data: { user } } = await supabase.auth.getUser()
+        const messagesHref = '/' + (pathnameRef.current?.split('/')[1] || '') + '/messages'
         if (user) notify(payload.new as MessageRow, user.id, messagesHref)
       })
       .subscribe()
 
     // Marking a conversation read happens client-side within the Messages
-    // page without a route change or a messages INSERT, so it wouldn't
-    // otherwise be caught by either listener above.
+    // page without a messages INSERT, so it wouldn't otherwise be caught by
+    // the listener above.
     window.addEventListener('unread-messages-changed', refresh)
 
     return () => {
@@ -69,9 +88,9 @@ export function useUnreadMessageCount() {
       supabase.removeChannel(channel)
       window.removeEventListener('unread-messages-changed', refresh)
     }
-    // Re-fetch on every route change too, so the badge clears right after
-    // the Messages page marks a conversation read.
-  }, [pathname])
+    // Deliberately once per mount (per portal session), not per navigation.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   return count
 }
