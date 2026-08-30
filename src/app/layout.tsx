@@ -4,8 +4,8 @@ import NavBar from "@/components/NavBar";
 import ChatWidget from "@/components/ChatWidget";
 
 export const metadata: Metadata = {
-  title: "Exam Platform",
-  description: "Online examination platform",
+  title: "Smart Assess Ja",
+  description: "Online exam and lesson planning platform for Jamaican schools.",
 };
 
 export default function RootLayout({
