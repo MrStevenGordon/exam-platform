@@ -5,8 +5,20 @@ import { useRouter, usePathname } from 'next/navigation'
 import Sidebar from '@/components/Sidebar'
 import PageTransition from '@/components/PageTransition'
 import InactivityLogout from '@/components/InactivityLogout'
+import OnboardingTour, { TourStep } from '@/components/OnboardingTour'
 import { getMfaRedirect } from '@/lib/mfaCheck'
 import { verifyPortalRole } from '@/lib/verifyPortalRole'
+
+const SUPERVISOR_TOUR_STEPS: TourStep[] = [
+  { href: '/supervisor', title: 'Your home base', body: "This is where you'll land every time you sign in, with anything waiting on you across your department." },
+  { href: '/supervisor/submissions', title: 'Submissions', body: 'Standardized exams your teachers submit for review land here. Approve them, or send feedback back for changes.' },
+  { href: '/supervisor/final-exams', title: 'Final Exams', body: 'Once you approve an exam, publish it to classes from here and manage everything already live.' },
+  { href: '/supervisor/appointments', title: 'Appointments', body: 'Assign which teachers are team leads for a subject and grade, giving them access to create standardized exams.' },
+  { href: '/supervisor/analytics', title: 'Analytics', body: "See how classes performed on published exams, department-wide." },
+  { href: '/supervisor/integrity', title: 'Integrity', body: 'A view into flagged exam sessions across your department, including possible AI-assisted answers.' },
+  { href: '/supervisor/messages', title: 'Messages', body: "Message other staff directly, or the whole staff group. That badge shows how many you haven't read yet." },
+  { href: '/supervisor/profile', title: "You're all set", body: 'Your profile, classes, and password live here. That covers the essentials. Explore the rest as you go.' },
+]
 
 const SUPERVISOR_NAV = [
   { label: 'Home', icon: 'ti-home', href: '/supervisor' },
@@ -49,6 +61,7 @@ export default function SupervisorLayout({ children }: { children: React.ReactNo
       <InactivityLogout />
       <main className="portal-content"><PageTransition>{children}</PageTransition></main>
       <Sidebar navItems={SUPERVISOR_NAV} portalLabel="Supervisor Portal" />
+      <OnboardingTour tourKey="supervisor" steps={SUPERVISOR_TOUR_STEPS} />
     </div>
   )
 }

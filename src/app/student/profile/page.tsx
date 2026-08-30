@@ -102,6 +102,18 @@ export default function StudentProfilePage() {
     load()
   }, [])
 
+  async function handleRetakeTour() {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+    const { data } = await supabase.from('profiles').select('onboarding_tours_seen').eq('id', user.id).single()
+    const next = { ...(data?.onboarding_tours_seen || {}), student: false }
+    await supabase.from('profiles').update({ onboarding_tours_seen: next }).eq('id', user.id)
+    // Full navigation, not router.push: /student/profile and /student share
+    // a layout Next.js keeps mounted across navigations within it, so the
+    // tour's mount-time check would never re-run.
+    window.location.href = '/student'
+  }
+
   async function handleChangePassword() {
     setPwError('')
     setPwSuccess('')
@@ -130,14 +142,19 @@ export default function StudentProfilePage() {
 
       {/* Personal info */}
       <div className="card" style={{ marginBottom: 16 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 16 }}>
-          <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'var(--accent-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, fontWeight: 800, color: 'var(--accent-dark)' }}>
-            {profile?.full_name?.split(' ').map((n: string) => n[0]).slice(0, 2).join('')}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16, marginBottom: 16 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+            <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'var(--accent-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, fontWeight: 800, color: 'var(--accent-dark)' }}>
+              {profile?.full_name?.split(' ').map((n: string) => n[0]).slice(0, 2).join('')}
+            </div>
+            <div>
+              <div style={{ fontWeight: 800, fontSize: 18 }}>{profile?.full_name}</div>
+              <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 2 }}>Student · Grade {profile?.grade_level} · Class {className}</div>
+            </div>
           </div>
-          <div>
-            <div style={{ fontWeight: 800, fontSize: 18 }}>{profile?.full_name}</div>
-            <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 2 }}>Student · Grade {profile?.grade_level} · Class {className}</div>
-          </div>
+          <button onClick={handleRetakeTour} className="btn btn-ghost" style={{ fontSize: 12, flexShrink: 0 }}>
+            Retake the tour
+          </button>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>

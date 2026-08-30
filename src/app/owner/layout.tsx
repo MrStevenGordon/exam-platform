@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import PageTransition from '@/components/PageTransition'
 import InactivityLogout from '@/components/InactivityLogout'
+import OnboardingTour, { TourStep } from '@/components/OnboardingTour'
 import { getMfaRedirect } from '@/lib/mfaCheck'
 
 const OWNER_NAV = [
@@ -16,7 +17,15 @@ const OWNER_NAV = [
   { label: 'Org subscriptions & payments', href: '/owner/organization-payments' },
 ]
 
-// This whole area is deliberately separate from /school-admin — it's for
+const OWNER_TOUR_STEPS: TourStep[] = [
+  { href: '/owner/school-requests', title: 'School requests', body: 'New schools asking to join show up here. Approve one to provision it its own database and admin account.' },
+  { href: '/owner/org-requests', title: 'Org requests', body: 'Organizations (rather than individual schools) requesting access land here for the same kind of review.' },
+  { href: '/owner/school-features', title: 'Configure school tools', body: "Right after provisioning a new school, set which review workflow and exam types it uses here." },
+  { href: '/owner/school-subscriptions', title: 'School subscriptions', body: 'Grant or renew a school\'s subscription so their staff can keep logging in.' },
+  { href: '/owner/organization-payments', title: "You're all set", body: 'Organization subscriptions and payments live here. That covers the essentials. Explore the rest as you go.' },
+]
+
+// This whole area is deliberately separate from /school-admin: it's for
 // the platform owner only (approving new schools, granting/renewing
 // organization subscriptions), never for an individual school's own admin
 // staff, no matter how the school-admin portal's own access rules evolve.
@@ -83,6 +92,7 @@ export default function OwnerLayout({ children }: { children: React.ReactNode })
       <div style={{ maxWidth: 1000, margin: '0 auto', padding: 24 }}>
         <PageTransition>{children}</PageTransition>
       </div>
+      <OnboardingTour tourKey="owner" steps={OWNER_TOUR_STEPS} />
     </div>
   )
 }

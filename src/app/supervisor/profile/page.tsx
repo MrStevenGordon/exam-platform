@@ -58,6 +58,18 @@ export default function SupervisorProfilePage() {
     setLoading(false)
   }
 
+  async function handleRetakeTour() {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+    const { data } = await supabase.from('profiles').select('onboarding_tours_seen').eq('id', user.id).single()
+    const next = { ...(data?.onboarding_tours_seen || {}), supervisor: false }
+    await supabase.from('profiles').update({ onboarding_tours_seen: next }).eq('id', user.id)
+    // Full navigation, not router.push: /supervisor/profile and /supervisor
+    // share a layout Next.js keeps mounted across navigations within it, so
+    // the tour's mount-time check would never re-run.
+    window.location.href = '/supervisor'
+  }
+
   async function handleSave() {
     setSaving(true)
     setSaveError('')
@@ -118,11 +130,18 @@ export default function SupervisorProfilePage() {
       <p className="portal-page-sub">Manage your account and class assignments</p>
 
       <div className="card" style={{ marginBottom: 20 }}>
-        <h2 style={{ marginBottom: 4 }}>Account</h2>
-        <p style={{ fontSize: 14, color: 'var(--text-secondary)', margin: 0 }}>{(profile as any)?.full_name}</p>
-        <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '4px 0 0' }}>
-          Supervisor / HOD · {(profile?.departments as any)?.name || 'No department'}
-        </p>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <div>
+            <h2 style={{ marginBottom: 4 }}>Account</h2>
+            <p style={{ fontSize: 14, color: 'var(--text-secondary)', margin: 0 }}>{(profile as any)?.full_name}</p>
+            <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '4px 0 0' }}>
+              Supervisor / HOD · {(profile?.departments as any)?.name || 'No department'}
+            </p>
+          </div>
+          <button onClick={handleRetakeTour} className="btn btn-ghost" style={{ fontSize: 12 }}>
+            Retake the tour
+          </button>
+        </div>
       </div>
 
       <div className="card">

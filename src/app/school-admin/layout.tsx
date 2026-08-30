@@ -5,8 +5,20 @@ import { useRouter, usePathname } from 'next/navigation'
 import Sidebar from '@/components/Sidebar'
 import PageTransition from '@/components/PageTransition'
 import InactivityLogout from '@/components/InactivityLogout'
+import OnboardingTour, { TourStep } from '@/components/OnboardingTour'
 import { getMfaRedirect } from '@/lib/mfaCheck'
 import { verifyPortalRole } from '@/lib/verifyPortalRole'
+
+const SCHOOL_ADMIN_TOUR_STEPS: TourStep[] = [
+  { href: '/school-admin', title: 'Your home base', body: "This is where you'll land every time you sign in, with a school-wide overview." },
+  { href: '/school-admin/departments', title: 'Departments', body: 'Set up departments and assign a head of department (supervisor) to each one.' },
+  { href: '/school-admin/staff', title: 'Staff', body: 'Add teachers and supervisors one at a time, or import a whole list from a CSV file.' },
+  { href: '/school-admin/students', title: 'Students', body: 'Add students individually or in bulk, and manage their class enrollment.' },
+  { href: '/school-admin/settings', title: 'Settings', body: "Configure school-wide options here, including which tools and exam types your school uses." },
+  { href: '/school-admin/analytics', title: 'Analytics', body: 'See how classes and departments are performing across the whole school.' },
+  { href: '/school-admin/messages', title: 'Messages', body: "Message other staff directly, or the whole staff group. That badge shows how many you haven't read yet." },
+  { href: '/school-admin/profile', title: "You're all set", body: 'Your profile and password live here. That covers the essentials. Explore the rest as you go.' },
+]
 
 const SCHOOL_ADMIN_NAV = [
   { label: 'Overview', icon: 'ti-home', href: '/school-admin' },
@@ -50,6 +62,7 @@ export default function SchoolAdminLayout({ children }: { children: React.ReactN
       <InactivityLogout />
       <main className="portal-content"><PageTransition>{children}</PageTransition></main>
       <Sidebar navItems={SCHOOL_ADMIN_NAV} portalLabel="School Admin" />
+      <OnboardingTour tourKey="admin" steps={SCHOOL_ADMIN_TOUR_STEPS} />
     </div>
   )
 }

@@ -36,7 +36,6 @@ export default function OnboardingTour({ tourKey, steps }: Props) {
   useEffect(() => {
     let cancelled = false
     async function checkShouldShow() {
-      if (window.innerWidth < 768) return
       const { data: { user } } = await supabase.auth.getUser()
       if (!user || cancelled) return
       const { data: profile } = await supabase
@@ -46,6 +45,18 @@ export default function OnboardingTour({ tourKey, steps }: Props) {
         .single()
       if (cancelled) return
       if (profile?.onboarding_tours_seen?.[tourKey]) return
+
+      // A real, visible browser tab never reports 0 here. Some embeddings
+      // briefly do, before their viewport has actually attached/painted, so
+      // treating 0 as "definitely mobile, skip" was misfiring on genuine
+      // desktop views. Give it a few frames to settle to a real value
+      // before deciding.
+      let width = window.innerWidth
+      for (let i = 0; i < 10 && width === 0; i++) {
+        await new Promise((resolve) => requestAnimationFrame(resolve))
+        width = window.innerWidth
+      }
+      if (width > 0 && width < 768) return
 
       // Only spotlight nav items actually present for this user (e.g. Team
       // Lead Exams / Lesson Plans are conditional on school + appointment).
@@ -100,11 +111,18 @@ export default function OnboardingTour({ tourKey, steps }: Props) {
   const isLast = stepIndex === visibleSteps.length - 1
   const pad = 8
 
-  // Sidebar sits on the right on desktop (the only width this ever runs
-  // at, see the viewport gate above), so the callout opens to its left.
+  // Most portals use the right-side vertical Sidebar, where the callout
+  // opens to the target's left. The owner portal uses a horizontal top bar
+  // instead (rect.top stays small there), where "to the left" would float
+  // oddly in the header, so it opens below the target instead.
   const calloutWidth = 300
-  const calloutTop = Math.min(Math.max(rect.top - 8, 16), window.innerHeight - 220)
-  const calloutLeft = rect.left - calloutWidth - 20
+  const isTopBarItem = rect.top < 100
+  const calloutTop = isTopBarItem
+    ? rect.bottom + 16
+    : Math.min(Math.max(rect.top - 8, 16), window.innerHeight - 220)
+  const calloutLeft = isTopBarItem
+    ? Math.min(rect.left, window.innerWidth - calloutWidth - 16)
+    : rect.left - calloutWidth - 20
 
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 1000 }}>
