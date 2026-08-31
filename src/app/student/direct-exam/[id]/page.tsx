@@ -36,6 +36,19 @@ export default function DirectExamFrontPage() {
   }, [examId])
 
   async function loadData() {
+    try {
+      await loadDataInner()
+    } catch (err) {
+      // A failed request partway through (e.g. the question count) used to
+      // leave stale defaults on screen forever -- "0 Questions" with no
+      // error -- since nothing after the throw ever reached setLoading(false).
+      console.error('Failed to load exam entry data', err)
+      setErrorMsg('Something went wrong loading this exam. Please try again.')
+      setLoading(false)
+    }
+  }
+
+  async function loadDataInner() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
       router.push('/login')

@@ -172,6 +172,19 @@ export default function TakeDirectExamPage() {
   useEffect(() => { loadData() }, [examId])
 
   async function loadData() {
+    try {
+      await loadDataInner()
+    } catch (err) {
+      // A failed request partway through used to leave the page stuck on
+      // "Loading..." forever, since nothing after the throw ever reached
+      // setLoading(false) -- surface it instead.
+      console.error('Failed to load exam data', err)
+      setErrorMsg('Something went wrong loading this exam. Please try again.')
+      setLoading(false)
+    }
+  }
+
+  async function loadDataInner() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { router.push('/login'); return }
 
