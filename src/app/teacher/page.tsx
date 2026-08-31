@@ -30,70 +30,78 @@ export default function TeacherHome() {
   }, [])
 
   async function loadData() {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) { router.push('/login'); return }
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) { router.push('/login'); return }
 
-    const { data: examData } = await supabase
-      .from('draft_exams')
-      .select('id, title, subject, status, exam_kind, direct_published, created_at')
-      .eq('created_by', user.id)
-      .order('created_at', { ascending: false })
-    setExams(examData || [])
+      // These three don't depend on each other, so fire them together
+      // instead of waiting on each round trip in turn.
+      const [examsRes, classesRes, bankRes] = await Promise.all([
+        supabase
+          .from('draft_exams')
+          .select('id, title, subject, status, exam_kind, direct_published, created_at')
+          .eq('created_by', user.id)
+          .order('created_at', { ascending: false }),
+        supabase
+          .from('teacher_class_groups')
+          .select('class_group_id')
+          .eq('teacher_id', user.id),
+        supabase
+          .from('questions')
+          .select('id', { count: 'exact', head: true })
+          .eq('created_by', user.id)
+          .eq('is_bank_question', true),
+      ])
+      setExams(examsRes.data || [])
+      setBankCount(bankRes.count || 0)
 
-    const { data: sessions } = await supabase
-      .from('exam_sessions')
-      .select('id')
-      .eq('status', 'completed')
+      const classIds = (classesRes.data || []).map((tc) => tc.class_group_id)
 
-    if (sessions && sessions.length > 0) {
-      const { count } = await supabase
-        .from('responses')
-        .select('id', { count: 'exact', head: true })
-        .is('points_awarded', null)
-        .in('session_id', sessions.map((s) => s.id))
-      setEssayCount(count || 0)
-    }
+      // Also independent of each other: the essay-grading count and the
+      // roster for this teacher's own classes.
+      const [sessionsRes, enrollmentsRes] = await Promise.all([
+        supabase.from('exam_sessions').select('id').eq('status', 'completed'),
+        classIds.length > 0
+          ? supabase.from('enrollments').select('student_id', { count: 'exact' }).in('class_group_id', classIds)
+          : Promise.resolve({ data: [] as { student_id: string }[], count: 0 }),
+      ])
 
-    const { count: bank } = await supabase
-      .from('questions')
-      .select('id', { count: 'exact', head: true })
-      .eq('created_by', user.id)
-      .eq('is_bank_question', true)
-    setBankCount(bank || 0)
-
-    // Load students in teacher's classes
-    const { data: teacherClasses } = await supabase
-      .from('teacher_class_groups')
-      .select('class_group_id')
-      .eq('teacher_id', user.id)
-
-    if (teacherClasses && teacherClasses.length > 0) {
-      const classIds = teacherClasses.map((tc) => tc.class_group_id)
-      const { count } = await supabase
-        .from('enrollments')
-        .select('id', { count: 'exact', head: true })
-        .in('class_group_id', classIds)
-      setStudentCount(count || 0)
-
-      // Average score from completed sessions
-      const { data: sessions } = await supabase
-        .from('exam_sessions')
-        .select('total_score, max_possible_score')
-        .eq('status', 'completed')
-        .not('total_score', 'is', null)
-        .in('student_id', 
-          (await supabase.from('enrollments').select('student_id').in('class_group_id', classIds)).data?.map(e => e.student_id) || []
-        )
-      
-      if (sessions && sessions.length > 0) {
-        const avg = sessions.reduce((sum, s) => {
-          return sum + (s.max_possible_score > 0 ? (s.total_score / s.max_possible_score) * 100 : 0)
-        }, 0) / sessions.length
-        setAvgScore(Math.round(avg))
+      if (sessionsRes.data && sessionsRes.data.length > 0) {
+        const { count } = await supabase
+          .from('responses')
+          .select('id', { count: 'exact', head: true })
+          .is('points_awarded', null)
+          .in('session_id', sessionsRes.data.map((s) => s.id))
+        setEssayCount(count || 0)
       }
-    }
 
-    setLoading(false)
+      setStudentCount(enrollmentsRes.count || 0)
+
+      // Reuse the roster fetched above instead of hitting enrollments again
+      // just to get the same students' ids.
+      const studentIds = (enrollmentsRes.data || []).map((e) => e.student_id)
+      if (studentIds.length > 0) {
+        const { data: scoreSessions } = await supabase
+          .from('exam_sessions')
+          .select('total_score, max_possible_score')
+          .eq('status', 'completed')
+          .not('total_score', 'is', null)
+          .in('student_id', studentIds)
+
+        if (scoreSessions && scoreSessions.length > 0) {
+          const avg = scoreSessions.reduce((sum, s) => {
+            return sum + (s.max_possible_score > 0 ? (s.total_score / s.max_possible_score) * 100 : 0)
+          }, 0) / scoreSessions.length
+          setAvgScore(Math.round(avg))
+        }
+      }
+    } catch (err) {
+      // A failed request here used to leave the page spinning forever,
+      // since nothing after the throw ever reached setLoading(false).
+      console.error('Failed to load teacher home data', err)
+    } finally {
+      setLoading(false)
+    }
   }
 
   if (loading) return <div>Loading…</div>
