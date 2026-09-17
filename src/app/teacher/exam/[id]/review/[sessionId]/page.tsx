@@ -49,29 +49,35 @@ export default function TeacherReviewSessionPage() {
   useEffect(() => { loadData() }, [sessionId])
 
   async function loadData() {
-    const { data: session } = await supabase
-      .from('exam_sessions')
-      .select('total_score, max_possible_score, file_submission_url, file_submission_name, profiles!exam_sessions_student_id_fkey(full_name, student_id)')
-      .eq('id', sessionId)
-      .single()
+    try {
+      const { data: session } = await supabase
+        .from('exam_sessions')
+        .select('total_score, max_possible_score, file_submission_url, file_submission_name, profiles!exam_sessions_student_id_fkey(full_name, student_id)')
+        .eq('id', sessionId)
+        .single()
 
-    if (session) {
-      setStudentName((session.profiles as any)?.full_name || 'Unknown')
-      setStudentIdNum((session.profiles as any)?.student_id || '')
-      setTotalScore(session.total_score)
-      setMaxScore(session.max_possible_score)
-      setFileUrl((session as any).file_submission_url || null)
-      setFileName((session as any).file_submission_name || null)
+      if (session) {
+        setStudentName((session.profiles as any)?.full_name || 'Unknown')
+        setStudentIdNum((session.profiles as any)?.student_id || '')
+        setTotalScore(session.total_score)
+        setMaxScore(session.max_possible_score)
+        setFileUrl((session as any).file_submission_url || null)
+        setFileName((session as any).file_submission_name || null)
+      }
+
+      const { data: responseData } = await supabase
+        .from('responses')
+        .select('id, question_id, answer, working, points_awarded, integrity_signals, ai_review, questions(question_text, question_type, correct_answer, points, options, marking_points, show_working)')
+        .eq('session_id', sessionId)
+        .order('question_id')
+
+      setResponses((responseData as any) || [])
+    } catch (err) {
+      console.error('Failed to load session review', err)
+      setErrorMsg('Something went wrong loading this session. Please try again.')
+    } finally {
+      setLoading(false)
     }
-
-    const { data: responseData } = await supabase
-      .from('responses')
-      .select('id, question_id, answer, working, points_awarded, integrity_signals, ai_review, questions(question_text, question_type, correct_answer, points, options, marking_points, show_working)')
-      .eq('session_id', sessionId)
-      .order('question_id')
-
-    setResponses((responseData as any) || [])
-    setLoading(false)
   }
 
   async function handleSaveOverrides() {

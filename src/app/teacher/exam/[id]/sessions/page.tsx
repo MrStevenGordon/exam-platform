@@ -35,25 +35,31 @@ export default function ExamSessionsPage() {
   useEffect(() => { loadData() }, [examId])
 
   async function loadData() {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) { router.push('/login'); return }
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) { router.push('/login'); return }
 
-    const { data: examData } = await supabase
-      .from('draft_exams')
-      .select('title')
-      .eq('id', examId)
-      .single()
-    setExamTitle(examData?.title || '')
+      const { data: examData } = await supabase
+        .from('draft_exams')
+        .select('title')
+        .eq('id', examId)
+        .single()
+      setExamTitle(examData?.title || '')
 
-    const { data, error } = await supabase
-      .from('exam_sessions')
-      .select('id, status, started_at, completed_at, tab_switch_count, flagged, violation_log, total_score, max_possible_score, fully_graded, results_released, profiles!exam_sessions_student_id_fkey(full_name, student_id)')
-      .eq('draft_exam_id', examId)
-      .order('started_at', { ascending: false })
+      const { data, error } = await supabase
+        .from('exam_sessions')
+        .select('id, status, started_at, completed_at, tab_switch_count, flagged, violation_log, total_score, max_possible_score, fully_graded, results_released, profiles!exam_sessions_student_id_fkey(full_name, student_id)')
+        .eq('draft_exam_id', examId)
+        .order('started_at', { ascending: false })
 
-    if (error) setErrorMsg(error.message)
-    else setSessions((data as any) || [])
-    setLoading(false)
+      if (error) setErrorMsg(error.message)
+      else setSessions((data as any) || [])
+    } catch (err) {
+      console.error('Failed to load exam sessions', err)
+      setErrorMsg('Something went wrong loading sessions. Please try again.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   async function notifyReleased(sessionIds: string[]) {

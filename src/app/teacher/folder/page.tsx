@@ -26,16 +26,21 @@ export default function TeacherFolderPage() {
 
   useEffect(() => {
     async function load() {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) { router.push('/login'); return }
-      const { data } = await supabase
-        .from('draft_exams')
-        .select('id, title, subject, exam_kind, created_at')
-        .eq('created_by', user.id)
-        .eq('direct_published', true)
-        .order('created_at', { ascending: false })
-      setItems(data || [])
-      setLoading(false)
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) { router.push('/login'); return }
+        const { data } = await supabase
+          .from('draft_exams')
+          .select('id, title, subject, exam_kind, created_at')
+          .eq('created_by', user.id)
+          .eq('direct_published', true)
+          .order('created_at', { ascending: false })
+        setItems(data || [])
+      } catch (err) {
+        console.error('Failed to load folder', err)
+      } finally {
+        setLoading(false)
+      }
     }
     load()
   }, [router])

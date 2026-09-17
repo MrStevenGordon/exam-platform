@@ -25,6 +25,15 @@ export default function VettingPage() {
 
   useEffect(() => {
     async function load() {
+      try {
+        await loadInner()
+      } catch (err) {
+        console.error('Failed to load vetting queue', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+    async function loadInner() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.push('/login'); return }
 

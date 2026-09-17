@@ -29,25 +29,31 @@ export default function AddFromBankPage() {
 
   useEffect(() => {
     async function loadBank() {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) {
-        router.push('/login')
-        return
-      }
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) {
+          router.push('/login')
+          return
+        }
 
-      const { data, error } = await supabase
-        .from('questions')
-        .select('id, question_type, question_text, points, options, correct_answer')
-        .eq('created_by', user.id)
-        .eq('is_bank_question', true)
-        .neq('draft_exam_id', examId)
+        const { data, error } = await supabase
+          .from('questions')
+          .select('id, question_type, question_text, points, options, correct_answer')
+          .eq('created_by', user.id)
+          .eq('is_bank_question', true)
+          .neq('draft_exam_id', examId)
 
-      if (error) {
-        setErrorMsg(error.message)
-      } else {
-        setBankQuestions(data || [])
+        if (error) {
+          setErrorMsg(error.message)
+        } else {
+          setBankQuestions(data || [])
+        }
+      } catch (err) {
+        console.error('Failed to load question bank', err)
+        setErrorMsg('Something went wrong loading the question bank. Please try again.')
+      } finally {
+        setLoading(false)
       }
-      setLoading(false)
     }
     loadBank()
   }, [examId, router])
