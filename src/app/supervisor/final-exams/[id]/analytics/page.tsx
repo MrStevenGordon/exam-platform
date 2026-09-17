@@ -35,6 +35,16 @@ export default function ExamAnalyticsPage() {
 
   useEffect(() => {
     async function loadData() {
+      try {
+        await loadDataInner()
+      } catch (err) {
+        console.error('Failed to load exam analytics', err)
+        setErrorMsg('Something went wrong loading analytics. Please try again.')
+      } finally {
+        setLoading(false)
+      }
+    }
+    async function loadDataInner() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.push('/login'); return }
 
