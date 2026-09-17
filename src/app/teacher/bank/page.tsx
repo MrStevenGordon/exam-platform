@@ -16,11 +16,16 @@ export default function TeacherBankPage() {
 
   useEffect(() => {
     async function load() {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) { router.push('/login'); return }
-      const { data } = await supabase.from('questions').select('id, question_text, question_type, points, created_at, draft_exams(subject)').eq('created_by', user.id).eq('is_bank_question', true).order('created_at', { ascending: false })
-      setQuestions((data as any) || [])
-      setLoading(false)
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) { router.push('/login'); return }
+        const { data } = await supabase.from('questions').select('id, question_text, question_type, points, created_at, draft_exams(subject)').eq('created_by', user.id).eq('is_bank_question', true).order('created_at', { ascending: false })
+        setQuestions((data as any) || [])
+      } catch (err) {
+        console.error('Failed to load question bank', err)
+      } finally {
+        setLoading(false)
+      }
     }
     load()
   }, [router])

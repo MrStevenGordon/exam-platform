@@ -17,16 +17,21 @@ export default function TeacherTasksPage() {
 
   useEffect(() => {
     async function load() {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) { router.push('/login'); return }
-      const { data } = await supabase
-        .from('draft_exams')
-        .select('id, title, subject, status, exam_kind, direct_published, created_at')
-        .eq('created_by', user.id)
-        .in('exam_kind', TASK_KINDS)
-        .order('created_at', { ascending: false })
-      setTasks(data || [])
-      setLoading(false)
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) { router.push('/login'); return }
+        const { data } = await supabase
+          .from('draft_exams')
+          .select('id, title, subject, status, exam_kind, direct_published, created_at')
+          .eq('created_by', user.id)
+          .in('exam_kind', TASK_KINDS)
+          .order('created_at', { ascending: false })
+        setTasks(data || [])
+      } catch (err) {
+        console.error('Failed to load tasks', err)
+      } finally {
+        setLoading(false)
+      }
     }
     load()
   }, [router])
