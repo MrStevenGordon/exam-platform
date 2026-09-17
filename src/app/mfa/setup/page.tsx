@@ -40,7 +40,10 @@ export default function MfaSetupPage() {
       return
     }
 
-    const unverifiedFactors = factorsData?.totp?.filter((f) => f.status === 'unverified') || []
+    // supabase-js types factorsData.totp as always 'verified', but the real
+    // GoTrue API does return unverified factors here too (e.g. left over
+    // from an abandoned enrollment) -- widen the comparison accordingly.
+    const unverifiedFactors = factorsData?.totp?.filter((f) => (f.status as string) === 'unverified') || []
     for (const f of unverifiedFactors) {
       try { await supabase.auth.mfa.unenroll({ factorId: f.id }) } catch {}
     }

@@ -174,7 +174,7 @@ export default function SchoolAnalyticsPage() {
                   <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
                   <XAxis dataKey="label" tick={{ fontSize: 11 }} />
                   <YAxis domain={[0, 100]} tick={{ fontSize: 11 }} />
-                  <Tooltip formatter={(v: any, name: string) => name === 'avgPct' ? [`${v}%`, 'Average score'] : [v, name]} />
+                  <Tooltip formatter={(v: any, name: any) => name === 'avgPct' ? [`${v}%`, 'Average score'] : [v, name]} />
                   <Line type="monotone" dataKey="avgPct" stroke="var(--accent)" strokeWidth={2.5} dot={{ r: 4 }} />
                 </LineChart>
               </ResponsiveContainer>
@@ -188,7 +188,7 @@ export default function SchoolAnalyticsPage() {
               <BarChart data={byDept} layout="vertical" margin={{ top: 0, right: 24, left: 8, bottom: 0 }}>
                 <XAxis type="number" domain={[0, 100]} tick={{ fontSize: 11 }} />
                 <YAxis type="category" dataKey="name" width={110} tick={{ fontSize: 12 }} />
-                <Tooltip formatter={(v: any, name: string, props: any) => [`${v}% avg · ${props.payload.passRate}% pass rate · ${props.payload.count} sessions`, '']} />
+                <Tooltip formatter={(v: any, name: any, props: any) => [`${v}% avg · ${props.payload.passRate}% pass rate · ${props.payload.count} sessions`, '']} />
                 <Bar dataKey="avgPct" radius={[0, 4, 4, 0]}>
                   {byDept.map((d, i) => <Cell key={i} fill={d.avgPct >= 50 ? 'var(--success)' : 'var(--danger)'} opacity={0.8} />)}
                 </Bar>

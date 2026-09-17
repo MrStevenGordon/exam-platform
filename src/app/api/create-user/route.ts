@@ -97,7 +97,7 @@ export async function POST(req: NextRequest) {
       const email = `${student_id}@mhs.smartassess`
       const fullName = [first_name, middle_name, last_name].filter(Boolean).join(' ')
       const gradePrefix = class_id?.split('-')[0]
-      const gradeLevel = CLASS_TO_GRADE[gradePrefix] || null
+      const gradeLevel = (gradePrefix ? CLASS_TO_GRADE[gradePrefix] : null) || null
 
       // Get class group
       const { data: classGroup } = await supabaseAdmin
@@ -151,7 +151,7 @@ export async function POST(req: NextRequest) {
         role: 'student',
         birth_date: birth_date || null,
         gender: gender || null,
-        birth_year: birth_year ? parseInt(birth_year) : null,
+        birth_year: birth_year ? parseInt(String(birth_year), 10) : null,
         grade_level: gradeLevel,
         must_change_password: true,
         school_email: schoolEmail,
@@ -251,6 +251,9 @@ export async function POST(req: NextRequest) {
 
     if (type === 'reset-password') {
       const { user_id, password } = data
+      if (!user_id || !password) {
+        return NextResponse.json({ error: 'user_id and password are required.' }, { status: 400 })
+      }
       const { error } = await supabaseAdmin.auth.admin.updateUserById(user_id, { password })
       if (error) return NextResponse.json({ error: error.message }, { status: 400 })
       // The admin chose this password, so they know it too — require the
