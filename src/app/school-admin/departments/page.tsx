@@ -35,6 +35,16 @@ export default function DepartmentsPage() {
   useEffect(() => { loadData() }, [])
 
   async function loadData() {
+    try {
+      await loadDataInner()
+    } catch (err) {
+      console.error('Failed to load departments', err)
+      setErrorMsg('Something went wrong loading departments. Please try again.')
+      setLoading(false)
+    }
+  }
+
+  async function loadDataInner() {
     const { data: deptData } = await supabase
       .from('departments')
       .select('id, name, head_id')

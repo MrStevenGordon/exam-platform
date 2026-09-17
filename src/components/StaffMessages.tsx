@@ -29,6 +29,15 @@ export default function StaffMessages() {
   const staffById = useCallback((id: string) => staff.find((s) => s.id === id), [staff])
 
   async function loadAll() {
+    try {
+      await loadAllInner()
+    } catch (err) {
+      console.error('Failed to load staff messages', err)
+      setLoading(false)
+    }
+  }
+
+  async function loadAllInner() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
     setMyId(user.id)

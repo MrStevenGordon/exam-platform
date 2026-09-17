@@ -28,13 +28,18 @@ export default function AdminReportCardsPage() {
   useEffect(() => { loadData() }, [])
 
   async function loadData() {
-    const [{ data: termData }, { data: studentData }] = await Promise.all([
-      supabase.from('academic_terms').select('id, name, academic_year, start_date, end_date, report_cards_released').order('start_date', { ascending: false }),
-      supabase.from('profiles').select('id, full_name, student_id').eq('role', 'student').order('full_name'),
-    ])
-    setTerms(termData || [])
-    setStudents(studentData || [])
-    setLoading(false)
+    try {
+      const [{ data: termData }, { data: studentData }] = await Promise.all([
+        supabase.from('academic_terms').select('id, name, academic_year, start_date, end_date, report_cards_released').order('start_date', { ascending: false }),
+        supabase.from('profiles').select('id, full_name, student_id').eq('role', 'student').order('full_name'),
+      ])
+      setTerms(termData || [])
+      setStudents(studentData || [])
+    } catch (err) {
+      console.error('Failed to load report cards page', err)
+    } finally {
+      setLoading(false)
+    }
   }
 
   async function handleCreateTerm() {

@@ -14,6 +14,15 @@ export default function SettingsPage() {
 
   useEffect(() => {
     async function load() {
+      try {
+        await loadInner()
+      } catch (err) {
+        console.error('Failed to load settings', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+    async function loadInner() {
       const { data } = await supabase.from('class_groups').select('id, name, year_grade').order('year_grade')
       setClassGroups(data || [])
 
@@ -185,14 +194,19 @@ function RoutingCheckSection() {
 
   useEffect(() => {
     async function load() {
-      const [{ data: studentData }, { data: subjectData }] = await Promise.all([
-        supabase.from('profiles').select('id, full_name, student_id').eq('role', 'student').order('full_name'),
-        supabase.from('department_subjects').select('subject, department_id').order('subject'),
-      ])
-      setStudents(studentData || [])
-      const uniqueSubjects = Array.from(new Map((subjectData || []).map((s) => [s.subject, s])).values())
-      setSubjects(uniqueSubjects)
-      setRcLoading(false)
+      try {
+        const [{ data: studentData }, { data: subjectData }] = await Promise.all([
+          supabase.from('profiles').select('id, full_name, student_id').eq('role', 'student').order('full_name'),
+          supabase.from('department_subjects').select('subject, department_id').order('subject'),
+        ])
+        setStudents(studentData || [])
+        const uniqueSubjects = Array.from(new Map((subjectData || []).map((s) => [s.subject, s])).values())
+        setSubjects(uniqueSubjects)
+      } catch (err) {
+        console.error('Failed to load routing check data', err)
+      } finally {
+        setRcLoading(false)
+      }
     }
     load()
   }, [])

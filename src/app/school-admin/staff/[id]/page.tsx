@@ -34,6 +34,16 @@ export default function StaffDetailPage() {
   useEffect(() => { loadData() }, [staffId])
 
   async function loadData() {
+    try {
+      await loadDataInner()
+    } catch (err) {
+      console.error('Failed to load staff detail', err)
+      setErrorMsg('Something went wrong loading this staff member. Please try again.')
+      setLoading(false)
+    }
+  }
+
+  async function loadDataInner() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { router.push('/login'); return }
 

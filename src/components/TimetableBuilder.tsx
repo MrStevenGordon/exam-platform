@@ -65,6 +65,15 @@ export default function TimetableBuilder() {
   useEffect(() => { loadData() }, [])
 
   async function loadData() {
+    try {
+      await loadDataInner()
+    } catch (err) {
+      console.error('Failed to load timetable data', err)
+      setLoading(false)
+    }
+  }
+
+  async function loadDataInner() {
     const { data: { user } } = await supabase.auth.getUser()
     const [{ data: myProfile }, { data: periodData }, { data: deptData }, { data: subjectData }, { data: teacherSubData }, { data: cgData }, { data: sectionData }, { data: studentData }] = await Promise.all([
       user ? supabase.from('profiles').select('role, department_id').eq('id', user.id).single() : Promise.resolve({ data: null }),

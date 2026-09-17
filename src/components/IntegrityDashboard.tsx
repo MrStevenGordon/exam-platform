@@ -25,6 +25,16 @@ export default function IntegrityDashboard() {
   useEffect(() => { loadData() }, [])
 
   async function loadData() {
+    try {
+      await loadDataInner()
+    } catch (err) {
+      console.error('Failed to load integrity dashboard', err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function loadDataInner() {
     const [{ data: finalSessions }, { data: draftSessions }] = await Promise.all([
       supabase.from('exam_sessions')
         .select('id, profiles!exam_sessions_student_id_fkey(full_name), final_exams(title), responses(id, answer, integrity_signals, ai_review, questions(question_type))')

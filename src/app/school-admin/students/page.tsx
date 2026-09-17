@@ -66,23 +66,28 @@ export default function StudentsPage() {
   }, [])
 
   async function loadData() {
-    const { data } = await supabase
-      .from('profiles')
-      .select('id, full_name, student_id, grade_level, school_email, accommodations, enrollments(class_groups(name))')
-      .eq('role', 'student')
-      .order('grade_level', { ascending: true })
+    try {
+      const { data } = await supabase
+        .from('profiles')
+        .select('id, full_name, student_id, grade_level, school_email, accommodations, enrollments(class_groups(name))')
+        .eq('role', 'student')
+        .order('grade_level', { ascending: true })
 
-    const mapped = (data || []).map((s: any) => ({
-      id: s.id,
-      full_name: s.full_name,
-      student_id: s.student_id,
-      grade_level: s.grade_level,
-      class_name: s.enrollments?.[0]?.class_groups?.name || null,
-      school_email: s.school_email,
-      accommodations: Array.isArray(s.accommodations) ? s.accommodations : [],
-    }))
-    setStudents(mapped)
-    setLoading(false)
+      const mapped = (data || []).map((s: any) => ({
+        id: s.id,
+        full_name: s.full_name,
+        student_id: s.student_id,
+        grade_level: s.grade_level,
+        class_name: s.enrollments?.[0]?.class_groups?.name || null,
+        school_email: s.school_email,
+        accommodations: Array.isArray(s.accommodations) ? s.accommodations : [],
+      }))
+      setStudents(mapped)
+    } catch (err) {
+      console.error('Failed to load students', err)
+    } finally {
+      setLoading(false)
+    }
   }
 
   async function handleResetStudentPassword(studentId: string, name: string) {

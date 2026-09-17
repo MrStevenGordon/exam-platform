@@ -34,6 +34,15 @@ export default function ActivityPage() {
 
   useEffect(() => {
     async function load() {
+      try {
+        await loadInner()
+      } catch (err) {
+        console.error('Failed to load activity monitor', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+    async function loadInner() {
       const { data: flaggedData } = await supabase
         .from('exam_sessions')
         .select('id, status, started_at, completed_at, tab_switch_count, flagged, total_score, max_possible_score, violation_log, profiles!exam_sessions_student_id_fkey(full_name), final_exams(title), draft_exams(title)')

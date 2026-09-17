@@ -25,19 +25,24 @@ export default function PasswordRequestsPage() {
   useEffect(() => { loadData() }, [])
 
   async function loadData() {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) { router.push('/login'); return }
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) { router.push('/login'); return }
 
-    const { data: profile } = await supabase.from('profiles').select('is_system_admin, role').eq('id', user.id).single()
-    if (!profile?.is_system_admin && profile?.role !== 'admin') { router.push('/login'); return }
+      const { data: profile } = await supabase.from('profiles').select('is_system_admin, role').eq('id', user.id).single()
+      if (!profile?.is_system_admin && profile?.role !== 'admin') { router.push('/login'); return }
 
-    const { data } = await supabase
-      .from('password_reset_requests')
-      .select('id, full_name, identifier, user_type, status, created_at, resolved_at')
-      .order('created_at', { ascending: false })
+      const { data } = await supabase
+        .from('password_reset_requests')
+        .select('id, full_name, identifier, user_type, status, created_at, resolved_at')
+        .order('created_at', { ascending: false })
 
-    setRequests(data || [])
-    setLoading(false)
+      setRequests(data || [])
+    } catch (err) {
+      console.error('Failed to load password reset requests', err)
+    } finally {
+      setLoading(false)
+    }
   }
 
   async function markResolved(id: string) {

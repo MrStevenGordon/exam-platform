@@ -17,11 +17,16 @@ export default function SchoolAdminProfilePage() {
 
   useEffect(() => {
     async function load() {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) { router.push('/login'); return }
-      const { data } = await supabase.from('profiles').select('full_name, role, is_system_admin').eq('id', user.id).single()
-      setProfile(data)
-      setLoading(false)
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) { router.push('/login'); return }
+        const { data } = await supabase.from('profiles').select('full_name, role, is_system_admin').eq('id', user.id).single()
+        setProfile(data)
+      } catch (err) {
+        console.error('Failed to load admin profile', err)
+      } finally {
+        setLoading(false)
+      }
     }
     load()
   }, [])

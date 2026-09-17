@@ -21,21 +21,26 @@ export default function SchoolAdminSubjectsPage() {
   useEffect(() => { loadData() }, [])
 
   async function loadData() {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) { router.push('/login'); return }
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) { router.push('/login'); return }
 
-    const { data: profile } = await supabase.from('profiles').select('is_system_admin, role').eq('id', user.id).single()
-    if (!profile?.is_system_admin && profile?.role !== 'admin') { router.push('/login'); return }
+      const { data: profile } = await supabase.from('profiles').select('is_system_admin, role').eq('id', user.id).single()
+      if (!profile?.is_system_admin && profile?.role !== 'admin') { router.push('/login'); return }
 
-    const [{ data: deptData }, { data: subData }] = await Promise.all([
-      supabase.from('departments').select('id, name').order('name'),
-      supabase.from('department_subjects').select('id, subject, department_id').order('subject'),
-    ])
+      const [{ data: deptData }, { data: subData }] = await Promise.all([
+        supabase.from('departments').select('id, name').order('name'),
+        supabase.from('department_subjects').select('id, subject, department_id').order('subject'),
+      ])
 
-    setDepartments(deptData || [])
-    setSubjects(subData || [])
-    if (deptData && deptData.length > 0 && !selectedDept) setSelectedDept(deptData[0].id)
-    setLoading(false)
+      setDepartments(deptData || [])
+      setSubjects(subData || [])
+      if (deptData && deptData.length > 0 && !selectedDept) setSelectedDept(deptData[0].id)
+    } catch (err) {
+      console.error('Failed to load subjects', err)
+    } finally {
+      setLoading(false)
+    }
   }
 
   async function handleAdd() {
