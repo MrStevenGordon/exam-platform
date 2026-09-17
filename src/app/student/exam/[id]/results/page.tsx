@@ -17,26 +17,32 @@ export default function FinalExamResultsPage() {
 
   useEffect(() => {
     async function loadData() {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) { router.push('/login'); return }
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) { router.push('/login'); return }
 
-      const { data: examData } = await supabase
-        .from('final_exams')
-        .select('title, subject, pass_mark, duration_minutes')
-        .eq('id', examId)
-        .single()
-      setExam(examData)
+        const { data: examData } = await supabase
+          .from('final_exams')
+          .select('title, subject, pass_mark, duration_minutes')
+          .eq('id', examId)
+          .single()
+        setExam(examData)
 
-      const { data, error } = await supabase
-        .from('exam_sessions')
-        .select('status, total_score, max_possible_score, results_released, completed_at, started_at')
-        .eq('final_exam_id', examId)
-        .eq('student_id', user.id)
-        .single()
+        const { data, error } = await supabase
+          .from('exam_sessions')
+          .select('status, total_score, max_possible_score, results_released, completed_at, started_at')
+          .eq('final_exam_id', examId)
+          .eq('student_id', user.id)
+          .single()
 
-      if (error) setErrorMsg(error.message)
-      else setResult(data)
-      setLoading(false)
+        if (error) setErrorMsg(error.message)
+        else setResult(data)
+      } catch (err) {
+        console.error('Failed to load exam results', err)
+        setErrorMsg('Something went wrong loading your results. Please try again.')
+      } finally {
+        setLoading(false)
+      }
     }
     loadData()
   }, [examId, router])

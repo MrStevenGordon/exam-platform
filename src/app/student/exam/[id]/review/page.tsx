@@ -36,85 +36,85 @@ export default function ReviewExamPage() {
 
   useEffect(() => {
     async function loadData() {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) {
-        router.push('/login')
-        return
-      }
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) {
+          router.push('/login')
+          return
+        }
 
-      const { data: examData } = await supabase
-        .from('final_exams')
-        .select('title')
-        .eq('id', examId)
-        .single()
-      setExamTitle(examData?.title || '')
+        const { data: examData } = await supabase
+          .from('final_exams')
+          .select('title')
+          .eq('id', examId)
+          .single()
+        setExamTitle(examData?.title || '')
 
-      const { data: sessionData, error: sessionError } = await supabase
-        .from('exam_sessions')
-        .select('id, status, results_released, total_score, max_possible_score')
-        .eq('final_exam_id', examId)
-        .eq('student_id', user.id)
-        .single()
+        const { data: sessionData, error: sessionError } = await supabase
+          .from('exam_sessions')
+          .select('id, status, results_released, total_score, max_possible_score')
+          .eq('final_exam_id', examId)
+          .eq('student_id', user.id)
+          .single()
 
-      if (sessionError || !sessionData) {
-        setErrorMsg('No exam session found.')
-        setLoading(false)
-        return
-      }
-      setSession(sessionData)
+        if (sessionError || !sessionData) {
+          setErrorMsg('No exam session found.')
+          return
+        }
+        setSession(sessionData)
 
-      if (!sessionData.results_released) {
-        setLoading(false)
-        return
-      }
+        if (!sessionData.results_released) return
 
-      const { data: linkData, error: linkError } = await supabase
-        .from('final_exam_questions')
-        .select('order_index, questions(id, question_text, question_type, correct_answer, options, points)')
-        .eq('final_exam_id', examId)
-        .order('order_index', { ascending: true })
+        const { data: linkData, error: linkError } = await supabase
+          .from('final_exam_questions')
+          .select('order_index, questions(id, question_text, question_type, correct_answer, options, points)')
+          .eq('final_exam_id', examId)
+          .order('order_index', { ascending: true })
 
-      if (linkError) {
-        setErrorMsg(linkError.message)
-        setLoading(false)
-        return
-      }
+        if (linkError) {
+          setErrorMsg(linkError.message)
+          return
+        }
 
-      const { data: responseData, error: responseError } = await supabase
-        .from('responses')
-        .select('id, answer, points_awarded, question_id')
-        .eq('session_id', sessionData.id)
+        const { data: responseData, error: responseError } = await supabase
+          .from('responses')
+          .select('id, answer, points_awarded, question_id')
+          .eq('session_id', sessionData.id)
 
-      if (responseError) {
-        setErrorMsg(responseError.message)
-        setLoading(false)
-        return
-      }
+        if (responseError) {
+          setErrorMsg(responseError.message)
+          return
+        }
 
-      const responseMap: Record<string, { id: string; answer: string; points_awarded: number | null }> = {}
-      ;(responseData || []).forEach((r) => {
-        responseMap[r.question_id] = r
-      })
-
-      const combined = (linkData || [])
-        .map((l: any) => l.questions)
-        .filter(Boolean)
-        .map((q: any) => {
-          const r = responseMap[q.id]
-          return {
-            id: r?.id || q.id,
-            answer: r?.answer || '',
-            points_awarded: r?.points_awarded ?? null,
-            question_text: q.question_text,
-            question_type: q.question_type,
-            correct_answer: q.correct_answer,
-            options: q.options,
-            points: q.points,
-          }
+        const responseMap: Record<string, { id: string; answer: string; points_awarded: number | null }> = {}
+        ;(responseData || []).forEach((r) => {
+          responseMap[r.question_id] = r
         })
 
-      setItems(combined)
-      setLoading(false)
+        const combined = (linkData || [])
+          .map((l: any) => l.questions)
+          .filter(Boolean)
+          .map((q: any) => {
+            const r = responseMap[q.id]
+            return {
+              id: r?.id || q.id,
+              answer: r?.answer || '',
+              points_awarded: r?.points_awarded ?? null,
+              question_text: q.question_text,
+              question_type: q.question_type,
+              correct_answer: q.correct_answer,
+              options: q.options,
+              points: q.points,
+            }
+          })
+
+        setItems(combined)
+      } catch (err) {
+        console.error('Failed to load exam review', err)
+        setErrorMsg('Something went wrong loading this review. Please try again.')
+      } finally {
+        setLoading(false)
+      }
     }
     loadData()
   }, [examId, router])

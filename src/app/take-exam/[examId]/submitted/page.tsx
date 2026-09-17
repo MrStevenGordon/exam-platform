@@ -14,26 +14,33 @@ export default function TakeExamSubmittedPage() {
 
   useEffect(() => {
     async function load() {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) { setLoading(false); return }
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) return
 
-      const lookupRes = await fetch(`/api/org-exam-lookup?examId=${examId}`)
-      const lookupData = await lookupRes.json()
-      setShowScore(!!lookupData.showScoreToRespondent)
+        const lookupRes = await fetch(`/api/org-exam-lookup?examId=${examId}`)
+        const lookupData = await lookupRes.json()
+        setShowScore(!!lookupData.showScoreToRespondent)
 
-      const { data: session } = await supabase
-        .from('org_exam_sessions')
-        .select('total_score, max_possible_score')
-        .eq('org_exam_id', examId)
-        .eq('auth_user_id', user.id)
-        .order('started_at', { ascending: false })
-        .limit(1)
-        .maybeSingle()
+        const { data: session } = await supabase
+          .from('org_exam_sessions')
+          .select('total_score, max_possible_score')
+          .eq('org_exam_id', examId)
+          .eq('auth_user_id', user.id)
+          .order('started_at', { ascending: false })
+          .limit(1)
+          .maybeSingle()
 
-      if (session && session.total_score !== null) {
-        setScore({ total: session.total_score, max: session.max_possible_score })
+        if (session && session.total_score !== null) {
+          setScore({ total: session.total_score, max: session.max_possible_score })
+        }
+      } catch (err) {
+        // The exam was already submitted by this point -- a failure here
+        // just means the score recap doesn't show, not a lost submission.
+        console.error('Failed to load submission score', err)
+      } finally {
+        setLoading(false)
       }
-      setLoading(false)
     }
     load()
   }, [examId])

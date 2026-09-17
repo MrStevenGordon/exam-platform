@@ -39,6 +39,16 @@ export default function SelfMockPage() {
   }, [mockId])
 
   async function loadData() {
+    try {
+      await loadDataInner()
+    } catch (err) {
+      console.error('Failed to load practice mock', err)
+      setErrorMsg('Something went wrong loading this practice mock. Please try again.')
+      setLoading(false)
+    }
+  }
+
+  async function loadDataInner() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
       router.push('/login')

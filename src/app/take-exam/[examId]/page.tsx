@@ -23,13 +23,19 @@ export default function TakeExamStartPage() {
   useEffect(() => { loadExam() }, [examId])
 
   async function loadExam() {
-    const res = await fetch(`/api/org-exam-lookup?examId=${examId}`)
-    const data = await res.json()
-    if (!res.ok) { setError(data.error || 'Exam not found.'); setLoading(false); return }
-    setTitle(data.title)
-    setInstructions(data.instructions || '')
-    setFields(data.fields)
-    setLoading(false)
+    try {
+      const res = await fetch(`/api/org-exam-lookup?examId=${examId}`)
+      const data = await res.json()
+      if (!res.ok) { setError(data.error || 'Exam not found.'); return }
+      setTitle(data.title)
+      setInstructions(data.instructions || '')
+      setFields(data.fields)
+    } catch (err) {
+      console.error('Failed to load exam', err)
+      setError('Something went wrong loading this exam. Please try again.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   async function handleStart(e: React.FormEvent) {
