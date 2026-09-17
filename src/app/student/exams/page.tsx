@@ -16,15 +16,20 @@ export default function StudentExamsPage() {
 
   useEffect(() => {
     async function load() {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) { router.push('/login'); return }
-      const { data } = await supabase.from('final_exams').select('id, title, subject, duration_minutes, exam_category, profiles!final_exams_created_by_fkey(full_name)').order('published_at', { ascending: false })
-      setExams((data as any) || [])
-      const { data: sessions } = await supabase.from('exam_sessions').select('final_exam_id, status').eq('student_id', user.id)
-      const map: Record<string, string> = {}
-      ;(sessions || []).forEach((s: any) => { if (s.final_exam_id) map[s.final_exam_id] = s.status })
-      setSessionMap(map)
-      setLoading(false)
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) { router.push('/login'); return }
+        const { data } = await supabase.from('final_exams').select('id, title, subject, duration_minutes, exam_category, profiles!final_exams_created_by_fkey(full_name)').order('published_at', { ascending: false })
+        setExams((data as any) || [])
+        const { data: sessions } = await supabase.from('exam_sessions').select('final_exam_id, status').eq('student_id', user.id)
+        const map: Record<string, string> = {}
+        ;(sessions || []).forEach((s: any) => { if (s.final_exam_id) map[s.final_exam_id] = s.status })
+        setSessionMap(map)
+      } catch (err) {
+        console.error('Failed to load exams', err)
+      } finally {
+        setLoading(false)
+      }
     }
     load()
   }, [router])

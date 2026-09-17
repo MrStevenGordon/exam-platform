@@ -44,6 +44,16 @@ export default function StudentHome() {
   }, [])
 
   async function loadData() {
+    try {
+      await loadDataInner()
+    } catch (err) {
+      console.error('Failed to load student home data', err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function loadDataInner() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { router.push('/login'); return }
 

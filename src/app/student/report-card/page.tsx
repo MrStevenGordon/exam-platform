@@ -17,20 +17,25 @@ export default function StudentReportCardPage() {
 
   useEffect(() => {
     async function loadData() {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) { router.push('/login'); return }
-      setStudentId(user.id)
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) { router.push('/login'); return }
+        setStudentId(user.id)
 
-      const { data } = await supabase
-        .from('academic_terms')
-        .select('id, name, academic_year, report_cards_released')
-        .eq('report_cards_released', true)
-        .order('start_date', { ascending: false })
+        const { data } = await supabase
+          .from('academic_terms')
+          .select('id, name, academic_year, report_cards_released')
+          .eq('report_cards_released', true)
+          .order('start_date', { ascending: false })
 
-      const released = (data || []).map(({ id, name, academic_year }) => ({ id, name, academic_year }))
-      setTerms(released)
-      if (released.length > 0) setSelectedTerm(released[0].id)
-      setLoading(false)
+        const released = (data || []).map(({ id, name, academic_year }) => ({ id, name, academic_year }))
+        setTerms(released)
+        if (released.length > 0) setSelectedTerm(released[0].id)
+      } catch (err) {
+        console.error('Failed to load report card terms', err)
+      } finally {
+        setLoading(false)
+      }
     }
     loadData()
   }, [router])

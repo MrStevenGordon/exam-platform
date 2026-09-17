@@ -16,20 +16,25 @@ export default function StudentTestsPage() {
 
   useEffect(() => {
     async function load() {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) { router.push('/login'); return }
-      const { data } = await supabase
-        .from('draft_exams')
-        .select('id, title, subject, exam_kind, duration_minutes, profiles!draft_exams_created_by_fkey(full_name)')
-        .eq('direct_published', true)
-        .not('exam_kind', 'in', '(homework,assignment,group_project)')
-        .order('direct_published_at', { ascending: false })
-      setExams((data as any) || [])
-      const { data: sessions } = await supabase.from('exam_sessions').select('draft_exam_id, status').eq('student_id', user.id)
-      const map: Record<string, string> = {}
-      ;(sessions || []).forEach((s: any) => { if (s.draft_exam_id) map[s.draft_exam_id] = s.status })
-      setSessionMap(map)
-      setLoading(false)
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) { router.push('/login'); return }
+        const { data } = await supabase
+          .from('draft_exams')
+          .select('id, title, subject, exam_kind, duration_minutes, profiles!draft_exams_created_by_fkey(full_name)')
+          .eq('direct_published', true)
+          .not('exam_kind', 'in', '(homework,assignment,group_project)')
+          .order('direct_published_at', { ascending: false })
+        setExams((data as any) || [])
+        const { data: sessions } = await supabase.from('exam_sessions').select('draft_exam_id, status').eq('student_id', user.id)
+        const map: Record<string, string> = {}
+        ;(sessions || []).forEach((s: any) => { if (s.draft_exam_id) map[s.draft_exam_id] = s.status })
+        setSessionMap(map)
+      } catch (err) {
+        console.error('Failed to load tests', err)
+      } finally {
+        setLoading(false)
+      }
     }
     load()
   }, [router])

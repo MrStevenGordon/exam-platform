@@ -22,6 +22,16 @@ export default function ScoreHistoryPage() {
 
   useEffect(() => {
     async function loadData() {
+      try {
+        await loadDataInner()
+      } catch (err) {
+        console.error('Failed to load score history', err)
+        setErrorMsg('Something went wrong loading your history. Please try again.')
+      } finally {
+        setLoading(false)
+      }
+    }
+    async function loadDataInner() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.push('/login'); return }
 
