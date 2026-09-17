@@ -39,24 +39,29 @@ export default function SupervisorStudentsPage() {
   }, [])
 
   async function loadData() {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) { router.push('/login'); return }
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) { router.push('/login'); return }
 
-    const { data } = await supabase
-      .from('profiles')
-      .select('id, full_name, student_id, grade_level, enrollments(class_groups(name))')
-      .eq('role', 'student')
-      .order('grade_level', { ascending: true })
+      const { data } = await supabase
+        .from('profiles')
+        .select('id, full_name, student_id, grade_level, enrollments(class_groups(name))')
+        .eq('role', 'student')
+        .order('grade_level', { ascending: true })
 
-    const mapped = (data || []).map((s: any) => ({
-      id: s.id,
-      full_name: s.full_name,
-      student_id: s.student_id,
-      grade_level: s.grade_level,
-      class_name: s.enrollments?.[0]?.class_groups?.name || null,
-    }))
-    setStudents(mapped)
-    setLoading(false)
+      const mapped = (data || []).map((s: any) => ({
+        id: s.id,
+        full_name: s.full_name,
+        student_id: s.student_id,
+        grade_level: s.grade_level,
+        class_name: s.enrollments?.[0]?.class_groups?.name || null,
+      }))
+      setStudents(mapped)
+    } catch (err) {
+      console.error('Failed to load students', err)
+    } finally {
+      setLoading(false)
+    }
   }
 
   if (loading) return <div>Loading…</div>

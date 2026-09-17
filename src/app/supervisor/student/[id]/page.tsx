@@ -44,6 +44,16 @@ export default function SupervisorStudentDetailPage() {
 
   useEffect(() => {
     async function load() {
+      try {
+        await loadInner()
+      } catch (err) {
+        console.error('Failed to load student detail', err)
+        setErrorMsg('Something went wrong loading this student. Please try again.')
+      } finally {
+        setLoading(false)
+      }
+    }
+    async function loadInner() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.push('/login'); return }
 

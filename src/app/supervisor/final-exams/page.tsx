@@ -38,18 +38,23 @@ export default function FinalExamsPage() {
 
   useEffect(() => {
     async function load() {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) { router.push('/login'); return }
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) { router.push('/login'); return }
 
-      const { data } = await supabase
-        .from('draft_exams')
-        .select('id, title, subject, exam_kind, term, target_grade, status, created_at, profiles!draft_exams_created_by_fkey(full_name)')
-        .in('exam_kind', ['monthly', 'midterm', 'end_of_term', 'end_of_year'])
-        .in('status', ['approved', 'published'])
-        .order('created_at', { ascending: false })
+        const { data } = await supabase
+          .from('draft_exams')
+          .select('id, title, subject, exam_kind, term, target_grade, status, created_at, profiles!draft_exams_created_by_fkey(full_name)')
+          .in('exam_kind', ['monthly', 'midterm', 'end_of_term', 'end_of_year'])
+          .in('status', ['approved', 'published'])
+          .order('created_at', { ascending: false })
 
-      setExams((data as any) || [])
-      setLoading(false)
+        setExams((data as any) || [])
+      } catch (err) {
+        console.error('Failed to load final exams', err)
+      } finally {
+        setLoading(false)
+      }
     }
     load()
   }, [])

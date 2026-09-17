@@ -22,18 +22,23 @@ export default function SupervisorExamsPage() {
 
   useEffect(() => {
     async function load() {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) { router.push('/login'); return }
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) { router.push('/login'); return }
 
-      const { data } = await supabase
-        .from('draft_exams')
-        .select('id, title, subject, exam_kind, status, direct_published, created_at')
-        .eq('created_by', user.id)
-        .eq('exam_kind', 'pop_quiz')
-        .order('created_at', { ascending: false })
+        const { data } = await supabase
+          .from('draft_exams')
+          .select('id, title, subject, exam_kind, status, direct_published, created_at')
+          .eq('created_by', user.id)
+          .eq('exam_kind', 'pop_quiz')
+          .order('created_at', { ascending: false })
 
-      setExams(data || [])
-      setLoading(false)
+        setExams(data || [])
+      } catch (err) {
+        console.error('Failed to load exams', err)
+      } finally {
+        setLoading(false)
+      }
     }
     load()
   }, [])

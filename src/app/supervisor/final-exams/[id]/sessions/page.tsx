@@ -38,6 +38,16 @@ export default function ExamSessionsPage() {
   }, [finalExamId])
 
   async function loadData() {
+    try {
+      await loadDataInner()
+    } catch (err) {
+      console.error('Failed to load exam sessions', err)
+      setErrorMsg('Something went wrong loading sessions. Please try again.')
+      setLoading(false)
+    }
+  }
+
+  async function loadDataInner() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
       router.push('/login')

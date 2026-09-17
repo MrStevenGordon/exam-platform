@@ -68,27 +68,32 @@ export default function SupervisorExamPublishPage() {
   useEffect(() => { loadData() }, [])
 
   async function loadData() {
-    const { data: examData } = await supabase
-      .from('draft_exams')
-      .select('id, title, subject, exam_kind, term, target_grade, status, instructions, duration_minutes, access_password, questions_per_page, department_id, calculator_enabled, published_final_exam_id')
-      .eq('id', examId)
-      .single()
-    setExam(examData)
+    try {
+      const { data: examData } = await supabase
+        .from('draft_exams')
+        .select('id, title, subject, exam_kind, term, target_grade, status, instructions, duration_minutes, access_password, questions_per_page, department_id, calculator_enabled, published_final_exam_id')
+        .eq('id', examId)
+        .single()
+      setExam(examData)
 
-    const { data: qData } = await supabase
-      .from('questions')
-      .select('id, question_type, question_text, points, options')
-      .eq('draft_exam_id', examId)
-      .order('order_index')
-    setQuestions(qData || [])
+      const { data: qData } = await supabase
+        .from('questions')
+        .select('id, question_type, question_text, points, options')
+        .eq('draft_exam_id', examId)
+        .order('order_index')
+      setQuestions(qData || [])
 
-    const { data: cgData } = await supabase
-      .from('class_groups')
-      .select('id, name, year_grade')
-      .order('year_grade')
-    setClassGroups(cgData || [])
-
-    setLoading(false)
+      const { data: cgData } = await supabase
+        .from('class_groups')
+        .select('id, name, year_grade')
+        .order('year_grade')
+      setClassGroups(cgData || [])
+    } catch (err) {
+      console.error('Failed to load exam for publishing', err)
+      setErrorMsg('Something went wrong loading this exam. Please try again.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   async function handlePublish() {

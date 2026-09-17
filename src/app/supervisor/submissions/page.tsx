@@ -16,11 +16,16 @@ export default function SupervisorSubmissionsPage() {
 
   useEffect(() => {
     async function load() {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) { router.push('/login'); return }
-      const { data } = await supabase.from('draft_exams').select('id, title, subject, status, created_at, created_by, profiles!draft_exams_created_by_fkey(full_name)').eq('exam_kind', 'final_exam_submission').order('created_at', { ascending: false })
-      setExams((data as any) || [])
-      setLoading(false)
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) { router.push('/login'); return }
+        const { data } = await supabase.from('draft_exams').select('id, title, subject, status, created_at, created_by, profiles!draft_exams_created_by_fkey(full_name)').eq('exam_kind', 'final_exam_submission').order('created_at', { ascending: false })
+        setExams((data as any) || [])
+      } catch (err) {
+        console.error('Failed to load submissions', err)
+      } finally {
+        setLoading(false)
+      }
     }
     load()
   }, [router])

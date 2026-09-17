@@ -61,6 +61,16 @@ export default function AppointmentsPage() {
   useEffect(() => { loadData() }, [])
 
   async function loadData() {
+    try {
+      await loadDataInner()
+    } catch (err) {
+      console.error('Failed to load appointments', err)
+      setErrorMsg('Something went wrong loading this page. Please try again.')
+      setLoading(false)
+    }
+  }
+
+  async function loadDataInner() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { router.push('/login'); return }
 

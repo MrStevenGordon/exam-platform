@@ -22,25 +22,31 @@ export default function DepartmentSubjectsPage() {
   useEffect(() => { loadData() }, [])
 
   async function loadData() {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) { router.push('/login'); return }
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) { router.push('/login'); return }
 
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('department_id, departments!profiles_department_id_fkey(name)')
-      .eq('id', user.id)
-      .single()
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('department_id, departments!profiles_department_id_fkey(name)')
+        .eq('id', user.id)
+        .single()
 
-    setDeptName((profile?.departments as any)?.name || 'Your department')
+      setDeptName((profile?.departments as any)?.name || 'Your department')
 
-    const { data } = await supabase
-      .from('department_subjects')
-      .select('id, subject')
-      .eq('department_id', profile?.department_id)
-      .order('subject')
+      const { data } = await supabase
+        .from('department_subjects')
+        .select('id, subject')
+        .eq('department_id', profile?.department_id)
+        .order('subject')
 
-    setSubjects(data || [])
-    setLoading(false)
+      setSubjects(data || [])
+    } catch (err) {
+      console.error('Failed to load department subjects', err)
+      setErrorMsg('Something went wrong loading subjects. Please try again.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   async function handleAdd() {
