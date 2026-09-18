@@ -1,6 +1,8 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { getPlayAccount } from '@/lib/playAuth'
+import { getPlayPool } from '@/lib/playDb'
+import { getStreaks, getXp, loadClassBoard } from '@/lib/playProgress'
 import SignOutButton from './SignOutButton'
 
 type Game = { name: string; mode: string; blurb: string; href?: string; cta?: string }
@@ -14,6 +16,7 @@ const STUDENT_GAMES: Game[] = [
 const TEACHER_GAMES: Game[] = [
   { name: 'Host a live game', mode: 'Live classroom game', blurb: 'Create a game, share the code, and run it on the projector while students play on their own devices.', href: '/play/host', cta: 'Host' },
   { name: 'Jeopardy board', mode: 'Live classroom game', blurb: 'Pick categories and run a buzz-in board on the projector. Students buzz from their own devices and you judge the answers.', href: '/play/host/board', cta: 'Host' },
+  { name: 'Class progress', mode: 'Leaderboards and streaks', blurb: 'See how each class is doing: XP, day streaks and who has not played yet.', href: '/play/host/classes', cta: 'View' },
   { name: 'Game questions', mode: 'Question bank', blurb: 'Add, edit and approve the questions used in live games, Topic Mastery and Math Duels.', href: '/play/host/questions', cta: 'Manage' },
 ]
 
@@ -22,6 +25,20 @@ export default async function PlayHomePage() {
   if (!account) redirect('/play/login')
 
   const games = account.role === 'teacher' ? TEACHER_GAMES : STUDENT_GAMES
+
+  // A student's streak, weekly XP and standing in their class, computed live.
+  let progress: { current: number; best: number; playedToday: boolean; weekXp: number; className: string | null; rank: number | null } | null = null
+  if (account.role === 'student') {
+    const [streaks, week, cls] = await Promise.all([
+      getStreaks([account.id]),
+      getXp([account.id], 'week'),
+      getPlayPool().query('select c.id, c.name from play_class_members m join play_classes c on c.id = m.class_id where m.account_id = $1 order by c.name limit 1', [account.id]),
+    ])
+    const streak = streaks.get(account.id)!
+    let rank: number | null = null
+    if (cls.rows[0]) rank = (await loadClassBoard(cls.rows[0].id, 'week', account.id))?.rows.find((r) => r.isMe)?.rank ?? null
+    progress = { current: streak.current, best: streak.best, playedToday: streak.playedToday, weekXp: week.get(account.id) ?? 0, className: cls.rows[0]?.name ?? null, rank }
+  }
 
   return (
     <div className="page-container" style={{ maxWidth: 680 }}>
@@ -32,6 +49,26 @@ export default async function PlayHomePage() {
         </div>
         <SignOutButton />
       </div>
+
+      {progress && (
+        <div className="card" style={{ display: 'flex', flexWrap: 'wrap', gap: 20, alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+          <div style={{ display: 'flex', gap: 28, flexWrap: 'wrap' }}>
+            <div>
+              <div style={{ fontSize: 30, fontWeight: 800, lineHeight: 1, color: progress.current > 0 ? 'var(--accent-dark)' : 'var(--text-muted)' }}>{progress.current}<span style={{ fontSize: 14, fontWeight: 600 }}> day{progress.current !== 1 ? 's' : ''}</span></div>
+              <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 4 }}>
+                {progress.current === 0 ? 'Play today to start a streak' : progress.playedToday ? `Streak kept today. Best: ${progress.best}` : `Play today to keep it going. Best: ${progress.best}`}
+              </div>
+            </div>
+            <div>
+              <div style={{ fontSize: 30, fontWeight: 800, lineHeight: 1 }}>{progress.weekXp}<span style={{ fontSize: 14, fontWeight: 600 }}> XP</span></div>
+              <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 4 }}>
+                {progress.className ? (progress.rank ? `#${progress.rank} in ${progress.className} this week` : `Earn XP to join the ${progress.className} board`) : 'This week'}
+              </div>
+            </div>
+          </div>
+          {progress.className && <Link href="/play/leaderboard" className="btn btn-secondary" style={{ fontSize: 13, padding: '6px 14px' }}>Class leaderboard</Link>}
+        </div>
+      )}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         {games.map((g) => (

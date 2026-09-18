@@ -49,6 +49,14 @@ try {
     )
     teachers = t.rows
   }
+  // Classes, who is in them, and which teachers teach them (read-only).
+  const classes = (await exam.query('select id, name, year_grade from class_groups')).rows
+  const enrollments = (await exam.query(
+    `select e.class_group_id, p.student_id from enrollments e join profiles p on p.id = e.student_id where p.student_id is not null`
+  )).rows
+  const assignments = (await exam.query(
+    `select t.class_group_id, lower(u.email) as email from teacher_class_groups t join auth.users u on u.id = t.teacher_id`
+  )).rows
   await exam.query('rollback')
 
   let created = 0, updated = 0
@@ -79,7 +87,43 @@ try {
     )
     if (res.rows[0].inserted) created++; else updated++
   }
+  // Classes are replaced wholesale so the copy always mirrors the exam database.
+  await play.query('delete from play_class_members')
+  await play.query('delete from play_class_teachers')
+  const classIds = new Map()
+  for (const c of classes) {
+    const r = await play.query(
+      `insert into play_classes (name, grade_label, source_class_id) values ($1, $2, $3)
+       on conflict (source_class_id) do update set name = excluded.name, grade_label = excluded.grade_label
+       returning id`,
+      [c.name, c.year_grade, c.id]
+    )
+    classIds.set(c.id, r.rows[0].id)
+  }
+  await play.query('delete from play_classes where source_class_id <> all($1::uuid[])', [classes.map((c) => c.id)])
+  let members = 0, classTeachers = 0
+  for (const e of enrollments) {
+    const cid = classIds.get(e.class_group_id)
+    if (!cid) continue
+    const r = await play.query(
+      `insert into play_class_members (class_id, account_id)
+       select $1, id from play_accounts where student_id = $2 and role = 'student' on conflict do nothing`,
+      [cid, e.student_id]
+    )
+    members += r.rowCount
+  }
+  for (const a of assignments) {
+    const cid = classIds.get(a.class_group_id)
+    if (!cid) continue
+    const r = await play.query(
+      `insert into play_class_teachers (class_id, account_id)
+       select $1, id from play_accounts where student_id = $2 and role = 'teacher' on conflict do nothing`,
+      [cid, a.email.split('@')[0]]
+    )
+    classTeachers += r.rowCount
+  }
   await play.query('commit')
+  console.log(`Classes copied: ${classes.length}, memberships: ${members}, teacher assignments: ${classTeachers}.`)
   console.log(`Teachers matched: ${teachers.length} of ${teacherEmails.length} requested.`)
   console.log(`Roster read: ${students.length} students. Game accounts created: ${created}, updated: ${updated}.`)
   console.log(resetPasswords || created > 0 ? `New/reset accounts use game password: ${password}` : 'Existing passwords unchanged.')
