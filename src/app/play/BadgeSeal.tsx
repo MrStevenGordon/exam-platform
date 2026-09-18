@@ -1,4 +1,4 @@
-import type { BadgeCategory } from '@/lib/playBadges'
+import type { BadgeCategory } from '@/lib/playBadgeCatalog'
 
 const TONES: Record<BadgeCategory, { bg: string; border: string; text: string }> = {
   streak: { bg: 'var(--accent-light)', border: 'var(--accent)', text: 'var(--accent-dark)' },

@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import BadgeSeal from '../../BadgeSeal'
+import { BADGES } from '@/lib/playBadgeCatalog'
 
 type ClassInfo = { id: string; name: string; gradeLabel: string | null; students: number }
 type Row = {
@@ -15,7 +17,12 @@ type Row = {
   bestStreak: number
   playedToday: boolean
   lastPlayed: string | null
+  // Badge keys, newest first.
+  badges: string[]
 }
+
+const BADGE_BY_KEY = new Map(BADGES.map((b) => [b.key, b]))
+const SEALS_SHOWN = 5
 
 function lastPlayedLabel(iso: string | null): string {
   if (!iso) return 'Never'
@@ -73,6 +80,8 @@ export default function ClassProgressPage() {
   const noXp = rows?.filter((r) => r.xp === 0 && r.lastPlayed !== null) ?? []
   const active = rows?.filter((r) => r.xp > 0).length ?? 0
   const streaking = rows?.filter((r) => r.streak >= 3).length ?? 0
+  const badgeTotal = rows?.reduce((n, r) => n + r.badges.length, 0) ?? 0
+  const withBadges = rows?.filter((r) => r.badges.length > 0).length ?? 0
 
   return (
     <div className="page-container" style={{ maxWidth: 860 }}>
@@ -102,11 +111,12 @@ export default function ClassProgressPage() {
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 14 }}>
             <Stat label={`Earned XP ${period === 'week' ? 'this week' : 'in total'}`} value={`${active} of ${rows.length}`} />
             <Stat label="On a 3+ day streak" value={String(streaking)} />
+            <Stat label={`Badges earned (${withBadges} student${withBadges !== 1 ? 's' : ''})`} value={String(badgeTotal)} />
             <Stat label="Never played" value={String(notPlayedEver.length)} />
           </div>
 
           <div className="card" style={{ padding: 0, overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14, minWidth: 560 }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14, minWidth: 720 }}>
               <thead>
                 <tr style={{ textAlign: 'left', color: 'var(--text-secondary)', fontSize: 12 }}>
                   <th style={{ padding: '10px 12px', width: 44 }}>Rank</th>
@@ -114,6 +124,7 @@ export default function ClassProgressPage() {
                   <th style={{ padding: '10px 12px', textAlign: 'right' }}>{period === 'week' ? 'XP this week' : 'XP all time'}</th>
                   <th style={{ padding: '10px 12px', textAlign: 'right' }}>{period === 'week' ? 'XP all time' : 'XP this week'}</th>
                   <th style={{ padding: '10px 12px', textAlign: 'right' }}>Streak</th>
+                  <th style={{ padding: '10px 12px' }}>Badges</th>
                   <th style={{ padding: '10px 12px' }}>Last played</th>
                 </tr>
               </thead>
@@ -127,6 +138,22 @@ export default function ClassProgressPage() {
                     <td style={{ padding: '8px 12px', textAlign: 'right', whiteSpace: 'nowrap' }}>
                       {r.streak > 0 ? <span style={{ fontWeight: 700, color: 'var(--accent-dark)' }}>{r.streak} day{r.streak !== 1 ? 's' : ''}</span> : <span style={{ color: 'var(--text-muted)' }}>none</span>}
                       {r.bestStreak > r.streak && <span style={{ color: 'var(--text-muted)', fontSize: 12 }}> (best {r.bestStreak})</span>}
+                    </td>
+                    <td style={{ padding: '8px 12px' }}>
+                      {r.badges.length === 0 ? (
+                        <span style={{ color: 'var(--text-muted)' }}>none</span>
+                      ) : (
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                          <span style={{ fontWeight: 700, marginRight: 4 }}>{r.badges.length}</span>
+                          {r.badges.slice(0, SEALS_SHOWN).map((key) => {
+                            const b = BADGE_BY_KEY.get(key)
+                            return b ? <span key={key} title={`${b.name}: ${b.description}`}><BadgeSeal mark={b.mark} category={b.category} size={26} label={b.name} /></span> : null
+                          })}
+                          {r.badges.length > SEALS_SHOWN && (
+                            <span style={{ fontSize: 12, color: 'var(--text-muted)' }} title={r.badges.slice(SEALS_SHOWN).map((k) => BADGE_BY_KEY.get(k)?.name).filter(Boolean).join(', ')}>+{r.badges.length - SEALS_SHOWN}</span>
+                          )}
+                        </span>
+                      )}
                     </td>
                     <td style={{ padding: '8px 12px', color: r.lastPlayed === null ? 'var(--danger)' : 'var(--text-secondary)' }}>{lastPlayedLabel(r.lastPlayed)}</td>
                   </tr>

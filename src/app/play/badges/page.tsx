@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import BadgeSeal from '../BadgeSeal'
-import type { BadgeCategory } from '@/lib/playBadges'
+import type { BadgeCategory } from '@/lib/playBadgeCatalog'
 
 type Progress = { current: number; target: number } | null
 type Badge = { key: string; name: string; description: string; category: BadgeCategory; mark: string }

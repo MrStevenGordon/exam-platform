@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getPlayPool } from '@/lib/playDb'
 import { getPlayAccount, UUID_RE } from '@/lib/playAuth'
 import { loadClassBoard, type Period } from '@/lib/playProgress'
+import { badgesForStudents } from '@/lib/playBadges'
 
 const STUDENT_TOP = 10
 
@@ -28,7 +29,15 @@ export async function GET(request: Request) {
     if (!board) return NextResponse.json({ error: 'Class not found.' }, { status: 404 })
 
     if (account.role === 'teacher') {
-      return NextResponse.json({ role: 'teacher', period, className: board.className, gradeLabel: board.gradeLabel, rows: board.rows.map(({ isMe: _isMe, ...r }) => r) })
+      // Badges are for teachers only; classmates do not see each other's.
+      const badges = await badgesForStudents(board.rows.map((r) => r.id))
+      return NextResponse.json({
+        role: 'teacher',
+        period,
+        className: board.className,
+        gradeLabel: board.gradeLabel,
+        rows: board.rows.map(({ isMe: _isMe, id, ...r }) => ({ ...r, badges: (badges.get(id) ?? []).map((b) => b.key) })),
+      })
     }
 
     const ranked = board.rows.filter((r) => r.rank !== null)

@@ -72,6 +72,8 @@ export async function getLastPlayed(accountIds: string[]): Promise<Map<string, s
 }
 
 export type ClassBoardRow = {
+  // Internal: routes must strip this before responding.
+  id: string
   // null until the student has earned some XP in this period.
   rank: number | null
   name: string
@@ -119,6 +121,7 @@ export async function loadClassBoard(classId: string, period: Period, viewerId: 
     className: cls.rows[0].name,
     gradeLabel: cls.rows[0].grade_label,
     rows: rows.map((r) => ({
+      id: r.id,
       rank: r.xp > 0 ? 1 + rows.filter((x) => x.xp > r.xp).length : null,
       name: r.name,
       xp: r.xp,
