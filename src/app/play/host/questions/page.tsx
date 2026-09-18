@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Facet, QuestionType, TYPE_LABELS } from './QuestionForm'
@@ -43,6 +43,15 @@ export default function ManageQuestionsPage() {
   const [type, setType] = useState('')
   const [search, setSearch] = useState('')
   const [debounced, setDebounced] = useState('')
+  // Only the newest request may update the list, so a slow earlier response
+  // (for example the unfiltered one fired before a URL filter applied) cannot
+  // overwrite a newer, filtered one.
+  const latestRequest = useRef(0)
+
+  useEffect(() => {
+    const initial = new URLSearchParams(window.location.search).get('status')
+    if (initial && ['draft', 'approved', 'archived'].includes(initial)) setStatus(initial)
+  }, [])
 
   useEffect(() => {
     const t = setTimeout(() => setDebounced(search), 250)
@@ -50,6 +59,7 @@ export default function ManageQuestionsPage() {
   }, [search])
 
   const load = useCallback(async () => {
+    const requestId = ++latestRequest.current
     try {
       const params = new URLSearchParams()
       if (subject) params.set('subject', subject)
@@ -60,15 +70,16 @@ export default function ManageQuestionsPage() {
       const res = await fetch(`/api/play/host/questions?${params}`)
       if (res.status === 401) { router.push('/play/login'); return }
       const data = await res.json()
+      if (requestId !== latestRequest.current) return
       if (!res.ok) throw new Error(data.error)
       setRows(data.questions)
       setFacets(data.facets)
       setTruncated(data.truncated)
       setError('')
     } catch (err: any) {
-      setError(err?.message || 'Something went wrong loading questions.')
+      if (requestId === latestRequest.current) setError(err?.message || 'Something went wrong loading questions.')
     } finally {
-      setLoading(false)
+      if (requestId === latestRequest.current) setLoading(false)
     }
   }, [subject, topic, status, type, debounced, router])
 
@@ -102,6 +113,7 @@ export default function ManageQuestionsPage() {
         <p className="portal-page-title" style={{ margin: 0 }}>Game questions</p>
         <div style={{ display: 'flex', gap: 8 }}>
           <Link href="/play/host" className="btn btn-secondary" style={{ fontSize: 13, padding: '6px 14px' }}>Back</Link>
+          <Link href="/play/host/questions/import" className="btn btn-secondary" style={{ fontSize: 13, padding: '6px 14px' }}>Import from spreadsheet</Link>
           <Link href="/play/host/questions/new" className="btn btn-primary" style={{ fontSize: 13, padding: '6px 16px' }}>Add question</Link>
         </div>
       </div>
