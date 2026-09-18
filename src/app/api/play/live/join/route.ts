@@ -30,21 +30,28 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Too many wrong codes. Please wait a few minutes and try again.' }, { status: 429, headers: { 'Retry-After': '600' } })
     }
 
-    const game = await pool.query(`select id, status from play_live_games where code = $1 and status <> 'ended'`, [code])
-    if (game.rows.length === 0) {
+    // A code identifies one open game, either a live quiz or a Jeopardy board.
+    let kind: 'quiz' | 'board' = 'quiz'
+    let game = (await pool.query(`select id, status from play_live_games where code = $1 and status <> 'ended'`, [code])).rows[0]
+    if (!game) {
+      game = (await pool.query(`select id, status from play_board_games where code = $1 and status <> 'ended'`, [code])).rows[0]
+      kind = 'board'
+    }
+    if (!game) {
       await pool.query('insert into play_login_attempts (student_id, succeeded) values ($1, false)', [key])
       return NextResponse.json({ error: 'No game found with that code. Check it and try again.' }, { status: 404 })
     }
+    const playersTable = kind === 'quiz' ? 'play_live_players' : 'play_board_players'
 
     // New players can only join in the lobby; players already in the game can
     // always rejoin (for example after their connection drops).
-    const already = await pool.query('select 1 from play_live_players where game_id = $1 and account_id = $2', [game.rows[0].id, accountId])
-    if (already.rows.length === 0 && game.rows[0].status !== 'lobby') {
+    const already = await pool.query(`select 1 from ${playersTable} where game_id = $1 and account_id = $2`, [game.id, accountId])
+    if (already.rows.length === 0 && game.status !== 'lobby') {
       return NextResponse.json({ error: 'That game has already started. Ask your teacher to start a new one.' }, { status: 409 })
     }
 
-    await pool.query('insert into play_live_players (game_id, account_id) values ($1, $2) on conflict do nothing', [game.rows[0].id, accountId])
-    return NextResponse.json({ code })
+    await pool.query(`insert into ${playersTable} (game_id, account_id) values ($1, $2) on conflict do nothing`, [game.id, accountId])
+    return NextResponse.json({ code, kind })
   } catch (err) {
     console.error('Play live join failed', err)
     return NextResponse.json({ error: 'Something went wrong joining the game.' }, { status: 500 })

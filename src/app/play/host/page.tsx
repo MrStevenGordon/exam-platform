@@ -69,6 +69,7 @@ export default function HostLandingPage() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
         <p className="portal-page-title" style={{ margin: 0 }}>Host a live game</p>
         <div style={{ display: 'flex', gap: 8 }}>
+          <Link href="/play/host/board" className="btn btn-secondary" style={{ fontSize: 13, padding: '6px 14px' }}>Jeopardy board</Link>
           <Link href="/play/host/questions" className="btn btn-secondary" style={{ fontSize: 13, padding: '6px 14px' }}>Game questions</Link>
           <Link href="/play/home" className="btn btn-secondary" style={{ fontSize: 13, padding: '6px 14px' }}>Back</Link>
         </div>

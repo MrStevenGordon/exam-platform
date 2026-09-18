@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { randomInt } from 'node:crypto'
 import { getPlayPool } from '@/lib/playDb'
 import { getPlayTeacherId } from '@/lib/playAuth'
+import { CODE_LOCK_KEY, codeInUseByOpenGame } from '@/lib/playBoard'
 
 const ALLOWED_COUNTS = [5, 10, 15]
 const ALLOWED_SECONDS = [10, 20, 30, 45]
@@ -51,6 +52,7 @@ export async function POST(request: Request) {
   const client = await getPlayPool().connect()
   try {
     await client.query('begin')
+    await client.query('select pg_advisory_xact_lock($1)', [CODE_LOCK_KEY])
     const picked = await client.query(
       `select id from play_questions
         where status = 'approved' and subject = $1 and ($2::text is null or topic = $2) and question_type = any($3)
@@ -65,11 +67,13 @@ export async function POST(request: Request) {
     // Starting a new game closes any of this teacher's unfinished ones, so a
     // stale join code never lingers.
     await client.query(`update play_live_games set status = 'ended', ended_at = now() where host_id = $1 and status <> 'ended'`, [teacherId])
+    await client.query(`update play_board_games set status = 'ended', ended_at = now() where host_id = $1 and status <> 'ended'`, [teacherId])
 
     let gameId: string | null = null
     let code = ''
     for (let attempt = 0; attempt < 10 && !gameId; attempt++) {
       code = String(randomInt(0, 1_000_000)).padStart(6, '0')
+      if (await codeInUseByOpenGame(client, code)) continue
       await client.query('savepoint code_try')
       try {
         const res = await client.query(
