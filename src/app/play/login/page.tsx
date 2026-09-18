@@ -37,14 +37,14 @@ export default function PlayLoginPage() {
     <div className="page-container" style={{ maxWidth: 400, marginTop: 64 }}>
       <p className="portal-page-title" style={{ margin: 0 }}>Smart Assess Play</p>
       <p style={{ margin: '4px 0 24px', fontSize: 14, color: 'var(--text-secondary)' }}>
-        Sign in with your student ID# and your game password.
+        Sign in with your ID# (teachers: your username) and your game password.
       </p>
 
       <form onSubmit={handleSubmit} className="card" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
         {error && <p className="banner banner-danger" role="alert" style={{ margin: 0 }}>{error}</p>}
         <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 13, color: 'var(--text-secondary)' }}>
-          Student ID#
-          <input value={studentId} onChange={(e) => setStudentId(e.target.value)} inputMode="numeric" autoComplete="username" required maxLength={32} />
+          Student ID# or teacher username
+          <input value={studentId} onChange={(e) => setStudentId(e.target.value)} autoComplete="username" required maxLength={32} />
         </label>
         <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 13, color: 'var(--text-secondary)' }}>
           Game password

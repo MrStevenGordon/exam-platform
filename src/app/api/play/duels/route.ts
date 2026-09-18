@@ -44,7 +44,7 @@ export async function POST(request: Request) {
       `select o.id
          from play_accounts me
          join play_accounts o
-           on o.id <> me.id and o.is_active
+           on o.id <> me.id and o.is_active and o.role = 'student'
           and o.grade_level is not distinct from me.grade_level
           and o.school is not distinct from me.school
         where me.id = $1 and o.id = $2`,
