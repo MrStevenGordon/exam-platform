@@ -3,6 +3,8 @@ import { redirect } from 'next/navigation'
 import { getPlayAccount } from '@/lib/playAuth'
 import { getPlayPool } from '@/lib/playDb'
 import { getStreaks, getXp, loadClassBoard } from '@/lib/playProgress'
+import { loadBadges } from '@/lib/playBadges'
+import BadgeSeal from '../BadgeSeal'
 import SignOutButton from './SignOutButton'
 
 type Game = { name: string; mode: string; blurb: string; href?: string; cta?: string }
@@ -27,6 +29,7 @@ export default async function PlayHomePage() {
   const games = account.role === 'teacher' ? TEACHER_GAMES : STUDENT_GAMES
 
   // A student's streak, weekly XP and standing in their class, computed live.
+  const badges = account.role === 'student' ? await loadBadges(account.id) : null
   let progress: { current: number; best: number; playedToday: boolean; weekXp: number; className: string | null; rank: number | null } | null = null
   if (account.role === 'student') {
     const [streaks, week, cls] = await Promise.all([
@@ -50,6 +53,21 @@ export default async function PlayHomePage() {
         <SignOutButton />
       </div>
 
+      {badges && badges.newCount > 0 && (
+        <Link href="/play/badges" className="card" style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 16, borderColor: 'var(--accent)', background: 'var(--accent-light)', textDecoration: 'none', color: 'inherit' }}>
+          <div style={{ display: 'flex' }}>
+            {badges.earned.filter((b) => b.isNew).slice(0, 3).map((b, i) => (
+              <span key={b.key} style={{ marginLeft: i === 0 ? 0 : -12 }}><BadgeSeal mark={b.mark} category={b.category} size={44} label={b.name} /></span>
+            ))}
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontWeight: 800 }}>You earned {badges.newCount} new badge{badges.newCount !== 1 ? 's' : ''}!</div>
+            <div style={{ fontSize: 13, color: 'var(--text-secondary)' }}>{badges.earned.filter((b) => b.isNew).map((b) => b.name).slice(0, 3).join(', ')}{badges.newCount > 3 ? ` and ${badges.newCount - 3} more` : ''}</div>
+          </div>
+          <span className="btn btn-primary" style={{ fontSize: 13, padding: '6px 14px' }}>See badges</span>
+        </Link>
+      )}
+
       {progress && (
         <div className="card" style={{ display: 'flex', flexWrap: 'wrap', gap: 20, alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
           <div style={{ display: 'flex', gap: 28, flexWrap: 'wrap' }}>
@@ -66,7 +84,10 @@ export default async function PlayHomePage() {
               </div>
             </div>
           </div>
-          {progress.className && <Link href="/play/leaderboard" className="btn btn-secondary" style={{ fontSize: 13, padding: '6px 14px' }}>Class leaderboard</Link>}
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <Link href="/play/badges" className="btn btn-secondary" style={{ fontSize: 13, padding: '6px 14px' }}>Badges{badges ? ` ${badges.earned.length}/${badges.earned.length + badges.locked.length}` : ''}</Link>
+            {progress.className && <Link href="/play/leaderboard" className="btn btn-secondary" style={{ fontSize: 13, padding: '6px 14px' }}>Class leaderboard</Link>}
+          </div>
         </div>
       )}
 
