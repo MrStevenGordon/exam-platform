@@ -68,7 +68,10 @@ export default function HostLandingPage() {
     <div className="page-container" style={{ maxWidth: 680 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
         <p className="portal-page-title" style={{ margin: 0 }}>Host a live game</p>
-        <Link href="/play/home" className="btn btn-secondary" style={{ fontSize: 13, padding: '6px 14px' }}>Back</Link>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <Link href="/play/host/questions" className="btn btn-secondary" style={{ fontSize: 13, padding: '6px 14px' }}>Game questions</Link>
+          <Link href="/play/home" className="btn btn-secondary" style={{ fontSize: 13, padding: '6px 14px' }}>Back</Link>
+        </div>
       </div>
       <p style={{ margin: '4px 0 20px', fontSize: 14, color: 'var(--text-secondary)' }}>
         Students join with a code on their own devices. Everyone answers the same question against the clock, and faster correct answers score more.

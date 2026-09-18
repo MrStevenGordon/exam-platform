@@ -65,7 +65,7 @@ export async function POST(request: Request) {
     }
 
     const picked = await client.query(
-      'select id from play_questions where subject = $1 and ($2::text is null or topic = $2) order by random() limit $3',
+      `select id from play_questions where status = 'approved' and subject = $1 and ($2::text is null or topic = $2) order by random() limit $3`,
       [subject, topic, questionCount]
     )
     if (picked.rows.length < MIN_QUESTIONS) {

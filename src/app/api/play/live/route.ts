@@ -53,7 +53,7 @@ export async function POST(request: Request) {
     await client.query('begin')
     const picked = await client.query(
       `select id from play_questions
-        where subject = $1 and ($2::text is null or topic = $2) and question_type = any($3)
+        where status = 'approved' and subject = $1 and ($2::text is null or topic = $2) and question_type = any($3)
         order by random() limit $4`,
       [subject, topic, LIVE_TYPES, questionCount]
     )

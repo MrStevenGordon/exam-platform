@@ -11,7 +11,7 @@ export async function GET() {
     const { rows } = await getPlayPool().query(
       `select subject, topic, count(*)::int as question_count
          from play_questions
-        where question_type in ('multiple_choice', 'true_false')
+        where status = 'approved' and question_type in ('multiple_choice', 'true_false')
         group by 1, 2 order by 1, 2`
     )
     return NextResponse.json({ topics: rows.map((r) => ({ subject: r.subject, topic: r.topic, questionCount: r.question_count })) })

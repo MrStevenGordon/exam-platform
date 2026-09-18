@@ -13,6 +13,7 @@ const STUDENT_GAMES: Game[] = [
 
 const TEACHER_GAMES: Game[] = [
   { name: 'Host a live game', mode: 'Live classroom game', blurb: 'Create a game, share the code, and run it on the projector while students play on their own devices.', href: '/play/host', cta: 'Host' },
+  { name: 'Game questions', mode: 'Question bank', blurb: 'Add, edit and approve the questions used in live games, Topic Mastery and Math Duels.', href: '/play/host/questions', cta: 'Manage' },
 ]
 
 export default async function PlayHomePage() {

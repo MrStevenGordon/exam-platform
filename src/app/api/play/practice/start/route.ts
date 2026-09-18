@@ -24,7 +24,7 @@ export async function POST(request: Request) {
   try {
     await client.query('begin')
     const picked = await client.query(
-      'select id from play_questions where subject = $1 and topic = $2 order by random() limit $3',
+      `select id from play_questions where status = 'approved' and subject = $1 and topic = $2 order by random() limit $3`,
       [subject, topic, SET_SIZE]
     )
     if (picked.rows.length === 0) {

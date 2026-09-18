@@ -34,13 +34,21 @@ try {
   )
   await exam.query('rollback')
 
+  // Questions whose choices are unusable (duplicates, or a key that is not one of
+  // the choices) arrive as drafts so a teacher fixes them before students see them.
+  const needsReview = (r) => {
+    if (r.question_type !== 'multiple_choice') return false
+    const opts = (r.options ?? []).map((o) => String(o).trim().toLowerCase())
+    return new Set(opts).size !== opts.length || !opts.includes(String(r.correct_answer).trim().toLowerCase())
+  }
+
   let imported = 0
   for (const r of rows) {
     const res = await play.query(
-      `insert into play_questions (subject, topic, question_type, question_text, options, correct_answer, points, source_question_id)
-       values ($1, $2, $3, $4, $5, $6, $7, $8)
+      `insert into play_questions (subject, topic, question_type, question_text, options, correct_answer, points, source_question_id, status)
+       values ($1, $2, $3, $4, $5, $6, $7, $8, $9)
        on conflict (source_question_id) do nothing`,
-      [r.subject, r.topic, r.question_type, r.question_text, r.options ? JSON.stringify(r.options) : null, r.correct_answer, r.points || 1, r.id]
+      [r.subject, r.topic, r.question_type, r.question_text, r.options ? JSON.stringify(r.options) : null, r.correct_answer, r.points || 1, r.id, needsReview(r) ? 'draft' : 'approved']
     )
     imported += res.rowCount
   }
