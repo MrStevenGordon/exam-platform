@@ -17,6 +17,7 @@ export default function AddQuestionPage() {
   const [questionType, setQuestionType] = useState<QuestionType>('multiple_choice')
   const [questionText, setQuestionText] = useState('')
   const [points, setPoints] = useState(1)
+  const [topic, setTopic] = useState('')
   const [errorMsg, setErrorMsg] = useState('')
   const [saving, setSaving] = useState(false)
   const [showWorking, setShowWorking] = useState(false)
@@ -217,6 +218,7 @@ export default function AddQuestionPage() {
       audio_url: audioUrl || null,
       video_url: videoUrl || null,
       points,
+      topic: topic.trim() || null,
       order_index: sectionBand * 100000 + (withinSectionCount || 0),
       is_bank_question: saveToBank,
       show_working: questionType === 'short_answer' && showWorking,
@@ -388,15 +390,26 @@ export default function AddQuestionPage() {
           {polishError && <p className="banner banner-danger" style={{ marginTop: 8, fontSize: 13 }}>{polishError}</p>}
         </div>
 
-        <div style={{ marginBottom: 16 }}>
-          <label style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)' }}>Points</label><br />
-          <input
-            type="number"
-            min={1}
-            value={points}
-            onChange={(e) => setPoints(parseInt(e.target.value) || 1)}
-            style={{ width: 100, marginTop: 6 }}
-          />
+        <div style={{ marginBottom: 16, display: 'flex', gap: 16 }}>
+          <div>
+            <label style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)' }}>Points</label><br />
+            <input
+              type="number"
+              min={1}
+              value={points}
+              onChange={(e) => setPoints(parseInt(e.target.value) || 1)}
+              style={{ width: 100, marginTop: 6 }}
+            />
+          </div>
+          <div style={{ flex: 1 }}>
+            <label style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)' }}>Topic (optional)</label><br />
+            <input
+              value={topic}
+              onChange={(e) => setTopic(e.target.value)}
+              placeholder="e.g. Algebra, Cell Biology"
+              style={{ width: '100%', marginTop: 6 }}
+            />
+          </div>
         </div>
 
         {questionType === 'multiple_choice' && (
