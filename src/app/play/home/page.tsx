@@ -6,7 +6,7 @@ import SignOutButton from './SignOutButton'
 
 const GAMES: { name: string; mode: string; blurb: string; href?: string }[] = [
   { name: 'Topic Mastery', mode: 'Single player', blurb: 'Practice one topic at a time and watch your mastery grow.', href: '/play/topic-mastery' },
-  { name: 'Math Duels', mode: 'Multiplayer', blurb: 'Challenge a classmate to the same questions and compare scores.' },
+  { name: 'Math Duels', mode: 'Multiplayer', blurb: 'Challenge a student in your grade to the same questions and compare scores.', href: '/play/duels' },
 ]
 
 export default async function PlayHomePage() {
