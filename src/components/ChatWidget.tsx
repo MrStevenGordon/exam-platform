@@ -13,6 +13,7 @@ const EXAM_ROUTE_PATTERNS = [
   /^\/student\/direct-exam\/[^/]+\/take/,
   /^\/take-exam\/[^/]+\/questions/,
   /^\/demo-exam/,
+  /^\/play(\/|$)/,
 ]
 const HIDDEN_ROUTES = ['/coming-soon', '/maintenance']
 
