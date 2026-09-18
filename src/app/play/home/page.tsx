@@ -1,10 +1,11 @@
+import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { getPlaySession } from '@/lib/playSession'
 import { getPlayPool } from '@/lib/playDb'
 import SignOutButton from './SignOutButton'
 
-const GAMES = [
-  { name: 'Topic Mastery', mode: 'Single player', blurb: 'Practice one topic at a time and watch your mastery grow.' },
+const GAMES: { name: string; mode: string; blurb: string; href?: string }[] = [
+  { name: 'Topic Mastery', mode: 'Single player', blurb: 'Practice one topic at a time and watch your mastery grow.', href: '/play/topic-mastery' },
   { name: 'Math Duels', mode: 'Multiplayer', blurb: 'Challenge a classmate to the same questions and compare scores.' },
 ]
 
@@ -36,7 +37,11 @@ export default async function PlayHomePage() {
               <div style={{ fontWeight: 700, fontSize: 15 }}>{g.name}</div>
               <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 2 }}>{g.mode} · {g.blurb}</div>
             </div>
-            <span style={{ fontSize: 12, color: 'var(--text-muted)', flexShrink: 0 }}>Coming soon</span>
+            {g.href ? (
+              <Link href={g.href} className="btn btn-primary" style={{ fontSize: 13, padding: '6px 16px', flexShrink: 0 }}>Play</Link>
+            ) : (
+              <span style={{ fontSize: 12, color: 'var(--text-muted)', flexShrink: 0 }}>Coming soon</span>
+            )}
           </div>
         ))}
       </div>
