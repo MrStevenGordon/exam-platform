@@ -8,6 +8,9 @@ const ALLOWED_ROWS = [3, 4, 5]
 const ALLOWED_BUZZ_SECONDS = [10, 20, 30, 45]
 const MIN_CATEGORIES = 2
 const MAX_CATEGORIES = 6
+const MIN_TEAMS = 2
+const MAX_TEAMS = 6
+const MAX_TEAM_NAME = 24
 
 export async function GET() {
   const teacherId = await getPlayTeacherId()
@@ -44,6 +47,16 @@ export async function POST(request: Request) {
   const distinct = Array.from(new Set(topics))
   if (!subject || subject.length > 100 || !ALLOWED_ROWS.includes(rowsPer) || !ALLOWED_BUZZ_SECONDS.includes(buzzSeconds)) {
     return NextResponse.json({ error: 'Pick a subject, the number of rows and a buzz time.' }, { status: 400 })
+  }
+  // Optional team mode: 2-6 distinct team names.
+  let teamNames: string[] | null = null
+  if (body?.teamNames !== undefined && body?.teamNames !== null) {
+    if (!Array.isArray(body.teamNames)) return NextResponse.json({ error: 'Team names must be a list.' }, { status: 400 })
+    teamNames = body.teamNames.map((n: unknown) => (typeof n === 'string' ? n.replace(/\s+/g, ' ').trim() : ''))
+    const names = teamNames as string[]
+    if (names.length < MIN_TEAMS || names.length > MAX_TEAMS) return NextResponse.json({ error: `Use between ${MIN_TEAMS} and ${MAX_TEAMS} teams.` }, { status: 400 })
+    if (names.some((n) => !n || n.length > MAX_TEAM_NAME)) return NextResponse.json({ error: `Give every team a name of up to ${MAX_TEAM_NAME} characters.` }, { status: 400 })
+    if (new Set(names.map((n) => n.toLowerCase())).size !== names.length) return NextResponse.json({ error: 'Team names must all be different.' }, { status: 400 })
   }
   if (distinct.length !== topics.length || distinct.length < MIN_CATEGORIES || distinct.length > MAX_CATEGORIES || distinct.some((t) => !t || t.length > 100)) {
     return NextResponse.json({ error: `Choose between ${MIN_CATEGORIES} and ${MAX_CATEGORIES} different categories.` }, { status: 400 })
@@ -84,11 +97,16 @@ export async function POST(request: Request) {
     if (!code) throw new Error('Could not allocate a join code')
 
     const game = await client.query(
-      `insert into play_board_games (code, host_id, subject, rows_per_category, deduct_wrong, buzz_seconds)
-       values ($1, $2, $3, $4, $5, $6) returning id`,
-      [code, teacherId, subject, rowsPer, deductWrong, buzzSeconds]
+      `insert into play_board_games (code, host_id, subject, rows_per_category, deduct_wrong, buzz_seconds, team_mode)
+       values ($1, $2, $3, $4, $5, $6, $7) returning id`,
+      [code, teacherId, subject, rowsPer, deductWrong, buzzSeconds, teamNames !== null]
     )
     const gameId = game.rows[0].id
+    if (teamNames) {
+      for (let i = 0; i < teamNames.length; i++) {
+        await client.query('insert into play_board_teams (game_id, position, name) values ($1, $2, $3)', [gameId, i, teamNames[i]])
+      }
+    }
 
     for (let c = 0; c < distinct.length; c++) {
       await client.query('insert into play_board_categories (game_id, position, topic) values ($1, $2, $3)', [gameId, c, distinct[c]])

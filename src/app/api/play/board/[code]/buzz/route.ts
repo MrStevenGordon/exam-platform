@@ -19,8 +19,10 @@ export async function POST(_request: Request, { params }: { params: Promise<{ co
     const game = locked.rows.length > 0 ? await findBoardByCode(client, code) : null
     if (!game || game.id !== locked.rows[0].id) { await client.query('rollback'); return NextResponse.json({ error: 'Game not found.' }, { status: 404 }) }
 
-    const joined = await client.query('select 1 from play_board_players where game_id = $1 and account_id = $2', [game.id, accountId])
+    const joined = await client.query('select team_id from play_board_players where game_id = $1 and account_id = $2', [game.id, accountId])
     if (joined.rows.length === 0) { await client.query('rollback'); return NextResponse.json({ error: 'Game not found.' }, { status: 404 }) }
+    const teamId: string | null = game.team_mode ? joined.rows[0].team_id : null
+    if (game.team_mode && !teamId) { await client.query('rollback'); return NextResponse.json({ error: 'You are not on a team yet. Ask your teacher.' }, { status: 409 }) }
 
     if (game.status === 'answering') { await client.query('rollback'); return NextResponse.json({ error: 'Someone else buzzed in first.' }, { status: 409 }) }
     if (game.status !== 'clue' || !game.current_clue_id || (game.elapsed_ms ?? 0) > game.buzz_seconds * 1000 + BOARD_GRACE_MS) {
@@ -28,10 +30,16 @@ export async function POST(_request: Request, { params }: { params: Promise<{ co
       return NextResponse.json({ error: 'You can only buzz in while a clue is open.' }, { status: 409 })
     }
 
-    const existing = await client.query('select 1 from play_board_buzzes where clue_id = $1 and account_id = $2', [game.current_clue_id, accountId])
-    if (existing.rows.length > 0) { await client.query('rollback'); return NextResponse.json({ error: 'You already buzzed on this clue.' }, { status: 409 }) }
+    // One attempt per clue: per player in an individual game, per team in a team game.
+    const existing = teamId
+      ? await client.query('select 1 from play_board_buzzes where clue_id = $1 and team_id = $2', [game.current_clue_id, teamId])
+      : await client.query('select 1 from play_board_buzzes where clue_id = $1 and account_id = $2', [game.current_clue_id, accountId])
+    if (existing.rows.length > 0) {
+      await client.query('rollback')
+      return NextResponse.json({ error: teamId ? 'Your team already tried this clue.' : 'You already buzzed on this clue.' }, { status: 409 })
+    }
 
-    await client.query('insert into play_board_buzzes (clue_id, game_id, account_id) values ($1, $2, $3)', [game.current_clue_id, game.id, accountId])
+    await client.query('insert into play_board_buzzes (clue_id, game_id, account_id, team_id) values ($1, $2, $3, $4)', [game.current_clue_id, game.id, accountId, teamId])
     await client.query(`update play_board_games set status = 'answering' where id = $1`, [game.id])
     await client.query('commit')
     return NextResponse.json({ ok: true })

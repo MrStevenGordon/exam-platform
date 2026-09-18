@@ -45,14 +45,18 @@ export default function BoardPlayerPage() {
   return (
     <div className="page-container" style={{ maxWidth: 560 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: 'var(--text-secondary)', marginBottom: 12 }}>
-        <span>Jeopardy · {g.subject}</span>
-        <span>Score {me.score.toLocaleString()} · #{me.rank}</span>
+        <span>Jeopardy · {g.subject}{me.team ? ` · ${me.team.name}` : ''}</span>
+        <span>{me.team ? 'Team score' : 'Score'} {me.score.toLocaleString()} · #{me.rank}</span>
       </div>
 
       {g.status === 'lobby' && (
         <div className="card" style={{ textAlign: 'center', padding: '32px 16px' }}>
           <div style={{ fontSize: 20, fontWeight: 800 }}>You're in!</div>
-          <p style={{ color: 'var(--text-secondary)', margin: '8px 0 0' }}>Waiting for your teacher to start the board. {state.playerCount} player{state.playerCount !== 1 ? 's' : ''} joined.</p>
+          {me.team && (
+            <div style={{ margin: '12px 0 4px', fontSize: 18, fontWeight: 800, color: 'var(--accent-dark)' }}>You are on {me.team.name}</div>
+          )}
+          {me.team && me.teamMates.length > 0 && <p style={{ margin: '0 0 6px', fontSize: 14 }}>With {me.teamMates.join(', ')}</p>}
+          <p style={{ color: 'var(--text-secondary)', margin: '8px 0 0' }}>Waiting for your teacher to start the board. {state.playerCount} player{state.playerCount !== 1 ? 's' : ''} joined. Your team may change until the game starts.</p>
         </div>
       )}
 
@@ -98,18 +102,18 @@ export default function BoardPlayerPage() {
             </button>
           )}
           {g.status === 'clue' && me.lockedOut && (
-            <div className="card" style={{ textAlign: 'center', padding: '20px 16px', color: 'var(--danger)', fontWeight: 700 }}>Not quite. You are out for this clue while others try.</div>
+            <div className="card" style={{ textAlign: 'center', padding: '20px 16px', color: 'var(--danger)', fontWeight: 700 }}>{me.team ? 'Not quite. Your team is out for this clue while others try.' : 'Not quite. You are out for this clue while others try.'}</div>
           )}
           {g.status === 'answering' && me.isBuzzer && (
             <div className="card" style={{ textAlign: 'center', padding: '24px 16px', borderColor: 'var(--accent)' }}>
               <div style={{ fontSize: 26, fontWeight: 800 }}>You buzzed first!</div>
-              <p style={{ margin: '6px 0 0', color: 'var(--text-secondary)' }}>Say your answer out loud.</p>
+              <p style={{ margin: '6px 0 0', color: 'var(--text-secondary)' }}>{me.team ? `Say your answer out loud for ${me.team.name}.` : 'Say your answer out loud.'}</p>
             </div>
           )}
           {g.status === 'answering' && !me.isBuzzer && state.buzzer && (
             <div className="card" style={{ textAlign: 'center', padding: '24px 16px' }}>
-              <div style={{ fontSize: 20, fontWeight: 800 }}>{state.buzzer.name} buzzed in first</div>
-              <p style={{ margin: '6px 0 0', color: 'var(--text-secondary)' }}>Waiting to see if they are right…</p>
+              <div style={{ fontSize: 20, fontWeight: 800 }}>{state.buzzer.name}{state.buzzer.teamName ? ` (${state.buzzer.teamName})` : ''} buzzed in first</div>
+              <p style={{ margin: '6px 0 0', color: 'var(--text-secondary)' }}>{state.buzzer.isMyTeam ? 'Your teammate is answering. Waiting to see if they are right…' : 'Waiting to see if they are right…'}</p>
             </div>
           )}
           {g.status === 'clue' && !me.canBuzz && !me.lockedOut && (
@@ -125,7 +129,7 @@ export default function BoardPlayerPage() {
             <div style={{ fontSize: 26, fontWeight: 800 }}>{state.reveal.correctAnswer}</div>
             {state.reveal.explanation && <p style={{ margin: '6px 0 0', fontSize: 14, color: 'var(--text-secondary)' }}>{state.reveal.explanation}</p>}
           </div>
-          <p style={{ fontSize: 16, fontWeight: 700 }}>{state.reveal.winnerName ? `${state.reveal.winnerName} won ${state.reveal.winnerPoints} points.` : 'Nobody got it this time.'}</p>
+          <p style={{ fontSize: 16, fontWeight: 700 }}>{state.reveal.winnerName ? `${state.reveal.winnerTeamName ? `${state.reveal.winnerTeamName} (${state.reveal.winnerName})` : state.reveal.winnerName} won ${state.reveal.winnerPoints} points.` : 'Nobody got it this time.'}</p>
           <Leaderboard rows={state.scoreboard.slice(0, 5)} />
           <p style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 10 }}>Waiting for your teacher to go back to the board…</p>
         </div>
@@ -135,10 +139,16 @@ export default function BoardPlayerPage() {
         <div>
           <div className="card" style={{ textAlign: 'center', marginBottom: 16, padding: '24px 16px' }}>
             <div style={{ fontSize: 14, color: 'var(--text-secondary)' }}>Game over</div>
-            <div style={{ fontSize: 34, fontWeight: 800 }}>You finished #{me.rank}</div>
-            <div style={{ fontSize: 15, color: 'var(--text-secondary)' }}>{me.score.toLocaleString()} points</div>
+            <div style={{ fontSize: 34, fontWeight: 800 }}>{me.team ? `${me.team.name} finished #${me.rank}` : `You finished #${me.rank}`}</div>
+            <div style={{ fontSize: 15, color: 'var(--text-secondary)' }}>{me.score.toLocaleString()} points{me.team ? ' for your team' : ''}</div>
           </div>
           <Leaderboard rows={state.scoreboard} />
+          {state.individuals.length > 0 && (
+            <div style={{ marginTop: 16 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, color: 'var(--text-secondary)', marginBottom: 8 }}>Top players</div>
+              <Leaderboard rows={state.individuals.map((p) => ({ name: `${p.name} (${p.teamName})`, score: p.score, isMe: p.isMe }))} />
+            </div>
+          )}
           <div style={{ marginTop: 16 }}><Link href="/play/home" className="btn btn-primary">Back to games</Link></div>
         </div>
       )}

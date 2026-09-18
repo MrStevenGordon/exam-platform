@@ -3,7 +3,7 @@ import { getPlayPool } from '@/lib/playDb'
 import { getPlayTeacherId, UUID_RE } from '@/lib/playAuth'
 import { boardPhase, findBoardByCode } from '@/lib/playBoard'
 
-const ACTIONS = ['start', 'open', 'correct', 'wrong', 'reveal', 'board', 'end']
+const ACTIONS = ['start', 'open', 'correct', 'wrong', 'reveal', 'board', 'end', 'shuffle', 'move']
 
 export async function POST(request: Request, { params }: { params: Promise<{ code: string }> }) {
   const teacherId = await getPlayTeacherId()
@@ -30,7 +30,35 @@ export async function POST(request: Request, { params }: { params: Promise<{ cod
     if (!game || game.id !== locked.rows[0].id) return await fail(404, 'Game not found.')
     const phase = boardPhase(game)
 
-    if (action === 'start') {
+    if (action === 'shuffle' || action === 'move') {
+      if (!game.team_mode) return await fail(409, 'This game is not played in teams.')
+      if (game.status !== 'lobby') return await fail(409, 'Teams can only be changed before the game starts.')
+      if (action === 'shuffle') {
+        // Deal players round-robin in random order across the teams, so the sizes differ by at most one.
+        await client.query(
+          `with ordered as (
+             select account_id, row_number() over (order by random()) as rn from play_board_players where game_id = $1
+           ), t as (
+             select id, row_number() over (order by position) - 1 as pos, count(*) over () as cnt from play_board_teams where game_id = $1
+           )
+           update play_board_players p set team_id = t.id
+             from ordered o join t on t.pos = ((o.rn - 1) % t.cnt)
+            where p.game_id = $1 and p.account_id = o.account_id`,
+          [game.id]
+        )
+      } else {
+        const playerId = typeof body?.playerId === 'string' ? body.playerId : ''
+        const teamId = typeof body?.teamId === 'string' ? body.teamId : ''
+        if (!UUID_RE.test(playerId) || !UUID_RE.test(teamId)) return await fail(400, 'Pick a student and a team.')
+        const moved = await client.query(
+          `update play_board_players set team_id = $3
+            where game_id = $1 and account_id = $2
+              and exists (select 1 from play_board_teams where id = $3 and game_id = $1)`,
+          [game.id, playerId, teamId]
+        )
+        if (moved.rowCount === 0) return await fail(404, 'That student or team is not in this game.')
+      }
+    } else if (action === 'start') {
       if (game.status !== 'lobby') return await fail(409, 'The game has already started.')
       const n = await client.query('select count(*)::int as n from play_board_players where game_id = $1', [game.id])
       if (n.rows[0].n < 1) return await fail(409, 'Wait for at least one student to join.')
@@ -54,11 +82,21 @@ export async function POST(request: Request, { params }: { params: Promise<{ cod
         await client.query(`update play_board_games set status = 'reveal' where id = $1`, [game.id])
       } else {
         // Wrong: reopen for everyone who has not tried yet; if nobody is left, show the answer.
-        const left = await client.query(
-          `select count(*)::int as n from play_board_players p
-            where p.game_id = $1 and not exists (select 1 from play_board_buzzes b where b.clue_id = $2 and b.account_id = p.account_id)`,
-          [game.id, game.current_clue_id]
-        )
+        // Individual game: players who have not tried. Team game: teams that have
+        // players and have not tried (a team gets one attempt per clue).
+        const left = game.team_mode
+          ? await client.query(
+              `select count(*)::int as n from play_board_teams t
+                where t.game_id = $1
+                  and exists (select 1 from play_board_players p where p.team_id = t.id)
+                  and not exists (select 1 from play_board_buzzes b where b.clue_id = $2 and b.team_id = t.id)`,
+              [game.id, game.current_clue_id]
+            )
+          : await client.query(
+              `select count(*)::int as n from play_board_players p
+                where p.game_id = $1 and not exists (select 1 from play_board_buzzes b where b.clue_id = $2 and b.account_id = p.account_id)`,
+              [game.id, game.current_clue_id]
+            )
         if (left.rows[0].n > 0) await client.query(`update play_board_games set status = 'clue', clue_opened_at = clock_timestamp() where id = $1`, [game.id])
         else await client.query(`update play_board_games set status = 'reveal' where id = $1`, [game.id])
       }

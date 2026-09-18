@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 
 type TopicRow = { subject: string; topic: string; questionCount: number }
+const DEFAULT_TEAM_NAMES = ['Red', 'Blue', 'Green', 'Gold', 'Purple', 'Orange']
 type PastGame = { code: string; subject: string; status: string; players: number }
 
 export default function BoardSetupPage() {
@@ -16,6 +17,9 @@ export default function BoardSetupPage() {
   const [rows, setRows] = useState(5)
   const [buzzSeconds, setBuzzSeconds] = useState(20)
   const [deductWrong, setDeductWrong] = useState(false)
+  const [teamMode, setTeamMode] = useState(false)
+  const [teamCount, setTeamCount] = useState(3)
+  const [teamNames, setTeamNames] = useState(DEFAULT_TEAM_NAMES)
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
@@ -56,7 +60,7 @@ export default function BoardSetupPage() {
       const res = await fetch('/api/play/board', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ subject, topics: chosen, rows, buzzSeconds, deductWrong }),
+        body: JSON.stringify({ subject, topics: chosen, rows, buzzSeconds, deductWrong, teamNames: teamMode ? teamNames.slice(0, teamCount) : undefined }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error)
@@ -144,6 +148,31 @@ export default function BoardSetupPage() {
           <input type="checkbox" checked={deductWrong} onChange={(e) => setDeductWrong(e.target.checked)} style={{ marginTop: 3, width: 16, height: 16 }} />
           <span>Lose points for a wrong answer <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>(off by default)</span></span>
         </label>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 14, textTransform: 'none', letterSpacing: 'normal' }}>
+            <input type="checkbox" checked={teamMode} onChange={(e) => setTeamMode(e.target.checked)} style={{ marginTop: 3, width: 16, height: 16 }} />
+            <span>Play in teams <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>(students are split into balanced teams as they join; a team gets one try per clue and points go to the team)</span></span>
+          </label>
+          {teamMode && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, paddingLeft: 24 }}>
+              <label style={{ ...label, maxWidth: 160 }}>
+                Number of teams
+                <select value={teamCount} onChange={(e) => setTeamCount(Number(e.target.value))}>
+                  {[2, 3, 4, 5, 6].map((n) => <option key={n} value={n}>{n}</option>)}
+                </select>
+              </label>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                {teamNames.slice(0, teamCount).map((name, i) => (
+                  <label key={i} style={{ ...label, width: 150 }}>
+                    Team {i + 1} name
+                    <input value={name} maxLength={24} onChange={(e) => setTeamNames((prev) => prev.map((n, idx) => (idx === i ? e.target.value : n)))} />
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
 
         <div>
           <button onClick={create} disabled={busy || chosen.length < 2} className="btn btn-primary" style={{ fontSize: 13, padding: '8px 18px' }}>

@@ -14,6 +14,7 @@ export type BoardGameRow = {
   subject: string
   rows_per_category: number
   deduct_wrong: boolean
+  team_mode: boolean
   buzz_seconds: number
   status: BoardPhase
   current_clue_id: string | null
@@ -39,7 +40,7 @@ export const CODE_LOCK_KEY = 7001
 export async function findBoardByCode(db: Queryable, code: string): Promise<BoardGameRow | null> {
   if (!/^\d{6}$/.test(code)) return null
   const { rows } = await db.query(
-    `select id, code, host_id, subject, rows_per_category, deduct_wrong, buzz_seconds, status, current_clue_id,
+    `select id, code, host_id, subject, rows_per_category, deduct_wrong, team_mode, buzz_seconds, status, current_clue_id,
             case when clue_opened_at is null then null
                  else (extract(epoch from (clock_timestamp() - clue_opened_at)) * 1000)::int end as elapsed_ms
        from play_board_games
@@ -58,6 +59,22 @@ export function boardPhase(game: BoardGameRow): BoardPhase {
   return game.status
 }
 
+// The team with the fewest players; ties broken at random so teams fill evenly.
+export async function leastFullTeamId(db: Queryable, gameId: string): Promise<string | null> {
+  const { rows } = await db.query(
+    `select t.id from play_board_teams t
+       left join play_board_players p on p.team_id = t.id
+      where t.game_id = $1
+      group by t.id
+      order by count(p.account_id) asc, random()
+      limit 1`,
+    [gameId]
+  )
+  return rows[0]?.id ?? null
+}
+
+export type BoardTeam = { id: string; name: string; score: number; memberCount: number; members: { id: string; name: string }[] | null }
+
 export type BoardState = {
   role: 'host' | 'player'
   game: {
@@ -66,6 +83,7 @@ export type BoardState = {
     subject: string
     rows: number
     deductWrong: boolean
+    teamMode: boolean
     buzzSeconds: number
     msRemaining: number | null
   }
@@ -73,13 +91,26 @@ export type BoardState = {
   clues: { id: string; category: number; row: number; value: number; used: boolean }[]
   playerCount: number
   playerNames: string[] | null
+  // Team games only. The host also gets each team's members (to move players).
+  teams: BoardTeam[] | null
   clue: null | { value: number; category: string; text: string; type: string; options: string[] | null }
-  buzzer: null | { name: string; isMe: boolean }
+  buzzer: null | { name: string; teamName: string | null; isMe: boolean; isMyTeam: boolean }
   lockedOutNames: string[]
   hostAnswer: string | null
-  reveal: null | { correctAnswer: string; explanation: string | null; winnerName: string | null; winnerPoints: number | null }
+  reveal: null | { correctAnswer: string; explanation: string | null; winnerName: string | null; winnerTeamName: string | null; winnerPoints: number | null }
+  // Individual games: players. Team games: teams.
   scoreboard: { name: string; score: number; isMe: boolean }[]
-  me: null | { score: number; rank: number; canBuzz: boolean; lockedOut: boolean; isBuzzer: boolean }
+  // Team games, once finished: the top individual contributors.
+  individuals: { name: string; teamName: string | null; score: number; isMe: boolean }[]
+  me: null | {
+    score: number
+    rank: number
+    canBuzz: boolean
+    lockedOut: boolean
+    isBuzzer: boolean
+    team: { id: string; name: string } | null
+    teamMates: string[]
+  }
 }
 
 export async function loadBoardState(code: string, accountId: string, isTeacher: boolean): Promise<BoardState | null> {
@@ -88,33 +119,62 @@ export async function loadBoardState(code: string, accountId: string, isTeacher:
   if (!game) return null
 
   const isHost = isTeacher && game.host_id === accountId
+  let myTeamId: string | null = null
   if (!isHost) {
-    const p = await pool.query('select 1 from play_board_players where game_id = $1 and account_id = $2', [game.id, accountId])
+    const p = await pool.query('select team_id from play_board_players where game_id = $1 and account_id = $2', [game.id, accountId])
     if (p.rows.length === 0) return null
+    myTeamId = p.rows[0].team_id
   }
 
   const phase = boardPhase(game)
+  const teamMode = game.team_mode
 
-  const [cats, clueRows, board] = await Promise.all([
+  const [cats, clueRows, board, teamRows, memberRows] = await Promise.all([
     pool.query('select topic from play_board_categories where game_id = $1 order by position', [game.id]),
     pool.query('select id, category_position, row_position, value, used from play_board_clues where game_id = $1 order by category_position, row_position', [game.id]),
+    // Individual scores (also used for "top contributors" in team games).
     pool.query(
-      `select p.account_id, a.display_name,
+      `select p.account_id, a.display_name, p.team_id, tm.name as team_name,
               coalesce(sum(case when b.outcome = 'correct' then c.value
                                 when b.outcome = 'wrong' and $2 then -c.value
                                 else 0 end), 0)::int as score
          from play_board_players p
          join play_accounts a on a.id = p.account_id
+         left join play_board_teams tm on tm.id = p.team_id
          left join play_board_buzzes b on b.game_id = p.game_id and b.account_id = p.account_id
          left join play_board_clues c on c.id = b.clue_id
         where p.game_id = $1
-        group by p.account_id, a.display_name
+        group by p.account_id, a.display_name, p.team_id, tm.name
         order by score desc, a.display_name`,
       [game.id, game.deduct_wrong]
     ),
+    teamMode
+      ? pool.query(
+          `select t.id, t.name, t.position,
+                  coalesce(sum(case when b.outcome = 'correct' then c.value
+                                    when b.outcome = 'wrong' and $2 then -c.value
+                                    else 0 end), 0)::int as score
+             from play_board_teams t
+             left join play_board_buzzes b on b.team_id = t.id
+             left join play_board_clues c on c.id = b.clue_id
+            where t.game_id = $1
+            group by t.id, t.name, t.position
+            order by score desc, t.position`,
+          [game.id, game.deduct_wrong]
+        )
+      : Promise.resolve({ rows: [] as any[] }),
+    teamMode
+      ? pool.query(
+          `select p.account_id, a.display_name, p.team_id from play_board_players p
+             join play_accounts a on a.id = p.account_id where p.game_id = $1 order by a.display_name`,
+          [game.id]
+        )
+      : Promise.resolve({ rows: [] as any[] }),
   ])
   const categories: string[] = cats.rows.map((r) => r.topic)
-  const rows = board.rows as { account_id: string; display_name: string; score: number }[]
+  const rows = board.rows as { account_id: string; display_name: string; team_id: string | null; team_name: string | null; score: number }[]
+  const teamScores = teamRows.rows as { id: string; name: string; position: number; score: number }[]
+  const members = memberRows.rows as { account_id: string; display_name: string; team_id: string | null }[]
 
   let clue: BoardState['clue'] = null
   let hostAnswer: string | null = null
@@ -138,36 +198,87 @@ export async function loadBoardState(code: string, accountId: string, isTeacher:
       if (isHost && phase !== 'reveal') hostAnswer = r.correct_answer
 
       const buzzes = await pool.query(
-        `select b.account_id, b.outcome, a.display_name
-           from play_board_buzzes b join play_accounts a on a.id = b.account_id
+        `select b.account_id, b.team_id, b.outcome, a.display_name, tm.name as team_name
+           from play_board_buzzes b
+           join play_accounts a on a.id = b.account_id
+           left join play_board_teams tm on tm.id = b.team_id
           where b.clue_id = $1 order by b.buzzed_at`,
         [game.current_clue_id]
       )
       const pending = buzzes.rows.find((b) => b.outcome === 'pending')
-      if (pending && phase === 'answering') buzzer = { name: pending.display_name, isMe: pending.account_id === accountId }
-      lockedOutNames = buzzes.rows.filter((b) => b.outcome === 'wrong').map((b) => b.display_name)
-      mineOnClue = buzzes.rows.find((b) => b.account_id === accountId) ?? null
+      if (pending && phase === 'answering') {
+        buzzer = {
+          name: pending.display_name,
+          teamName: pending.team_name ?? null,
+          isMe: pending.account_id === accountId,
+          isMyTeam: teamMode ? !!myTeamId && pending.team_id === myTeamId : pending.account_id === accountId,
+        }
+      }
+      lockedOutNames = buzzes.rows.filter((b) => b.outcome === 'wrong').map((b) => (teamMode ? b.team_name : b.display_name))
+      // In a team game the team is the unit that gets one attempt per clue.
+      mineOnClue = teamMode
+        ? buzzes.rows.find((b) => !!myTeamId && b.team_id === myTeamId) ?? null
+        : buzzes.rows.find((b) => b.account_id === accountId) ?? null
 
       if (phase === 'reveal') {
         const winner = buzzes.rows.find((b) => b.outcome === 'correct')
-        reveal = { correctAnswer: r.correct_answer, explanation: r.explanation, winnerName: winner?.display_name ?? null, winnerPoints: winner ? r.value : null }
+        reveal = {
+          correctAnswer: r.correct_answer,
+          explanation: r.explanation,
+          winnerName: winner?.display_name ?? null,
+          winnerTeamName: winner?.team_name ?? null,
+          winnerPoints: winner ? r.value : null,
+        }
       }
     }
   }
 
   const topN = phase === 'ended' ? 10 : 8
-  const scoreboard = phase === 'lobby' ? [] : rows.slice(0, topN).map((r) => ({ name: r.display_name, score: r.score, isMe: r.account_id === accountId }))
+  let scoreboard: BoardState['scoreboard'] = []
+  if (phase !== 'lobby') {
+    scoreboard = teamMode
+      ? teamScores.map((t) => ({ name: t.name, score: t.score, isMe: t.id === myTeamId }))
+      : rows.slice(0, topN).map((r) => ({ name: r.display_name, score: r.score, isMe: r.account_id === accountId }))
+  }
+  const individuals: BoardState['individuals'] =
+    teamMode && phase === 'ended'
+      ? rows.slice(0, 5).map((r) => ({ name: r.display_name, teamName: r.team_name, score: r.score, isMe: r.account_id === accountId }))
+      : []
+
+  let teams: BoardState['teams'] = null
+  if (teamMode) {
+    // Position order keeps team columns steady; ranking order lives in `scoreboard`.
+    teams = [...teamScores]
+      .sort((a, b) => a.position - b.position)
+      .map((t) => {
+        const on = members.filter((m) => m.team_id === t.id)
+        return { id: t.id, name: t.name, score: t.score, memberCount: on.length, members: isHost ? on.map((m) => ({ id: m.account_id, name: m.display_name })) : null }
+      })
+
+  }
 
   let me: BoardState['me'] = null
   if (!isHost) {
     const mine = rows.find((r) => r.account_id === accountId)
-    const score = mine?.score ?? 0
+    let score = mine?.score ?? 0
+    let rank = 1 + rows.filter((r) => r.score > score).length
+    let team: { id: string; name: string } | null = null
+    let teamMates: string[] = []
+    if (teamMode) {
+      const t = teamScores.find((x) => x.id === myTeamId)
+      score = t?.score ?? 0
+      rank = 1 + teamScores.filter((x) => x.score > score).length
+      if (t) team = { id: t.id, name: t.name }
+      teamMates = members.filter((m) => m.team_id === myTeamId && m.account_id !== accountId).map((m) => m.display_name)
+    }
     me = {
       score,
-      rank: 1 + rows.filter((r) => r.score > score).length,
+      rank,
       canBuzz: phase === 'clue' && !mineOnClue,
       lockedOut: mineOnClue?.outcome === 'wrong',
       isBuzzer: !!buzzer?.isMe,
+      team,
+      teamMates,
     }
   }
 
@@ -180,6 +291,7 @@ export async function loadBoardState(code: string, accountId: string, isTeacher:
       subject: game.subject,
       rows: game.rows_per_category,
       deductWrong: game.deduct_wrong,
+      teamMode,
       buzzSeconds: game.buzz_seconds,
       msRemaining: phase === 'clue' ? Math.max(0, limitMs - (game.elapsed_ms ?? 0)) : null,
     },
@@ -187,12 +299,14 @@ export async function loadBoardState(code: string, accountId: string, isTeacher:
     clues: clueRows.rows.map((c) => ({ id: c.id, category: c.category_position, row: c.row_position, value: c.value, used: c.used })),
     playerCount: rows.length,
     playerNames: isHost && phase === 'lobby' ? rows.map((r) => r.display_name) : null,
+    teams,
     clue,
     buzzer,
     lockedOutNames,
     hostAnswer,
     reveal,
     scoreboard,
+    individuals,
     me,
   }
 }
