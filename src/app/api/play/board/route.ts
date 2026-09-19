@@ -88,6 +88,7 @@ export async function POST(request: Request) {
     // Starting a board closes this teacher's other unfinished games.
     await client.query(`update play_live_games set status = 'ended', ended_at = now() where host_id = $1 and status <> 'ended'`, [teacherId])
     await client.query(`update play_board_games set status = 'ended', ended_at = now() where host_id = $1 and status <> 'ended'`, [teacherId])
+    await client.query(`update play_tug_games set status = 'ended', ended_at = now(), end_reason = 'host' where host_id = $1 and status <> 'ended'`, [teacherId])
 
     let code = ''
     for (let attempt = 0; attempt < 20; attempt++) {

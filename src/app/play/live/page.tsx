@@ -23,7 +23,7 @@ export default function JoinLiveGamePage() {
       const data = await res.json().catch(() => ({}))
       if (res.status === 401) { router.push('/play/login'); return }
       if (!res.ok) throw new Error(data.error)
-      router.push(data.kind === 'board' ? `/play/board/${data.code}` : `/play/live/${data.code}`)
+      router.push(data.kind === 'board' ? `/play/board/${data.code}` : data.kind === 'tug' ? `/play/tug/${data.code}` : `/play/live/${data.code}`)
     } catch (err: any) {
       setError(err?.message || 'Something went wrong joining. Please try again.')
       setBusy(false)

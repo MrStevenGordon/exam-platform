@@ -18,6 +18,7 @@ const STUDENT_GAMES: Game[] = [
 const TEACHER_GAMES: Game[] = [
   { name: 'Host a live game', mode: 'Live classroom game', blurb: 'Create a game, share the code, and run it on the projector while students play on their own devices.', href: '/play/host', cta: 'Host' },
   { name: 'Jeopardy board', mode: 'Live classroom game', blurb: 'Pick categories and run a buzz-in board on the projector. Students buzz from their own devices and you judge the answers.', href: '/play/host/board', cta: 'Host' },
+  { name: 'Tug of War', mode: 'Live team game', blurb: 'Two teams race through quick questions and pull the rope. Every student appears on the field, animated on the projector.', href: '/play/host/tug', cta: 'Host' },
   { name: 'Class progress', mode: 'Leaderboards and streaks', blurb: 'See how each class is doing: XP, day streaks and who has not played yet.', href: '/play/host/classes', cta: 'View' },
   { name: 'Game questions', mode: 'Question bank', blurb: 'Add, edit and approve the questions used in live games, Topic Mastery and Math Duels.', href: '/play/host/questions', cta: 'Manage' },
 ]

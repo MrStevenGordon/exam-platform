@@ -68,6 +68,7 @@ export async function POST(request: Request) {
     // stale join code never lingers.
     await client.query(`update play_live_games set status = 'ended', ended_at = now() where host_id = $1 and status <> 'ended'`, [teacherId])
     await client.query(`update play_board_games set status = 'ended', ended_at = now() where host_id = $1 and status <> 'ended'`, [teacherId])
+    await client.query(`update play_tug_games set status = 'ended', ended_at = now(), end_reason = 'host' where host_id = $1 and status <> 'ended'`, [teacherId])
 
     let gameId: string | null = null
     let code = ''

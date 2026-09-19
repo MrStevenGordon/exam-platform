@@ -21,13 +21,15 @@ export type BoardGameRow = {
   elapsed_ms: number | null
 }
 
-// Join codes are unique among open games across live quizzes AND boards, so
+// Join codes are unique among open games across live quizzes, boards AND tug of war, so
 // creation checks the other table too (callers hold an advisory lock).
 export async function codeInUseByOpenGame(db: Queryable, code: string): Promise<boolean> {
   const { rows } = await db.query(
     `select 1 from play_live_games where code = $1 and status <> 'ended'
      union all
      select 1 from play_board_games where code = $1 and status <> 'ended'
+     union all
+     select 1 from play_tug_games where code = $1 and status <> 'ended'
      limit 1`,
     [code]
   )

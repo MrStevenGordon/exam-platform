@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getPlayPool } from '@/lib/playDb'
 import { getPlayAccountId } from '@/lib/playAuth'
 import { leastFullTeamId } from '@/lib/playBoard'
+import { leastFullTugTeamId } from '@/lib/playTug'
 
 const MAX_BAD_CODES = 10
 
@@ -32,11 +33,15 @@ export async function POST(request: Request) {
     }
 
     // A code identifies one open game, either a live quiz or a Jeopardy board.
-    let kind: 'quiz' | 'board' = 'quiz'
+    let kind: 'quiz' | 'board' | 'tug' = 'quiz'
     let game = (await pool.query(`select id, status from play_live_games where code = $1 and status <> 'ended'`, [code])).rows[0]
     if (!game) {
       game = (await pool.query(`select id, status from play_board_games where code = $1 and status <> 'ended'`, [code])).rows[0]
       kind = 'board'
+    }
+    if (!game) {
+      game = (await pool.query(`select id, status from play_tug_games where code = $1 and status <> 'ended'`, [code])).rows[0]
+      kind = 'tug'
     }
     if (!game) {
       await pool.query('insert into play_login_attempts (student_id, succeeded) values ($1, false)', [key])
@@ -62,6 +67,36 @@ export async function POST(request: Request) {
           }
           const teamId = g.team_mode ? await leastFullTeamId(client, game.id) : null
           await client.query('insert into play_board_players (game_id, account_id, team_id) values ($1, $2, $3) on conflict do nothing', [game.id, accountId, teamId])
+        }
+        await client.query('commit')
+        return NextResponse.json({ code, kind })
+      } catch (err) {
+        await client.query('rollback').catch(() => {})
+        throw err
+      } finally {
+        client.release()
+      }
+    }
+
+    if (kind === 'tug') {
+      // Same idea as boards: a row lock keeps the two sides balanced when many
+      // students join at once. Joining is only possible before the game starts.
+      const client = await pool.connect()
+      try {
+        await client.query('begin')
+        const g = (await client.query('select status from play_tug_games where id = $1 for update', [game.id])).rows[0]
+        if (!g || g.status === 'ended') {
+          await client.query('rollback')
+          return NextResponse.json({ error: 'No game found with that code. Check it and try again.' }, { status: 404 })
+        }
+        const already = await client.query('select 1 from play_tug_players where game_id = $1 and account_id = $2', [game.id, accountId])
+        if (already.rows.length === 0) {
+          if (g.status !== 'lobby') {
+            await client.query('rollback')
+            return NextResponse.json({ error: 'That game has already started. Ask your teacher to start a new one.' }, { status: 409 })
+          }
+          const teamId = await leastFullTugTeamId(client, game.id)
+          await client.query('insert into play_tug_players (game_id, account_id, team_id) values ($1, $2, $3) on conflict do nothing', [game.id, accountId, teamId])
         }
         await client.query('commit')
         return NextResponse.json({ code, kind })
