@@ -241,7 +241,7 @@ function RoutingCheckSection() {
       .eq('class_group_id', enrollment.class_group_id)
 
     if (!classTeachers || classTeachers.length === 0) {
-      steps.push({ label: 'Class assignment', status: 'fail', detail: `No teacher is assigned to class ${className} at all. Go to HOD \u2192 Class Assignments to fix this.` })
+      steps.push({ label: 'Class assignment', status: 'fail', detail: `No teacher is assigned to class ${className} at all. Go to HOD \u2192 Classrooms \u2192 Class Assignments to fix this.` })
       setTrace(steps)
       setChecking(false)
       return

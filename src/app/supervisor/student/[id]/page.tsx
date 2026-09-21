@@ -121,7 +121,7 @@ export default function SupervisorStudentDetailPage() {
 
   return (
     <div className="page-container">
-      <Link href="/supervisor/students" style={{ color: 'var(--text-secondary)', fontSize: 14 }}>&larr; Back to students</Link>
+      <Link href="/supervisor/classrooms?tab=students" style={{ color: 'var(--text-secondary)', fontSize: 14 }}>&larr; Back to students</Link>
 
       <div className="card" style={{ marginTop: 16, display: 'flex', alignItems: 'center', gap: 16 }}>
         <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'var(--accent-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 700, color: 'var(--accent-dark)', flexShrink: 0 }}>

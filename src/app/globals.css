@@ -519,3 +519,38 @@ body.exam-fullscreen .portal-content {
   width: 100% !important;
   min-height: 36px !important;
 }
+
+/* ===== Tabbed pages (TabHub) ===== */
+.hub-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid var(--border);
+}
+.hub-tab {
+  margin-bottom: -1px;
+  padding: 10px 14px;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+.hub-tab:hover { color: var(--text-primary); }
+.hub-tab[aria-selected="true"] {
+  color: var(--text-primary);
+  border-bottom-color: var(--accent);
+}
+.hub-tab:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+/* A page shown inside a tab already has its title in the tab bar, and sits
+   inside the portal padding already. */
+.hub-embedded .portal-page-title,
+.hub-embedded h1 { display: none; }
+.hub-embedded .page-container { max-width: none; padding: 0; }
