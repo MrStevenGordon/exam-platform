@@ -122,7 +122,7 @@ export default function HomePage() {
           {[
             { icon: '🛡️', title: 'Exam integrity built in', desc: 'Fullscreen lock, tab-switch detection, single-device login, and a dedicated desktop app with kiosk-mode lockdown during exams.' },
             { icon: '📝', title: 'Tasks, Tests & Final Exams', desc: 'Flexible take-home tasks, timed proctored tests, and a review pipeline that adapts to your school, from a single sign-off to a full multi-stage chain.' },
-            { icon: '👥', title: 'Role-based portals', desc: 'Student, Teacher, Supervisor, and Administrator portals, each showing only what that person needs, configured to match how your school is actually structured.' },
+            { icon: '👥', title: 'Role-based portals', desc: 'Student, Teacher, HOD (Head of Department), and Administrator portals, each showing only what that person needs, configured to match how your school is actually structured.' },
             { icon: '∑', title: 'Real math notation', desc: 'A proper symbol toolbar for powers, roots, fractions, Greek letters and more, plus image, audio, and video questions.' },
             { icon: '🎯', title: 'Smart grading routing', desc: 'A completed exam finds the right subject teacher automatically, based on class assignment and what they actually teach.' },
             { icon: '✨', title: 'AI-assisted authoring', desc: 'Import questions straight from a PDF exam paper, and polish rough drafts with one click.' },
@@ -144,14 +144,14 @@ export default function HomePage() {
           <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase', color: 'var(--accent)', marginBottom: '0.5rem' }}>How it works</div>
           <h2 style={{ fontSize: 30, fontWeight: 700, margin: 0, textTransform: 'none', color: 'var(--text-primary)' }}>From question to results, your way</h2>
           <p style={{ fontSize: 15, color: 'var(--text-secondary)', maxWidth: 480, margin: '0.75rem auto 0', lineHeight: 1.6 }}>
-            Every school reviews exams differently. Smart Assess adapts to yours, from a single supervisor sign-off to a full multi-stage review chain.
+            Every school reviews exams differently. Smart Assess adapts to yours, from a single HOD sign-off to a full multi-stage review chain.
           </p>
         </div>
         <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 8, maxWidth: 1000, margin: '0 auto' }}>
           {[
             { step: '1', title: 'Teacher creates', desc: 'Writes and organizes the exam into sections, pulling in questions from a shared bank, or importing straight from a PDF.', optional: false },
             { step: '2', title: 'Reviewed', desc: 'Anywhere from no review at all to a full department-level vetting chain, set per school once it’s configured.', optional: true },
-            { step: '3', title: 'Supervisor publishes', desc: 'Sets the exam window and assigns it to the right classes. Students see nothing until it opens.', optional: false },
+            { step: '3', title: 'HOD publishes', desc: 'Sets the exam window and assigns it to the right classes. Students see nothing until it opens.', optional: false },
             { step: '4', title: 'Student sits exam', desc: 'Enters the access password, answers under full proctoring, on the web or the desktop app, fullscreen and monitored.', optional: false },
             { step: '5', title: 'Teacher grades & releases', desc: 'Routed automatically to the right subject teacher, who grades and releases results.', optional: false },
           ].map((s) => (

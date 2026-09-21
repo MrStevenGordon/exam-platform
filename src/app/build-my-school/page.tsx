@@ -18,7 +18,7 @@ const WORKFLOW_TEMPLATES = [
   {
     value: 'full_review',
     title: 'Full Multi-Stage Review',
-    desc: 'Team Lead creates → Senior Team Lead vets → Supervisor publishes. The most thorough option.',
+    desc: 'Team Lead creates → Senior Team Lead vets → HOD publishes. The most thorough option.',
   },
   {
     value: 'other',

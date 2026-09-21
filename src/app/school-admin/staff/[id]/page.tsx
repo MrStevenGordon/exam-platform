@@ -128,7 +128,7 @@ export default function StaffDetailPage() {
 
   const hasChanges = JSON.stringify([...originalSubjects].sort()) !== JSON.stringify([...selectedSubjects].sort())
   const initials = staff.full_name.split(' ').map((n) => n[0]).slice(0, 2).join('')
-  const roleLabel: Record<string, string> = { teacher: 'Teacher', supervisor: 'Supervisor / HOD', admin: 'Administrator' }
+  const roleLabel: Record<string, string> = { teacher: 'Teacher', supervisor: 'HOD', admin: 'Administrator' }
 
   return (
     <div className="page-container">

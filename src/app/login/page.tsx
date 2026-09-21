@@ -9,7 +9,7 @@ import { getMfaRedirect } from '@/lib/mfaCheck'
 const ROLE_OPTIONS = [
   { value: 'student', label: 'Student' },
   { value: 'teacher', label: 'Teacher' },
-  { value: 'supervisor', label: 'Supervisor / HOD' },
+  { value: 'supervisor', label: 'HOD (Head of Department)' },
   { value: 'school_admin', label: 'School Admin' },
   { value: 'owner', label: 'Administrator' },
 ]

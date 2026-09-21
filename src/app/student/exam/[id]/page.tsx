@@ -106,7 +106,7 @@ export default function ExamFrontPage() {
       setUnlocked(true)
       setPasswordError('')
     } else {
-      setPasswordError('Incorrect password. Check with your teacher or supervisor.')
+      setPasswordError('Incorrect password. Check with your teacher or HOD.')
     }
   }
 
@@ -218,13 +218,13 @@ export default function ExamFrontPage() {
         <div className="card" style={{ textAlign: 'center' }}>
           <p style={{ fontSize: 32 }}>🔒</p>
           <p style={{ fontWeight: 700, marginBottom: 6 }}>This exam's window has closed</p>
-          <p style={{ color: 'var(--text-secondary)' }}>It closed {dateFmt(closesAt!)}. Contact your teacher or supervisor if you were unable to sit it.</p>
+          <p style={{ color: 'var(--text-secondary)' }}>It closed {dateFmt(closesAt!)}. Contact your teacher or HOD if you were unable to sit it.</p>
         </div>
       ) : !unlocked ? (
         <div className="card">
           <p style={{ fontWeight: 700, marginBottom: 6 }}>Enter the exam password to begin</p>
           <p style={{ fontSize: 14, color: 'var(--text-secondary)', marginBottom: 14 }}>
-            Your teacher or supervisor provides this password on exam day.
+            Your teacher or HOD provides this password on exam day.
           </p>
           <div style={{ display: 'flex', gap: 8 }}>
             <input

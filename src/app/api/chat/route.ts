@@ -26,11 +26,11 @@ const schema = z.object({
 const PLATFORM_FACTS = `
 Smart Assess Ja is an online exam and assessment platform for schools and organizations in Jamaica.
 
-Roles: Student, Teacher, Supervisor/Head of Department, School Administrator, and Organization Administrator, each with their own portal.
+Roles: Student, Teacher, HOD (Head of Department), School Administrator, and Organization Administrator, each with their own portal.
 
 Assessment types: pop quizzes, class tests, weekly tests, monthly/end-of-term/end-of-year exams, homework, take-home tasks, group projects, and full formal final exams.
 
-Review workflow (school-configurable, not one-size-fits-all): Direct Publish (teacher publishes with no review), Department Head Review (a supervisor reviews and publishes), or Full Multi-Stage Review (Team Lead creates, Senior Team Lead vets, Supervisor publishes).
+Review workflow (school-configurable, not one-size-fits-all): Direct Publish (teacher publishes with no review), Department Head Review (an HOD reviews and publishes), or Full Multi-Stage Review (Team Lead creates, Senior Team Lead vets, Supervisor publishes).
 
 Exam integrity features: fullscreen lock, tab-switch detection, single-device login for students, and a desktop app with kiosk-mode lockdown during live exams that also detects when a student switches away from the app (e.g. Alt+Tab), even in cases the OS itself can't be prevented from allowing.
 

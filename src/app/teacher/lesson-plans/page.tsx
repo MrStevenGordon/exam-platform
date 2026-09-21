@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { getSchoolFeatures } from '@/lib/schoolFeatures'
+import { Lesson, LESSON_FIELDS, UNIT_FIELDS, emptyLesson, lessonsForPlan, legacyFieldsFromLessons, cleanLessons } from '@/lib/lessonPlan'
 
 type LessonPlan = {
   id: string
@@ -26,6 +27,13 @@ type LessonPlan = {
   elaborate: string | null
   evaluate: string | null
   success_criteria: string | null
+  sub_topics: string | null
+  prerequisite_knowledge: string | null
+  four_cs: string | null
+  subject_practices: string | null
+  general_objectives: string | null
+  key_terms_formulae: string | null
+  lessons: Lesson[] | null
   created_at: string
 }
 
@@ -52,29 +60,83 @@ type SharedPlan = {
   elaborate: string | null
   evaluate: string | null
   success_criteria: string | null
+  sub_topics?: string | null
+  prerequisite_knowledge?: string | null
+  four_cs?: string | null
+  subject_practices?: string | null
+  general_objectives?: string | null
+  key_terms_formulae?: string | null
+  lessons?: Lesson[] | null
   published_at: string
 }
 
-const BODY_FIELDS: { key: keyof LessonPlan; label: string }[] = [
+// Fields from the original single-lesson format that aren't part of the unit
+// layout. Kept (under "More NSC details") so nothing already written is lost.
+const NSC_EXTRA_FIELDS: { key: 'specific_objective' | 'skills' | 'prior_learning' | 'materials' | 'success_criteria'; label: string }[] = [
   { key: 'specific_objective', label: 'Specific Objective' },
   { key: 'skills', label: 'Skills' },
   { key: 'prior_learning', label: 'Prior Learning' },
   { key: 'materials', label: 'Materials' },
-  { key: 'engage', label: 'Engage' },
-  { key: 'explore', label: 'Explore' },
-  { key: 'explain', label: 'Explain' },
-  { key: 'elaborate', label: 'Elaborate / Extend' },
-  { key: 'evaluate', label: 'Evaluate' },
   { key: 'success_criteria', label: 'Success Criteria' },
 ]
 
-function emptyForm() {
+type PlanForm = {
+  subject: string; grade: string; term: string; unit_theme: string; focus_strand: string; topic: string
+  focus_question: string; duration: string; attainment_target: string
+  specific_objective: string; skills: string; prior_learning: string; materials: string; success_criteria: string
+  sub_topics: string; prerequisite_knowledge: string; four_cs: string; subject_practices: string; general_objectives: string; key_terms_formulae: string
+  lessons: Lesson[]
+}
+
+function emptyForm(): PlanForm {
   return {
     subject: '', grade: '', term: '', unit_theme: '', focus_strand: '', topic: '',
     focus_question: '', duration: '', attainment_target: '',
-    specific_objective: '', skills: '', prior_learning: '', materials: '',
-    engage: '', explore: '', explain: '', elaborate: '', evaluate: '', success_criteria: '',
+    specific_objective: '', skills: '', prior_learning: '', materials: '', success_criteria: '',
+    sub_topics: '', prerequisite_knowledge: '', four_cs: '', subject_practices: '', general_objectives: '', key_terms_formulae: '',
+    lessons: [emptyLesson()],
   }
+}
+
+// Works for both a saved plan and a library plan (same shape, nulls allowed).
+function formFromPlan(plan: LessonPlan | SharedPlan): PlanForm {
+  return {
+    subject: plan.subject, grade: plan.grade, term: plan.term || '', unit_theme: plan.unit_theme || '',
+    focus_strand: plan.focus_strand || '', topic: plan.topic, focus_question: plan.focus_question || '',
+    duration: plan.duration || '', attainment_target: plan.attainment_target || '',
+    specific_objective: plan.specific_objective || '', skills: plan.skills || '',
+    prior_learning: plan.prior_learning || '', materials: plan.materials || '', success_criteria: plan.success_criteria || '',
+    sub_topics: plan.sub_topics || '', prerequisite_knowledge: plan.prerequisite_knowledge || '', four_cs: plan.four_cs || '',
+    subject_practices: plan.subject_practices || '', general_objectives: plan.general_objectives || '', key_terms_formulae: plan.key_terms_formulae || '',
+    lessons: lessonsForPlan(plan),
+  }
+}
+
+// Read-only view of a plan (used for library plans): unit overview, then each
+// lesson. A plan from before units existed shows as a single lesson.
+function PlanBody({ plan }: { plan: SharedPlan }) {
+  const lessons = lessonsForPlan(plan)
+  const show = (label: string, value: string | null | undefined) =>
+    value ? (
+      <div style={{ marginBottom: 14 }}>
+        <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)' }}>{label}</div>
+        <div style={{ fontSize: 14, marginTop: 4, whiteSpace: 'pre-wrap' }}>{value}</div>
+      </div>
+    ) : null
+  return (
+    <>
+      <div className="card" style={{ marginBottom: 16 }}>
+        {UNIT_FIELDS.map(({ key, label }) => <div key={key}>{show(label, plan[key])}</div>)}
+        {NSC_EXTRA_FIELDS.map(({ key, label }) => <div key={key}>{show(label, plan[key])}</div>)}
+      </div>
+      {lessons.map((lesson, i) => (
+        <div key={i} className="card" style={{ marginBottom: 16 }}>
+          <div style={{ fontWeight: 700, marginBottom: 12 }}>Lesson {i + 1}{lesson.title ? ` – ${lesson.title}` : ''}</div>
+          {LESSON_FIELDS.map(({ key, label }) => <div key={key}>{show(label, lesson[key])}</div>)}
+        </div>
+      ))}
+    </>
+  )
 }
 
 export default function LessonPlansPage() {
@@ -86,7 +148,8 @@ export default function LessonPlansPage() {
   const [plans, setPlans] = useState<LessonPlan[]>([])
   const [loading, setLoading] = useState(true)
   const [editingId, setEditingId] = useState<string | null>(null)
-  const [form, setForm] = useState(emptyForm())
+  const [form, setForm] = useState<PlanForm>(emptyForm())
+  const [lessonCount, setLessonCount] = useState(1)
   const [saving, setSaving] = useState(false)
   const [errorMsg, setErrorMsg] = useState('')
   const [generating, setGenerating] = useState(false)
@@ -130,22 +193,31 @@ export default function LessonPlansPage() {
 
   function startEdit(plan: LessonPlan) {
     setEditingId(plan.id)
-    setForm({
-      subject: plan.subject, grade: plan.grade, term: plan.term || '', unit_theme: plan.unit_theme || '',
-      focus_strand: plan.focus_strand || '', topic: plan.topic, focus_question: plan.focus_question || '',
-      duration: plan.duration || '', attainment_target: plan.attainment_target || '',
-      specific_objective: plan.specific_objective || '', skills: plan.skills || '',
-      prior_learning: plan.prior_learning || '', materials: plan.materials || '',
-      engage: plan.engage || '', explore: plan.explore || '', explain: plan.explain || '',
-      elaborate: plan.elaborate || '', evaluate: plan.evaluate || '', success_criteria: plan.success_criteria || '',
-    })
+    const next = formFromPlan(plan)
+    setForm(next)
+    setLessonCount(Math.min(5, Math.max(1, next.lessons.length)))
     setGenerateError('')
     setErrorMsg('')
     setView('form')
   }
 
-  function updateField(key: keyof ReturnType<typeof emptyForm>, value: string) {
+  function updateField(key: Exclude<keyof PlanForm, 'lessons'>, value: string) {
     setForm((prev) => ({ ...prev, [key]: value }))
+  }
+
+  function updateLesson(index: number, key: keyof Lesson, value: string) {
+    setForm((prev) => ({ ...prev, lessons: prev.lessons.map((l, i) => (i === index ? { ...l, [key]: value } : l)) }))
+  }
+
+  function addLesson() {
+    setForm((prev) => (prev.lessons.length >= 12 ? prev : { ...prev, lessons: [...prev.lessons, emptyLesson()] }))
+  }
+
+  function removeLesson(index: number) {
+    const lesson = form.lessons[index]
+    const hasContent = Object.values(lesson).some((v) => v.trim())
+    if (hasContent && !confirm(`Remove Lesson ${index + 1}${lesson.title ? ` (${lesson.title})` : ''}? Its content will be lost.`)) return
+    setForm((prev) => ({ ...prev, lessons: prev.lessons.length > 1 ? prev.lessons.filter((_, i) => i !== index) : prev.lessons }))
   }
 
   async function handleGenerate() {
@@ -153,6 +225,8 @@ export default function LessonPlansPage() {
       setGenerateError('Fill in Subject, Grade, and Topic first.')
       return
     }
+    const hasWrittenLessons = form.lessons.some((l) => Object.values(l).some((v) => v.trim()))
+    if (hasWrittenLessons && !confirm('The AI draft will replace the lessons you have already written. Continue?')) return
     setGenerating(true)
     setGenerateError('')
     try {
@@ -166,6 +240,8 @@ export default function LessonPlansPage() {
           topic: form.topic,
           focusQuestion: form.focus_question || undefined,
           attainmentTarget: form.attainment_target || undefined,
+          duration: form.duration || undefined,
+          lessonCount,
           accessToken: session?.access_token,
         }),
       })
@@ -177,17 +253,19 @@ export default function LessonPlansPage() {
       }
       setForm((prev) => ({
         ...prev,
+        sub_topics: data.subTopics || prev.sub_topics,
+        prerequisite_knowledge: data.prerequisiteKnowledge || prev.prerequisite_knowledge,
+        four_cs: data.fourCs || prev.four_cs,
+        subject_practices: data.subjectPractices || prev.subject_practices,
+        general_objectives: data.generalObjectives || prev.general_objectives,
+        key_terms_formulae: data.keyTermsFormulae || prev.key_terms_formulae,
         specific_objective: data.specificObjective || prev.specific_objective,
         skills: data.skills || prev.skills,
-        prior_learning: data.priorLearning || prev.prior_learning,
-        materials: data.materials || prev.materials,
-        engage: data.engage || prev.engage,
-        explore: data.explore || prev.explore,
-        explain: data.explain || prev.explain,
-        elaborate: data.elaborate || prev.elaborate,
-        evaluate: data.evaluate || prev.evaluate,
         success_criteria: data.successCriteria || prev.success_criteria,
+        lessons: Array.isArray(data.lessons) && data.lessons.length > 0 ? cleanLessons(data.lessons) : prev.lessons,
       }))
+    } catch {
+      setGenerateError('Could not reach the AI service. Please try again.')
     } finally {
       setGenerating(false)
     }
@@ -205,7 +283,10 @@ export default function LessonPlansPage() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { router.push('/login'); return }
 
-    const payload = { ...form, teacher_id: user.id, updated_at: new Date().toISOString() }
+    // Lesson 1 is mirrored onto the original 5E columns so older screens and
+    // the shared library keep working.
+    const lessons = cleanLessons(form.lessons)
+    const payload = { ...form, lessons, ...legacyFieldsFromLessons(lessons), teacher_id: user.id, updated_at: new Date().toISOString() }
 
     const { error } = editingId
       ? await supabase.from('lesson_plans').update(payload).eq('id', editingId)
@@ -252,15 +333,9 @@ export default function LessonPlansPage() {
 
   function copyToMyPlans(plan: SharedPlan) {
     setEditingId(null)
-    setForm({
-      subject: plan.subject, grade: plan.grade, term: plan.term || '', unit_theme: plan.unit_theme || '',
-      focus_strand: plan.focus_strand || '', topic: plan.topic, focus_question: plan.focus_question || '',
-      duration: plan.duration || '', attainment_target: plan.attainment_target || '',
-      specific_objective: plan.specific_objective || '', skills: plan.skills || '',
-      prior_learning: plan.prior_learning || '', materials: plan.materials || '',
-      engage: plan.engage || '', explore: plan.explore || '', explain: plan.explain || '',
-      elaborate: plan.elaborate || '', evaluate: plan.evaluate || '', success_criteria: plan.success_criteria || '',
-    })
+    const next = formFromPlan(plan)
+    setForm(next)
+    setLessonCount(Math.min(5, Math.max(1, next.lessons.length)))
     setViewingPlan(null)
     setGenerateError('')
     setErrorMsg('')
@@ -287,6 +362,10 @@ export default function LessonPlansPage() {
           engage: plan.engage || undefined, explore: plan.explore || undefined, explain: plan.explain || undefined,
           elaborate: plan.elaborate || undefined, evaluate: plan.evaluate || undefined,
           successCriteria: plan.success_criteria || undefined,
+          subTopics: plan.sub_topics || undefined, prerequisiteKnowledge: plan.prerequisite_knowledge || undefined,
+          fourCs: plan.four_cs || undefined, subjectPractices: plan.subject_practices || undefined,
+          generalObjectives: plan.general_objectives || undefined, keyTermsFormulae: plan.key_terms_formulae || undefined,
+          lessons: lessonsForPlan(plan),
         }),
       })
       const data = await res.json()
@@ -383,18 +462,7 @@ export default function LessonPlansPage() {
               Shared by {viewingPlan.school_name}{viewingPlan.teacher_name ? ` · ${viewingPlan.teacher_name}` : ''}
             </div>
           </div>
-          <div className="card" style={{ marginBottom: 16 }}>
-            {BODY_FIELDS.map(({ key, label }) => {
-              const value = viewingPlan[key as keyof SharedPlan]
-              if (!value) return null
-              return (
-                <div key={key} style={{ marginBottom: 14 }}>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)' }}>{label}</div>
-                  <div style={{ fontSize: 14, marginTop: 4, whiteSpace: 'pre-wrap' }}>{String(value)}</div>
-                </div>
-              )
-            })}
-          </div>
+          <PlanBody plan={viewingPlan} />
           <button onClick={() => copyToMyPlans(viewingPlan)} className="btn btn-primary">
             Copy to My Plans
           </button>
@@ -420,7 +488,7 @@ export default function LessonPlansPage() {
                     <div>
                       <div style={{ fontWeight: 600 }}>{plan.topic}</div>
                       <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 2 }}>
-                        {plan.subject} · {plan.grade}{plan.term ? ` · ${plan.term}` : ''}
+                        {plan.subject} · {plan.grade}{plan.term ? ` · ${plan.term}` : ''}{Array.isArray(plan.lessons) && plan.lessons.length > 1 ? ` · ${plan.lessons.length} lessons` : ''}
                       </div>
                     </div>
                     <button
@@ -454,7 +522,7 @@ export default function LessonPlansPage() {
               </div>
               <div>
                 <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)' }}>Grade *</label>
-                <input value={form.grade} onChange={(e) => updateField('grade', e.target.value)} placeholder="e.g. Grade 5" required style={{ width: '100%', marginTop: 4 }} />
+                <input value={form.grade} onChange={(e) => updateField('grade', e.target.value)} placeholder="e.g. Grade 9" required style={{ width: '100%', marginTop: 4 }} />
               </div>
               <div>
                 <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)' }}>Term</label>
@@ -462,52 +530,99 @@ export default function LessonPlansPage() {
               </div>
               <div>
                 <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)' }}>Duration</label>
-                <input value={form.duration} onChange={(e) => updateField('duration', e.target.value)} placeholder="e.g. 1 hour" style={{ width: '100%', marginTop: 4 }} />
-              </div>
-              <div>
-                <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)' }}>Unit & Theme</label>
-                <input value={form.unit_theme} onChange={(e) => updateField('unit_theme', e.target.value)} style={{ width: '100%', marginTop: 4 }} />
-              </div>
-              <div>
-                <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)' }}>Focus Strand</label>
-                <input value={form.focus_strand} onChange={(e) => updateField('focus_strand', e.target.value)} style={{ width: '100%', marginTop: 4 }} />
+                <input value={form.duration} onChange={(e) => updateField('duration', e.target.value)} placeholder="e.g. 4 lessons × 60 minutes" style={{ width: '100%', marginTop: 4 }} />
               </div>
             </div>
-            <div style={{ marginBottom: 14 }}>
+            <div>
               <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)' }}>Topic *</label>
               <input value={form.topic} onChange={(e) => updateField('topic', e.target.value)} required style={{ width: '100%', marginTop: 4 }} />
             </div>
-            <div style={{ marginBottom: 14 }}>
-              <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)' }}>Focus Question</label>
-              <input value={form.focus_question} onChange={(e) => updateField('focus_question', e.target.value)} style={{ width: '100%', marginTop: 4 }} />
-            </div>
-            <div>
-              <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)' }}>Attainment Target</label>
-              <textarea value={form.attainment_target} onChange={(e) => updateField('attainment_target', e.target.value)} rows={2} style={{ width: '100%', marginTop: 4 }} />
-            </div>
           </div>
 
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Lesson Body</div>
-            <button type="button" onClick={handleGenerate} disabled={generating} className="btn btn-secondary" style={{ fontSize: 13 }}>
-              {generating ? 'Drafting…' : '✨ AI-assist all sections'}
-            </button>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap', marginBottom: 12 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Unit overview</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <label style={{ fontSize: 13, color: 'var(--text-secondary)' }} htmlFor="lesson-count">Lessons</label>
+              <select id="lesson-count" value={lessonCount} onChange={(e) => setLessonCount(Number(e.target.value))} disabled={generating}>
+                {[1, 2, 3, 4, 5].map((n) => <option key={n} value={n}>{n}</option>)}
+              </select>
+              <button type="button" onClick={handleGenerate} disabled={generating} className="btn btn-secondary" style={{ fontSize: 13 }}>
+                {generating ? 'Drafting…' : '✨ AI-assist plan'}
+              </button>
+            </div>
           </div>
           {generateError && <p className="banner banner-danger" style={{ marginBottom: 14 }}>{generateError}</p>}
 
           <div className="card" style={{ marginBottom: 16 }}>
-            {BODY_FIELDS.map(({ key, label }) => (
+            {UNIT_FIELDS.map(({ key, label, rows, placeholder }) => (
               <div key={key} style={{ marginBottom: 14 }}>
                 <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)' }}>{label}</label>
-                <textarea
-                  value={form[key as keyof ReturnType<typeof emptyForm>]}
-                  onChange={(e) => updateField(key as keyof ReturnType<typeof emptyForm>, e.target.value)}
-                  rows={3}
-                  style={{ width: '100%', marginTop: 4 }}
-                />
+                <textarea value={form[key]} onChange={(e) => updateField(key, e.target.value)} rows={rows} placeholder={placeholder} style={{ width: '100%', marginTop: 4 }} />
               </div>
             ))}
           </div>
+
+          <details style={{ marginBottom: 16 }}>
+            <summary style={{ cursor: 'pointer', fontSize: 13, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: 12 }}>More NSC details (optional)</summary>
+            <div className="card" style={{ marginTop: 12 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
+                <div>
+                  <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)' }}>Unit & Theme</label>
+                  <input value={form.unit_theme} onChange={(e) => updateField('unit_theme', e.target.value)} style={{ width: '100%', marginTop: 4 }} />
+                </div>
+                <div>
+                  <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)' }}>Focus Strand</label>
+                  <input value={form.focus_strand} onChange={(e) => updateField('focus_strand', e.target.value)} style={{ width: '100%', marginTop: 4 }} />
+                </div>
+              </div>
+              <div style={{ marginBottom: 14 }}>
+                <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)' }}>Focus Question</label>
+                <input value={form.focus_question} onChange={(e) => updateField('focus_question', e.target.value)} style={{ width: '100%', marginTop: 4 }} />
+              </div>
+              <div style={{ marginBottom: 14 }}>
+                <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)' }}>Attainment Target</label>
+                <textarea value={form.attainment_target} onChange={(e) => updateField('attainment_target', e.target.value)} rows={2} style={{ width: '100%', marginTop: 4 }} />
+              </div>
+              {NSC_EXTRA_FIELDS.map(({ key, label }) => (
+                <div key={key} style={{ marginBottom: 14 }}>
+                  <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)' }}>{label}</label>
+                  <textarea value={form[key]} onChange={(e) => updateField(key, e.target.value)} rows={2} style={{ width: '100%', marginTop: 4 }} />
+                </div>
+              ))}
+            </div>
+          </details>
+
+          <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: 12 }}>
+            Lessons ({form.lessons.length})
+          </div>
+          {form.lessons.map((lesson, i) => (
+            <div key={i} className="card" style={{ marginBottom: 16 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+                <div style={{ fontWeight: 700, whiteSpace: 'nowrap' }}>Lesson {i + 1}</div>
+                <input
+                  value={lesson.title}
+                  onChange={(e) => updateLesson(i, 'title', e.target.value)}
+                  placeholder="Lesson title, e.g. Introduction to Simple Interest"
+                  aria-label={`Lesson ${i + 1} title`}
+                  style={{ flex: 1 }}
+                />
+                {form.lessons.length > 1 && (
+                  <button type="button" onClick={() => removeLesson(i)} className="btn btn-ghost" style={{ fontSize: 12, color: 'var(--danger)' }}>
+                    Remove
+                  </button>
+                )}
+              </div>
+              {LESSON_FIELDS.map(({ key, label, rows }) => (
+                <div key={key} style={{ marginBottom: 12 }}>
+                  <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)' }}>{label}</label>
+                  <textarea value={lesson[key]} onChange={(e) => updateLesson(i, key, e.target.value)} rows={rows} style={{ width: '100%', marginTop: 4 }} />
+                </div>
+              ))}
+            </div>
+          ))}
+          <button type="button" onClick={addLesson} className="btn btn-secondary" style={{ marginBottom: 20 }} disabled={form.lessons.length >= 12}>
+            + Add lesson
+          </button>
 
           {errorMsg && <p className="banner banner-danger" style={{ marginBottom: 16 }}>{errorMsg}</p>}
           <button type="submit" disabled={saving} className="btn btn-primary">

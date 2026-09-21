@@ -246,7 +246,7 @@ export default function StaffPage() {
   const deptNames = departments.map((d) => d.name)
 
   const roleLabel: Record<string, string> = {
-    teacher: 'Teacher', supervisor: 'Supervisor / HOD', admin: 'Platform Admin'
+    teacher: 'Teacher', supervisor: 'HOD', admin: 'Platform Admin'
   }
 
   return (
@@ -292,7 +292,7 @@ export default function StaffPage() {
               <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Role</label>
               <select value={newRole} onChange={(e) => setNewRole(e.target.value)} style={{ width: '100%', marginTop: 4 }}>
                 <option value="teacher">Teacher</option>
-                <option value="supervisor">Supervisor / HOD</option>
+                <option value="supervisor">HOD (Head of Department)</option>
               </select>
             </div>
             <div>

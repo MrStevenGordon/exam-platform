@@ -145,7 +145,7 @@ export default function SupervisorProfilePage() {
             <h2 style={{ marginBottom: 4 }}>Account</h2>
             <p style={{ fontSize: 14, color: 'var(--text-secondary)', margin: 0 }}>{(profile as any)?.full_name}</p>
             <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '4px 0 0' }}>
-              Supervisor / HOD · {(profile?.departments as any)?.name || 'No department'}
+              HOD · {(profile?.departments as any)?.name || 'No department'}
             </p>
           </div>
           <button onClick={handleRetakeTour} className="btn btn-ghost" style={{ fontSize: 12 }}>

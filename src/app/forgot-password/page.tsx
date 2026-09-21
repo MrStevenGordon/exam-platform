@@ -7,7 +7,7 @@ import { supabase } from '@/lib/supabase'
 const USER_TYPE_OPTIONS = [
   { value: 'student', label: 'Student' },
   { value: 'teacher', label: 'Teacher' },
-  { value: 'supervisor', label: 'Supervisor / HOD' },
+  { value: 'supervisor', label: 'HOD (Head of Department)' },
 ]
 
 export default function ForgotPasswordPage() {

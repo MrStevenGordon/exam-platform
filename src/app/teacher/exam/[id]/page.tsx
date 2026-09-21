@@ -344,7 +344,7 @@ export default function ExamEditorPage() {
 
       {isFinalExamSubmission && !isLocked && hasComments && (
         <div className="banner banner-warning" style={{ marginTop: 16 }}>
-          Your supervisor left feedback on one or more questions below. Please review and make changes before resubmitting.
+          Your HOD left feedback on one or more questions below. Please review and make changes before resubmitting.
         </div>
       )}
 
@@ -555,7 +555,7 @@ export default function ExamEditorPage() {
                   <p style={{ margin: '8px 0 0' }}>{q.question_text}</p>
                   {q.supervisor_comment && (
                     <div className="banner banner-warning" style={{ marginTop: 8, fontSize: 14 }}>
-                      <strong>Supervisor feedback:</strong> {q.supervisor_comment}
+                      <strong>HOD feedback:</strong> {q.supervisor_comment}
                     </div>
                   )}
                 </div>
@@ -603,7 +603,7 @@ export default function ExamEditorPage() {
             <p style={{ margin: '8px 0 0' }}>{q.question_text}</p>
             {q.supervisor_comment && (
               <div className="banner banner-warning" style={{ marginTop: 8, fontSize: 14 }}>
-                <strong>Supervisor feedback:</strong> {q.supervisor_comment}
+                <strong>HOD feedback:</strong> {q.supervisor_comment}
               </div>
             )}
 
@@ -654,7 +654,7 @@ export default function ExamEditorPage() {
                 <div className="banner banner-warning">Submitted for senior team lead vetting.</div>
               )}
               {exam.status === 'approved' && (
-                <div className="banner banner-success">Approved. Awaiting supervisor to publish.</div>
+                <div className="banner banner-success">Approved. Awaiting HOD to publish.</div>
               )}
             </div>
           ) : (

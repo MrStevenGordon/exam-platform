@@ -266,7 +266,7 @@ export default function Dashboard() {
 
       {profile?.role === 'supervisor' && (
         <div className="card" style={{ marginTop: 24 }}>
-          <h2>Supervisor portal</h2>
+          <h2>HOD portal</h2>
         </div>
       )}
 

@@ -70,7 +70,7 @@ export default function PrivacyPolicyPage() {
           paste attempts. We do not record keystroke content itself, only behavioral patterns used to flag
           possible academic integrity concerns for a teacher to review. If a teacher, supervisor, or school
           admin enables a text-to-speech accommodation for you, that setting is stored on your profile.</p>
-          <p style={{ marginBottom: 12 }}><strong>Staff (teachers, supervisors, school admins):</strong> full name, email address, role,
+          <p style={{ marginBottom: 12 }}><strong>Staff (teachers, HODs, school admins):</strong> full name, email address, role,
           department, and two-factor authentication enrollment status (the actual authenticator secret is
           managed by our authentication provider, Supabase, not stored by us directly).</p>
           <p style={{ marginBottom: 12 }}><strong>Organizations:</strong> organization name, contact name and email, exams and questions you
@@ -116,7 +116,7 @@ export default function PrivacyPolicyPage() {
 
         <Section title="Who we share it with">
           <p style={{ marginBottom: 12 }}>Within a school, access is role-based and enforced at the database level. A teacher only sees
-          their own students and classes, a department supervisor only their own department, and so on. We
+          their own students and classes, a head of department only their own department, and so on. We
           never share student data across schools or organizations; each runs on its own isolated database.</p>
           <p>We use a small number of service providers to actually run Smart Assess, each only with the access
           they need to do their specific job: Supabase (database, authentication, and file storage), Vercel

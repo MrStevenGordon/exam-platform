@@ -4,6 +4,7 @@ import { z } from 'zod'
 import { getLibraryAdmin } from '@/lib/libraryDb'
 import { rateLimit } from '@/lib/rateLimit'
 import { validateBody } from '@/lib/validateBody'
+import { cleanLessons } from '@/lib/lessonPlan'
 
 const schoolAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -31,6 +32,14 @@ const schema = z.object({
   elaborate: z.string().trim().max(2000).optional(),
   evaluate: z.string().trim().max(2000).optional(),
   successCriteria: z.string().trim().max(2000).optional(),
+  // Unit fields (see 052/053). Optional so older clients keep publishing.
+  subTopics: z.string().trim().max(3000).optional(),
+  prerequisiteKnowledge: z.string().trim().max(3000).optional(),
+  fourCs: z.string().trim().max(3000).optional(),
+  subjectPractices: z.string().trim().max(3000).optional(),
+  generalObjectives: z.string().trim().max(4000).optional(),
+  keyTermsFormulae: z.string().trim().max(4000).optional(),
+  lessons: z.array(z.record(z.string(), z.string().max(4000))).max(12).optional(),
 }).strict()
 
 // Publishes a copy of a plan (whatever the teacher currently has in the
@@ -66,7 +75,7 @@ export async function POST(req: NextRequest) {
 
     const schoolName = process.env.NEXT_PUBLIC_SCHOOL_NAME?.trim() || 'A partner school'
 
-    const { error: insertError } = await library.from('shared_lesson_plans').insert({
+    const legacyRow = {
       school_name: schoolName,
       teacher_name: callerProfile.full_name || null,
       subject: fields.subject,
@@ -88,13 +97,35 @@ export async function POST(req: NextRequest) {
       elaborate: fields.elaborate || null,
       evaluate: fields.evaluate || null,
       success_criteria: fields.successCriteria || null,
-    })
+    }
+    const lessons = cleanLessons(fields.lessons).filter((l) => Object.values(l).some(Boolean))
+    const unitRow = {
+      ...legacyRow,
+      sub_topics: fields.subTopics || null,
+      prerequisite_knowledge: fields.prerequisiteKnowledge || null,
+      four_cs: fields.fourCs || null,
+      subject_practices: fields.subjectPractices || null,
+      general_objectives: fields.generalObjectives || null,
+      key_terms_formulae: fields.keyTermsFormulae || null,
+      lessons,
+    }
+    const hasUnitContent = lessons.length > 0 || [fields.subTopics, fields.prerequisiteKnowledge, fields.fourCs, fields.subjectPractices, fields.generalObjectives, fields.keyTermsFormulae].some(Boolean)
+
+    // Try the full unit first. If the shared library's table hasn't been
+    // given the unit columns yet (migration 053), fall back to the original
+    // columns, which carry lesson 1, so publishing still works either way.
+    let { error: insertError } = await library.from('shared_lesson_plans').insert(hasUnitContent ? unitRow : legacyRow)
+    let partial = false
+    if (insertError && hasUnitContent && /column|schema cache/i.test(insertError.message || '')) {
+      partial = true
+      ;({ error: insertError } = await library.from('shared_lesson_plans').insert(legacyRow))
+    }
 
     if (insertError) {
       return NextResponse.json({ error: insertError.message || 'Could not publish this plan.' }, { status: 400 })
     }
 
-    return NextResponse.json({ success: true })
+    return NextResponse.json({ success: true, partial })
   } catch (err) {
     console.error('lesson-plans/library/publish error:', err)
     return NextResponse.json({ error: 'Something went wrong. Please try again.' }, { status: 500 })

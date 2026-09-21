@@ -8,7 +8,8 @@ import InactivityLogout from '@/components/InactivityLogout'
 import OnboardingTour, { TourStep } from '@/components/OnboardingTour'
 import { supabase } from '@/lib/supabase'
 import { getMfaRedirect } from '@/lib/mfaCheck'
-import { verifyPortalRole } from '@/lib/verifyPortalRole'
+import { verifyPortalRoleDetailed } from '@/lib/verifyPortalRole'
+import { HOD_NAV, HOD_TOUR_STEPS, isOpenToHods, resolveHodActivePathname } from '@/lib/hodNav'
 import { getSchoolFeatures } from '@/lib/schoolFeatures'
 
 // Only the highest-value stops, not every nav item: a tour that spotlights
@@ -21,7 +22,7 @@ const TEACHER_TOUR_STEPS: TourStep[] = [
   { href: '/teacher/tests', title: 'Create exams and quizzes', body: 'Build a pop quiz, class test, or weekly test here. It publishes straight to your classes, no approval step needed.' },
   { href: '/teacher/bank', title: 'Question bank', body: "Save a question once and reuse it in future exams instead of writing it again. It's yours to draw from whenever you're building a new test." },
   { href: '/teacher/classes', title: 'My Classes', body: 'Your rosters, grouped by grade. See who\'s enrolled in each class you teach.' },
-  { href: '/teacher/team-lead', title: 'Team Lead Exams', body: 'As a team lead, standardized exams (monthly, midterm, end of term) you create here go to your supervisor for review before publishing.' },
+  { href: '/teacher/team-lead', title: 'Team Lead Exams', body: 'As a team lead, standardized exams (monthly, midterm, end of term) you create here go to your HOD for review before publishing.' },
   { href: '/teacher/lesson-plans', title: 'Lesson plans', body: "Draft a full lesson plan from a subject, grade, and topic with one click. Included free with your account, and shareable with other teachers." },
   { href: '/teacher/messages', title: 'Messages', body: "Message other staff directly, or the whole staff group. That badge shows how many you haven't read yet." },
   { href: '/teacher/profile', title: "You're all set", body: 'Your profile and password live here. That covers the essentials. Explore the rest as you go.' },
@@ -70,6 +71,9 @@ export default function TeacherLayout({ children }: { children: React.ReactNode 
   const [navItems, setNavItems] = useState(BASE_NAV)
   const [mfaChecked, setMfaChecked] = useState(false)
   const [navReady, setNavReady] = useState(false)
+  // HODs teach classes too, so a few teacher pages (exam builder, lesson
+  // plans) open for them. They get their own sidebar there, not this one.
+  const [isHod, setIsHod] = useState(false)
 
   useEffect(() => {
     async function checkAccess() {
@@ -79,8 +83,9 @@ export default function TeacherLayout({ children }: { children: React.ReactNode 
       // before because its promise is awaited below.
       const mfaPromise = getMfaRedirect('teacher')
       mfaPromise.catch(() => {})
-      const roleRedirect = await verifyPortalRole('teacher')
+      const { redirect: roleRedirect, role } = await verifyPortalRoleDetailed('teacher', isOpenToHods(pathname) ? ['supervisor'] : [])
       if (roleRedirect) { router.push(roleRedirect); return }
+      setIsHod(role === 'supervisor')
       const mfaRedirect = await mfaPromise
       if (mfaRedirect) { router.push(`${mfaRedirect}?from=${encodeURIComponent(pathname)}`); return }
       setMfaChecked(true)
@@ -89,7 +94,7 @@ export default function TeacherLayout({ children }: { children: React.ReactNode 
   }, [router, pathname])
 
   useEffect(() => {
-    if (!mfaChecked) return
+    if (!mfaChecked || isHod) return
     async function checkAppointments() {
       // Cached session, not another auth-server round trip: these queries
       // run under the user's token and row-level security scopes them.
@@ -126,9 +131,20 @@ export default function TeacherLayout({ children }: { children: React.ReactNode 
       setNavReady(true)
     }
     checkAppointments()
-  }, [mfaChecked])
+  }, [mfaChecked, isHod])
 
   if (!mfaChecked) return null
+
+  if (isHod) {
+    return (
+      <div className="portal-layout" style={{ minHeight: "100vh" }}>
+        <InactivityLogout />
+        <main className="portal-content"><PageTransition>{children}</PageTransition></main>
+        <Sidebar navItems={HOD_NAV} portalLabel="HOD Portal" resolveActivePathname={resolveHodActivePathname} />
+        <OnboardingTour tourKey="supervisor" steps={HOD_TOUR_STEPS} />
+      </div>
+    )
+  }
 
   return (
     <div className="portal-layout" style={{ minHeight: "100vh" }}>

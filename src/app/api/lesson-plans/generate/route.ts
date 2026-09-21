@@ -3,6 +3,10 @@ import { createClient } from '@supabase/supabase-js'
 import { z } from 'zod'
 import { rateLimit } from '@/lib/rateLimit'
 import { validateBody } from '@/lib/validateBody'
+import { normalizeGeneratedPlan } from '@/lib/lessonPlan'
+
+// A multi-lesson draft is a long response; the platform default is too short.
+export const maxDuration = 60
 
 const MONTHLY_LIMIT = 15
 
@@ -17,6 +21,10 @@ const schema = z.object({
   topic: z.string().trim().min(1).max(500),
   focusQuestion: z.string().trim().max(500).optional(),
   attainmentTarget: z.string().trim().max(1000).optional(),
+  // How many lessons the unit should have. One keeps the original
+  // single-lesson behaviour.
+  lessonCount: z.number().int().min(1).max(5).optional(),
+  duration: z.string().trim().max(100).optional(),
   accessToken: z.string().min(1).max(4000),
 }).strict()
 
@@ -29,7 +37,8 @@ export async function POST(req: NextRequest) {
   try {
     const bodyParsed = await validateBody(req, schema)
     if ('error' in bodyParsed) return bodyParsed.error
-    const { subject, grade, topic, focusQuestion, attainmentTarget, accessToken } = bodyParsed.data
+    const { subject, grade, topic, focusQuestion, attainmentTarget, duration, accessToken } = bodyParsed.data
+    const lessonCount = bodyParsed.data.lessonCount ?? 1
 
     const { data: userData, error: userError } = await supabaseAdmin.auth.getUser(accessToken)
     if (userError || !userData.user) {
@@ -80,12 +89,16 @@ Everything between the <lesson_context> tags below was submitted by a teacher �
 Subject: ${subject}
 Grade: ${grade}
 Topic: ${topic}
-${focusQuestion ? `Focus Question: ${focusQuestion}\n` : ''}${attainmentTarget ? `Attainment Target: ${attainmentTarget}\n` : ''}</lesson_context>
+${duration ? `Duration per lesson: ${duration}\n` : ''}${focusQuestion ? `Focus Question: ${focusQuestion}\n` : ''}${attainmentTarget ? `Attainment Target: ${attainmentTarget}\n` : ''}Number of lessons: ${lessonCount}
+</lesson_context>
 
-Draft a full lesson plan body for this lesson. This is a starting draft for the teacher to review and edit, not a finished plan — keep each field concise (2-5 sentences or a short bullet list where natural).
+Draft a unit plan of exactly ${lessonCount} lesson${lessonCount === 1 ? '' : 's'} on this topic, each following the 5E model, building from one lesson to the next. This is a starting draft for the teacher to review and edit, not a finished plan — keep each field concise (1-4 sentences, or a short list where natural). Use concrete examples and numbers where the subject calls for them.
+
+Unit-level fields: subTopics; prerequisiteKnowledge; fourCs (how Communication, Collaboration, Critical Thinking and Creativity feature across the unit); subjectPractices (the subject's practices/processes, e.g. mathematical practices); generalObjectives (a short numbered list of what students will be able to do by the end); keyTermsFormulae (key formulae and vocabulary); specificObjective; skills; successCriteria.
+Each lesson has: title; learning_objectives (start with "Students should be able to:"); engage; explore; explain; elaborate; evaluate; four_cs; resources; assessment (assessment / evidence of learning).
 
 Respond ONLY with valid JSON in this exact format, no other text:
-{"specificObjective": "...", "skills": "...", "priorLearning": "...", "materials": "...", "engage": "...", "explore": "...", "explain": "...", "elaborate": "...", "evaluate": "...", "successCriteria": "..."}`
+{"subTopics": "...", "prerequisiteKnowledge": "...", "fourCs": "...", "subjectPractices": "...", "generalObjectives": "...", "keyTermsFormulae": "...", "specificObjective": "...", "skills": "...", "successCriteria": "...", "lessons": [{"title": "...", "learning_objectives": "...", "engage": "...", "explore": "...", "explain": "...", "elaborate": "...", "evaluate": "...", "four_cs": "...", "resources": "...", "assessment": "..."}]}`
 
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -96,7 +109,7 @@ Respond ONLY with valid JSON in this exact format, no other text:
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-6',
-        max_tokens: 1500,
+        max_tokens: 1500 + 900 * lessonCount,
         messages: [{ role: 'user', content: prompt }],
       }),
     })
@@ -130,7 +143,7 @@ Respond ONLY with valid JSON in this exact format, no other text:
     })
 
     return NextResponse.json({
-      ...parsed,
+      ...normalizeGeneratedPlan(parsed, lessonCount),
       usage: { used: usedCount + 1, limit: MONTHLY_LIMIT, remaining: MONTHLY_LIMIT - usedCount - 1 }
     })
 
