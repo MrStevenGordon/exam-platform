@@ -54,6 +54,12 @@ export async function POST(req: NextRequest) {
     }
     const teacherId = userData.user.id
 
+    // Without a key the request would fail with Anthropic's raw "x-api-key
+    // header is required"; say what is actually wrong instead.
+    if (!process.env.ANTHROPIC_API_KEY) {
+      return NextResponse.json({ error: 'AI assist isn’t set up on this server yet (no Anthropic API key configured).' }, { status: 503 })
+    }
+
     const burstLimited = await rateLimit(teacherId, 'lesson-plan-generate-burst', { limit: 5, windowSeconds: 60 })
     if (burstLimited) return burstLimited
 
