@@ -1,7 +1,7 @@
--- Restores the policies on public.responses exactly as they were before
--- 050_faster_responses_rls.sql (copied from pg_policies on the live database),
--- then removes the helper functions. One transaction: there is never a moment
--- without policies.
+-- Restores the policies on public.responses and the two class-teacher policies
+-- on public.exam_sessions exactly as they were before 050 (copied from
+-- pg_policies on the live database), then removes the helper functions.
+-- One transaction: there is never a moment without policies.
 
 begin;
 
@@ -83,10 +83,33 @@ create policy "Teachers grade responses for their assigned classes" on public.re
     )
   );
 
+drop policy "Teachers view sessions for their assigned classes" on public.exam_sessions;
+create policy "Teachers view sessions for their assigned classes" on public.exam_sessions
+  for select using (
+    (assigned_teacher_id = auth.uid())
+    or exists (
+      select 1 from final_exams f
+      where f.id = exam_sessions.final_exam_id
+        and is_class_subject_teacher(auth.uid(), exam_sessions.student_id, f.subject)
+    )
+  );
+
+drop policy "Teachers update sessions for their assigned classes" on public.exam_sessions;
+create policy "Teachers update sessions for their assigned classes" on public.exam_sessions
+  for update using (
+    (assigned_teacher_id = auth.uid())
+    or exists (
+      select 1 from final_exams f
+      where f.id = exam_sessions.final_exam_id
+        and is_class_subject_teacher(auth.uid(), exam_sessions.student_id, f.subject)
+    )
+  );
+
+drop function public.rls_is_class_teacher_of_session(uuid);
+drop function public.rls_teaches_final_exam_student(uuid, uuid);
 drop function public.rls_own_session_ids();
 drop function public.rls_supervised_direct_session_ids();
 drop function public.rls_supervised_final_session_ids();
 drop function public.rls_own_direct_exam_session_ids();
-drop function public.rls_class_teacher_session_ids();
 
 commit;

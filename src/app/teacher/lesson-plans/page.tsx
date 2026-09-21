@@ -171,14 +171,16 @@ export default function LessonPlansPage() {
       if (!features.lessonPlanLibraryEnabled) { router.push('/teacher'); return }
       setHasAccess(true)
       setCheckingAccess(false)
-      loadPlans()
+      loadPlans(user.id)
     }
     checkAccess()
   }, [router])
 
-  async function loadPlans() {
+  // "My Plans" is the signed-in person's own plans only. Row-level security
+  // also lets HODs/admins read every plan, so it must be filtered here too.
+  async function loadPlans(userId: string) {
     setLoading(true)
-    const { data } = await supabase.from('lesson_plans').select('*').order('created_at', { ascending: false })
+    const { data } = await supabase.from('lesson_plans').select('*').eq('teacher_id', userId).order('created_at', { ascending: false })
     setPlans(data || [])
     setLoading(false)
   }
@@ -300,7 +302,7 @@ export default function LessonPlansPage() {
 
     setSaving(false)
     setView('list')
-    loadPlans()
+    loadPlans(user.id)
   }
 
   async function loadLibrary(search?: string) {
