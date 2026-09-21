@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { getSchoolFeatures } from '@/lib/schoolFeatures'
+import { downloadLessonPlanDocx, type PlanForDoc } from '@/lib/lessonPlanDocx'
 import { Lesson, LESSON_FIELDS, UNIT_FIELDS, emptyLesson, lessonsForPlan, legacyFieldsFromLessons, cleanLessons } from '@/lib/lessonPlan'
 
 type LessonPlan = {
@@ -162,6 +163,8 @@ export default function LessonPlansPage() {
   const [viewingPlan, setViewingPlan] = useState<SharedPlan | null>(null)
   const [publishingId, setPublishingId] = useState<string | null>(null)
   const [publishedId, setPublishedId] = useState<string | null>(null)
+  const [downloadingKey, setDownloadingKey] = useState<string | null>(null)
+  const [actionError, setActionError] = useState('')
 
   useEffect(() => {
     async function checkAccess() {
@@ -186,6 +189,7 @@ export default function LessonPlansPage() {
   }
 
   function startNew() {
+    setActionError('')
     setEditingId(null)
     setForm(emptyForm())
     setGenerateError('')
@@ -345,6 +349,21 @@ export default function LessonPlansPage() {
     setView('form')
   }
 
+  // Saves the plan as a Word document (works for saved plans, the plan being
+  // edited, and library plans alike).
+  async function handleDownload(plan: PlanForDoc, key: string) {
+    setDownloadingKey(key)
+    setActionError('')
+    try {
+      await downloadLessonPlanDocx(plan)
+    } catch (err) {
+      console.error('Lesson plan download failed', err)
+      setActionError('Could not create the Word file. Please try again.')
+    } finally {
+      setDownloadingKey(null)
+    }
+  }
+
   async function handlePublish(plan: LessonPlan) {
     setPublishingId(plan.id)
     setPublishedId(null)
@@ -465,9 +484,15 @@ export default function LessonPlansPage() {
             </div>
           </div>
           <PlanBody plan={viewingPlan} />
-          <button onClick={() => copyToMyPlans(viewingPlan)} className="btn btn-primary">
-            Copy to My Plans
-          </button>
+          {actionError && <p className="banner banner-danger" role="alert" style={{ marginBottom: 16 }}>{actionError}</p>}
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button onClick={() => copyToMyPlans(viewingPlan)} className="btn btn-primary">
+              Copy to My Plans
+            </button>
+            <button type="button" onClick={() => handleDownload(viewingPlan, 'library-' + viewingPlan.id)} disabled={downloadingKey === 'library-' + viewingPlan.id} className="btn btn-secondary">
+              {downloadingKey === 'library-' + viewingPlan.id ? 'Preparing…' : 'Download Word'}
+            </button>
+          </div>
         </div>
       )}
 
@@ -476,6 +501,7 @@ export default function LessonPlansPage() {
           <button onClick={startNew} className="btn btn-primary" style={{ marginBottom: 20 }}>
             + New Lesson Plan
           </button>
+          {actionError && <p className="banner banner-danger" role="alert" style={{ marginBottom: 16 }}>{actionError}</p>}
           {loading ? (
             <p style={{ color: 'var(--text-secondary)' }}>Loading…</p>
           ) : plans.length === 0 ? (
@@ -493,15 +519,26 @@ export default function LessonPlansPage() {
                         {plan.subject} · {plan.grade}{plan.term ? ` · ${plan.term}` : ''}{Array.isArray(plan.lessons) && plan.lessons.length > 1 ? ` · ${plan.lessons.length} lessons` : ''}
                       </div>
                     </div>
-                    <button
-                      type="button"
-                      onClick={(e) => { e.stopPropagation(); handlePublish(plan) }}
-                      disabled={publishingId === plan.id}
-                      className="btn btn-secondary"
-                      style={{ fontSize: 12.5, flex: 'none' }}
-                    >
-                      {publishingId === plan.id ? 'Publishing…' : publishedId === plan.id ? '✓ Published' : 'Publish to Library'}
-                    </button>
+                    <div style={{ display: 'flex', gap: 8, flex: 'none' }}>
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); handleDownload(plan, plan.id) }}
+                        disabled={downloadingKey === plan.id}
+                        className="btn btn-secondary"
+                        style={{ fontSize: 12.5, flex: 'none' }}
+                      >
+                        {downloadingKey === plan.id ? 'Preparing…' : 'Download Word'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); handlePublish(plan) }}
+                        disabled={publishingId === plan.id}
+                        className="btn btn-secondary"
+                        style={{ fontSize: 12.5, flex: 'none' }}
+                      >
+                        {publishingId === plan.id ? 'Publishing…' : publishedId === plan.id ? '✓ Published' : 'Publish to Library'}
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -627,9 +664,15 @@ export default function LessonPlansPage() {
           </button>
 
           {errorMsg && <p className="banner banner-danger" style={{ marginBottom: 16 }}>{errorMsg}</p>}
-          <button type="submit" disabled={saving} className="btn btn-primary">
-            {saving ? 'Saving…' : editingId ? 'Save changes' : 'Save lesson plan'}
-          </button>
+          {actionError && <p className="banner banner-danger" role="alert" style={{ marginBottom: 16 }}>{actionError}</p>}
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button type="submit" disabled={saving} className="btn btn-primary">
+              {saving ? 'Saving…' : editingId ? 'Save changes' : 'Save lesson plan'}
+            </button>
+            <button type="button" onClick={() => handleDownload(form, 'form')} disabled={downloadingKey === 'form' || !form.topic.trim()} className="btn btn-secondary">
+              {downloadingKey === 'form' ? 'Preparing…' : 'Download Word'}
+            </button>
+          </div>
         </form>
       )}
     </div>

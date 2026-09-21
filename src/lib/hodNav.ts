@@ -21,6 +21,7 @@ export const HOD_NAV = [
   { label: 'Tasks', icon: 'ti-clipboard-list', href: '/teacher/tasks' },
   { label: 'Tests', icon: 'ti-file-text', href: '/teacher/tests' },
   { label: 'Lesson Plans', icon: 'ti-notebook', href: '/teacher/lesson-plans' },
+  { label: 'Question Bank', icon: 'ti-database', href: '/teacher/bank' },
   { label: 'Submissions', icon: 'ti-inbox', href: '/supervisor/submissions' },
   { label: 'Final Exams', icon: 'ti-file-check', href: '/supervisor/final-exams' },
   { label: 'Appointments', icon: 'ti-award', href: '/supervisor/appointments' },
@@ -48,6 +49,6 @@ export function isOpenToHods(pathname: string): boolean {
 // itself a sidebar entry.
 export function resolveHodActivePathname(pathname: string, searchParams: URLSearchParams): string {
   if (pathname === '/teacher/new') return searchParams.get('kind') === 'task' ? '/teacher/tasks' : '/teacher/tests'
-  if (pathname.startsWith('/teacher/exam') || pathname.startsWith('/teacher/bank') || pathname.startsWith('/teacher/grade')) return '/teacher/tests'
+  if (pathname.startsWith('/teacher/exam') || pathname.startsWith('/teacher/grade')) return '/teacher/tests'
   return pathname
 }
