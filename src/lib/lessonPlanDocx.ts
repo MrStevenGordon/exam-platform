@@ -1,50 +1,15 @@
-import { lessonsForPlan, LESSON_FIELDS, type Lesson } from '@/lib/lessonPlan'
+import {
+  type PlanForDoc, LESSON_TABLE_HEADER, textLines, planFileName, planTitle, planSubtitle, filledLessons,
+  overviewRows, listSection, lessonHeading, lessonRows,
+} from '@/lib/lessonPlanContent'
 
 // Builds a Word (.docx) copy of a lesson plan laid out like the Ministry-style
 // 5E unit plans teachers already use: a title, an overview table, general
 // objectives and key formulae/vocabulary, then one table per lesson.
 
-export type PlanForDoc = {
-  subject: string
-  grade: string
-  topic: string
-  term?: string | null
-  duration?: string | null
-  unit_theme?: string | null
-  focus_strand?: string | null
-  focus_question?: string | null
-  attainment_target?: string | null
-  specific_objective?: string | null
-  skills?: string | null
-  prior_learning?: string | null
-  materials?: string | null
-  success_criteria?: string | null
-  sub_topics?: string | null
-  prerequisite_knowledge?: string | null
-  four_cs?: string | null
-  subject_practices?: string | null
-  general_objectives?: string | null
-  key_terms_formulae?: string | null
-  lessons?: unknown
-  engage?: string | null
-  explore?: string | null
-  explain?: string | null
-  elaborate?: string | null
-  evaluate?: string | null
-}
-
 const A4_CONTENT_WIDTH = 9026 // A4 (11906) minus 1-inch margins, in DXA
 const LABEL_FILL = 'E8EDF3'
 const BORDER = { style: 'single' as const, size: 4, color: '9AA5B1' }
-
-const nonEmpty = (v: string | null | undefined): v is string => typeof v === 'string' && v.trim().length > 0
-const lines = (text: string) => text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean)
-const stripMarker = (l: string) => l.replace(/^(\d+[.)]|[-•*])\s+/, '')
-
-export function planFileName(plan: Pick<PlanForDoc, 'grade' | 'topic'>): string {
-  const clean = (s: string) => s.replace(/[^A-Za-z0-9]+/g, '_').replace(/^_+|_+$/g, '')
-  return `${clean(plan.grade) || 'Grade'}_${clean(plan.topic) || 'Lesson'}_5E_Lesson_Plan.docx`
-}
 
 export async function buildLessonPlanDocument(plan: PlanForDoc) {
   const d = await import('docx')
@@ -61,7 +26,7 @@ export async function buildLessonPlanDocument(plan: PlanForDoc) {
     })
 
   const cellParas = (text: string, bold = false) => {
-    const ls = lines(text)
+    const ls = textLines(text)
     return (ls.length ? ls : ['']).map((l) => para(l, { bold }))
   }
 
@@ -88,55 +53,29 @@ export async function buildLessonPlanDocument(plan: PlanForDoc) {
     new Paragraph({ heading: HeadingLevel.HEADING_2, spacing: { before: 240, after: 100 }, children: [new TextRun({ text, bold: true })] })
 
   // ---- title -----------------------------------------------------------------
-  const lessons: Lesson[] = lessonsForPlan(plan).filter((l) => Object.values(l).some((v) => v.trim()))
-  const lessonCount = lessons.length
-  const subtitleParts = [`${plan.grade} ${plan.subject}`.trim()]
-  if (nonEmpty(plan.duration)) subtitleParts.push(plan.duration.trim())
-  else if (lessonCount > 1) subtitleParts.push(`${lessonCount} lessons`)
+  const lessons = filledLessons(plan)
 
   const children: (InstanceType<typeof Paragraph> | InstanceType<typeof Table>)[] = [
-    new Paragraph({ spacing: { after: 60 }, children: [new TextRun({ text: `5E LESSON PLAN – ${plan.topic.toUpperCase()}`, bold: true, size: 32 })] }),
-    new Paragraph({ spacing: { after: 200 }, border: { bottom: { style: BorderStyle.SINGLE, size: 6, color: '9AA5B1', space: 4 } }, children: [new TextRun({ text: subtitleParts.join(' | '), size: 24 })] }),
+    new Paragraph({ spacing: { after: 60 }, children: [new TextRun({ text: planTitle(plan), bold: true, size: 32 })] }),
+    new Paragraph({ spacing: { after: 200 }, border: { bottom: { style: BorderStyle.SINGLE, size: 6, color: '9AA5B1', space: 4 } }, children: [new TextRun({ text: planSubtitle(plan, lessons.length), size: 24 })] }),
+    twoColumnTable(overviewRows(plan), [2600, A4_CONTENT_WIDTH - 2600]),
   ]
-
-  // ---- overview --------------------------------------------------------------
-  const practicesLabel = /math/i.test(plan.subject) ? 'Mathematical Practices' : 'Subject Practices'
-  const overview: [string, string | null | undefined][] = [
-    ['Topic', plan.topic],
-    ['Sub-topics', plan.sub_topics],
-    ['Grade', plan.grade],
-    ['Term', plan.term],
-    ['Duration', plan.duration],
-    ['Unit & Theme', plan.unit_theme],
-    ['Focus Strand', plan.focus_strand],
-    ['Focus Question', plan.focus_question],
-    ['Attainment Target', plan.attainment_target],
-    ['Prerequisite Knowledge', plan.prerequisite_knowledge || plan.prior_learning],
-    ['4Cs', plan.four_cs],
-    [practicesLabel, plan.subject_practices],
-    ['Specific Objective', plan.specific_objective],
-    ['Skills', plan.skills],
-    ['Materials', plan.materials],
-    ['Success Criteria', plan.success_criteria],
-  ]
-  children.push(twoColumnTable(overview.filter(([, v]) => nonEmpty(v)) as [string, string][], [2600, A4_CONTENT_WIDTH - 2600]))
 
   // ---- general objectives + key content ---------------------------------------
-  const listSection = (title: string, text: string | null | undefined) => {
-    if (!nonEmpty(text)) return
+  const addList = (title: string, text: string | null | undefined) => {
+    const section = listSection(text)
+    if (!section) return
     children.push(heading(title))
-    const ls = lines(text)
-    if (ls.length === 1) children.push(para(ls[0]))
-    else ls.forEach((l) => children.push(para(stripMarker(l), { bullet: true })))
+    section.items.forEach((item) => children.push(para(item, { bullet: section.bullets })))
   }
-  listSection('General Learning Objectives', plan.general_objectives)
-  listSection('Key Formulae and Vocabulary', plan.key_terms_formulae)
+  addList('General Learning Objectives', plan.general_objectives)
+  addList('Key Formulae and Vocabulary', plan.key_terms_formulae)
 
   // ---- lessons ---------------------------------------------------------------
   lessons.forEach((lesson, i) => {
-    children.push(heading(`Lesson ${i + 1}${lesson.title.trim() ? ` – ${lesson.title.trim()}` : ''}`))
-    const rows = LESSON_FIELDS.filter(({ key }) => lesson[key].trim()).map(({ key, label }) => [label, lesson[key]] as [string, string])
-    if (rows.length > 0) children.push(twoColumnTable(rows, [2200, A4_CONTENT_WIDTH - 2200], ['Component', 'Activities / Teaching and Learning']))
+    children.push(heading(lessonHeading(lesson, i)))
+    const rows = lessonRows(lesson)
+    if (rows.length > 0) children.push(twoColumnTable(rows, [2200, A4_CONTENT_WIDTH - 2200], LESSON_TABLE_HEADER))
     else children.push(para('No content yet.'))
   })
 
@@ -160,7 +99,7 @@ export async function downloadLessonPlanDocx(plan: PlanForDoc): Promise<void> {
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
-  a.download = planFileName(plan)
+  a.download = planFileName(plan, 'docx')
   document.body.appendChild(a)
   a.click()
   a.remove()

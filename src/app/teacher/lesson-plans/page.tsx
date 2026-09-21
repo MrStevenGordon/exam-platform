@@ -4,7 +4,9 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { getSchoolFeatures } from '@/lib/schoolFeatures'
-import { downloadLessonPlanDocx, type PlanForDoc } from '@/lib/lessonPlanDocx'
+import { downloadLessonPlanDocx } from '@/lib/lessonPlanDocx'
+import { downloadLessonPlanPdf } from '@/lib/lessonPlanPdf'
+import type { PlanForDoc } from '@/lib/lessonPlanContent'
 import { Lesson, LESSON_FIELDS, UNIT_FIELDS, emptyLesson, lessonsForPlan, legacyFieldsFromLessons, cleanLessons } from '@/lib/lessonPlan'
 
 type LessonPlan = {
@@ -349,16 +351,17 @@ export default function LessonPlansPage() {
     setView('form')
   }
 
-  // Saves the plan as a Word document (works for saved plans, the plan being
-  // edited, and library plans alike).
-  async function handleDownload(plan: PlanForDoc, key: string) {
-    setDownloadingKey(key)
+  // Saves the plan as a Word or PDF file (works for saved plans, the plan
+  // being edited, and library plans alike).
+  async function handleDownload(plan: PlanForDoc, key: string, format: 'docx' | 'pdf') {
+    const busyKey = `${key}:${format}`
+    setDownloadingKey(busyKey)
     setActionError('')
     try {
-      await downloadLessonPlanDocx(plan)
+      await (format === 'pdf' ? downloadLessonPlanPdf(plan) : downloadLessonPlanDocx(plan))
     } catch (err) {
       console.error('Lesson plan download failed', err)
-      setActionError('Could not create the Word file. Please try again.')
+      setActionError(`Could not create the ${format === 'pdf' ? 'PDF' : 'Word'} file. Please try again.`)
     } finally {
       setDownloadingKey(null)
     }
@@ -489,9 +492,17 @@ export default function LessonPlansPage() {
             <button onClick={() => copyToMyPlans(viewingPlan)} className="btn btn-primary">
               Copy to My Plans
             </button>
-            <button type="button" onClick={() => handleDownload(viewingPlan, 'library-' + viewingPlan.id)} disabled={downloadingKey === 'library-' + viewingPlan.id} className="btn btn-secondary">
-              {downloadingKey === 'library-' + viewingPlan.id ? 'Preparing…' : 'Download Word'}
-            </button>
+            {(['docx', 'pdf'] as const).map((format) => (
+              <button
+                key={format}
+                type="button"
+                onClick={() => handleDownload(viewingPlan, 'library-' + viewingPlan.id, format)}
+                disabled={downloadingKey !== null}
+                className="btn btn-secondary"
+              >
+                {downloadingKey === `library-${viewingPlan.id}:${format}` ? 'Preparing…' : `Download ${format === 'pdf' ? 'PDF' : 'Word'}`}
+              </button>
+            ))}
           </div>
         </div>
       )}
@@ -520,15 +531,19 @@ export default function LessonPlansPage() {
                       </div>
                     </div>
                     <div style={{ display: 'flex', gap: 8, flex: 'none' }}>
-                      <button
-                        type="button"
-                        onClick={(e) => { e.stopPropagation(); handleDownload(plan, plan.id) }}
-                        disabled={downloadingKey === plan.id}
-                        className="btn btn-secondary"
-                        style={{ fontSize: 12.5, flex: 'none' }}
-                      >
-                        {downloadingKey === plan.id ? 'Preparing…' : 'Download Word'}
-                      </button>
+                      {(['docx', 'pdf'] as const).map((format) => (
+                        <button
+                          key={format}
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); handleDownload(plan, plan.id, format) }}
+                          disabled={downloadingKey !== null && downloadingKey.startsWith(plan.id)}
+                          aria-label={`Download as ${format === 'pdf' ? 'PDF' : 'Word'}`}
+                          className="btn btn-secondary"
+                          style={{ fontSize: 12.5, flex: 'none' }}
+                        >
+                          {downloadingKey === `${plan.id}:${format}` ? 'Preparing…' : format === 'pdf' ? 'PDF' : 'Word'}
+                        </button>
+                      ))}
                       <button
                         type="button"
                         onClick={(e) => { e.stopPropagation(); handlePublish(plan) }}
@@ -669,9 +684,17 @@ export default function LessonPlansPage() {
             <button type="submit" disabled={saving} className="btn btn-primary">
               {saving ? 'Saving…' : editingId ? 'Save changes' : 'Save lesson plan'}
             </button>
-            <button type="button" onClick={() => handleDownload(form, 'form')} disabled={downloadingKey === 'form' || !form.topic.trim()} className="btn btn-secondary">
-              {downloadingKey === 'form' ? 'Preparing…' : 'Download Word'}
-            </button>
+            {(['docx', 'pdf'] as const).map((format) => (
+              <button
+                key={format}
+                type="button"
+                onClick={() => handleDownload(form, 'form', format)}
+                disabled={downloadingKey !== null || !form.topic.trim()}
+                className="btn btn-secondary"
+              >
+                {downloadingKey === `form:${format}` ? 'Preparing…' : `Download ${format === 'pdf' ? 'PDF' : 'Word'}`}
+              </button>
+            ))}
           </div>
         </form>
       )}
