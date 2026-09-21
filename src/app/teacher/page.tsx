@@ -20,9 +20,9 @@ export default function TeacherHome() {
   const router = useRouter()
   const [exams, setExams] = useState<DraftExam[]>([])
   const [essayCount, setEssayCount] = useState(0)
-  const [bankCount, setBankCount] = useState(0)
   const [studentCount, setStudentCount] = useState(0)
   const [avgScore, setAvgScore] = useState<number | null>(null)
+  const [scoreLoading, setScoreLoading] = useState(true)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -31,12 +31,22 @@ export default function TeacherHome() {
 
   async function loadData() {
     try {
-      const { data: { user } } = await supabase.auth.getUser()
+      // Reads the locally cached session rather than asking the auth server
+      // again: every query below runs under this user's token, so row-level
+      // security still decides what comes back.
+      const { data: { session } } = await supabase.auth.getSession()
+      const user = session?.user
       if (!user) { router.push('/login'); return }
 
-      // These three don't depend on each other, so fire them together
+      // The essay-grading count and the average score both go through the
+      // heavily policy-guarded exam_sessions / responses tables, which can
+      // take seconds on a cold connection. Neither is needed to draw the
+      // page, so they load in the background instead of holding it up.
+      loadEssayCount()
+
+      // These two don't depend on each other, so fire them together
       // instead of waiting on each round trip in turn.
-      const [examsRes, classesRes, bankRes] = await Promise.all([
+      const [examsRes, classesRes] = await Promise.all([
         supabase
           .from('draft_exams')
           .select('id, title, subject, status, exam_kind, direct_published, created_at')
@@ -46,26 +56,29 @@ export default function TeacherHome() {
           .from('teacher_class_groups')
           .select('class_group_id')
           .eq('teacher_id', user.id),
-        supabase
-          .from('questions')
-          .select('id', { count: 'exact', head: true })
-          .eq('created_by', user.id)
-          .eq('is_bank_question', true),
       ])
       setExams(examsRes.data || [])
-      setBankCount(bankRes.count || 0)
 
       const classIds = (classesRes.data || []).map((tc) => tc.class_group_id)
+      const enrollmentsRes = classIds.length > 0
+        ? await supabase.from('enrollments').select('student_id', { count: 'exact' }).in('class_group_id', classIds)
+        : { data: [] as { student_id: string }[], count: 0 }
+      setStudentCount(enrollmentsRes.count || 0)
 
-      // Also independent of each other: the essay-grading count and the
-      // roster for this teacher's own classes.
-      const [sessionsRes, enrollmentsRes] = await Promise.all([
-        supabase.from('exam_sessions').select('id').eq('status', 'completed'),
-        classIds.length > 0
-          ? supabase.from('enrollments').select('student_id', { count: 'exact' }).in('class_group_id', classIds)
-          : Promise.resolve({ data: [] as { student_id: string }[], count: 0 }),
-      ])
+      loadAvgScore((enrollmentsRes.data || []).map((e) => e.student_id))
+    } catch (err) {
+      // A failed request here used to leave the page spinning forever,
+      // since nothing after the throw ever reached setLoading(false).
+      console.error('Failed to load teacher home data', err)
+      setScoreLoading(false)
+    } finally {
+      setLoading(false)
+    }
+  }
 
+  async function loadEssayCount() {
+    try {
+      const sessionsRes = await supabase.from('exam_sessions').select('id').eq('status', 'completed')
       if (sessionsRes.data && sessionsRes.data.length > 0) {
         const { count } = await supabase
           .from('responses')
@@ -74,12 +87,13 @@ export default function TeacherHome() {
           .in('session_id', sessionsRes.data.map((s) => s.id))
         setEssayCount(count || 0)
       }
+    } catch (err) {
+      console.error('Failed to load essay count', err)
+    }
+  }
 
-      setStudentCount(enrollmentsRes.count || 0)
-
-      // Reuse the roster fetched above instead of hitting enrollments again
-      // just to get the same students' ids.
-      const studentIds = (enrollmentsRes.data || []).map((e) => e.student_id)
+  async function loadAvgScore(studentIds: string[]) {
+    try {
       if (studentIds.length > 0) {
         const { data: scoreSessions } = await supabase
           .from('exam_sessions')
@@ -96,11 +110,9 @@ export default function TeacherHome() {
         }
       }
     } catch (err) {
-      // A failed request here used to leave the page spinning forever,
-      // since nothing after the throw ever reached setLoading(false).
-      console.error('Failed to load teacher home data', err)
+      console.error('Failed to load average score', err)
     } finally {
-      setLoading(false)
+      setScoreLoading(false)
     }
   }
 
@@ -133,7 +145,7 @@ export default function TeacherHome() {
           <div className="stat-card-label">Number of students</div>
         </div>
         <div className="stat-card stat-card-accent">
-          <div className="stat-card-value">{avgScore !== null ? `${avgScore}%` : 'N/A'}</div>
+          <div className="stat-card-value">{avgScore !== null ? `${avgScore}%` : scoreLoading ? '…' : 'N/A'}</div>
           <div className="stat-card-label">Student performance</div>
         </div>
       </div>

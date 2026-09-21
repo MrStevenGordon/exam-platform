@@ -73,9 +73,15 @@ export default function TeacherLayout({ children }: { children: React.ReactNode 
 
   useEffect(() => {
     async function checkAccess() {
+      // The MFA lookup doesn't depend on the role check, so start it
+      // straight away rather than after it. The role redirect still wins
+      // when both would apply, and an MFA failure still surfaces exactly as
+      // before because its promise is awaited below.
+      const mfaPromise = getMfaRedirect('teacher')
+      mfaPromise.catch(() => {})
       const roleRedirect = await verifyPortalRole('teacher')
       if (roleRedirect) { router.push(roleRedirect); return }
-      const mfaRedirect = await getMfaRedirect('teacher')
+      const mfaRedirect = await mfaPromise
       if (mfaRedirect) { router.push(`${mfaRedirect}?from=${encodeURIComponent(pathname)}`); return }
       setMfaChecked(true)
     }
@@ -85,33 +91,32 @@ export default function TeacherLayout({ children }: { children: React.ReactNode 
   useEffect(() => {
     if (!mfaChecked) return
     async function checkAppointments() {
-      const { data: { user } } = await supabase.auth.getUser()
+      // Cached session, not another auth-server round trip: these queries
+      // run under the user's token and row-level security scopes them.
+      const { data: { session } } = await supabase.auth.getSession()
+      const user = session?.user
       if (!user) return
 
-      const features = await getSchoolFeatures()
-
-      let tlData: any[] | null = null
-      let stlData: any[] | null = null
-
-      if (features.teamLeadsEnabled) {
+      // Whether the two appointment lookups matter depends on the school's
+      // feature flags, but they're cheap, so run them alongside the flag
+      // fetch and just ignore the result when a feature is switched off.
+      async function appointmentIds(table: 'team_lead_appointments' | 'senior_team_lead_appointments') {
         try {
-          const res = await supabase.from('team_lead_appointments').select('id').eq('teacher_id', user.id).limit(1)
-          if (res.error) console.error('team_lead_appointments check failed:', res.error)
-          tlData = res.data
+          const res = await supabase.from(table).select('id').eq('teacher_id', user!.id).limit(1)
+          if (res.error) console.error(`${table} check failed:`, res.error)
+          return res.data
         } catch (e) {
-          console.error('team_lead_appointments check threw:', e)
+          console.error(`${table} check threw:`, e)
+          return null
         }
       }
-
-      if (features.seniorTeamLeadsEnabled) {
-        try {
-          const res = await supabase.from('senior_team_lead_appointments').select('id').eq('teacher_id', user.id).limit(1)
-          if (res.error) console.error('senior_team_lead_appointments check failed:', res.error)
-          stlData = res.data
-        } catch (e) {
-          console.error('senior_team_lead_appointments check threw:', e)
-        }
-      }
+      const [features, tlAll, stlAll] = await Promise.all([
+        getSchoolFeatures(),
+        appointmentIds('team_lead_appointments'),
+        appointmentIds('senior_team_lead_appointments'),
+      ])
+      const tlData = features.teamLeadsEnabled ? tlAll : null
+      const stlData = features.seniorTeamLeadsEnabled ? stlAll : null
 
       const nav = [...BASE_NAV]
       if (tlData && tlData.length > 0) nav.splice(4, 0, ...TEAM_LEAD_NAV)
