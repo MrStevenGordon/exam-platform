@@ -61,6 +61,11 @@ $$;
 
 drop function if exists public.is_principal();
 
+delete from public.password_reset_requests where user_type = 'principal';
+alter table public.password_reset_requests drop constraint password_reset_requests_user_type_check;
+alter table public.password_reset_requests add constraint password_reset_requests_user_type_check
+  check (user_type = any (array['student'::text, 'teacher'::text, 'supervisor'::text]));
+
 alter table public.profiles drop column if exists leadership_title;
 alter table public.profiles drop constraint profiles_role_check;
 alter table public.profiles add constraint profiles_role_check

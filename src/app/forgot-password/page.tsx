@@ -8,6 +8,7 @@ const USER_TYPE_OPTIONS = [
   { value: 'student', label: 'Student' },
   { value: 'teacher', label: 'Teacher' },
   { value: 'supervisor', label: 'HOD (Head of Department)' },
+  { value: 'principal', label: 'Principal / Vice Principal' },
 ]
 
 export default function ForgotPasswordPage() {

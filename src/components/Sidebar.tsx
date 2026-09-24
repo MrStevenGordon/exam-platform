@@ -21,6 +21,15 @@ type SidebarProps = {
   resolveActivePathname?: (pathname: string, searchParams: URLSearchParams) => string
 }
 
+// What to show under a person's name in the sidebar (never the raw role value:
+// the HOD role is stored as "supervisor").
+function roleDisplay(role: string | undefined, leadershipTitle: string | null): string {
+  if (!role) return ''
+  if (role === 'principal') return leadershipTitle || 'Principal / Vice Principal'
+  const labels: Record<string, string> = { supervisor: 'HOD', teacher: 'Teacher', admin: 'School Admin', student: 'Student' }
+  return labels[role] || role
+}
+
 // useSearchParams() needs a Suspense boundary in this Next.js version (it
 // opts the tree into client-side-only rendering otherwise) — this wrapper
 // keeps that requirement contained to Sidebar itself rather than pushing it
@@ -40,6 +49,7 @@ function SidebarInner({ navItems, portalLabel, resolveActivePathname }: SidebarP
   const activePathname = resolveActivePathname ? resolveActivePathname(pathname || '', searchParams) : pathname
   const [profile, setProfile] = useState<{ full_name: string; role: string; student_id?: string | null; grade_level?: number | null; departments?: { name: string } | null } | null>(null)
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [leadershipTitle, setLeadershipTitle] = useState<string | null>(null)
   const [schoolLogoUrl, setSchoolLogoUrl] = useState<string | null>(null)
   const unreadMessages = useUnreadMessageCount()
   const hasMessagesNav = navItems.some((i) => i.href.endsWith('/messages'))
@@ -64,6 +74,14 @@ function SidebarInner({ navItems, portalLabel, resolveActivePathname }: SidebarP
         .eq('id', user.id)
         .single()
       if (data) setProfile(data as any)
+      // Principals show their own title (Principal / Vice Principal). Fetched
+      // on its own, and only for them, so every other account is untouched.
+      if ((data as { role?: string } | null)?.role === 'principal') {
+        try {
+          const { data: t } = await supabase.from('profiles').select('leadership_title').eq('id', user.id).single()
+          if (t?.leadership_title) setLeadershipTitle(t.leadership_title)
+        } catch { /* falls back to the generic label */ }
+      }
     }
     loadProfile()
 
@@ -183,7 +201,7 @@ function SidebarInner({ navItems, portalLabel, resolveActivePathname }: SidebarP
               {profile?.full_name || '…'}
             </div>
             <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: 0.5, marginTop: 1 }}>
-              {profile?.student_id ? `ID: ${profile.student_id}` : profile?.role || ''}
+              {profile?.student_id ? `ID: ${profile.student_id}` : roleDisplay(profile?.role, leadershipTitle)}
               {profile?.grade_level ? ` · Grade ${profile.grade_level}` : ''}
               {!profile?.student_id && (profile?.departments as any)?.name ? ` · ${(profile?.departments as any)?.name}` : ''}
             </div>

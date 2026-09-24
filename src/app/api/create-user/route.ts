@@ -41,7 +41,8 @@ const schema = z.object({
     school_email: z.union([z.string().trim().email().max(320), z.literal('')]).optional(),
     // staff
     email: z.string().trim().email().max(320).optional(),
-    role: z.enum(['teacher', 'supervisor', 'admin']).optional(),
+    role: z.enum(['teacher', 'supervisor', 'admin', 'principal']).optional(),
+    leadership_title: z.enum(['Principal', 'Vice Principal']).optional(),
     department_id: z.string().uuid().optional(),
     subjects: z.string().max(1000).optional(),
     // reset-password
@@ -186,7 +187,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (type === 'staff') {
-      const { first_name, last_name, email, role, department_id, subjects } = data
+      const { first_name, last_name, email, role, department_id, subjects, leadership_title } = data
       const fullName = `${first_name} ${last_name}`
 
       const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
@@ -204,6 +205,9 @@ export async function POST(req: NextRequest) {
         last_name,
         role: role || 'teacher',
         department_id: department_id || null,
+        // Only sent for principals, so creating any other kind of account
+        // never touches the leadership_title column.
+        ...(role === 'principal' ? { leadership_title: leadership_title || 'Vice Principal' } : {}),
         must_change_password: true,
       })
 

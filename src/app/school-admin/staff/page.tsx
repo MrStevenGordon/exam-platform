@@ -38,6 +38,7 @@ export default function StaffPage() {
   const [newLastName, setNewLastName] = useState('')
   const [newEmail, setNewEmail] = useState('')
   const [newRole, setNewRole] = useState('teacher')
+  const [newTitle, setNewTitle] = useState('Vice Principal')
   const [newDept, setNewDept] = useState('')
   const [allSubjects, setAllSubjects] = useState<{ id: string; subject: string; department_id: string }[]>([])
   const [selectedSubjects, setSelectedSubjects] = useState<Set<string>>(new Set())
@@ -49,7 +50,7 @@ export default function StaffPage() {
       const { data } = await supabase
         .from('profiles')
         .select('id, full_name, role, department_id, is_system_admin, is_active, departments!profiles_department_id_fkey(name)')
-        .in('role', ['teacher', 'supervisor'])
+        .in('role', ['teacher', 'supervisor', 'principal'])
         .neq('is_system_admin', true)
         .order('full_name')
       setStaff((data as any) || [])
@@ -130,6 +131,7 @@ export default function StaffPage() {
           last_name: newLastName.trim(),
           email,
           role: newRole,
+          ...(newRole === 'principal' ? { leadership_title: newTitle } : {}),
           department_id: newDept || null,
           subjects: Array.from(selectedSubjects).join(';'),
         },
@@ -149,6 +151,7 @@ export default function StaffPage() {
     setNewLastName('')
     setNewEmail('')
     setNewRole('teacher')
+    setNewTitle('Vice Principal')
     setNewDept('')
     setSelectedSubjects(new Set())
     setShowAddForm(false)
@@ -246,7 +249,7 @@ export default function StaffPage() {
   const deptNames = departments.map((d) => d.name)
 
   const roleLabel: Record<string, string> = {
-    teacher: 'Teacher', supervisor: 'HOD', admin: 'Platform Admin'
+    teacher: 'Teacher', supervisor: 'HOD', principal: 'Principal / Vice Principal', admin: 'Platform Admin'
   }
 
   return (
@@ -293,7 +296,14 @@ export default function StaffPage() {
               <select value={newRole} onChange={(e) => setNewRole(e.target.value)} style={{ width: '100%', marginTop: 4 }}>
                 <option value="teacher">Teacher</option>
                 <option value="supervisor">HOD (Head of Department)</option>
+                <option value="principal">Principal / Vice Principal</option>
               </select>
+              {newRole === 'principal' && (
+                <select value={newTitle} onChange={(e) => setNewTitle(e.target.value)} aria-label="Title" style={{ width: '100%', marginTop: 8 }}>
+                  <option value="Principal">Principal</option>
+                  <option value="Vice Principal">Vice Principal</option>
+                </select>
+              )}
             </div>
             <div>
               <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Department</label>
@@ -425,7 +435,7 @@ export default function StaffPage() {
         // Group by department
         const grouped: Record<string, typeof filtered> = {}
         filtered.forEach((s) => {
-          const dept = (s.departments as any)?.name || 'Unassigned'
+          const dept = s.role === 'principal' ? 'School Leadership' : (s.departments as any)?.name || 'Unassigned'
           if (!grouped[dept]) grouped[dept] = []
           grouped[dept].push(s)
         })

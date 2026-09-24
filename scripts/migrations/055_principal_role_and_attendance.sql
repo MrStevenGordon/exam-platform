@@ -35,6 +35,11 @@ alter table public.profiles add constraint profiles_role_check
 alter table public.profiles add column if not exists leadership_title text
   check (leadership_title in ('Principal', 'Vice Principal'));
 
+-- Principals can ask for a password reset like everyone else.
+alter table public.password_reset_requests drop constraint password_reset_requests_user_type_check;
+alter table public.password_reset_requests add constraint password_reset_requests_user_type_check
+  check (user_type = any (array['student'::text, 'teacher'::text, 'supervisor'::text, 'principal'::text]));
+
 create or replace function public.is_principal()
 returns boolean
 language sql stable security definer

@@ -5,6 +5,7 @@ const HOME_BY_ROLE: Record<string, string> = {
   teacher: '/teacher',
   supervisor: '/supervisor',
   student: '/student',
+  principal: '/principal',
 }
 
 // Confirms the logged-in user's actual profile matches the portal they're
@@ -18,8 +19,8 @@ const HOME_BY_ROLE: Record<string, string> = {
 // teaches classes too, so those pages must open for them, while the rest of
 // the teacher portal stays off-limits.
 export async function verifyPortalRole(
-  expectedRole: 'admin' | 'teacher' | 'supervisor' | 'student',
-  alsoAllow: ('admin' | 'teacher' | 'supervisor' | 'student')[] = [],
+  expectedRole: 'admin' | 'teacher' | 'supervisor' | 'student' | 'principal',
+  alsoAllow: ('admin' | 'teacher' | 'supervisor' | 'student' | 'principal')[] = [],
 ): Promise<string | null> {
   return (await verifyPortalRoleDetailed(expectedRole, alsoAllow)).redirect
 }
@@ -27,8 +28,8 @@ export async function verifyPortalRole(
 // Same check, but also reports which role the signed-in user actually has, so
 // a shared area can decide which portal shell to draw around itself.
 export async function verifyPortalRoleDetailed(
-  expectedRole: 'admin' | 'teacher' | 'supervisor' | 'student',
-  alsoAllow: ('admin' | 'teacher' | 'supervisor' | 'student')[] = [],
+  expectedRole: 'admin' | 'teacher' | 'supervisor' | 'student' | 'principal',
+  alsoAllow: ('admin' | 'teacher' | 'supervisor' | 'student' | 'principal')[] = [],
 ): Promise<{ redirect: string | null; role: string | null }> {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { redirect: '/login', role: null }

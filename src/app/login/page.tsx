@@ -10,6 +10,7 @@ const ROLE_OPTIONS = [
   { value: 'student', label: 'Student' },
   { value: 'teacher', label: 'Teacher' },
   { value: 'supervisor', label: 'HOD (Head of Department)' },
+  { value: 'principal', label: 'Principal / Vice Principal' },
   { value: 'school_admin', label: 'School Admin' },
   { value: 'owner', label: 'Administrator' },
 ]
@@ -23,6 +24,7 @@ const SELECTION_TO_ROLE: Record<string, string> = {
   student: 'student',
   teacher: 'teacher',
   supervisor: 'supervisor',
+  principal: 'principal',
   school_admin: 'admin',
 }
 
@@ -30,6 +32,7 @@ const ROLE_REDIRECTS: Record<string, string> = {
   student: '/student',
   teacher: '/teacher',
   supervisor: '/supervisor',
+  principal: '/principal',
   admin: '/school-admin',
 }
 
