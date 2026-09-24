@@ -9,7 +9,8 @@ import OnboardingTour, { TourStep } from '@/components/OnboardingTour'
 import { supabase } from '@/lib/supabase'
 import { getMfaRedirect } from '@/lib/mfaCheck'
 import { verifyPortalRoleDetailed } from '@/lib/verifyPortalRole'
-import { HOD_NAV, HOD_TOUR_STEPS, isOpenToHods, resolveHodActivePathname } from '@/lib/hodNav'
+import { hodNavItems, HOD_TOUR_STEPS, isOpenToHods, resolveHodActivePathname } from '@/lib/hodNav'
+import { isAttendanceAvailable } from '@/lib/attendance'
 import { getSchoolFeatures } from '@/lib/schoolFeatures'
 
 // Only the highest-value stops, not every nav item: a tour that spotlights
@@ -39,6 +40,10 @@ const BASE_NAV = [
   { label: 'Report Cards', icon: 'ti-report', href: '/teacher/report-cards' },
   { label: 'Messages', icon: 'ti-message-circle', href: '/teacher/messages' },
   { label: 'My Profile', icon: 'ti-user', href: '/teacher/profile' },
+]
+
+const ATTENDANCE_NAV = [
+  { label: 'Attendance', icon: 'ti-checklist', href: '/teacher/attendance' },
 ]
 
 const LESSON_PLANS_NAV = [
@@ -74,6 +79,9 @@ export default function TeacherLayout({ children }: { children: React.ReactNode 
   // HODs teach classes too, so a few teacher pages (exam builder, lesson
   // plans) open for them. They get their own sidebar there, not this one.
   const [isHod, setIsHod] = useState(false)
+  const [attendanceOn, setAttendanceOn] = useState(false)
+
+  useEffect(() => { isAttendanceAvailable().then(setAttendanceOn) }, [])
 
   useEffect(() => {
     async function checkAccess() {
@@ -127,11 +135,13 @@ export default function TeacherLayout({ children }: { children: React.ReactNode 
       if (tlData && tlData.length > 0) nav.splice(4, 0, ...TEAM_LEAD_NAV)
       if (features.lessonPlanLibraryEnabled) nav.splice(nav.indexOf(BASE_NAV[7]) + 1, 0, ...LESSON_PLANS_NAV)
       if (stlData && stlData.length > 0) nav.splice(nav.length - 1, 0, ...SENIOR_TL_NAV)
+      // Only once the attendance tables exist (see isAttendanceAvailable).
+      if (attendanceOn) nav.splice(nav.indexOf(BASE_NAV[6]) + 1, 0, ...ATTENDANCE_NAV)
       setNavItems(nav)
       setNavReady(true)
     }
     checkAppointments()
-  }, [mfaChecked, isHod])
+  }, [mfaChecked, isHod, attendanceOn])
 
   if (!mfaChecked) return null
 
@@ -140,7 +150,7 @@ export default function TeacherLayout({ children }: { children: React.ReactNode 
       <div className="portal-layout" style={{ minHeight: "100vh" }}>
         <InactivityLogout />
         <main className="portal-content"><PageTransition>{children}</PageTransition></main>
-        <Sidebar navItems={HOD_NAV} portalLabel="HOD Portal" resolveActivePathname={resolveHodActivePathname} />
+        <Sidebar navItems={hodNavItems(attendanceOn)} portalLabel="HOD Portal" resolveActivePathname={resolveHodActivePathname} />
         <OnboardingTour tourKey="supervisor" steps={HOD_TOUR_STEPS} />
       </div>
     )

@@ -5,25 +5,24 @@ import { useRouter, usePathname } from 'next/navigation'
 import Sidebar from '@/components/Sidebar'
 import PageTransition from '@/components/PageTransition'
 import InactivityLogout from '@/components/InactivityLogout'
-import OnboardingTour from '@/components/OnboardingTour'
 import { getMfaRedirect } from '@/lib/mfaCheck'
 import { verifyPortalRole } from '@/lib/verifyPortalRole'
-import { hodNavItems, HOD_TOUR_STEPS, resolveHodActivePathname } from '@/lib/hodNav'
-import { isAttendanceAvailable } from '@/lib/attendance'
+import { PRINCIPAL_NAV } from '@/lib/principalNav'
 
-export default function SupervisorLayout({ children }: { children: React.ReactNode }) {
+export default function PrincipalLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const pathname = usePathname()
   const [checked, setChecked] = useState(false)
-  const [attendanceOn, setAttendanceOn] = useState(false)
-
-  useEffect(() => { isAttendanceAvailable().then(setAttendanceOn) }, [])
 
   useEffect(() => {
     async function checkAccess() {
-      const roleRedirect = await verifyPortalRole('supervisor')
+      // Same order as the other staff portals: the MFA lookup starts right away,
+      // the role redirect still wins, and an MFA failure still blocks entry.
+      const mfaPromise = getMfaRedirect('principal')
+      mfaPromise.catch(() => {})
+      const roleRedirect = await verifyPortalRole('principal')
       if (roleRedirect) { router.push(roleRedirect); return }
-      const mfaRedirect = await getMfaRedirect('supervisor')
+      const mfaRedirect = await mfaPromise
       if (mfaRedirect) { router.push(`${mfaRedirect}?from=${encodeURIComponent(pathname)}`); return }
       setChecked(true)
     }
@@ -33,11 +32,10 @@ export default function SupervisorLayout({ children }: { children: React.ReactNo
   if (!checked) return null
 
   return (
-    <div className="portal-layout" style={{ minHeight: "100vh" }}>
+    <div className="portal-layout" style={{ minHeight: '100vh' }}>
       <InactivityLogout />
       <main className="portal-content"><PageTransition>{children}</PageTransition></main>
-      <Sidebar navItems={hodNavItems(attendanceOn)} portalLabel="HOD Portal" resolveActivePathname={resolveHodActivePathname} />
-      <OnboardingTour tourKey="supervisor" steps={HOD_TOUR_STEPS} />
+      <Sidebar navItems={PRINCIPAL_NAV} portalLabel="Leadership Portal" />
     </div>
   )
 }

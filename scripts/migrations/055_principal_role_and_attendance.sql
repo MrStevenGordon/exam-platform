@@ -153,8 +153,11 @@ alter table public.class_attendance enable row level security;
 -- Read access only. There are deliberately no INSERT/UPDATE/DELETE policies:
 -- every write goes through start_class / mark_class_attendance /
 -- mark_morning_register below.
+-- A teacher sees the morning register of students they teach, whether through a
+-- class group they are assigned to or through a timetable class (grades 10-11
+-- are subject-based, so their students may not share a class group).
 create policy "Teachers view daily attendance of their students" on public.daily_attendance
-  for select using (public.is_teacher_of_class_student(student_id));
+  for select using (public.is_teacher_of_class_student(student_id) or public.is_teacher_of_timetable_student(student_id));
 create policy "Principals and admins view all daily attendance" on public.daily_attendance
   for select using (public.is_principal() or public.is_admin());
 create policy "Students view own daily attendance" on public.daily_attendance

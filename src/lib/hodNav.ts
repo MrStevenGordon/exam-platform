@@ -30,9 +30,17 @@ export const HOD_NAV = [
   { label: 'My Profile', icon: 'ti-user', href: '/supervisor/profile' },
 ]
 
+// HODs teach classes too, so once attendance is installed they get the same
+// Attendance page teachers use (register, Start class, roll call).
+export function hodNavItems(attendanceOn: boolean) {
+  if (!attendanceOn) return HOD_NAV
+  const i = HOD_NAV.findIndex((n) => n.href === '/supervisor/timetable')
+  return [...HOD_NAV.slice(0, i + 1), { label: 'Attendance', icon: 'ti-checklist', href: '/teacher/attendance' }, ...HOD_NAV.slice(i + 1)]
+}
+
 // Pages under /teacher that HODs may also open. Everything else under
 // /teacher stays teacher-only.
-export const TEACHER_AREAS_OPEN_TO_HODS = ['/teacher/tasks', '/teacher/tests', '/teacher/exam', '/teacher/new', '/teacher/lesson-plans', '/teacher/bank', '/teacher/grade']
+export const TEACHER_AREAS_OPEN_TO_HODS = ['/teacher/tasks', '/teacher/tests', '/teacher/exam', '/teacher/new', '/teacher/lesson-plans', '/teacher/bank', '/teacher/grade', '/teacher/attendance']
 
 export function isOpenToHods(pathname: string): boolean {
   return TEACHER_AREAS_OPEN_TO_HODS.some((p) => pathname === p || pathname.startsWith(p + '/'))
