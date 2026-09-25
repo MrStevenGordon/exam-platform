@@ -8,6 +8,10 @@ export type SchoolFeatures = {
   seniorTeamLeadsEnabled: boolean
   examCategories: ExamCategory[]
   lessonPlanLibraryEnabled: boolean
+  // The other Smart products. Off unless a school has been switched on for them,
+  // and off for any school whose settings predate them.
+  smartLearningEnabled: boolean
+  smartPlayEnabled: boolean
 }
 
 // The full set every school effectively had before this config existed —
@@ -20,6 +24,8 @@ const DEFAULT_FEATURES: SchoolFeatures = {
   seniorTeamLeadsEnabled: true,
   examCategories: [...ALL_EXAM_CATEGORIES],
   lessonPlanLibraryEnabled: true,
+  smartLearningEnabled: false,
+  smartPlayEnabled: false,
 }
 
 export async function getSchoolFeatures(): Promise<SchoolFeatures> {
@@ -29,6 +35,8 @@ export async function getSchoolFeatures(): Promise<SchoolFeatures> {
     senior_team_leads_enabled: boolean
     exam_categories: string[]
     lesson_plan_library_enabled: boolean
+    smart_learning_enabled: boolean
+    smart_play_enabled: boolean
   }> | null
 
   if (!raw) return DEFAULT_FEATURES
@@ -38,5 +46,7 @@ export async function getSchoolFeatures(): Promise<SchoolFeatures> {
     seniorTeamLeadsEnabled: raw.senior_team_leads_enabled ?? DEFAULT_FEATURES.seniorTeamLeadsEnabled,
     examCategories: (raw.exam_categories as ExamCategory[] | undefined) ?? DEFAULT_FEATURES.examCategories,
     lessonPlanLibraryEnabled: raw.lesson_plan_library_enabled ?? DEFAULT_FEATURES.lessonPlanLibraryEnabled,
+    smartLearningEnabled: raw.smart_learning_enabled ?? false,
+    smartPlayEnabled: raw.smart_play_enabled ?? false,
   }
 }

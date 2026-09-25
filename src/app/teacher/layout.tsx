@@ -12,6 +12,7 @@ import { getMfaRedirect } from '@/lib/mfaCheck'
 import { verifyPortalRoleDetailed } from '@/lib/verifyPortalRole'
 import { hodNavItems, HOD_TOUR_STEPS, isOpenToHods, resolveHodActivePathname } from '@/lib/hodNav'
 import { isAttendanceAvailable } from '@/lib/attendance'
+import { isTopicsAvailable } from '@/lib/topics'
 import { getSchoolFeatures } from '@/lib/schoolFeatures'
 
 // Only the highest-value stops, not every nav item: a tour that spotlights
@@ -82,7 +83,10 @@ export default function TeacherLayout({ children }: { children: React.ReactNode 
   const [isHod, setIsHod] = useState(false)
   const [attendanceOn, setAttendanceOn] = useState(false)
 
+  const [topicsOn, setTopicsOn] = useState(false)
+
   useEffect(() => { isAttendanceAvailable().then(setAttendanceOn) }, [])
+  useEffect(() => { isTopicsAvailable().then(setTopicsOn) }, [])
 
   useEffect(() => {
     async function checkAccess() {
@@ -153,7 +157,7 @@ export default function TeacherLayout({ children }: { children: React.ReactNode 
       <PresenceHeartbeat />
         <PresenceHeartbeat />
         <main className="portal-content"><PageTransition>{children}</PageTransition></main>
-        <Sidebar navItems={hodNavItems(attendanceOn)} portalLabel="HOD Portal" resolveActivePathname={resolveHodActivePathname} />
+        <Sidebar navItems={hodNavItems(attendanceOn, topicsOn)} portalLabel="HOD Portal" resolveActivePathname={resolveHodActivePathname} />
         <OnboardingTour tourKey="supervisor" steps={HOD_TOUR_STEPS} />
       </div>
     )

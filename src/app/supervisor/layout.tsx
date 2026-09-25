@@ -11,6 +11,7 @@ import { getMfaRedirect } from '@/lib/mfaCheck'
 import { verifyPortalRole } from '@/lib/verifyPortalRole'
 import { hodNavItems, HOD_TOUR_STEPS, resolveHodActivePathname } from '@/lib/hodNav'
 import { isAttendanceAvailable } from '@/lib/attendance'
+import { isTopicsAvailable } from '@/lib/topics'
 
 export default function SupervisorLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
@@ -18,7 +19,10 @@ export default function SupervisorLayout({ children }: { children: React.ReactNo
   const [checked, setChecked] = useState(false)
   const [attendanceOn, setAttendanceOn] = useState(false)
 
+  const [topicsOn, setTopicsOn] = useState(false)
+
   useEffect(() => { isAttendanceAvailable().then(setAttendanceOn) }, [])
+  useEffect(() => { isTopicsAvailable().then(setTopicsOn) }, [])
 
   useEffect(() => {
     async function checkAccess() {
@@ -38,7 +42,7 @@ export default function SupervisorLayout({ children }: { children: React.ReactNo
       <InactivityLogout />
       <PresenceHeartbeat />
       <main className="portal-content"><PageTransition>{children}</PageTransition></main>
-      <Sidebar navItems={hodNavItems(attendanceOn)} portalLabel="HOD Portal" resolveActivePathname={resolveHodActivePathname} />
+      <Sidebar navItems={hodNavItems(attendanceOn, topicsOn)} portalLabel="HOD Portal" resolveActivePathname={resolveHodActivePathname} />
       <OnboardingTour tourKey="supervisor" steps={HOD_TOUR_STEPS} />
     </div>
   )

@@ -9,6 +9,7 @@ import PresenceHeartbeat from '@/components/PresenceHeartbeat'
 import OnboardingTour, { TourStep } from '@/components/OnboardingTour'
 import { getMfaRedirect } from '@/lib/mfaCheck'
 import { verifyPortalRole } from '@/lib/verifyPortalRole'
+import { isTopicsAvailable } from '@/lib/topics'
 
 const SCHOOL_ADMIN_TOUR_STEPS: TourStep[] = [
   { href: '/school-admin', title: 'Your home base', body: "This is where you'll land every time you sign in, with a school-wide overview." },
@@ -44,6 +45,9 @@ export default function SchoolAdminLayout({ children }: { children: React.ReactN
   const router = useRouter()
   const pathname = usePathname()
   const [checked, setChecked] = useState(false)
+  const [topicsOn, setTopicsOn] = useState(false)
+
+  useEffect(() => { isTopicsAvailable().then(setTopicsOn) }, [])
 
   useEffect(() => {
     async function checkAccess() {
@@ -63,7 +67,7 @@ export default function SchoolAdminLayout({ children }: { children: React.ReactN
       <InactivityLogout />
       <PresenceHeartbeat />
       <main className="portal-content"><PageTransition>{children}</PageTransition></main>
-      <Sidebar navItems={SCHOOL_ADMIN_NAV} portalLabel="School Admin" />
+      <Sidebar navItems={topicsOn ? SCHOOL_ADMIN_NAV.flatMap((n) => (n.href === '/school-admin/subjects' ? [n, { label: 'Topics', icon: 'ti-tags', href: '/school-admin/topics' }] : [n])) : SCHOOL_ADMIN_NAV} portalLabel="School Admin" />
       <OnboardingTour tourKey="admin" steps={SCHOOL_ADMIN_TOUR_STEPS} />
     </div>
   )

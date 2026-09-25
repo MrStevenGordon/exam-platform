@@ -1,5 +1,7 @@
 'use client'
 
+import QuestionTopicField from '@/components/QuestionTopicField'
+import type { TopicChoice } from '@/lib/topics'
 import { useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
@@ -17,6 +19,7 @@ export default function AddQuestionPage() {
   const [questionType, setQuestionType] = useState<QuestionType>('multiple_choice')
   const [questionText, setQuestionText] = useState('')
   const [points, setPoints] = useState(1)
+  const [topic, setTopic] = useState<TopicChoice | null>(null)
   const [errorMsg, setErrorMsg] = useState('')
   const [saving, setSaving] = useState(false)
   const [showWorking, setShowWorking] = useState(false)
@@ -219,6 +222,8 @@ export default function AddQuestionPage() {
       points,
       order_index: sectionBand * 100000 + (withinSectionCount || 0),
       is_bank_question: saveToBank,
+      // Only when a topic was picked, so questions saved without one are exactly as before.
+      ...(topic ? { topic_id: topic.id, topic: topic.name } : {}),
       show_working: questionType === 'short_answer' && showWorking,
       marking_points: (questionType === 'short_answer' || questionType === 'fill_blank') && markingPoints.some(p => p.text)
         ? markingPoints.map(p => {
@@ -397,6 +402,10 @@ export default function AddQuestionPage() {
             onChange={(e) => setPoints(parseInt(e.target.value) || 1)}
             style={{ width: 100, marginTop: 6 }}
           />
+        </div>
+
+        <div style={{ marginBottom: 16 }}>
+          <QuestionTopicField examId={examId} value={topic?.id ?? null} onChange={setTopic} />
         </div>
 
         {questionType === 'multiple_choice' && (

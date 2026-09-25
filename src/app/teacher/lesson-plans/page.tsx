@@ -6,6 +6,8 @@ import { supabase } from '@/lib/supabase'
 import { getSchoolFeatures } from '@/lib/schoolFeatures'
 import { downloadLessonPlanDocx } from '@/lib/lessonPlanDocx'
 import { downloadLessonPlanPdf } from '@/lib/lessonPlanPdf'
+import TopicPicker from '@/components/TopicPicker'
+import { isTopicsAvailable } from '@/lib/topics'
 import type { PlanForDoc } from '@/lib/lessonPlanContent'
 import { Lesson, LESSON_FIELDS, UNIT_FIELDS, emptyLesson, lessonsForPlan, legacyFieldsFromLessons, cleanLessons } from '@/lib/lessonPlan'
 
@@ -88,6 +90,7 @@ type PlanForm = {
   focus_question: string; duration: string; attainment_target: string
   specific_objective: string; skills: string; prior_learning: string; materials: string; success_criteria: string
   sub_topics: string; prerequisite_knowledge: string; four_cs: string; subject_practices: string; general_objectives: string; key_terms_formulae: string
+  topic_id: string | null
   lessons: Lesson[]
 }
 
@@ -97,6 +100,7 @@ function emptyForm(): PlanForm {
     focus_question: '', duration: '', attainment_target: '',
     specific_objective: '', skills: '', prior_learning: '', materials: '', success_criteria: '',
     sub_topics: '', prerequisite_knowledge: '', four_cs: '', subject_practices: '', general_objectives: '', key_terms_formulae: '',
+    topic_id: null,
     lessons: [emptyLesson()],
   }
 }
@@ -111,6 +115,7 @@ function formFromPlan(plan: LessonPlan | SharedPlan): PlanForm {
     prior_learning: plan.prior_learning || '', materials: plan.materials || '', success_criteria: plan.success_criteria || '',
     sub_topics: plan.sub_topics || '', prerequisite_knowledge: plan.prerequisite_knowledge || '', four_cs: plan.four_cs || '',
     subject_practices: plan.subject_practices || '', general_objectives: plan.general_objectives || '', key_terms_formulae: plan.key_terms_formulae || '',
+    topic_id: (plan as { topic_id?: string | null }).topic_id ?? null,
     lessons: lessonsForPlan(plan),
   }
 }
@@ -153,6 +158,9 @@ export default function LessonPlansPage() {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [form, setForm] = useState<PlanForm>(emptyForm())
   const [lessonCount, setLessonCount] = useState(1)
+  const [topicsOn, setTopicsOn] = useState(false)
+
+  useEffect(() => { isTopicsAvailable().then(setTopicsOn) }, [])
   const [saving, setSaving] = useState(false)
   const [errorMsg, setErrorMsg] = useState('')
   const [generating, setGenerating] = useState(false)
@@ -294,7 +302,9 @@ export default function LessonPlansPage() {
     // Lesson 1 is mirrored onto the original 5E columns so older screens and
     // the shared library keep working.
     const lessons = cleanLessons(form.lessons)
-    const payload = { ...form, lessons, ...legacyFieldsFromLessons(lessons), teacher_id: user.id, updated_at: new Date().toISOString() }
+    // The topic link is only sent once the topic list exists, so saving works the same either way.
+    const { topic_id: topicId, ...formFields } = form
+    const payload = { ...formFields, ...(topicsOn ? { topic_id: topicId } : {}), lessons, ...legacyFieldsFromLessons(lessons), teacher_id: user.id, updated_at: new Date().toISOString() }
 
     const { error } = editingId
       ? await supabase.from('lesson_plans').update(payload).eq('id', editingId)
@@ -590,6 +600,15 @@ export default function LessonPlansPage() {
             <div>
               <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)' }}>Topic *</label>
               <input value={form.topic} onChange={(e) => updateField('topic', e.target.value)} required style={{ width: '100%', marginTop: 4 }} />
+            </div>
+            <div style={{ marginTop: 14 }}>
+              <TopicPicker
+                subject={form.subject}
+                grade={form.grade}
+                value={form.topic_id}
+                label="Curriculum topic (optional)"
+                onChange={(t) => setForm((prev) => ({ ...prev, topic_id: t?.id ?? null, topic: prev.topic.trim() ? prev.topic : (t?.name ?? prev.topic) }))}
+              />
             </div>
           </div>
 

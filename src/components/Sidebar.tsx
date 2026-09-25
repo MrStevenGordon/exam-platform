@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { releaseDeviceLock } from '@/lib/studentDeviceLock'
 import { presenceSignOut } from '@/lib/presence'
+import ProductSwitcher from '@/components/ProductSwitcher'
 import { useUnreadMessageCount, requestMessageNotificationPermission } from '@/lib/useUnreadMessages'
 
 type NavItem = { label: string; icon: string; href: string }
@@ -123,6 +124,7 @@ function SidebarInner({ navItems, portalLabel, resolveActivePathname, badges }: 
         <div style={{ fontSize: 15, fontWeight: 700, color: 'white', marginTop: 2 }}>
           {portalLabel}
         </div>
+        <ProductSwitcher role={profile?.role} />
       </div>
 
       {/* Nav */}

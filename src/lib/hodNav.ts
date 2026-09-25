@@ -32,14 +32,19 @@ export const HOD_NAV = [
 
 // HODs teach classes too, so once attendance is installed they get the same
 // Attendance page teachers use (register, Start class, roll call).
-export function hodNavItems(attendanceOn: boolean) {
-  if (!attendanceOn) return HOD_NAV
-  const i = HOD_NAV.findIndex((n) => n.href === '/supervisor/timetable')
+export function hodNavItems(attendanceOn: boolean, topicsOn = false) {
+  let items = HOD_NAV
+  if (topicsOn) {
+    // The shared topic list, next to the department's subjects.
+    items = items.flatMap((n) => (n.href === '/supervisor/subjects' ? [n, { label: 'Topics', icon: 'ti-tags', href: '/supervisor/topics' }] : [n]))
+  }
+  if (!attendanceOn) return items
+  const i = items.findIndex((n) => n.href === '/supervisor/timetable')
   return [
-    ...HOD_NAV.slice(0, i + 1),
+    ...items.slice(0, i + 1),
     { label: 'Attendance', icon: 'ti-checklist', href: '/teacher/attendance' },
     { label: 'Department Attendance', icon: 'ti-clipboard-check', href: '/supervisor/attendance' },
-    ...HOD_NAV.slice(i + 1),
+    ...items.slice(i + 1),
   ]
 }
 

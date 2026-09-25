@@ -29,6 +29,8 @@ export default function SchoolFeaturesPage() {
   const [seniorTeamLeadsEnabled, setSeniorTeamLeadsEnabled] = useState(true)
   const [examCategories, setExamCategories] = useState<Set<ExamCategory>>(new Set(ALL_EXAM_CATEGORIES))
   const [lessonPlanLibraryEnabled, setLessonPlanLibraryEnabled] = useState(true)
+  const [smartLearningEnabled, setSmartLearningEnabled] = useState(false)
+  const [smartPlayEnabled, setSmartPlayEnabled] = useState(false)
 
   useEffect(() => { loadData() }, [])
 
@@ -74,6 +76,8 @@ export default function SchoolFeaturesPage() {
           seniorTeamLeadsEnabled,
           examCategories: Array.from(examCategories),
           lessonPlanLibraryEnabled,
+          smartLearningEnabled,
+          smartPlayEnabled,
         },
         accessToken: session?.access_token,
       }),
@@ -139,6 +143,18 @@ export default function SchoolFeaturesPage() {
           <label style={{ fontSize: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
             <input type="checkbox" checked={lessonPlanLibraryEnabled} onChange={(e) => setLessonPlanLibraryEnabled(e.target.checked)} />
             Lesson Plan Library (included automatically, no charge)
+          </label>
+        </div>
+
+        <div style={{ marginBottom: 20 }}>
+          <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', display: 'block', marginBottom: 8 }}>Other Smart products (off unless switched on here)</label>
+          <label style={{ fontSize: 14, display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+            <input type="checkbox" checked={smartLearningEnabled} onChange={(e) => setSmartLearningEnabled(e.target.checked)} />
+            Smart Learning
+          </label>
+          <label style={{ fontSize: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <input type="checkbox" checked={smartPlayEnabled} onChange={(e) => setSmartPlayEnabled(e.target.checked)} />
+            Smart Play (only once Play is live for this school)
           </label>
         </div>
 
