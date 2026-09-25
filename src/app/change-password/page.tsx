@@ -3,6 +3,7 @@
 import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import { landingFor } from '@/lib/loginProduct'
 
 function ChangePasswordForm() {
   const router = useRouter()
@@ -44,10 +45,7 @@ function ChangePasswordForm() {
 
     // Redirect to correct portal
     if (profile?.is_system_admin) { router.push('/owner'); return }
-    const redirects: Record<string, string> = {
-      student: '/student', teacher: '/teacher', supervisor: '/supervisor', admin: '/school-admin'
-    }
-    router.push(redirects[profile?.role] || '/login')
+    router.push((await landingFor(profile?.role)) || '/login')
   }
 
   return (

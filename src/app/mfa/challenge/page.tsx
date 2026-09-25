@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import { landingFor } from '@/lib/loginProduct'
 
 // getMfaRedirect() (see lib/mfaCheck.ts) sends staff here whenever they have
 // a verified authenticator but their current session hasn't cleared AAL2
@@ -88,13 +89,7 @@ function MfaChallengeForm() {
       return
     }
 
-    const destinations: Record<string, string> = {
-      teacher: '/teacher',
-      supervisor: '/supervisor',
-      admin: '/school-admin',
-      system_admin: '/owner',
-    }
-    router.push(destinations[role] || '/login')
+    router.push((await landingFor(role)) || '/login')
   }
 
   if (loading) return <div style={{ padding: 40, textAlign: 'center' }}>Loading…</div>

@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { getMfaRedirect } from '@/lib/mfaCheck'
+import { getEnabledProducts, PRODUCTS, type ProductKey } from '@/lib/products'
+import { landingFor, loginProductOptions, rememberLoginProduct, rememberedLoginProduct } from '@/lib/loginProduct'
 
 const ROLE_OPTIONS = [
   { value: 'student', label: 'Student' },
@@ -28,14 +30,6 @@ const SELECTION_TO_ROLE: Record<string, string> = {
   school_admin: 'admin',
 }
 
-const ROLE_REDIRECTS: Record<string, string> = {
-  student: '/student',
-  teacher: '/teacher',
-  supervisor: '/supervisor',
-  principal: '/principal',
-  admin: '/school-admin',
-}
-
 export default function LoginPage() {
   const router = useRouter()
   const [selectedRole, setSelectedRole] = useState('student')
@@ -49,6 +43,9 @@ export default function LoginPage() {
   const [desktopVersion, setDesktopVersion] = useState('')
   const [inactivityNotice, setInactivityNotice] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
+  // Which Smart products this school has on. The picker only appears when there is a real choice.
+  const [productOptions, setProductOptions] = useState<ProductKey[]>([])
+  const [product, setProduct] = useState<ProductKey>('assess')
 
   useEffect(() => {
     const electronAPI = (window as unknown as { electronAPI?: { getAppVersion: () => Promise<string> } }).electronAPI
@@ -57,12 +54,29 @@ export default function LoginPage() {
     if (new URLSearchParams(window.location.search).get('reason') === 'inactivity') {
       setInactivityNotice(true)
     }
+
+    let cancelled = false
+    getEnabledProducts().then((enabled) => {
+      if (cancelled) return
+      const options = loginProductOptions(enabled)
+      setProductOptions(options)
+      const last = rememberedLoginProduct()
+      setProduct(options.includes(last) ? last : 'assess')
+    })
+    return () => { cancelled = true }
   }, [])
+
+  // Not offered to the platform owner, who always signs in to the owner portal.
+  const showProductPicker = productOptions.length > 1 && selectedRole !== 'owner'
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault()
     setError('')
     setLoading(true)
+
+    // Remembered before sign-in so it is still known after two-factor or a password change.
+    // With only one product on there is no choice, so Smart Assess as always.
+    rememberLoginProduct(showProductPicker ? product : 'assess')
 
     const { data, error: authError } = await supabase.auth.signInWithPassword({ email, password })
 
@@ -301,7 +315,7 @@ export default function LoginPage() {
     const mfaRedirect = await getMfaRedirect(profile.role)
     if (mfaRedirect) { router.push(mfaRedirect); return }
 
-    router.push(ROLE_REDIRECTS[profile.role] || '/dashboard')
+    router.push((await landingFor(profile.role)) || '/dashboard')
   }
 
   return (
@@ -383,6 +397,40 @@ export default function LoginPage() {
           </form>
         ) : (
         <form onSubmit={handleLogin}>
+          {showProductPicker && (
+            <fieldset style={{ border: 'none', padding: 0, margin: '0 0 16px' }}>
+              <legend style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: 0.5, textTransform: 'uppercase', padding: 0, marginBottom: 8 }}>
+                Sign in to
+              </legend>
+              <div role="radiogroup" aria-label="Sign in to" style={{ display: 'grid', gridTemplateColumns: `repeat(${productOptions.length}, minmax(0, 1fr))`, gap: 8 }}>
+                {productOptions.map((p) => {
+                  const on = product === p
+                  return (
+                    <button
+                      key={p}
+                      type="button"
+                      role="radio"
+                      aria-checked={on}
+                      aria-label={`${PRODUCTS[p].label}: ${PRODUCTS[p].tagline}`}
+                      onClick={() => setProduct(p)}
+                      style={{
+                        textAlign: 'left', cursor: 'pointer', padding: '10px 12px', borderRadius: 8,
+                        border: `2px solid ${on ? 'var(--accent)' : 'var(--border)'}`,
+                        background: on ? 'var(--accent-light)' : 'var(--card-bg)',
+                        color: 'var(--text-primary)',
+                      }}
+                    >
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 14, fontWeight: 700 }}>
+                        <i className={`ti ${PRODUCTS[p].icon}`} aria-hidden="true" />{PRODUCTS[p].label}
+                      </span>
+                      <span style={{ display: 'block', fontSize: 12, color: 'var(--text-secondary)', marginTop: 2 }}>{PRODUCTS[p].tagline}</span>
+                    </button>
+                  )
+                })}
+              </div>
+            </fieldset>
+          )}
+
           <div style={{ marginBottom: 16 }}>
             <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: 0.5, textTransform: 'uppercase' }}>
               I am a

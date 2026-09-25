@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import { landingFor } from '@/lib/loginProduct'
 
 function buildQrSrc(qrValue: string): string {
   if (!qrValue) return ''
@@ -91,13 +92,7 @@ export default function MfaSetupPage() {
       return
     }
 
-    const destinations: Record<string, string> = {
-      teacher: '/teacher',
-      supervisor: '/supervisor',
-      admin: '/school-admin',
-      system_admin: '/owner',
-    }
-    router.push(destinations[role] || '/login')
+    router.push((await landingFor(role)) || '/login')
   }
 
   if (loading) return <div style={{ padding: 40, textAlign: 'center' }}>Setting up two-factor authentication…</div>
