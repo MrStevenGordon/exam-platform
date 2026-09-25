@@ -1,4 +1,5 @@
 import { getSchoolFeatures } from '@/lib/schoolFeatures'
+import { supabase } from '@/lib/supabase'
 
 export type ProductKey = 'assess' | 'learning' | 'play'
 
@@ -25,6 +26,18 @@ export function currentProduct(pathname: string | null): ProductKey {
   return 'assess'
 }
 
+// Installed means the query worked, or was refused for lack of permission (which only happens
+// when the table exists). A missing table, an expired session or any other problem counts as
+// not installed, so the picker is hidden rather than offering something that might not work.
+async function learningInstalled(): Promise<boolean> {
+  try {
+    const { error } = await supabase.from('learning_lessons').select('id').limit(1)
+    return !error || error.code === '42501'
+  } catch {
+    return false
+  }
+}
+
 let enabled: Promise<ProductKey[]> | null = null
 
 // The products this school has switched on. Smart Assess is always on; the others
@@ -36,7 +49,9 @@ export function getEnabledProducts(): Promise<ProductKey[]> {
       try {
         const f = await getSchoolFeatures()
         const list: ProductKey[] = ['assess']
-        if (f.smartLearningEnabled) list.push('learning')
+        // Switched on AND its database tables exist (migration 059), so a school can never be
+        // offered a Smart Learning that cannot work yet.
+        if (f.smartLearningEnabled && (await learningInstalled())) list.push('learning')
         if (f.smartPlayEnabled) list.push('play')
         return list
       } catch {
