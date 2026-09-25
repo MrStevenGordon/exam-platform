@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 
@@ -19,18 +19,35 @@ export default function PlayTopicMasteryPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [starting, setStarting] = useState<string | null>(null)
+  // A topic asked for by a link (for example from a Smart Learning lesson).
+  const [asked, setAsked] = useState<{ topic: string; matched: string | null; fromLearning: boolean } | null>(null)
+  const focusRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => { load() }, [])
 
   async function load() {
     try {
       const res = await fetch('/api/play/topics')
-      if (res.status === 401) { router.push('/play/login'); return }
+      if (res.status === 401) { router.push(`/play/login?next=${encodeURIComponent(window.location.pathname + window.location.search)}`); return }
       const data = await res.json()
       if (!res.ok) throw new Error(data.error)
       setTopics(data.topics)
       const subjects = Array.from(new Set<string>(data.topics.map((t: TopicRow) => t.subject))).sort()
       if (subjects.length > 0) setSubject(subjects.includes('Mathematics') ? 'Mathematics' : subjects[0])
+
+      // Matched by name, ignoring capitals and extra spaces. Prefer the subject the link named.
+      const params = new URLSearchParams(window.location.search)
+      const wantTopic = (params.get('topic') || '').trim().slice(0, 100)
+      if (wantTopic) {
+        const norm = (v: string) => v.trim().toLowerCase().replace(/\s+/g, ' ')
+        const wantSubject = norm(params.get('subject') || '')
+        const rows: TopicRow[] = data.topics
+        const hit = rows.find((t) => norm(t.topic) === norm(wantTopic) && norm(t.subject) === wantSubject) || rows.find((t) => norm(t.topic) === norm(wantTopic))
+        const subjectHit = rows.find((t) => norm(t.subject) === wantSubject)
+        if (hit) setSubject(hit.subject)
+        else if (subjectHit) setSubject(subjectHit.subject)
+        setAsked({ topic: wantTopic, matched: hit ? hit.topic : null, fromLearning: params.get('from') === 'learning' })
+      }
     } catch (err: any) {
       setError(err?.message || 'Something went wrong loading topics. Please try again.')
     } finally {
@@ -48,7 +65,7 @@ export default function PlayTopicMasteryPage() {
         body: JSON.stringify({ subject, topic }),
       })
       const data = await res.json()
-      if (res.status === 401) { router.push('/play/login'); return }
+      if (res.status === 401) { router.push(`/play/login?next=${encodeURIComponent(window.location.pathname + window.location.search)}`); return }
       if (!res.ok) throw new Error(data.error)
       router.push(`/play/topic-mastery/${data.sessionId}`)
     } catch (err: any) {
@@ -57,10 +74,15 @@ export default function PlayTopicMasteryPage() {
     }
   }
 
+  useEffect(() => {
+    if (!loading && asked?.matched) focusRef.current?.scrollIntoView({ block: 'center' })
+  }, [loading, asked])
+
   if (loading) return <div className="page-container">Loading…</div>
 
   const subjects = Array.from(new Set(topics.map((t) => t.subject))).sort()
-  const visible = topics.filter((t) => t.subject === subject)
+  // The topic the link asked for goes first so it is the first thing they see.
+  const visible = topics.filter((t) => t.subject === subject).sort((a, b) => Number(b.topic === asked?.matched) - Number(a.topic === asked?.matched))
 
   return (
     <div className="page-container" style={{ maxWidth: 680 }}>
@@ -73,6 +95,20 @@ export default function PlayTopicMasteryPage() {
       </p>
 
       {error && <p className="banner banner-danger" role="alert" style={{ marginBottom: 16 }}>{error}</p>}
+
+      {asked && asked.matched && (
+        <p className="banner banner-success" role="status" style={{ marginBottom: 16 }}>
+          {asked.fromLearning ? 'From your lesson: ' : 'Ready: '}<strong>{asked.matched}</strong>. Press the button on that topic to start.
+        </p>
+      )}
+      {asked && !asked.matched && !error && (
+        <p className="banner banner-warning" role="status" style={{ marginBottom: 16 }}>
+          Smart Play does not have questions for “{asked.topic}” yet. You can practise these topics instead.
+        </p>
+      )}
+      {asked?.fromLearning && (
+        <p style={{ margin: '0 0 12px', fontSize: 13 }}><Link href="/learning">&larr; Back to Smart Learning</Link></p>
+      )}
 
       {subjects.length === 0 && !error && (
         <p style={{ fontSize: 14, color: 'var(--text-secondary)' }}>No practice topics are available yet.</p>
@@ -89,7 +125,7 @@ export default function PlayTopicMasteryPage() {
           const pct = t.masteryPct
           const barColor = pct === null ? 'var(--border-strong)' : pct >= 80 ? 'var(--success)' : pct >= 50 ? 'var(--accent)' : 'var(--danger)'
           return (
-            <div key={t.topic} className="card">
+            <div key={t.topic} className="card" ref={t.topic === asked?.matched ? focusRef : undefined} style={t.topic === asked?.matched ? { borderColor: 'var(--accent)', borderWidth: 2 } : undefined}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
                 <div>
                   <div style={{ fontWeight: 700, fontSize: 15 }}>{t.topic}</div>

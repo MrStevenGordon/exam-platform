@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { safePlayPath } from '@/lib/playNext'
 
 export default function PlayLoginPage() {
   const router = useRouter()
@@ -25,7 +26,8 @@ export default function PlayLoginPage() {
         setError(data.error || 'Something went wrong. Please try again.')
         return
       }
-      router.push('/play/home')
+      // Coming from a link (for example a lesson's "Practise this topic"): go back to it.
+      router.push(safePlayPath(new URLSearchParams(window.location.search).get('next')))
     } catch {
       setError('Could not reach the server. Check your connection and try again.')
     } finally {
