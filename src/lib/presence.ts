@@ -32,6 +32,8 @@ export function usePresence(ids: string[]): Record<string, PresenceInfo> {
       if (document.hidden) return
       try {
         const { data, error } = await supabase.rpc('presence_for', { p_ids: list })
+        // Not installed yet (migration 057): stop polling until the page is reloaded.
+        if (error?.code === 'PGRST202') { cancelled = true; clearInterval(t); return }
         if (error || cancelled) return
         setMap(Object.fromEntries(((data || []) as { user_id: string; state: PresenceState; last_seen_at: string | null }[]).map((r) => [r.user_id, { state: r.state, lastSeen: r.last_seen_at }])))
       } catch {
@@ -39,8 +41,10 @@ export function usePresence(ids: string[]): Record<string, PresenceInfo> {
       }
     }
 
+    // eslint-disable-next-line prefer-const
+    let t: ReturnType<typeof setInterval>
     load()
-    const t = setInterval(load, REFRESH_MS)
+    t = setInterval(load, REFRESH_MS)
     document.addEventListener('visibilitychange', load)
     return () => { cancelled = true; clearInterval(t); document.removeEventListener('visibilitychange', load) }
   }, [key])

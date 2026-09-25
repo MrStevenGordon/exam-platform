@@ -18,6 +18,8 @@ export default function PresenceHeartbeat() {
     let lastActivity = Date.now()
     let token: string | null = null
     let stopped = false
+    // eslint-disable-next-line prefer-const
+    let timer: ReturnType<typeof setInterval>
 
     const onActivity = () => { lastActivity = Date.now() }
     ACTIVITY_EVENTS.forEach((e) => window.addEventListener(e, onActivity, { passive: true }))
@@ -27,6 +29,8 @@ export default function PresenceHeartbeat() {
       const active = document.visibilityState === 'visible' && Date.now() - lastActivity < ACTIVE_WINDOW_MS
       try {
         const { error } = await supabase.rpc('presence_heartbeat', { p_active: active })
+        // The database does not have presence yet (migration 057): stop asking until the page is reloaded.
+        if (error?.code === 'PGRST202') { stopped = true; clearInterval(timer); return }
         if (!error) {
           const { data: { session } } = await supabase.auth.getSession()
           token = session?.access_token ?? null
@@ -37,7 +41,7 @@ export default function PresenceHeartbeat() {
     }
 
     beat()
-    const timer = setInterval(beat, BEAT_MS)
+    timer = setInterval(beat, BEAT_MS)
     const onVisible = () => { if (document.visibilityState === 'visible') beat() }
     document.addEventListener('visibilitychange', onVisible)
 
