@@ -1,6 +1,8 @@
 export const PRINCIPAL_NAV = [
   { label: 'Overview', icon: 'ti-home', href: '/principal' },
+  { label: 'Alerts', icon: 'ti-bell', href: '/principal/alerts' },
   { label: 'Attendance', icon: 'ti-checklist', href: '/principal/attendance' },
+  { label: 'Timetable', icon: 'ti-calendar', href: '/principal/timetable' },
   { label: 'Staff', icon: 'ti-users', href: '/principal/staff' },
   { label: 'Students', icon: 'ti-school', href: '/principal/students' },
   { label: 'Messages', icon: 'ti-message-circle', href: '/principal/messages' },

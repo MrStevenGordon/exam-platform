@@ -12,7 +12,7 @@ type TruancyRow = {
 }
 
 // Students who were at school (present at the morning register) but absent from a class.
-export default function TruancyView() {
+export default function TruancyView({ linkStudents = true }: { linkStudents?: boolean }) {
   const today = jamaicaDate()
   const [from, setFrom] = useState(shiftDate(today, -6))
   const [to, setTo] = useState(today)
@@ -75,7 +75,9 @@ export default function TruancyView() {
                   <tr key={`${r.class_date}-${r.student_id}-${r.section_id}`} style={{ borderTop: '1px solid var(--border)' }}>
                     <td style={{ padding: '8px 12px', whiteSpace: 'nowrap' }}>{formatDay(r.class_date)}</td>
                     <td style={{ padding: '8px 12px' }}>
-                      <Link href={`/principal/students/${r.student_id}`} style={{ fontWeight: 600 }}>{r.student_name}</Link>
+                      {linkStudents
+                        ? <Link href={`/principal/students/${r.student_id}`} style={{ fontWeight: 600 }}>{r.student_name}</Link>
+                        : <span style={{ fontWeight: 600 }}>{r.student_name}</span>}
                       {r.student_code && <span style={{ color: 'var(--text-muted)' }}> · {r.student_code}</span>}
                     </td>
                     <td style={{ padding: '8px 12px' }}>{r.home_class || '—'}</td>

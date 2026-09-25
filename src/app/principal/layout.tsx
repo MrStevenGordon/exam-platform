@@ -8,11 +8,14 @@ import InactivityLogout from '@/components/InactivityLogout'
 import { getMfaRedirect } from '@/lib/mfaCheck'
 import { verifyPortalRole } from '@/lib/verifyPortalRole'
 import { PRINCIPAL_NAV } from '@/lib/principalNav'
+import { useAttendanceAlerts } from '@/lib/useAttendanceAlerts'
 
 export default function PrincipalLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const pathname = usePathname()
   const [checked, setChecked] = useState(false)
+  const [accessOk, setAccessOk] = useState(false)
+  const unreadAlerts = useAttendanceAlerts(accessOk)
 
   useEffect(() => {
     async function checkAccess() {
@@ -25,6 +28,7 @@ export default function PrincipalLayout({ children }: { children: React.ReactNod
       const mfaRedirect = await mfaPromise
       if (mfaRedirect) { router.push(`${mfaRedirect}?from=${encodeURIComponent(pathname)}`); return }
       setChecked(true)
+      setAccessOk(true)
     }
     checkAccess()
   }, [router, pathname])
@@ -35,7 +39,7 @@ export default function PrincipalLayout({ children }: { children: React.ReactNod
     <div className="portal-layout" style={{ minHeight: '100vh' }}>
       <InactivityLogout />
       <main className="portal-content"><PageTransition>{children}</PageTransition></main>
-      <Sidebar navItems={PRINCIPAL_NAV} portalLabel="Leadership Portal" />
+      <Sidebar navItems={PRINCIPAL_NAV} portalLabel="Leadership Portal" badges={{ '/principal/alerts': unreadAlerts }} />
     </div>
   )
 }

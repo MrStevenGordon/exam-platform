@@ -35,7 +35,12 @@ export const HOD_NAV = [
 export function hodNavItems(attendanceOn: boolean) {
   if (!attendanceOn) return HOD_NAV
   const i = HOD_NAV.findIndex((n) => n.href === '/supervisor/timetable')
-  return [...HOD_NAV.slice(0, i + 1), { label: 'Attendance', icon: 'ti-checklist', href: '/teacher/attendance' }, ...HOD_NAV.slice(i + 1)]
+  return [
+    ...HOD_NAV.slice(0, i + 1),
+    { label: 'Attendance', icon: 'ti-checklist', href: '/teacher/attendance' },
+    { label: 'Department Attendance', icon: 'ti-clipboard-check', href: '/supervisor/attendance' },
+    ...HOD_NAV.slice(i + 1),
+  ]
 }
 
 // Pages under /teacher that HODs may also open. Everything else under

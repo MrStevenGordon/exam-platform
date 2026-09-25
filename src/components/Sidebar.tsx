@@ -11,6 +11,8 @@ type NavItem = { label: string; icon: string; href: string }
 type SidebarProps = {
   navItems: NavItem[]
   portalLabel: string
+  // Optional count badges by nav href (e.g. unread attendance alerts).
+  badges?: Record<string, number>
   // Some pages (e.g. a shared "create" page reached via a query param, like
   // /teacher/new?kind=task) don't live under the nav item's own href, so
   // path-prefix matching alone can't tell which section they belong to —
@@ -42,7 +44,7 @@ export default function Sidebar(props: SidebarProps) {
   )
 }
 
-function SidebarInner({ navItems, portalLabel, resolveActivePathname }: SidebarProps) {
+function SidebarInner({ navItems, portalLabel, resolveActivePathname, badges }: SidebarProps) {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -127,7 +129,8 @@ function SidebarInner({ navItems, portalLabel, resolveActivePathname }: SidebarP
           const hasExactMatch = navItems.some((i) => i.href === activePathname)
           return navItems.map((item) => {
             const isActive = hasExactMatch ? item.href === activePathname : (item.href !== '/' && activePathname?.startsWith(item.href))
-            const showUnreadBadge = item.href.endsWith('/messages') && unreadMessages > 0
+            const badgeCount = item.href.endsWith('/messages') ? unreadMessages : (badges?.[item.href] ?? 0)
+            const showUnreadBadge = badgeCount > 0
             return (
               <Link key={item.href} href={item.href} onClick={() => setMobileOpen(false)} style={{ textDecoration: 'none' }}>
                 <div style={{
@@ -148,7 +151,7 @@ function SidebarInner({ navItems, portalLabel, resolveActivePathname }: SidebarP
                       borderRadius: 100, minWidth: 16, height: 16, padding: '0 5px',
                       display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
                     }}>
-                      {unreadMessages > 9 ? '9+' : unreadMessages}
+                      {badgeCount > 9 ? '9+' : badgeCount}
                     </span>
                   )}
                 </div>

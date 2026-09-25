@@ -69,6 +69,10 @@ export default function TeacherAttendancePage() {
         const uid = session?.user?.id
         if (!uid) { setError('Please sign in again.'); return }
 
+        // Opening this page also runs the "has every class started?" check that
+        // feeds the principal's alerts (safe to repeat; ignored if it fails).
+        void supabase.rpc('refresh_attendance_alerts').then(() => {}, () => {})
+
         // The database decides what "today" is; fall back to this device only if that fails.
         const { data: serverDay } = await supabase.rpc('school_today')
         const day: string = typeof serverDay === 'string' ? serverDay : jamaicaDate()

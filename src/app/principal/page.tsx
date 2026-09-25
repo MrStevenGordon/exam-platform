@@ -6,7 +6,9 @@ import { supabase } from '@/lib/supabase'
 import EmptyState from '@/components/EmptyState'
 import { jamaicaDate, formatDay, formatTime, teacherStatusLabel, TEACHER_STATUS, attendanceError } from '@/lib/attendance'
 import type { BoardRow } from '@/components/principal/TodayBoardView'
+import { ALERT_KIND, type AlertKind } from '@/lib/attendanceAlerts'
 
+type RecentAlert = { id: string; kind: AlertKind; message: string; created_at: string }
 type TruantRow = { student_id: string; student_name: string; student_code: string | null; subject: string; period_name: string; starts_at: string; teacher_name: string }
 
 export default function PrincipalHome() {
@@ -14,6 +16,7 @@ export default function PrincipalHome() {
   const [board, setBoard] = useState<BoardRow[]>([])
   const [truants, setTruants] = useState<TruantRow[]>([])
   const [title, setTitle] = useState('')
+  const [alerts, setAlerts] = useState<RecentAlert[]>([])
   const [counts, setCounts] = useState({ teachers: 0, hods: 0, students: 0 })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -23,13 +26,14 @@ export default function PrincipalHome() {
     async function load() {
       try {
         const { data: { user } } = await supabase.auth.getUser()
-        const [boardRes, truancyRes, teachers, hods, students, me] = await Promise.all([
+        const [boardRes, truancyRes, teachers, hods, students, me, alertRes] = await Promise.all([
           supabase.rpc('attendance_board', { p_date: today }),
           supabase.rpc('truancy_report', { p_from: today, p_to: today }),
           supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'teacher'),
           supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'supervisor'),
           supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'student'),
           user ? supabase.from('profiles').select('leadership_title').eq('id', user.id).single() : Promise.resolve({ data: null }),
+          supabase.from('attendance_alerts').select('id, kind, message, created_at').is('resolved_at', null).order('created_at', { ascending: false }).limit(5),
         ])
         if (boardRes.error) throw boardRes.error
         if (truancyRes.error) throw truancyRes.error
@@ -38,6 +42,7 @@ export default function PrincipalHome() {
         setTruants((truancyRes.data as TruantRow[]) || [])
         setCounts({ teachers: teachers.count || 0, hods: hods.count || 0, students: students.count || 0 })
         setTitle(me.data?.leadership_title || '')
+        setAlerts((alertRes.data as RecentAlert[]) || [])
       } catch (err) {
         if (!cancelled) setError(attendanceError(err))
       } finally {
@@ -76,6 +81,24 @@ export default function PrincipalHome() {
 
       {board.length === 0 && !error && (
         <EmptyState icon="🗓️" title="No classes scheduled today" description="Once the timetable is built and teachers start recording attendance, today's picture appears here." />
+      )}
+
+      {alerts.length > 0 && (
+        <section style={{ marginTop: 24 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+            <div className="section-label">Latest alerts</div>
+            <Link href="/principal/alerts" style={{ fontSize: 13, fontWeight: 700 }}>All alerts →</Link>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {alerts.map((a) => (
+              <div key={a.id} className="card" style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+                <span className={`badge ${ALERT_KIND[a.kind].badge}`}>{ALERT_KIND[a.kind].label}</span>
+                <span style={{ fontSize: 14, flex: 1 }}>{a.message}</span>
+                <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{formatTime(a.created_at)}</span>
+              </div>
+            ))}
+          </div>
+        </section>
       )}
 
       {attention.length > 0 && (

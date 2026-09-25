@@ -10,7 +10,7 @@
 --                        from a class (cleared if the mark is corrected)
 --   Late and truancy alerts are created the instant the data is recorded (database
 --   triggers). "Not started" is a time-based check, run by refresh_attendance_alerts(),
---   which any signed-in staff member's page can call; it does nothing on a day when
+--   which any signed-in staff member's page (or the optional scheduled job) can call; it does nothing on a day when
 --   no class has been started and no register taken (so holidays stay quiet), and it
 --   only looks at classes that are in progress right now.
 --
@@ -177,7 +177,8 @@ declare
   n integer := 0;
   v_rows integer;
 begin
-  if not public.is_staff() then raise exception 'Not allowed.' using errcode = '42501'; end if;
+  -- Signed-in staff (their page load runs it) or the server's scheduled job.
+  if not (public.is_staff() or coalesce(auth.role(), '') = 'service_role') then raise exception 'Not allowed.' using errcode = '42501'; end if;
 
   -- Only on days the school is actually running.
   if not (exists (select 1 from class_sessions where class_date = v_today)
@@ -402,6 +403,7 @@ revoke execute on function
   public.raise_truancy_alert(uuid, date, uuid)
 from public, anon;
 grant execute on function public.refresh_attendance_alerts(), public.my_unread_alert_count(), public.mark_alerts_read(uuid[]) to authenticated;
+grant execute on function public.refresh_attendance_alerts() to service_role;
 -- raise_truancy_alert is only ever called by the triggers.
 revoke execute on function public.raise_truancy_alert(uuid, date, uuid) from authenticated;
 
