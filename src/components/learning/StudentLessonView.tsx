@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { jamaicaDate } from '@/lib/attendance'
 import { STEP_INFO, STEP_KEYS, dueLabel, paragraphs, type Resource, type StepKey } from '@/lib/learning'
+import StudentLessonCheck from '@/components/learning/StudentLessonCheck'
 
 type LessonForStudent = {
   id: string
@@ -153,6 +154,7 @@ export default function StudentLessonView({ lessonId }: { lessonId: string }) {
           </div>
         )}
       </div>
+      <StudentLessonCheck lessonId={lessonId} stepsDone={lesson.steps_done.length} stepsTotal={STEP_KEYS.length} />
       <style>{`@media (min-width: 820px) { .learning-grid { grid-template-columns: minmax(0, 1fr) 260px !important; align-items: start; } }`}</style>
     </div>
   )

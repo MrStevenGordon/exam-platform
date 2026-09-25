@@ -7,6 +7,9 @@ import TabHub from '@/components/TabHub'
 import LessonBuildTab from '@/components/learning/LessonBuildTab'
 import LessonAssignTab from '@/components/learning/LessonAssignTab'
 import LessonResultsTab from '@/components/learning/LessonResultsTab'
+import LessonChecksTab from '@/components/learning/LessonChecksTab'
+import LessonCheckResults from '@/components/learning/LessonCheckResults'
+import { isChecksAvailable } from '@/lib/learningChecks'
 import type { LessonRow } from '@/lib/learning'
 import { useRouter, usePathname } from 'next/navigation'
 
@@ -17,6 +20,9 @@ export default function LessonEditor({ lessonId }: { lessonId: string }) {
   const [lesson, setLesson] = useState<LessonRow | null>(null)
   const [missing, setMissing] = useState(false)
   const [reload, setReload] = useState(0)
+  // Check questions need migration 060; until then the tab is not offered.
+  const [checksOn, setChecksOn] = useState(false)
+  useEffect(() => { isChecksAvailable().then(setChecksOn) }, [])
 
   useEffect(() => {
     let cancelled = false
@@ -54,8 +60,9 @@ export default function LessonEditor({ lessonId }: { lessonId: string }) {
         title={lesson.title}
         tabs={[
           { key: 'build', label: 'Build', render: () => <LessonBuildTab lesson={lesson} onSaved={refresh} onGoAssign={() => goTab('assign')} /> },
+          ...(checksOn ? [{ key: 'checks', label: 'Checks', render: () => <LessonChecksTab lesson={lesson} /> }] : []),
           { key: 'assign', label: 'Assign', render: () => <LessonAssignTab lesson={lesson} onGoBuild={() => goTab('build')} /> },
-          { key: 'results', label: 'Results', render: () => <LessonResultsTab lesson={lesson} /> },
+          { key: 'results', label: 'Results', render: () => <><LessonResultsTab lesson={lesson} /><LessonCheckResults lessonId={lesson.id} /></> },
         ]}
       />
     </div>
