@@ -6,10 +6,13 @@ import { supabase } from '@/lib/supabase'
 import EmptyState from '@/components/EmptyState'
 import { jamaicaDate } from '@/lib/attendance'
 import { STATE_INFO, STEP_KEYS, dueLabel, lessonState, type StudentLessonRow } from '@/lib/learning'
+import { catchupMessage, loadStudentCatchup, type StudentCatchup } from '@/lib/learningCatchup'
 
 // A student's lessons: what their teachers have assigned, what is due, and how far they have got.
 export default function StudentLessonList() {
   const [rows, setRows] = useState<StudentLessonRow[]>([])
+  // Lessons the student was away for. Empty if catch-up is not installed.
+  const [catchup, setCatchup] = useState<Record<string, StudentCatchup>>({})
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const today = jamaicaDate()
@@ -17,10 +20,11 @@ export default function StudentLessonList() {
   useEffect(() => {
     let cancelled = false
     async function load() {
-      const { data, error: e } = await supabase.rpc('learning_student_lessons')
+      const [{ data, error: e }, missed] = await Promise.all([supabase.rpc('learning_student_lessons'), loadStudentCatchup()])
       if (cancelled) return
       if (e) setError('Could not load your lessons. Please try again.')
       else setRows((data as StudentLessonRow[]) || [])
+      setCatchup(missed)
       setLoading(false)
     }
     load()
@@ -29,7 +33,8 @@ export default function StudentLessonList() {
 
   if (loading) return <div>Loading…</div>
 
-  const open = rows.filter((r) => !r.completed_at && !r.closed).sort((a, b) => (a.due_date ?? '9999').localeCompare(b.due_date ?? '9999'))
+  // Lessons they were away for come first, then by due date.
+  const open = rows.filter((r) => !r.completed_at && !r.closed).sort((a, b) => Number(!!catchup[b.lesson_id]) - Number(!!catchup[a.lesson_id]) || (a.due_date ?? '9999').localeCompare(b.due_date ?? '9999'))
   const done = rows.filter((r) => r.completed_at)
   const closed = rows.filter((r) => !r.completed_at && r.closed)
 
@@ -41,6 +46,9 @@ export default function StudentLessonList() {
         <div>
           <div style={{ fontWeight: 700, fontSize: 15 }}>{r.title}</div>
           <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 2 }}>{r.subject} · {r.teacher_name}</div>
+          {catchup[r.lesson_id] && !r.completed_at && (
+            <div style={{ marginTop: 6 }}><span className="badge badge-warning">Catch up</span> <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{catchupMessage(catchup[r.lesson_id])}</span></div>
+          )}
           <div style={{ marginTop: 8, display: 'flex', gap: 8, alignItems: 'center' }}>
             <div style={{ width: 120, height: 6, borderRadius: 3, background: 'var(--border)' }} aria-hidden="true">
               <div style={{ width: `${(r.steps_done / STEP_KEYS.length) * 100}%`, height: 6, borderRadius: 3, background: 'var(--accent)' }} />

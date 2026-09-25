@@ -7,6 +7,7 @@ import { jamaicaDate } from '@/lib/attendance'
 import { STEP_INFO, STEP_KEYS, dueLabel, paragraphs, type Resource, type StepKey } from '@/lib/learning'
 import StudentLessonCheck from '@/components/learning/StudentLessonCheck'
 import PlayTopicLink from '@/components/learning/PlayTopicLink'
+import { catchupMessage, loadStudentCatchup, type StudentCatchup } from '@/lib/learningCatchup'
 
 type LessonForStudent = {
   id: string
@@ -33,7 +34,14 @@ export default function StudentLessonView({ lessonId }: { lessonId: string }) {
   const [step, setStep] = useState(0)
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState('')
+  const [catchup, setCatchup] = useState<StudentCatchup | undefined>(undefined)
   const today = jamaicaDate()
+
+  useEffect(() => {
+    let cancelled = false
+    loadStudentCatchup().then((all) => { if (!cancelled) setCatchup(all[lessonId]) })
+    return () => { cancelled = true }
+  }, [lessonId])
 
   useEffect(() => {
     let cancelled = false
@@ -89,6 +97,10 @@ export default function StudentLessonView({ lessonId }: { lessonId: string }) {
         <span>· {lesson.teacher_name}</span>
         {due && <span style={{ color: due.overdue && !lesson.completed_at ? 'var(--danger)' : undefined, fontWeight: due.overdue && !lesson.completed_at ? 700 : 400 }}>· {due.text}</span>}
       </div>
+
+      {catchup && !lesson.completed_at && (
+        <p className="banner banner-warning" role="status" style={{ marginBottom: 12 }}>{catchupMessage(catchup)}</p>
+      )}
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
         <div style={{ flex: 1, height: 6, borderRadius: 3, background: 'var(--border)' }} role="progressbar" aria-valuemin={0} aria-valuemax={STEP_KEYS.length} aria-valuenow={lesson.steps_done.length} aria-label="Lesson progress">

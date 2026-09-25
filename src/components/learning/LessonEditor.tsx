@@ -9,7 +9,9 @@ import LessonAssignTab from '@/components/learning/LessonAssignTab'
 import LessonResultsTab from '@/components/learning/LessonResultsTab'
 import LessonChecksTab from '@/components/learning/LessonChecksTab'
 import LessonCheckResults from '@/components/learning/LessonCheckResults'
+import LessonCatchupTab from '@/components/learning/LessonCatchupTab'
 import { isChecksAvailable } from '@/lib/learningChecks'
+import { isCatchupAvailable } from '@/lib/learningCatchup'
 import type { LessonRow } from '@/lib/learning'
 import { useRouter, usePathname } from 'next/navigation'
 
@@ -23,6 +25,9 @@ export default function LessonEditor({ lessonId }: { lessonId: string }) {
   // Check questions need migration 060; until then the tab is not offered.
   const [checksOn, setChecksOn] = useState(false)
   useEffect(() => { isChecksAvailable().then(setChecksOn) }, [])
+  // Catch-up needs migration 062.
+  const [catchupOn, setCatchupOn] = useState(false)
+  useEffect(() => { isCatchupAvailable().then(setCatchupOn) }, [])
 
   useEffect(() => {
     let cancelled = false
@@ -62,6 +67,7 @@ export default function LessonEditor({ lessonId }: { lessonId: string }) {
           { key: 'build', label: 'Build', render: () => <LessonBuildTab lesson={lesson} onSaved={refresh} onGoAssign={() => goTab('assign')} /> },
           ...(checksOn ? [{ key: 'checks', label: 'Checks', render: () => <LessonChecksTab lesson={lesson} /> }] : []),
           { key: 'assign', label: 'Assign', render: () => <LessonAssignTab lesson={lesson} onGoBuild={() => goTab('build')} /> },
+          ...(catchupOn ? [{ key: 'catchup', label: 'Catch-up', render: () => <LessonCatchupTab lesson={lesson} onGoAssign={() => goTab('assign')} /> }] : []),
           { key: 'results', label: 'Results', render: () => <><LessonResultsTab lesson={lesson} /><LessonCheckResults lessonId={lesson.id} /></> },
         ]}
       />
