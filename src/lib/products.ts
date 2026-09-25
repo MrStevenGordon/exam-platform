@@ -38,6 +38,18 @@ async function learningInstalled(): Promise<boolean> {
   }
 }
 
+// Smart Play is a separate part of the app with its own database. It is installed only where its
+// pages exist; where they do not, its API answers 404. Any answer other than 404 (even "please
+// sign in") means it is there. Problems reaching the server count as not installed.
+async function playInstalled(): Promise<boolean> {
+  try {
+    const res = await fetch('/api/play/topics', { credentials: 'same-origin' })
+    return res.status !== 404
+  } catch {
+    return false
+  }
+}
+
 let enabled: Promise<ProductKey[]> | null = null
 
 // The products this school has switched on. Smart Assess is always on; the others
@@ -52,7 +64,7 @@ export function getEnabledProducts(): Promise<ProductKey[]> {
         // Switched on AND its database tables exist (migration 059), so a school can never be
         // offered a Smart Learning that cannot work yet.
         if (f.smartLearningEnabled && (await learningInstalled())) list.push('learning')
-        if (f.smartPlayEnabled) list.push('play')
+        if (f.smartPlayEnabled && (await playInstalled())) list.push('play')
         return list
       } catch {
         return ['assess'] as ProductKey[]
