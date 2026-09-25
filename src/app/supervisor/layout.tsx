@@ -5,6 +5,7 @@ import { useRouter, usePathname } from 'next/navigation'
 import Sidebar from '@/components/Sidebar'
 import PageTransition from '@/components/PageTransition'
 import InactivityLogout from '@/components/InactivityLogout'
+import PresenceHeartbeat from '@/components/PresenceHeartbeat'
 import OnboardingTour from '@/components/OnboardingTour'
 import { getMfaRedirect } from '@/lib/mfaCheck'
 import { verifyPortalRole } from '@/lib/verifyPortalRole'
@@ -35,6 +36,7 @@ export default function SupervisorLayout({ children }: { children: React.ReactNo
   return (
     <div className="portal-layout" style={{ minHeight: "100vh" }}>
       <InactivityLogout />
+      <PresenceHeartbeat />
       <main className="portal-content"><PageTransition>{children}</PageTransition></main>
       <Sidebar navItems={hodNavItems(attendanceOn)} portalLabel="HOD Portal" resolveActivePathname={resolveHodActivePathname} />
       <OnboardingTour tourKey="supervisor" steps={HOD_TOUR_STEPS} />

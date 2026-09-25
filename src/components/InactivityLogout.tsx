@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { releaseDeviceLock } from '@/lib/studentDeviceLock'
+import { presenceSignOut } from '@/lib/presence'
 
 const TIMEOUT_MS = 5 * 60 * 1000
 const WARNING_MS = 15 * 1000
@@ -46,6 +47,7 @@ export default function InactivityLogout() {
       timerRef.current = setTimeout(async () => {
         const { data: { user } } = await supabase.auth.getUser()
         if (user) await releaseDeviceLock(user.id)
+        await presenceSignOut()
         await supabase.auth.signOut()
         router.push('/login?reason=inactivity')
       }, TIMEOUT_MS)

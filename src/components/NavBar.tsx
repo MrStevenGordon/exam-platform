@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
+import { presenceSignOut } from '@/lib/presence'
 
 export default function NavBar() {
   const router = useRouter()
@@ -34,6 +35,7 @@ export default function NavBar() {
   }, [])
 
   async function handleLogout() {
+    await presenceSignOut()
     await supabase.auth.signOut()
     router.push('/login')
   }

@@ -554,3 +554,11 @@ body.exam-fullscreen .portal-content {
 .hub-embedded .portal-page-title,
 .hub-embedded h1 { display: none; }
 .hub-embedded .page-container { max-width: none; padding: 0; }
+
+/* ===== Online / away / offline status ===== */
+.presence { display: inline-flex; align-items: center; gap: 6px; vertical-align: middle; }
+.presence-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; display: inline-block; }
+.presence-online { background: var(--success); }
+.presence-away { background: #D9A441; }
+.presence-offline { background: transparent; border: 2px solid var(--text-muted); }
+.presence-label { font-size: 11px; color: var(--text-secondary); }

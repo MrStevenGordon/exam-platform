@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
+import { usePresence } from '@/lib/presence'
+import PresenceDot from '@/components/PresenceDot'
 
 type StaffMember = {
   id: string
@@ -18,6 +20,7 @@ type StaffMember = {
 export default function StaffPage() {
   const router = useRouter()
   const [staff, setStaff] = useState<StaffMember[]>([])
+  const presence = usePresence(staff.map((s) => s.id))
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [filterDept, setFilterDept] = useState('')
@@ -468,7 +471,7 @@ export default function StaffPage() {
                           {s.full_name?.split(' ').map((n: string) => n[0]).slice(0, 2).join('')}
                         </div>
                         <div>
-                          <div style={{ fontWeight: 700, fontSize: 14 }}>{s.full_name}</div>
+                          <div style={{ fontWeight: 700, fontSize: 14 }}><PresenceDot info={presence[s.id]} /> {s.full_name}</div>
                           <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 2 }}>
                             {roleLabel[s.role] || s.role}
                             {s.is_system_admin && <span style={{ marginLeft: 6, color: 'var(--accent-dark)', fontWeight: 700 }}>· System Admin</span>}

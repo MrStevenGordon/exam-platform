@@ -17,6 +17,7 @@ export default function PrincipalHome() {
   const [truants, setTruants] = useState<TruantRow[]>([])
   const [title, setTitle] = useState('')
   const [alerts, setAlerts] = useState<RecentAlert[]>([])
+  const [online, setOnline] = useState<{ staff_online: number; staff_away: number; students_online: number; students_away: number } | null>(null)
   const [counts, setCounts] = useState({ teachers: 0, hods: 0, students: 0 })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -26,7 +27,7 @@ export default function PrincipalHome() {
     async function load() {
       try {
         const { data: { user } } = await supabase.auth.getUser()
-        const [boardRes, truancyRes, teachers, hods, students, me, alertRes] = await Promise.all([
+        const [boardRes, truancyRes, teachers, hods, students, me, alertRes, presenceRes] = await Promise.all([
           supabase.rpc('attendance_board', { p_date: today }),
           supabase.rpc('truancy_report', { p_from: today, p_to: today }),
           supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'teacher'),
@@ -34,6 +35,7 @@ export default function PrincipalHome() {
           supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'student'),
           user ? supabase.from('profiles').select('leadership_title').eq('id', user.id).single() : Promise.resolve({ data: null }),
           supabase.from('attendance_alerts').select('id, kind, message, created_at').is('resolved_at', null).order('created_at', { ascending: false }).limit(5),
+          supabase.rpc('presence_summary'),
         ])
         if (boardRes.error) throw boardRes.error
         if (truancyRes.error) throw truancyRes.error
@@ -43,6 +45,9 @@ export default function PrincipalHome() {
         setCounts({ teachers: teachers.count || 0, hods: hods.count || 0, students: students.count || 0 })
         setTitle(me.data?.leadership_title || '')
         setAlerts((alertRes.data as RecentAlert[]) || [])
+        // Optional: only present once online status is installed.
+        const summary = (presenceRes.data as { staff_online: number; staff_away: number; students_online: number; students_away: number }[] | null)?.[0]
+        setOnline(!presenceRes.error && summary ? summary : null)
       } catch (err) {
         if (!cancelled) setError(attendanceError(err))
       } finally {
@@ -71,6 +76,13 @@ export default function PrincipalHome() {
         <div className="stat-card"><div className="stat-card-value">{counts.hods}</div><div className="stat-card-label">Heads of department</div></div>
         <div className="stat-card"><div className="stat-card-value">{counts.students}</div><div className="stat-card-label">Students</div></div>
       </div>
+
+      {online && (
+        <div className="stat-grid">
+          <div className="stat-card"><div className="stat-card-value">{online.staff_online}</div><div className="stat-card-label">Staff online now{online.staff_away ? ` · ${online.staff_away} away` : ''}</div></div>
+          <div className="stat-card"><div className="stat-card-value">{online.students_online}</div><div className="stat-card-label">Students online now{online.students_away ? ` · ${online.students_away} away` : ''}</div></div>
+        </div>
+      )}
 
       <div className="stat-grid">
         <div className="stat-card"><div className="stat-card-value">{board.length}</div><div className="stat-card-label">Classes today</div></div>

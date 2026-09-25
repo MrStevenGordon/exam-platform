@@ -5,6 +5,7 @@ import { useRouter, usePathname } from 'next/navigation'
 import Sidebar from '@/components/Sidebar'
 import PageTransition from '@/components/PageTransition'
 import InactivityLogout from '@/components/InactivityLogout'
+import PresenceHeartbeat from '@/components/PresenceHeartbeat'
 import OnboardingTour, { TourStep } from '@/components/OnboardingTour'
 import { verifyPortalRole } from '@/lib/verifyPortalRole'
 
@@ -46,7 +47,8 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
   }, [router])
 
   if (isTakePage) {
-    return <>{children}</>
+    // No inactivity logout mid-exam, but the student still shows as online.
+    return <><PresenceHeartbeat />{children}</>
   }
 
   if (!checked) return null
@@ -54,6 +56,7 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
   return (
     <div className="portal-layout" style={{ minHeight: "100vh" }}>
       <InactivityLogout />
+      <PresenceHeartbeat />
       <main className="portal-content"><PageTransition>{children}</PageTransition></main>
       <Sidebar navItems={STUDENT_NAV} portalLabel="Student Portal" />
       <OnboardingTour tourKey="student" steps={STUDENT_TOUR_STEPS} />

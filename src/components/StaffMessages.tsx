@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
+import { usePresence } from '@/lib/presence'
+import PresenceDot from '@/components/PresenceDot'
 
 type StaffMember = { id: string; full_name: string; role: string }
 type Conversation = { id: string; type: 'direct' | 'staff_group'; created_at: string }
@@ -27,6 +29,7 @@ export default function StaffMessages() {
   useEffect(() => { selectedIdRef.current = selectedId }, [selectedId])
 
   const staffById = useCallback((id: string) => staff.find((s) => s.id === id), [staff])
+  const presence = usePresence(staff.map((s) => s.id))
 
   async function loadAll() {
     try {
@@ -177,7 +180,10 @@ export default function StaffMessages() {
                   }}
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontWeight: 600, fontSize: 14 }}>{conversationName(c)}</span>
+                    <span style={{ fontWeight: 600, fontSize: 14 }}>
+                      {c.type !== 'staff_group' && <PresenceDot info={presence[participants.find((p) => p.conversation_id === c.id && p.user_id !== myId)?.user_id ?? '']} />}{' '}
+                      {conversationName(c)}
+                    </span>
                     {unread > 0 && (
                       <span style={{ background: 'var(--accent)', color: '#fff', fontSize: 11, fontWeight: 700, borderRadius: 100, padding: '1px 7px' }}>{unread}</span>
                     )}
@@ -252,8 +258,8 @@ export default function StaffMessages() {
                 className="btn btn-secondary"
                 style={{ width: '100%', textAlign: 'left', marginBottom: 6, display: 'flex', justifyContent: 'space-between' }}
               >
-                <span>{s.full_name}</span>
-                <span style={{ fontSize: 11, color: 'var(--text-muted)', textTransform: 'capitalize' }}>{s.role}</span>
+                <span><PresenceDot info={presence[s.id]} /> {s.full_name}</span>
+                <span style={{ fontSize: 11, color: 'var(--text-muted)', textTransform: 'capitalize' }}>{s.role === 'supervisor' ? 'HOD' : s.role}</span>
               </button>
             ))}
             {staff.filter((s) => s.id !== myId).length === 0 && <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>No other staff yet.</p>}

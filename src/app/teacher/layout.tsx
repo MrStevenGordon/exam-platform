@@ -5,6 +5,7 @@ import { useRouter, usePathname } from 'next/navigation'
 import Sidebar from '@/components/Sidebar'
 import PageTransition from '@/components/PageTransition'
 import InactivityLogout from '@/components/InactivityLogout'
+import PresenceHeartbeat from '@/components/PresenceHeartbeat'
 import OnboardingTour, { TourStep } from '@/components/OnboardingTour'
 import { supabase } from '@/lib/supabase'
 import { getMfaRedirect } from '@/lib/mfaCheck'
@@ -149,6 +150,8 @@ export default function TeacherLayout({ children }: { children: React.ReactNode 
     return (
       <div className="portal-layout" style={{ minHeight: "100vh" }}>
         <InactivityLogout />
+      <PresenceHeartbeat />
+        <PresenceHeartbeat />
         <main className="portal-content"><PageTransition>{children}</PageTransition></main>
         <Sidebar navItems={hodNavItems(attendanceOn)} portalLabel="HOD Portal" resolveActivePathname={resolveHodActivePathname} />
         <OnboardingTour tourKey="supervisor" steps={HOD_TOUR_STEPS} />

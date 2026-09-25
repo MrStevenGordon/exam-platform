@@ -5,6 +5,7 @@ import { useRouter, usePathname } from 'next/navigation'
 import Sidebar from '@/components/Sidebar'
 import PageTransition from '@/components/PageTransition'
 import InactivityLogout from '@/components/InactivityLogout'
+import PresenceHeartbeat from '@/components/PresenceHeartbeat'
 import OnboardingTour, { TourStep } from '@/components/OnboardingTour'
 import { getMfaRedirect } from '@/lib/mfaCheck'
 import { verifyPortalRole } from '@/lib/verifyPortalRole'
@@ -60,6 +61,7 @@ export default function SchoolAdminLayout({ children }: { children: React.ReactN
   return (
     <div className="portal-layout" style={{ minHeight: "100vh" }}>
       <InactivityLogout />
+      <PresenceHeartbeat />
       <main className="portal-content"><PageTransition>{children}</PageTransition></main>
       <Sidebar navItems={SCHOOL_ADMIN_NAV} portalLabel="School Admin" />
       <OnboardingTour tourKey="admin" steps={SCHOOL_ADMIN_TOUR_STEPS} />

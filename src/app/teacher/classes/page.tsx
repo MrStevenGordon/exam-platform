@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
+import { usePresence } from '@/lib/presence'
+import PresenceDot from '@/components/PresenceDot'
 
 type ClassGroup = {
   id: string
@@ -15,6 +17,7 @@ type ClassGroup = {
 export default function MyClassesPage() {
   const router = useRouter()
   const [classes, setClasses] = useState<ClassGroup[]>([])
+  const presence = usePresence(classes.flatMap((c) => c.students.map((s) => s.id)))
   const [loading, setLoading] = useState(true)
   const [expandedClasses, setExpandedClasses] = useState<Set<string>>(new Set())
   const [search, setSearch] = useState('')
@@ -175,7 +178,7 @@ export default function MyClassesPage() {
                                       {s.full_name.split(' ').map((n) => n[0]).slice(0, 2).join('')}
                                     </div>
                                     <div>
-                                      <div style={{ fontWeight: 600, fontSize: 13 }}>{s.full_name}</div>
+                                      <div style={{ fontWeight: 600, fontSize: 13 }}><PresenceDot info={presence[s.id]} /> {s.full_name}</div>
                                       <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>ID: {s.student_id}</div>
                                     </div>
                                   </div>

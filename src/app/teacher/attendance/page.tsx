@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import EmptyState from '@/components/EmptyState'
+import { usePresence } from '@/lib/presence'
+import PresenceDot from '@/components/PresenceDot'
 import {
   jamaicaDate, isoWeekday, schoolYear, formatTime, formatDay, MARK_LABEL, attendanceError, type MarkStatus,
 } from '@/lib/attendance'
@@ -60,6 +62,7 @@ export default function TeacherAttendancePage() {
   const [draftMorning, setDraftMorning] = useState<Record<string, Record<string, MarkStatus>>>({})
   const [openRoll, setOpenRoll] = useState<string | null>(null)
   const [reload, setReload] = useState(0)
+  const presence = usePresence([...Object.values(groupRosters), ...Object.values(rosters)].flat().map((s) => s.id))
 
   useEffect(() => {
     let cancelled = false
@@ -186,7 +189,7 @@ export default function TeacherAttendancePage() {
                   {roster.length === 0 && <p style={{ color: 'var(--text-secondary)' }}>No students are enrolled in this class.</p>}
                   {roster.map((s) => (
                     <div key={s.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                      <span style={{ fontSize: 14 }}>{s.name}</span>
+                      <span style={{ fontSize: 14 }}><PresenceDot info={presence[s.id]} /> {s.name}</span>
                       <MarkButtons name={s.name} value={draftMorning[g.id]?.[s.id] ?? morning[s.id] ?? 'present'} onChange={(st) => setDraft(setDraftMorning, g.id, s.id, st)} />
                     </div>
                   ))}
@@ -261,7 +264,7 @@ export default function TeacherAttendancePage() {
                       const chip = morningChip(st.id)
                       return (
                         <div key={st.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                          <span style={{ fontSize: 14 }}>{st.name} <span className={`badge ${chip.cls}`} style={{ marginLeft: 6 }}>{chip.text}</span></span>
+                          <span style={{ fontSize: 14 }}><PresenceDot info={presence[st.id]} /> {st.name} <span className={`badge ${chip.cls}`} style={{ marginLeft: 6 }}>{chip.text}</span></span>
                           <MarkButtons name={st.name} value={draftClass[s.id]?.[st.id] ?? classMarks[s.id]?.[st.id] ?? 'present'} onChange={(m) => setDraft(setDraftClass, s.id, st.id, m)} />
                         </div>
                       )

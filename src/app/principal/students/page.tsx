@@ -5,6 +5,8 @@ import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import EmptyState from '@/components/EmptyState'
 import { jamaicaDate, shiftDate, attendanceError } from '@/lib/attendance'
+import { usePresence } from '@/lib/presence'
+import PresenceDot from '@/components/PresenceDot'
 
 type Row = {
   student_id: string; student_name: string; student_code: string | null; class_name: string | null
@@ -21,6 +23,7 @@ export default function PrincipalStudentsPage() {
   const [search, setSearch] = useState('')
   const [cls, setCls] = useState('')
   const [onlyConcerns, setOnlyConcerns] = useState(false)
+  const presence = usePresence(rows.map((r) => r.student_id))
 
   useEffect(() => {
     let cancelled = false
@@ -81,7 +84,7 @@ export default function PrincipalStudentsPage() {
                 {visible.map((r) => (
                   <tr key={r.student_id} style={{ borderTop: '1px solid var(--border)' }}>
                     <td style={{ padding: '8px 12px' }}>
-                      <Link href={`/principal/students/${r.student_id}`} style={{ fontWeight: 600 }}>{r.student_name}</Link>
+                      <PresenceDot info={presence[r.student_id]} /> <Link href={`/principal/students/${r.student_id}`} style={{ fontWeight: 600 }}>{r.student_name}</Link>
                       {r.student_code && <span style={{ color: 'var(--text-muted)' }}> · {r.student_code}</span>}
                     </td>
                     <td style={{ padding: '8px 12px' }}>{r.class_name || '—'}</td>

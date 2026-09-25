@@ -5,6 +5,7 @@ import { useRouter, usePathname } from 'next/navigation'
 import Sidebar from '@/components/Sidebar'
 import PageTransition from '@/components/PageTransition'
 import InactivityLogout from '@/components/InactivityLogout'
+import PresenceHeartbeat from '@/components/PresenceHeartbeat'
 import { getMfaRedirect } from '@/lib/mfaCheck'
 import { verifyPortalRole } from '@/lib/verifyPortalRole'
 import { PRINCIPAL_NAV } from '@/lib/principalNav'
@@ -38,6 +39,7 @@ export default function PrincipalLayout({ children }: { children: React.ReactNod
   return (
     <div className="portal-layout" style={{ minHeight: '100vh' }}>
       <InactivityLogout />
+      <PresenceHeartbeat />
       <main className="portal-content"><PageTransition>{children}</PageTransition></main>
       <Sidebar navItems={PRINCIPAL_NAV} portalLabel="Leadership Portal" badges={{ '/principal/alerts': unreadAlerts }} />
     </div>

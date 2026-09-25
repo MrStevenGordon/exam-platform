@@ -4,6 +4,8 @@ import { useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
+import { usePresence } from '@/lib/presence'
+import PresenceDot from '@/components/PresenceDot'
 
 type Student = {
   id: string
@@ -16,6 +18,7 @@ type Student = {
 export default function StudentsView() {
   const router = useRouter()
   const [students, setStudents] = useState<Student[]>([])
+  const presence = usePresence(students.map((s) => s.id))
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [filterGrade, setFilterGrade] = useState('')
@@ -256,7 +259,7 @@ export default function StudentsView() {
                             <Link key={s.id} href={`/supervisor/student/${s.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
                               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', background: 'var(--card-bg)', borderRadius: 8, border: '1px solid var(--border)', cursor: 'pointer' }}>
                                 <div>
-                                  <div style={{ fontWeight: 600, fontSize: 13 }}>{s.full_name}</div>
+                                  <div style={{ fontWeight: 600, fontSize: 13 }}><PresenceDot info={presence[s.id]} /> {s.full_name}</div>
                                   <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 2 }}>ID: {s.student_id}</div>
                                 </div>
                                 <span style={{ color: 'var(--text-secondary)', fontSize: 13 }}>→</span>

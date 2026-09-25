@@ -5,6 +5,7 @@ import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { releaseDeviceLock } from '@/lib/studentDeviceLock'
+import { presenceSignOut } from '@/lib/presence'
 import { useUnreadMessageCount, requestMessageNotificationPermission } from '@/lib/useUnreadMessages'
 
 type NavItem = { label: string; icon: string; href: string }
@@ -99,6 +100,7 @@ function SidebarInner({ navItems, portalLabel, resolveActivePathname, badges }: 
       const { data: { user } } = await supabase.auth.getUser()
       if (user) await releaseDeviceLock(user.id)
     }
+    await presenceSignOut()
     await supabase.auth.signOut()
     router.push('/login')
   }

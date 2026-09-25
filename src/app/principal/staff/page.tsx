@@ -5,6 +5,8 @@ import { supabase } from '@/lib/supabase'
 import EmptyState from '@/components/EmptyState'
 import { jamaicaDate, shiftDate, attendanceError } from '@/lib/attendance'
 import { onTimePercent, type PunctualityRow } from '@/components/principal/PunctualityView'
+import { usePresence } from '@/lib/presence'
+import PresenceDot from '@/components/PresenceDot'
 
 type Person = { id: string; full_name: string; role: string; department: string | null; is_active: boolean | null }
 
@@ -18,6 +20,7 @@ export default function PrincipalStaffPage() {
   const [error, setError] = useState('')
   const [search, setSearch] = useState('')
   const [role, setRole] = useState<'all' | 'teacher' | 'supervisor'>('all')
+  const presence = usePresence(people.map((p) => p.id))
 
   useEffect(() => {
     let cancelled = false
@@ -86,7 +89,7 @@ export default function PrincipalStaffPage() {
             <div key={p.id} className="card" style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
               <div>
                 <div style={{ fontWeight: 700, fontSize: 14 }}>
-                  {p.full_name}{' '}
+                  <PresenceDot info={presence[p.id]} showLabel /> {p.full_name}{' '}
                   <span className={`badge ${p.role === 'supervisor' ? 'badge-success' : 'badge-default'}`}>{p.role === 'supervisor' ? 'HOD' : 'Teacher'}</span>
                   {p.is_active === false && <span className="badge badge-danger" style={{ marginLeft: 6 }}>Deactivated</span>}
                 </div>
