@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import { compareClassNames } from '@/lib/classNames'
 import NotifyStudentButton from '@/components/NotifyStudentButton'
 import AccommodationsToggle from '@/components/AccommodationsToggle'
 
@@ -222,11 +223,7 @@ export default function StudentsPage() {
     if (!classesByGrade[s.grade_level].includes(s.class_name)) classesByGrade[s.grade_level].push(s.class_name)
   })
   Object.keys(classesByGrade).forEach((g) => {
-    classesByGrade[parseInt(g)].sort((a, b) => {
-      const aNum = parseInt((a || '').split('-')[1] || '0')
-      const bNum = parseInt((b || '').split('-')[1] || '0')
-      return aNum - bNum
-    })
+    classesByGrade[parseInt(g)].sort((a, b) => compareClassNames(a, b))
   })
 
   // Which grade a given class belongs to, for setting filterGrade when a
@@ -393,7 +390,7 @@ export default function StudentsPage() {
               >
                 All classes
               </div>
-              {[7, 8, 9, 10, 11].map((g) => {
+              {[7, 8, 9, 10, 11, 12].map((g) => {
                 const classes = classesByGrade[g]
                 if (!classes || classes.length === 0) return null
                 const isExpanded = expandedFilterGrade === g
@@ -445,14 +442,10 @@ export default function StudentsPage() {
         <div className="card"><p style={{ color: 'var(--text-secondary)' }}>No students found.</p></div>
       )}
 
-      {[7, 8, 9, 10, 11].map((grade) => {
+      {[7, 8, 9, 10, 11, 12].map((grade) => {
         const gradeStudents = filtered.filter((s) => s.grade_level === grade)
         if (gradeStudents.length === 0) return null
-        const classes = [...new Set(gradeStudents.map((s) => s.class_name).filter(Boolean))].sort((a, b) => {
-          const aNum = parseInt((a || '').split('-')[1] || '0')
-          const bNum = parseInt((b || '').split('-')[1] || '0')
-          return aNum - bNum
-        })
+        const classes = [...new Set(gradeStudents.map((s) => s.class_name).filter(Boolean))].sort((a, b) => compareClassNames(a, b))
 
         return (
           <div key={grade} style={{ marginBottom: 16 }}>

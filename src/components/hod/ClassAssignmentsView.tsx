@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import { compareClassNames, CLASS_GRADES } from '@/lib/classNames'
 import EmptyState from '@/components/EmptyState'
 
 type ClassGroup = { id: string; name: string; year_grade: string }
@@ -156,11 +157,7 @@ export default function ClassAssignmentsView() {
     grouped[cg.year_grade].push(cg)
   })
   Object.keys(grouped).forEach((g) => {
-    grouped[g].sort((a, b) => {
-      const aNum = parseInt((a.name || '').split('-')[1] || '0')
-      const bNum = parseInt((b.name || '').split('-')[1] || '0')
-      return aNum - bNum
-    })
+    grouped[g].sort((a, b) => compareClassNames(a.name, b.name))
   })
 
   function toggleGrade(grade: string) {
@@ -192,7 +189,7 @@ export default function ClassAssignmentsView() {
         </div>
       )}
 
-      {['Grade 7', 'Grade 8', 'Grade 9', 'Grade 10', 'Grade 11'].map((grade) => {
+      {CLASS_GRADES.map((grade) => {
         const classes = grouped[grade]
         if (!classes || classes.length === 0) return null
         const assignedCount = classes.filter((cg) => assignments[cg.id]).length

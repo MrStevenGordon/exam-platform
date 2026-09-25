@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { gradeLevelFromClassName } from '@/lib/classNames'
 import { z } from 'zod'
 import { validateBody } from '@/lib/validateBody'
 import { sendEmail, EMAIL_FROM } from '@/lib/email'
@@ -9,10 +10,6 @@ const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   (process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY)!
 )
-
-const CLASS_TO_GRADE: Record<string, number> = {
-  '1': 7, '2': 8, '3': 9, '4': 10, '5': 11
-}
 
 // The student's real school inbox (e.g. john.doe@stu.mhs.edu.jm) — separate
 // from their id#@mhs.smartassess login, which was never a real address.
@@ -97,8 +94,7 @@ export async function POST(req: NextRequest) {
       const { first_name, middle_name, last_name, student_id, class_id, birth_date, gender, birth_year, school_email: providedSchoolEmail } = data
       const email = `${student_id}@mhs.smartassess`
       const fullName = [first_name, middle_name, last_name].filter(Boolean).join(' ')
-      const gradePrefix = class_id?.split('-')[0]
-      const gradeLevel = (gradePrefix ? CLASS_TO_GRADE[gradePrefix] : null) || null
+      const gradeLevel = gradeLevelFromClassName(class_id)
 
       // Get class group
       const { data: classGroup } = await supabaseAdmin

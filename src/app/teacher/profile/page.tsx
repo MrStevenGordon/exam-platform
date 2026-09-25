@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import { compareClassNames, CLASS_GRADES } from '@/lib/classNames'
 
 type ClassGroup = {
   id: string
@@ -128,7 +129,7 @@ export default function TeacherProfilePage() {
 
   if (loading) return <div>Loading…</div>
 
-  const grades = ['Grade 7', 'Grade 8', 'Grade 9', 'Grade 10', 'Grade 11']
+  const grades = CLASS_GRADES
 
   return (
     <div>
@@ -155,11 +156,7 @@ export default function TeacherProfilePage() {
         </p>
 
         {grades.map((grade) => {
-          const gradeClasses = classGroups.filter((cg) => cg.year_grade === grade).sort((a, b) => {
-              const aNum = parseInt(a.name.split('-')[1] || '0')
-              const bNum = parseInt(b.name.split('-')[1] || '0')
-              return aNum - bNum
-            })
+          const gradeClasses = classGroups.filter((cg) => cg.year_grade === grade).sort((a, b) => compareClassNames(a.name, b.name))
           if (gradeClasses.length === 0) return null
           const selectedInGrade = gradeClasses.filter(cg => assignedIds.has(cg.id)).length
           const isExpanded = expandedGrades.has(grade)

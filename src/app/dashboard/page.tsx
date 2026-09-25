@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import { planPromotion } from '@/lib/promotion'
 
 type Profile = {
   full_name: string
@@ -24,7 +25,10 @@ export default function Dashboard() {
   const [graduatingStudents, setGraduatingStudents] = useState<GraduatingStudent[]>([])
   const [promotionResult, setPromotionResult] = useState('')
   const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set())
-  const [confirmPromotion, setConfirmPromotion] = useState(false)
+  const [promotionOk, setPromotionOk] = useState(true)
+  const [previewing, setPreviewing] = useState(false)
+  // What the promotion would do, worked out and shown before anything is changed.
+  const [plan, setPlan] = useState<ReturnType<typeof planPromotion> | null>(null)
 
   useEffect(() => {
     async function loadProfile() {
@@ -48,89 +52,74 @@ export default function Dashboard() {
     setGraduatingStudents((data as any) || [])
   }
 
+  // The database returns at most 1000 rows per request, so read a big school in pages.
+  async function fetchAll<T>(page: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: unknown }>): Promise<T[] | null> {
+    const out: T[] = []
+    for (let from = 0; ; from += 1000) {
+      const { data, error } = await page(from, from + 999)
+      if (error || !data) return null
+      out.push(...data)
+      if (data.length < 1000) return out
+    }
+  }
+
+  // Step 1: work out who would move where, and show it. Nothing is changed yet.
+  async function handlePreviewPromotion() {
+    setPreviewing(true)
+    setPromotionResult('')
+    const [students, groups, enrollments] = await Promise.all([
+      fetchAll<{ id: string; grade_level: number | null }>((a, b) => supabase.from('profiles').select('id, grade_level').eq('role', 'student').in('grade_level', [7, 8, 9, 10]).order('id').range(a, b)),
+      fetchAll<{ id: string; name: string }>((a, b) => supabase.from('class_groups').select('id, name').order('id').range(a, b)),
+      fetchAll<{ student_id: string; class_group_id: string }>((a, b) => supabase.from('enrollments').select('student_id, class_group_id').order('id').range(a, b)),
+    ])
+    setPreviewing(false)
+    if (!students || !groups || !enrollments) {
+      setPromotionOk(false)
+      setPromotionResult('Could not read the school\'s students and classes. Nothing was changed. Please try again.')
+      return
+    }
+    setPlan(planPromotion(students, groups, enrollments))
+  }
+
+  // Step 2: apply exactly the plan that was shown. Each student moves once, from the class
+  // they are in now to the same-numbered class a year up (1-3 to 2-3). Anyone the plan held
+  // back is left alone.
   async function handleYearPromotion() {
+    if (!plan) return
     setPromoting(true)
     setPromotionResult('')
 
-    // Grade promotion map: current grade → new grade, new class prefix
-    const gradeMap: Record<number, { newGrade: number; oldPrefix: string; newPrefix: string; newYearGrade: string }> = {
-      10: { newGrade: 11, oldPrefix: '4-', newPrefix: '5-', newYearGrade: 'Grade 11' },
-      9:  { newGrade: 10, oldPrefix: '3-', newPrefix: '4-', newYearGrade: 'Grade 10' },
-      8:  { newGrade: 9,  oldPrefix: '2-', newPrefix: '3-', newYearGrade: 'Grade 9'  },
-      7:  { newGrade: 8,  oldPrefix: '1-', newPrefix: '2-', newYearGrade: 'Grade 8'  },
-    }
+    let moved = 0
+    let failed = 0
+    for (const m of plan.moves) {
+      const { error: enrollError } = await supabase
+        .from('enrollments')
+        .update({ class_group_id: m.toGroupId })
+        .eq('class_group_id', m.fromGroupId)
+        .in('student_id', m.studentIds)
+      if (enrollError) { failed += m.studentIds.length; continue }
 
-    let totalPromoted = 0
-    let errors = 0
-
-    for (const [gradeStr, map] of Object.entries(gradeMap)) {
-      const grade = parseInt(gradeStr)
-
-      // Get all students at this grade level
-      const { data: students } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('role', 'student')
-        .eq('grade_level', grade)
-
-      if (!students || students.length === 0) continue
-
-      // Update grade_level
       const { error: gradeError } = await supabase
         .from('profiles')
-        .update({ grade_level: map.newGrade })
-        .eq('grade_level', grade)
-        .eq('role', 'student')
-
-      if (gradeError) { errors++; continue }
-
-      // Get all old class groups (e.g. 4-1 through 4-7)
-      const { data: oldGroups } = await supabase
-        .from('class_groups')
-        .select('id, name')
-        .eq('year_grade', `Grade ${grade}`)
-
-      // Get all new class groups
-      const { data: newGroups } = await supabase
-        .from('class_groups')
-        .select('id, name')
-        .eq('year_grade', map.newYearGrade)
-
-      if (!oldGroups || !newGroups) continue
-
-      const newGroupMap: Record<string, string> = {}
-      newGroups.forEach((g) => {
-        const suffix = g.name.split('-')[1]
-        newGroupMap[suffix] = g.id
-      })
-
-      // For each old group, move enrolled students to the corresponding new group
-      let gradeHadError = false
-      for (const oldGroup of oldGroups) {
-        const suffix = oldGroup.name.split('-')[1]
-        const newGroupId = newGroupMap[suffix]
-        if (!newGroupId) continue
-
-        const { error: enrollError } = await supabase
-          .from('enrollments')
-          .update({ class_group_id: newGroupId })
-          .eq('class_group_id', oldGroup.id)
-
-        if (enrollError) gradeHadError = true
+        .update({ grade_level: m.toGrade })
+        .in('id', m.studentIds)
+      if (gradeError) {
+        // Put the class back so these students' class and grade still agree.
+        await supabase.from('enrollments').update({ class_group_id: m.fromGroupId }).eq('class_group_id', m.toGroupId).in('student_id', m.studentIds)
+        failed += m.studentIds.length
+        continue
       }
-      // Counted once per grade (this grade's real student count), not once
-      // per class group successfully updated — the previous version added
-      // students.length again for every group, so a grade split across
-      // several sections reported several times its actual student count.
-      if (!gradeHadError) totalPromoted += students.length
+      moved += m.studentIds.length
     }
 
     await loadGraduatingStudents()
-    setPromotionResult(errors === 0
-      ? `Year promotion complete. ${totalPromoted} students moved up successfully.`
-      : `Promotion finished with ${errors} error(s). Check the database.`)
+    const heldNote = plan.held.length ? ` ${plan.held.length} student${plan.held.length === 1 ? ' was' : 's were'} not moved and need placing by hand.` : ''
+    setPromotionOk(failed === 0)
+    setPromotionResult(failed === 0
+      ? `Year promotion complete. ${moved} student${moved === 1 ? '' : 's'} moved up.${heldNote}`
+      : `${moved} student${moved === 1 ? '' : 's'} moved up, but ${failed} could not be moved and were left as they were. Run the preview again to see who is left.${heldNote}`)
     setPromoting(false)
-    setConfirmPromotion(false)
+    setPlan(null)
   }
 
   async function handleDeleteStudent(studentId: string) {
@@ -173,38 +162,66 @@ export default function Dashboard() {
           <div className="card" style={{ marginTop: 24 }}>
             <h2>Year Promotion</h2>
             <p style={{ color: 'var(--text-secondary)', marginTop: 8, fontSize: 14 }}>
-              Run this on September 1 each year. Moves every student up one grade level and updates their class group enrollment. Grade 11 students are NOT deleted. Use the graduation review below to confirm deletions separately.
+              Run this on September 1 each year. Moves students in Forms 1 to 4 (Grades 7 to 10) up one year, into the class with the same number (1-3 goes to 2-3). Fifth form and the sixth form are not moved automatically. Grade 11 students are NOT deleted. Use the graduation review below to confirm deletions separately. You will see exactly what will happen before anything changes.
             </p>
 
             {promotionResult && (
-              <div className={`banner ${promotionResult.includes('error') ? 'banner-danger' : 'banner-success'}`} style={{ marginTop: 12 }}>
+              <div className={`banner ${promotionOk ? 'banner-success' : 'banner-danger'}`} style={{ marginTop: 12 }}>
                 {promotionResult}
               </div>
             )}
 
-            {!confirmPromotion ? (
+            {!plan ? (
               <button
-                onClick={() => setConfirmPromotion(true)}
+                onClick={handlePreviewPromotion}
+                disabled={previewing}
                 className="btn btn-primary"
                 style={{ marginTop: 16 }}
               >
-                Run Year Promotion
+                {previewing ? 'Checking…' : 'Preview Year Promotion'}
               </button>
             ) : (
               <div className="banner banner-warning" style={{ marginTop: 16 }}>
-                <p style={{ fontWeight: 700, marginBottom: 12 }}>
-                  This will move ALL students up one grade. This cannot be undone. Are you sure?
+                <p style={{ fontWeight: 700, marginBottom: 8 }}>
+                  {plan.moves.reduce((n, m) => n + m.studentIds.length, 0)} student{plan.moves.reduce((n, m) => n + m.studentIds.length, 0) === 1 ? '' : 's'} will move up one year.
                 </p>
+                <ul style={{ margin: '0 0 12px', paddingLeft: 18, fontSize: 13 }}>
+                  {plan.moves.map((m) => (
+                    <li key={m.fromGroupId + m.toGroupId}>{m.fromName} to {m.toName}: {m.studentIds.length}</li>
+                  ))}
+                </ul>
+                {plan.held.length > 0 && (
+                  <>
+                    <p style={{ fontWeight: 700, marginBottom: 6 }}>
+                      {plan.held.length} student{plan.held.length === 1 ? '' : 's'} will NOT be moved and stay exactly as they are:
+                    </p>
+                    <ul style={{ margin: '0 0 12px', paddingLeft: 18, fontSize: 13 }}>
+                      {Object.entries(plan.held.reduce<Record<string, number>>((acc, h) => {
+                        const label = h.reason === 'no_matching_class'
+                          ? `In ${h.className}: there is no class ${h.wantedClass ?? 'a year up'} to move them to`
+                          : h.reason === 'several_classes'
+                            ? `In more than one class (${h.className})`
+                            : 'Not in a class that matches their grade'
+                        acc[label] = (acc[label] || 0) + 1
+                        return acc
+                      }, {})).map(([label, n]) => (
+                        <li key={label}>{label}: {n}</li>
+                      ))}
+                    </ul>
+                  </>
+                )}
+                <p style={{ fontSize: 13, marginBottom: 12 }}>This cannot be undone. Are you sure?</p>
                 <div style={{ display: 'flex', gap: 8 }}>
                   <button
                     onClick={handleYearPromotion}
-                    disabled={promoting}
+                    disabled={promoting || plan.moves.length === 0}
                     className="btn btn-primary"
                   >
                     {promoting ? 'Promoting…' : 'Yes, run promotion'}
                   </button>
                   <button
-                    onClick={() => setConfirmPromotion(false)}
+                    onClick={() => setPlan(null)}
+                    disabled={promoting}
                     className="btn btn-ghost"
                   >
                     Cancel

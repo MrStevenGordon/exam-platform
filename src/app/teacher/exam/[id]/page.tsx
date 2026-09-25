@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
+import { compareClassNames, CLASS_GRADES } from '@/lib/classNames'
 
 type DraftExam = {
   id: string
@@ -666,7 +667,7 @@ export default function ExamEditorPage() {
               )}
 
               {/* Grouped by year grade */}
-              {['Grade 7', 'Grade 8', 'Grade 9', 'Grade 10', 'Grade 11'].map((grade) => {
+              {CLASS_GRADES.map((grade) => {
                 const gradeClasses = classGroups.filter((cg) => cg.year_grade === grade)
                 if (gradeClasses.length === 0) return null
                 const allSelected = gradeClasses.every((cg) => selectedGroups.has(cg.id))

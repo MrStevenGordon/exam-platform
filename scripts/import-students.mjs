@@ -16,8 +16,15 @@ const SCHOOL_DOMAIN = 'mhs.smartassess'
 const DEFAULT_PASSWORD = 'Student.Test'
 
 // Grade level mapping from class_id prefix
+// 1-x .. 5-x are Forms 1-5 (Grades 7-11); 6B1.. and 6A1.. are Lower and Upper Sixth (Grade 12).
 const CLASS_TO_GRADE = {
   '1': 7, '2': 8, '3': 9, '4': 10, '5': 11
+}
+function gradeForClass(className) {
+  const n = String(className || '').trim().toUpperCase()
+  const form = /^([1-5])-\d+$/.exec(n)
+  if (form) return CLASS_TO_GRADE[form[1]]
+  return /^6[AB]\d+$/.test(n) ? 12 : null
 }
 
 // Read CSV file path from command line argument
@@ -70,8 +77,7 @@ async function importStudents() {
     const email = `${student.student_id}@${SCHOOL_DOMAIN}`
     const fullName = [student.first_name, student.middle_name, student.last_name].filter(Boolean).join(' ')
     const classGroupId = classGroupMap[student.class_id]
-    const gradePrefix = student.class_id.split('-')[0]
-    const gradeLevel = CLASS_TO_GRADE[gradePrefix] || null
+    const gradeLevel = gradeForClass(student.class_id)
 
     if (!classGroupId) {
       console.error(`  ✗ ${fullName} — class group '${student.class_id}' not found in database`)
