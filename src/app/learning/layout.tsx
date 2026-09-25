@@ -10,6 +10,7 @@ import { supabase } from '@/lib/supabase'
 import { getMfaRedirect } from '@/lib/mfaCheck'
 import { verifyPortalRole } from '@/lib/verifyPortalRole'
 import { getEnabledProducts, productHref } from '@/lib/products'
+import { isCoverageAvailable } from '@/lib/coverage'
 
 type Role = 'student' | 'teacher' | 'supervisor' | 'admin' | 'principal'
 const ROLES: Role[] = ['student', 'teacher', 'supervisor', 'admin', 'principal']
@@ -20,7 +21,8 @@ const AUTHOR_NAV = [
   { label: 'New lesson', icon: 'ti-square-plus', href: '/learning/lessons/new' },
   { label: 'Lesson plans', icon: 'ti-notebook', href: '/learning/lesson-plans' },
 ]
-const OVERVIEW_NAV = [{ label: 'Overview', icon: 'ti-school', href: '/learning' }]
+const OVERVIEW_NAV = [{ label: 'Coverage', icon: 'ti-chart-grid-dots', href: '/learning' }]
+const COVERAGE_ITEM = { label: 'Coverage', icon: 'ti-chart-grid-dots', href: '/learning/coverage' }
 
 // Smart Learning's own shell. Everyone signed in can enter (the lessons themselves are
 // protected by the database), but only when the school has switched Smart Learning on.
@@ -29,6 +31,8 @@ export default function LearningLayout({ children }: { children: React.ReactNode
   const pathname = usePathname()
   const [role, setRole] = useState<Role | null>(null)
   const [state, setState] = useState<'checking' | 'ready' | 'off'>('checking')
+  // Heads of department and school admins get a Coverage page once migration 063 is applied.
+  const [coverageOn, setCoverageOn] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -49,7 +53,9 @@ export default function LearningLayout({ children }: { children: React.ReactNode
       if (mfaRedirect) { router.push(`${mfaRedirect}?from=${encodeURIComponent(pathname)}`); return }
 
       const products = await getEnabledProducts()
+      const coverage = r === 'supervisor' || r === 'admin' ? await isCoverageAvailable() : false
       if (cancelled) return
+      setCoverageOn(coverage)
       setRole(r)
       setState(products.includes('learning') ? 'ready' : 'off')
     }
@@ -69,7 +75,7 @@ export default function LearningLayout({ children }: { children: React.ReactNode
     )
   }
 
-  const nav = role === 'student' ? STUDENT_NAV : role === 'principal' ? OVERVIEW_NAV : AUTHOR_NAV
+  const nav = role === 'student' ? STUDENT_NAV : role === 'principal' ? OVERVIEW_NAV : coverageOn ? [...AUTHOR_NAV, COVERAGE_ITEM] : AUTHOR_NAV
   return (
     <div className="portal-layout" style={{ minHeight: '100vh' }}>
       <InactivityLogout />
