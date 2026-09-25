@@ -32,8 +32,9 @@ export const HOD_NAV = [
 
 // HODs teach classes too, so once attendance is installed they get the same
 // Attendance page teachers use (register, Start class, roll call).
-export function hodNavItems(attendanceOn: boolean, topicsOn = false) {
-  let items = HOD_NAV
+export function hodNavItems(attendanceOn: boolean, topicsOn = false, learningOn = false) {
+  // Lesson plans live in Smart Learning once a school has it switched on.
+  let items = learningOn ? HOD_NAV.filter((n) => n.href !== '/teacher/lesson-plans') : HOD_NAV
   if (topicsOn) {
     // The shared topic list, next to the department's subjects.
     items = items.flatMap((n) => (n.href === '/supervisor/subjects' ? [n, { label: 'Topics', icon: 'ti-tags', href: '/supervisor/topics' }] : [n]))

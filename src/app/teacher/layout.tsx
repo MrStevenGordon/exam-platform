@@ -13,6 +13,7 @@ import { verifyPortalRoleDetailed } from '@/lib/verifyPortalRole'
 import { hodNavItems, HOD_TOUR_STEPS, isOpenToHods, resolveHodActivePathname } from '@/lib/hodNav'
 import { isAttendanceAvailable } from '@/lib/attendance'
 import { isTopicsAvailable } from '@/lib/topics'
+import { getEnabledProducts } from '@/lib/products'
 import { getSchoolFeatures } from '@/lib/schoolFeatures'
 
 // Only the highest-value stops, not every nav item: a tour that spotlights
@@ -87,6 +88,8 @@ export default function TeacherLayout({ children }: { children: React.ReactNode 
 
   useEffect(() => { isAttendanceAvailable().then(setAttendanceOn) }, [])
   useEffect(() => { isTopicsAvailable().then(setTopicsOn) }, [])
+  const [learningOn, setLearningOn] = useState(false)
+  useEffect(() => { getEnabledProducts().then((p) => setLearningOn(p.includes('learning'))) }, [])
 
   useEffect(() => {
     async function checkAccess() {
@@ -138,7 +141,7 @@ export default function TeacherLayout({ children }: { children: React.ReactNode 
 
       const nav = [...BASE_NAV]
       if (tlData && tlData.length > 0) nav.splice(4, 0, ...TEAM_LEAD_NAV)
-      if (features.lessonPlanLibraryEnabled) nav.splice(nav.indexOf(BASE_NAV[7]) + 1, 0, ...LESSON_PLANS_NAV)
+      if (features.lessonPlanLibraryEnabled && !features.smartLearningEnabled) nav.splice(nav.indexOf(BASE_NAV[7]) + 1, 0, ...LESSON_PLANS_NAV)
       if (stlData && stlData.length > 0) nav.splice(nav.length - 1, 0, ...SENIOR_TL_NAV)
       // Only once the attendance tables exist (see isAttendanceAvailable).
       if (attendanceOn) nav.splice(nav.indexOf(BASE_NAV[6]) + 1, 0, ...ATTENDANCE_NAV)
@@ -157,7 +160,7 @@ export default function TeacherLayout({ children }: { children: React.ReactNode 
       <PresenceHeartbeat />
         <PresenceHeartbeat />
         <main className="portal-content"><PageTransition>{children}</PageTransition></main>
-        <Sidebar navItems={hodNavItems(attendanceOn, topicsOn)} portalLabel="HOD Portal" resolveActivePathname={resolveHodActivePathname} />
+        <Sidebar navItems={hodNavItems(attendanceOn, topicsOn, learningOn)} portalLabel="HOD Portal" resolveActivePathname={resolveHodActivePathname} />
         <OnboardingTour tourKey="supervisor" steps={HOD_TOUR_STEPS} />
       </div>
     )
