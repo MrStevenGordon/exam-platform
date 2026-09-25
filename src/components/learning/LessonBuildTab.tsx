@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import TopicPicker from '@/components/TopicPicker'
+import AiStudentDraft from '@/components/learning/AiStudentDraft'
 import {
   STEP_INFO, STEP_KEYS, allReady, defaultResourceTitle, isWebUrl, readyCount, resourceKindFor,
   type LessonRow, type LessonStep,
@@ -16,6 +17,9 @@ export default function LessonBuildTab({ lesson, onSaved, onGoAssign }: { lesson
   const [title, setTitle] = useState(lesson.title)
   const [keyTerms, setKeyTerms] = useState(lesson.key_terms)
   const [topicId, setTopicId] = useState<string | null>(lesson.topic_id)
+  const [topicName, setTopicName] = useState<string | undefined>(undefined)
+  // The exact text the AI drafted for each step, so a step that is still the untouched draft can be labelled.
+  const [aiText, setAiText] = useState<Record<number, string>>({})
   const [steps, setSteps] = useState<LessonStep[]>(lesson.steps.map((s) => ({ ...s, resources: s.resources.map((r) => ({ ...r })) })))
   const [open, setOpen] = useState<number>(0)
   const [urlDraft, setUrlDraft] = useState<Record<number, { url: string; title: string }>>({})
@@ -98,10 +102,17 @@ export default function LessonBuildTab({ lesson, onSaved, onGoAssign }: { lesson
       <div className="card" style={{ marginBottom: 12 }}>
         <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)' }} htmlFor="ltitle">Lesson title</label>
         <input id="ltitle" value={title} onChange={(e) => { setTitle(e.target.value); setNotice('') }} style={{ width: '100%', margin: '4px 0 12px' }} />
-        <TopicPicker subject={lesson.subject} grade={lesson.grade} value={topicId} onChange={(t) => { setTopicId(t?.id ?? null); setNotice('') }} label="Curriculum topic (optional)" />
+        <TopicPicker subject={lesson.subject} grade={lesson.grade} value={topicId} onChange={(t) => { setTopicId(t?.id ?? null); setTopicName(t?.name); setNotice('') }} label="Curriculum topic (optional)" />
         <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)', marginTop: 12 }} htmlFor="lterms">Key formulae and vocabulary (one per line, shown beside the lesson)</label>
         <textarea id="lterms" value={keyTerms} onChange={(e) => { setKeyTerms(e.target.value); setNotice('') }} rows={4} placeholder={'I = P × R × T\nP = Principal: the starting amount'} style={{ width: '100%', marginTop: 4 }} />
       </div>
+
+      <AiStudentDraft
+        title={title} subject={lesson.subject} grade={lesson.grade} topicName={topicName} keyTerms={keyTerms} steps={steps}
+        // Using a draft replaces the step's text and always takes its approval away.
+        onUseStep={(i, text) => { update(i, { text, approved: false }); setAiText((a) => ({ ...a, [i]: text })); setOpen(i) }}
+        onUseKeyTerms={(text) => { setKeyTerms(text); setNotice('') }}
+      />
 
       {steps.map((s, i) => {
         const info = STEP_INFO[STEP_KEYS[i]]
@@ -111,7 +122,10 @@ export default function LessonBuildTab({ lesson, onSaved, onGoAssign }: { lesson
           <div key={s.key} className="card" style={{ marginBottom: 8 }}>
             <button type="button" onClick={() => setOpen(isOpen ? -1 : i)} aria-expanded={isOpen} style={{ all: 'unset', boxSizing: 'border-box', width: '100%', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
               <span style={{ fontSize: 14, fontWeight: 700 }}><i className={`ti ti-chevron-${isOpen ? 'down' : 'right'}`} aria-hidden="true" /> <i className={`ti ${info.icon}`} aria-hidden="true" /> {info.label}</span>
-              <span className={`badge ${ready ? 'badge-success' : s.text.trim() ? 'badge-warning' : 'badge-default'}`}>{ready ? 'Approved' : s.text.trim() ? 'Needs your approval' : 'Empty'}</span>
+              <span style={{ display: 'inline-flex', gap: 6, alignItems: 'center' }}>
+                {!s.approved && aiText[i] !== undefined && s.text === aiText[i] && <span className="badge badge-default">AI draft</span>}
+                <span className={`badge ${ready ? 'badge-success' : s.text.trim() ? 'badge-warning' : 'badge-default'}`}>{ready ? 'Approved' : s.text.trim() ? 'Needs your approval' : 'Empty'}</span>
+              </span>
             </button>
             {isOpen && (
               <div style={{ marginTop: 10 }}>
