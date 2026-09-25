@@ -1,4 +1,6 @@
 -- Removes Smart Learning lessons, assignments and student progress (all of it is deleted).
+-- If 060 (check questions and evidence) is applied, roll that back FIRST: the database refuses to
+-- drop the lessons table while check questions still depend on it.
 begin;
 drop function if exists public.learning_lesson_stats();
 drop function if exists public.learning_results(uuid);
