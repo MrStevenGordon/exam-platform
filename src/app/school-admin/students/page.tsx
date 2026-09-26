@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import { compareClassNames } from '@/lib/classNames'
+import { compareClassNames, gradeLevelFromClassName } from '@/lib/classNames'
 import NotifyStudentButton from '@/components/NotifyStudentButton'
 import AccommodationsToggle from '@/components/AccommodationsToggle'
 import CsvFormatGuide from '@/components/CsvFormatGuide'
@@ -80,6 +80,20 @@ export default function StudentsPage() {
   const [emailError, setEmailError] = useState('')
 
   useEffect(() => { loadData() }, [])
+
+  // Arriving from a link such as /school-admin/students?class=3-1 (the class chips in Settings): show that class,
+  // opened, with its grade filter set. Read once from the address; the filters work as usual afterwards.
+  useEffect(() => {
+    const wanted = new URLSearchParams(window.location.search).get('class')
+    if (!wanted) return
+    const grade = gradeLevelFromClassName(wanted)
+    setFilterClass(wanted)
+    if (grade) {
+      setFilterGrade(String(grade))
+      setExpandedGrades(new Set([`grade-${grade}`]))
+      setExpandedClasses(new Set([`class-${grade}-${wanted}`]))
+    }
+  }, [])
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
