@@ -1,5 +1,6 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import { isPlayEnabled, isPlayPath } from '@/lib/playEnabled'
 
 // The marketing domain goes live before the app is ready for public traffic —
 // visitors there see a splash page while the existing *.vercel.app URLs
@@ -58,6 +59,13 @@ export async function proxy(request: NextRequest) {
 
   if (host === PITCH_HOST && request.nextUrl.pathname === '/') {
     return NextResponse.rewrite(new URL('/pitch/schools.html', request.url))
+  }
+
+  // Smart Play is reachable only for a school that has switched it on. Anything else is "not found",
+  // as if it did not exist. See src/lib/playEnabled.ts.
+  if (isPlayPath(request.nextUrl.pathname) && !(await isPlayEnabled())) {
+    if (request.nextUrl.pathname.startsWith('/api/')) return NextResponse.json({ error: 'Not found.' }, { status: 404 })
+    return NextResponse.rewrite(new URL('/__play-not-available', request.url), { status: 404 })
   }
 
   const protectedPaths = ['/dashboard']

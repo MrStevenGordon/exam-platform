@@ -1,0 +1,44 @@
+import { NextResponse } from 'next/server'
+import { getPlayPool } from '@/lib/playDb'
+import { getPlayAccountId } from '@/lib/playAuth'
+
+export async function GET() {
+  const accountId = await getPlayAccountId()
+  if (!accountId) return NextResponse.json({ error: 'Not signed in.' }, { status: 401 })
+
+  try {
+    const pool = getPlayPool()
+    const [topics, mastery] = await Promise.all([
+      pool.query(`select subject, topic, count(*)::int as question_count from play_questions where status = 'approved' group by 1, 2 order by 1, 2`),
+      pool.query(
+        `select q.subject, q.topic,
+                coalesce(sum(a.points_awarded), 0)::float as earned,
+                sum(q.points)::float as possible,
+                count(*)::int as attempts
+           from play_practice_answers a
+           join play_practice_sessions s on s.id = a.session_id
+           join play_questions q on q.id = a.question_id
+          where s.account_id = $1 and a.answered_at is not null
+          group by 1, 2`,
+        [accountId]
+      ),
+    ])
+
+    const key = (s: string, t: string) => `${s}|${t}`
+    const byKey = new Map(mastery.rows.map((m) => [key(m.subject, m.topic), m]))
+    const result = topics.rows.map((t) => {
+      const m = byKey.get(key(t.subject, t.topic))
+      return {
+        subject: t.subject,
+        topic: t.topic,
+        questionCount: t.question_count,
+        attempts: m?.attempts ?? 0,
+        masteryPct: m && m.possible > 0 ? Math.round((m.earned / m.possible) * 100) : null,
+      }
+    })
+    return NextResponse.json({ topics: result })
+  } catch (err) {
+    console.error('Play topics failed', err)
+    return NextResponse.json({ error: 'Something went wrong loading topics.' }, { status: 500 })
+  }
+}
