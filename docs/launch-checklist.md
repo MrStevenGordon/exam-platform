@@ -27,7 +27,8 @@ Check: `node scripts/launch-verify.mjs --school manchester` shows PASS for all e
 
 ## Stage 3: Decisions to make before the reset
 
-1. **Bank questions (finding A in the Play plan).** Students can currently read bank questions, answers included, on the live database. Decide with your HODs whether bank questions are open practice material. If not, ask me to remove that student policy.
+0. **Exam integrity (LAUNCH BLOCKER, see `docs/exam-integrity-findings.md`).** A student can currently read the correct answers of their own published exam and write their own marks and score, using only their own login. Approve the three-stage fix before launch.
+1. **Bank questions.** Covered by the same document (finding E5). Decide with your HODs whether bank questions are open practice material.
 2. **Which accounts survive the reset.** The platform owner (system admin) always does. Decide whether Manchester's real principal, HODs and admins are created fresh after the reset (cleanest) or kept now with `--keep-email`.
 3. **Topic list.** Have HODs review `scripts/data/mathematics-topics-draft.csv`, then import it on `/supervisor/topics` (after the reset, so it stays).
 4. **AI credit.** Top up the AI account, or the AI student-draft and AI tutor will show "unavailable".
