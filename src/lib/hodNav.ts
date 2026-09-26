@@ -22,6 +22,7 @@ export const HOD_NAV = [
   { label: 'Question Bank', icon: 'ti-database', href: '/teacher/bank' },
   { label: 'Final Exams', icon: 'ti-file-check', href: '/supervisor/final-exams' },
   { label: 'Classrooms', icon: 'ti-users', href: '/supervisor/classrooms' },
+  { label: 'My Teachers', icon: 'ti-user-check', href: '/supervisor/teachers' },
   { label: 'Subjects', icon: 'ti-books', href: '/supervisor/subjects' },
   { label: 'Timetable', icon: 'ti-calendar', href: '/supervisor/timetable' },
   { label: 'Report Cards', icon: 'ti-report', href: '/supervisor/report-cards' },
@@ -65,5 +66,6 @@ export function resolveHodActivePathname(pathname: string, searchParams: URLSear
   // Detail pages that belong to a merged section light up that section.
   if (pathname.startsWith('/supervisor/exam/')) return '/supervisor/final-exams'
   if (pathname.startsWith('/supervisor/student/')) return '/supervisor/classrooms'
+  if (pathname.startsWith('/supervisor/teachers/')) return '/supervisor/teachers'
   return pathname
 }

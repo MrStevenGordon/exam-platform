@@ -7,6 +7,7 @@ import { jamaicaDate, shiftDate, attendanceError } from '@/lib/attendance'
 import { onTimePercent, type PunctualityRow } from '@/components/principal/PunctualityView'
 import { usePresence } from '@/lib/presence'
 import PresenceDot from '@/components/PresenceDot'
+import Link from 'next/link'
 
 type Person = { id: string; full_name: string; role: string; department: string | null; is_active: boolean | null }
 
@@ -89,7 +90,7 @@ export default function PrincipalStaffPage() {
             <div key={p.id} className="card" style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
               <div>
                 <div style={{ fontWeight: 700, fontSize: 14 }}>
-                  <PresenceDot info={presence[p.id]} showLabel /> {p.full_name}{' '}
+                  <PresenceDot info={presence[p.id]} showLabel /> <Link href={`/principal/staff/${p.id}`} style={{ color: 'inherit' }}>{p.full_name}</Link>{' '}
                   <span className={`badge ${p.role === 'supervisor' ? 'badge-success' : 'badge-default'}`}>{p.role === 'supervisor' ? 'HOD' : 'Teacher'}</span>
                   {p.is_active === false && <span className="badge badge-danger" style={{ marginLeft: 6 }}>Deactivated</span>}
                 </div>
@@ -97,6 +98,7 @@ export default function PrincipalStaffPage() {
                   {p.department || 'No department'}{(subjects[p.id] || []).length ? ` · ${(subjects[p.id] || []).join(', ')}` : ''}
                 </div>
                 {(classes[p.id] || []).length > 0 && <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>Classes: {(classes[p.id] || []).sort().join(', ')}</div>}
+                <div style={{ marginTop: 6 }}><Link href={`/principal/staff/${p.id}`} className="btn btn-ghost" style={{ fontSize: 12, padding: '4px 10px' }}>View their work →</Link></div>
               </div>
               <div style={{ textAlign: 'right', alignSelf: 'center', fontSize: 12, color: 'var(--text-secondary)' }}>
                 {pct === null ? <span style={{ color: 'var(--text-muted)' }}>No attendance data yet</span> : (

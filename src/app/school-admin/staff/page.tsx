@@ -491,6 +491,9 @@ export default function StaffPage() {
                       </div>
                     </Link>
                     <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                      {(s.role === 'teacher' || s.role === 'supervisor') && (
+                        <Link href={`/school-admin/teachers/${s.id}`} className="btn btn-ghost" style={{ fontSize: 11 }}>View work</Link>
+                      )}
                       <button onClick={() => handleResetPassword(s.id, s.full_name, false)} className="btn btn-ghost" style={{ fontSize: 11 }}>
                         Reset password
                       </button>

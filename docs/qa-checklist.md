@@ -136,6 +136,18 @@ Pages: Overview, Attendance, Alerts, Timetable, Staff, Students, Messages, My Pr
 - [ ] HOD sees only their department's subjects
 - [ ] **Tutor flags** (principal and admin): unread first, wellbeing before other, overdue in red, read a transcript, mark read, menu badge updates; teachers cannot open it
 
+## 7c. Teacher view for leadership (needs update 069)
+
+- [ ] **School admin:** on Staff, a "View work" button appears on each teacher and HOD row. It opens a read-only page with Overview, Assessments & homework, and Marking tabs
+- [ ] **Principal / VP:** on Staff, each name and a "View their work" button open the same page
+- [ ] **HOD:** the menu has **My Teachers**, listing only teachers and HODs in their own department; opening one shows the same page
+- [ ] A HOD **cannot** open another department's teacher (typing the address gives "You do not have access to this teacher")
+- [ ] The numbers match reality for a teacher you know: live assessments, submitted vs expected, awaiting marking, oldest wait
+- [ ] Unpublished drafts appear only as a count ("private, not shown"), never by title
+- [ ] Nothing on the page can be edited, and there is no "sign in as this teacher"
+
+---
+
 ## 8. Owner console (you)
 
 - [ ] **School requests** and **Org requests**: approve and provision
