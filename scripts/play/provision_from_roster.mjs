@@ -1,3 +1,8 @@
+// RETIRED for real use. Smart Play now signs students and teachers in through the exam login
+// (/api/play/sso), which creates each account the first time they open Play, with no game password and
+// with no direct connection from Play to the exam database. This script remains only to seed a LOCAL test
+// database (it refuses anything else) and must be run with --legacy.
+//
 // One-way roster provisioning: copies student ID#, name and grade from the
 // exam database (READ ONLY) into game accounts in the Play database.
 // Nothing is ever written to the exam database. Re-running is safe: existing
@@ -13,6 +18,10 @@ import pg from 'pg'
 dotenv.config({ path: '.env.local', quiet: true })
 
 const args = process.argv.slice(2)
+if (!args.includes('--legacy')) {
+  console.error('This script is retired: Smart Play accounts are now created when people sign in through the exam login.\nFor a local test database only, run it again with --legacy.')
+  process.exit(1)
+}
 const pwIdx = args.indexOf('--password')
 const password = pwIdx >= 0 ? args[pwIdx + 1] : 'smart.play'
 const resetPasswords = args.includes('--reset-passwords')
@@ -21,8 +30,8 @@ const teacherEmails = tIdx >= 0 ? args[tIdx + 1].split(',').map((e) => e.trim().
 const school = process.env.NEXT_PUBLIC_SCHOOL_NAME || null
 
 const playUrl = process.env.PLAY_DATABASE_URL || 'postgres://play@127.0.0.1:54329/play'
-if (!/127\.0\.0\.1|localhost/.test(playUrl) && !args.includes('--allow-remote')) {
-  console.error('Refusing to write to a non-local Play database without --allow-remote.')
+if (!/127\.0\.0\.1|localhost/.test(playUrl)) {
+  console.error('Refusing to write to a non-local Play database.')
   process.exit(1)
 }
 

@@ -5,6 +5,10 @@ import { PLAY_COOKIE, createPlayToken } from '@/lib/playSession'
 const BAD_LOGIN = 'ID# or game password is incorrect.'
 
 export async function POST(request: Request) {
+  // Game passwords are retired: Smart Play signs in through the exam login (/api/play/sso). This route only
+  // exists for local development, behind PLAY_GAME_PASSWORD_LOGIN=1.
+  if (process.env.PLAY_GAME_PASSWORD_LOGIN !== '1') return NextResponse.json({ error: 'Not found.' }, { status: 404 })
+
   let body: any
   try {
     body = await request.json()

@@ -3,6 +3,7 @@ import { getPlayPool } from '@/lib/playDb'
 import { getPlayAccountId } from '@/lib/playAuth'
 import { leastFullTeamId } from '@/lib/playBoard'
 import { leastFullTugTeamId } from '@/lib/playTug'
+import { invalidateLiveState } from '@/lib/playLive'
 
 const MAX_BAD_CODES = 10
 
@@ -118,6 +119,7 @@ export async function POST(request: Request) {
     }
 
     await pool.query(`insert into ${playersTable} (game_id, account_id) values ($1, $2) on conflict do nothing`, [game.id, accountId])
+    invalidateLiveState(code)
     return NextResponse.json({ code, kind })
   } catch (err) {
     console.error('Play live join failed', err)

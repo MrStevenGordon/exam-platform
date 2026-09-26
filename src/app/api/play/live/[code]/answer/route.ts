@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { getPlayPool } from '@/lib/playDb'
 import { getPlayAccountId } from '@/lib/playAuth'
 import { gradeAnswer } from '@/lib/grading'
-import { GRACE_MS, findGameByCode, pointsFor } from '@/lib/playLive'
+import { GRACE_MS, findGameByCode, invalidateLiveState, pointsFor } from '@/lib/playLive'
 
 export async function POST(request: Request, { params }: { params: Promise<{ code: string }> }) {
   const accountId = await getPlayAccountId()
@@ -56,6 +56,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ cod
       [game.id, accountId, question.id, answer, correct, points, game.elapsed_ms ?? 0]
     )
     if (inserted.rowCount === 0) return NextResponse.json({ error: 'You already answered this question.' }, { status: 409 })
+
+    invalidateLiveState(code)
 
     // Correctness is intentionally not returned: it is revealed for everyone
     // together when the question ends.

@@ -3,5 +3,5 @@ import { getPlaySession } from '@/lib/playSession'
 
 export default async function PlayIndex() {
   const session = await getPlaySession()
-  redirect(session ? '/play/home' : '/play/login')
+  redirect(session ? '/play/home' : '/play/sso')
 }

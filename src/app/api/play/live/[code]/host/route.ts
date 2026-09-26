@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getPlayPool } from '@/lib/playDb'
 import { getPlayTeacherId } from '@/lib/playAuth'
-import { effectivePhase, findGameByCode } from '@/lib/playLive'
+import { effectivePhase, findGameByCode, invalidateLiveState } from '@/lib/playLive'
 
 const ACTIONS = ['start', 'skip', 'next', 'end']
 
@@ -60,6 +60,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ cod
       await client.query(`update play_live_games set status = 'ended', ended_at = now() where id = $1`, [game.id])
     }
     await client.query('commit')
+    invalidateLiveState(code)
     return NextResponse.json({ ok: true })
   } catch (err) {
     await client.query('rollback').catch(() => {})

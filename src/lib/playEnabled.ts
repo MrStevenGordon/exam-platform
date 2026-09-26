@@ -33,7 +33,9 @@ export function resetPlayEnabledCache() {
   cached = null
 }
 
-// Play's own pages and APIs. Nothing else in the app is affected by the switch.
+// Play's own pages and APIs. Nothing else in the app is affected by the switch. The one exception is the
+// route that deletes a removed student's Play data, which must keep working when the switch is off.
 export function isPlayPath(pathname: string): boolean {
+  if (pathname === '/api/play/remove-account') return false
   return pathname === '/play' || pathname.startsWith('/play/') || pathname === '/api/play' || pathname.startsWith('/api/play/')
 }

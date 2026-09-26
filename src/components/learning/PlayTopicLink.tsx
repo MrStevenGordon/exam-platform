@@ -23,7 +23,7 @@ export default function PlayTopicLink({ topic }: { topic: { name: string; subjec
       <div style={{ minWidth: 220, flex: 1 }}>
         <p style={{ margin: '0 0 2px', fontSize: 15, fontWeight: 700 }}>Practise this topic as a game</p>
         <p style={{ margin: 0, fontSize: 13, color: 'var(--text-secondary)' }}>
-          Play a round of {topic.name} in {PRODUCTS.play.label}. It has its own sign-in, so you will be asked for your game password.
+          Play a round of {topic.name} in {PRODUCTS.play.label}. You are signed in automatically.
         </p>
       </div>
       <a href={playTopicHref(topic)} className="btn btn-secondary">

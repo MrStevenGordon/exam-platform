@@ -143,6 +143,12 @@ export default function Dashboard() {
     await supabase.from('enrollments').delete().eq('student_id', studentId)
     await supabase.from('profiles').delete().eq('id', studentId)
 
+    // Their Smart Play data goes too. Best effort: where Smart Play is not set up this does nothing.
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session) await fetch('/api/play/remove-account', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` }, body: JSON.stringify({ userIds: [studentId] }) })
+    } catch { /* the exam-side deletion above is what matters */ }
+
     setGraduatingStudents((prev) => prev.filter((s) => s.id !== studentId))
     setDeletingIds((prev) => { const next = new Set(prev); next.delete(studentId); return next })
   }

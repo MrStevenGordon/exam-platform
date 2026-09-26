@@ -1,8 +1,8 @@
 import { ASSESS_HOME, getEnabledProducts, PRODUCTS, type ProductKey } from '@/lib/products'
 
-// Products someone can choose to sign in to. Smart Play signs in through its own
-// database, so it joins this list when that hand-off exists.
-export const LOGIN_PRODUCTS: ProductKey[] = ['assess', 'learning']
+// Products someone can choose to sign in to. Smart Play is entered through the exam sign-in
+// (/play/sso), so it needs no second password.
+export const LOGIN_PRODUCTS: ProductKey[] = ['assess', 'learning', 'play']
 
 const KEY = 'login_product'
 
@@ -32,7 +32,9 @@ export async function landingFor(role: string | null | undefined): Promise<strin
   const wanted = rememberedLoginProduct()
   if (wanted === 'assess' || !role) return assess
   const enabled = await getEnabledProducts()
-  return loginProductOptions(enabled).includes(wanted) ? '/learning' : assess
+  if (!loginProductOptions(enabled).includes(wanted)) return assess
+  if (wanted === 'play') return role === 'student' || role === 'teacher' ? '/play' : assess  // games are for students and teachers
+  return '/learning'
 }
 
 export { PRODUCTS }

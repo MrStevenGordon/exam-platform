@@ -2,6 +2,41 @@
 
 Written 26 September 2026. Based on reading the Play branch (`gamification-wip`), the live exam database (read-only) and the current `main`.
 
+## Build status (25 to 26 September 2026): phases 1 to 5 built and tested locally, NOT pushed, NOT applied anywhere
+
+Everything is on the local branch `feature/play-golive` (the Play branch merged into the current work). Nothing has been pushed, nothing applied to the live exam database, no Play database hosted yet.
+
+| Phase | State | Where |
+|---|---|---|
+| 1. Bank-answer exposure (finding A) | **Migration written and tested, waiting for your decision (decision 1).** | `scripts/migrations/068_bank_questions_closed_to_students.sql` and its rollback. Restoring it puts back migrations 047 to 049 byte for byte (checked). |
+| 2. Hosted Play database | **Hardening and check built. Waiting for you to create the project** (decision 2). | `scripts/play/012_hosted_hardening.sql` (+ rollback), `scripts/play/check_hosted.mjs`, connection pool sized for serverless (3 per instance, pooler address, SSL). Proven on a stand-in database that has Supabase-style public roles: 261 problems before, none after; the public roles are refused on every table, view and function. |
+| 3. Merge into the main line, switched off | **Done.** | Every `/play` page and `/api/play` route answers "not found" unless the school's `smart_play_enabled` switch is on; checked on the server in `src/proxy.ts`, fails closed. Exam-side Topic Mastery page and menu item left out (decision 4). On the dev server with the switch off, `/play`, `/play/login`, `/api/play/topics` and `/api/play/login` all return 404. |
+| 4. Sign in through the exam login (decision 3) | **Built and tested.** | `POST /api/play/sso` and `/play/sso`; `scripts/play/011_sso.sql` (+ rollback); Play joins the login picker for students and teachers; the game-password login is off unless `PLAY_GAME_PASSWORD_LOGIN=1` (local development only); deleting a student on the exam side deletes their Play data too; the provisioning script is retired. |
+| 5. Load test and reduction | **Done for the live quiz; see numbers below.** | `scripts/play/load_test.mjs`. |
+
+### What the sign-in does (and does not) do
+- The browser sends its exam access token; the server checks it and reads only the person's ID#, name, grade, role and classes. It never reads exam results, emails or credentials into Play (a teacher's email prefix becomes their Play username).
+- Students and teachers only. HODs, admins and principals are refused.
+- An account is created the first time someone opens Play and updated every time after (name, grade, classes), so class leaderboards fill as classes start playing.
+- A deactivated exam account is refused, and its Play account is switched off at that attempt. An already-open Play session ends within 12 hours at the latest, and an account check is remembered for up to 30 seconds.
+- Accounts made earlier by the old provisioning script are adopted on first sign-in (matched by ID#) and lose their shared game password.
+- No Play account has a password at all. Tested: 35 checks of the sign-in rules, including refusals, duplicate IDs, class changes and removal.
+
+### Load numbers (live quiz), measured on a test copy with 15 ms added to every database call to stand in for a hosted database
+| Scenario | Before (poll every 1 s, one read per viewer) | After (shared read, poll every 2 s) |
+|---|---|---|
+| Database calls per state request | 7.6 (8.6 with the account check) | **0.4** |
+| 1 class of 35 | 29 requests/s, 223 database calls/s | 16 requests/s, **7 calls/s** |
+| 3 classes at once, pool of 3 connections | **collapsed**: typical request 3.6 seconds, 100+ queued | 47 requests/s, 19 calls/s, typical request under 1 ms, worst 57 ms |
+| 3 classes, pool of 10 | typical 384 ms, worst 651 ms, 45 queued | typical under 1 ms, worst 54 ms, none queued |
+| 6 classes (210 players), pool of 5 | not run (the before-numbers already failed at 3) | 95 requests/s, 39 calls/s, worst 53 ms |
+
+What changed: the parts of a game's state that are the same for everyone (players and scores, the question, who has answered) are read once and shared for half a second; what is specific to a viewer is worked out in memory. Answering, joining and the host's buttons clear the shared copy. Browsers ask every 2 seconds instead of every second, and once more just after a question's time is due, so the answer still appears promptly. The account check is remembered for 30 seconds.
+A comparison test ran the old and new code over 195 viewer-and-phase combinations (lobby, running, everyone answered, timer expired, reveal, next question, ended, non-members, a second teacher, ties in score and name) and found **no difference** in what any viewer is shown, including that nobody sees a running question's points or the correct answer early.
+These numbers are from a local copy with an artificial delay; the real hosted database still needs the same run (`node scripts/play/load_test.mjs --database-url ... --allow-remote`) during the pilot.
+
+**Not yet reduced:** Jeopardy boards (about 7 database calls per poll, every second) and Tug of War (about 5, every 0.8 seconds, because it animates). They keep working as before and are fine for one class at a time. Before several classes play them at once they need the same treatment. For the pilot, run Live Quiz and Topic Mastery freely, and boards or Tug for one class at a time.
+
 ## 1. Where Play is today
 
 | | |
