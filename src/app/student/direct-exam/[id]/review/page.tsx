@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
+import { loadReview } from '@/lib/examApi'
 
 type ReviewItem = {
   id: string
@@ -63,6 +64,23 @@ export default function ReviewDirectExamPage() {
         setSession(sessionData)
 
         if (!sessionData.results_released) return
+
+        // Preferred: the database returns the answers only once results are released (migration 066).
+        // Databases without it fall through to the original query below.
+        const released = await loadReview('direct', examId)
+        if (released) {
+          setItems(released.map((r) => ({
+            id: r.response_id || r.question_id,
+            answer: r.answer || '',
+            points_awarded: r.points_awarded ?? null,
+            question_text: r.question_text,
+            question_type: r.question_type,
+            correct_answer: r.correct_answer,
+            options: r.options,
+            points: r.points,
+          })))
+          return
+        }
 
         const { data: questionData, error: questionError } = await supabase
           .from('questions')

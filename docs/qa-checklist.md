@@ -168,6 +168,11 @@ Pages: Overview, Attendance, Alerts, Timetable, Staff, Students, Messages, My Pr
 - [ ] A HOD cannot see another department's classes, subjects or reports
 - [ ] A student cannot see another student's results, report card or tutor chat
 - [ ] A student cannot see exam answers before results are released, nor bank-question answers (see the launch checklist decision)
+- [ ] **Exam cannot be cheated (after update 067):** sitting a test exam as a student, open the browser's developer panel (Network tab) and confirm the questions you receive contain no correct answers; the submit request sends only your answers, not marks
+- [ ] Finish that test exam as a student; the teacher sees the same total the exam page shows, and the multiple-choice and marking-point questions are already marked
+- [ ] A student cannot start an exam that is not open to their class, twice, or after it has closed; and cannot read the questions of an exam they have not started
+- [ ] Submit a test exam after its time is up (leave it open past the limit, or switch off Wi-Fi until after it, then reconnect): it is still marked, and the teacher sees it flagged as a late submission
+- [ ] After results are released, the review page shows the correct answers; before release it shows nothing
 - [ ] After the reset, **no demo account** still signs in
 
 ---

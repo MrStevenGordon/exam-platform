@@ -162,6 +162,15 @@ export default function GroupProjectPage() {
 
     const contributionSignals = capture.summarize('contribution', contribution.trim())
 
+    // Silent, teacher-only signal — no warning shown to the student, submission never blocked. Logged before the
+    // session is completed: once it is, only staff can add to its violation log.
+    if (contributionSignals.flags.length > 0) {
+      await supabase.rpc('append_violation_log', {
+        session_id: sessionId,
+        entry: { type: 'integrity', reason: contributionSignals.flags.join(', '), timestamp: new Date().toISOString() },
+      })
+    }
+
     const { error: sessionError } = await supabase
       .from('exam_sessions')
       .update({
@@ -172,14 +181,6 @@ export default function GroupProjectPage() {
       .eq('id', sessionId)
 
     if (sessionError) { setErrorMsg(sessionError.message); setSubmitting(false); return }
-
-    // Silent, teacher-only signal — no warning shown to the student, submission never blocked.
-    if (contributionSignals.flags.length > 0) {
-      await supabase.rpc('append_violation_log', {
-        session_id: sessionId,
-        entry: { type: 'integrity', reason: contributionSignals.flags.join(', '), timestamp: new Date().toISOString() },
-      })
-    }
 
     for (const member of members) {
       const rating = ratings[member.id]

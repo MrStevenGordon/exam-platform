@@ -45,3 +45,46 @@ The safe order is expand, then contract: new server-side functions first, the ap
 1. Approval to build this now, ahead of the Play work. It is the launch blocker.
 2. The go-ahead to change the six student pages and add these database changes (nothing is applied to the live database without you running it).
 3. A time when nobody is mid-exam for the rollout (a short window), or confirmation that no real exams are running yet.
+
+---
+
+## Status: built and tested (not applied to the live database, not pushed)
+
+Approved on 25 September 2026 ("build the exam integrity fix now"). Two database updates and an app update, each with a rollback.
+
+| Piece | What it does | Safe on its own? |
+|---|---|---|
+| **066** (`scripts/migrations/066_exam_integrity_functions.sql`) | Adds functions only. The student pages use them to load questions **without** answers or marking guide, to submit answers so that the **database marks the exam**, and to show the review (answers) **only after results are released**. Also makes `append_violation_log` refuse a student writing to someone else's session, or to their own after submitting. | Yes. Nothing existing changes for anyone. |
+| **The app update** (`src/lib/examApi.ts` and the student take, start, review and group pages) | Calls the new functions. If the database does not have 066 yet, each call falls back to the old behaviour, so it makes no difference whether the app or 066 goes first. | Yes, until 067. |
+| **067** (`scripts/migrations/067_exam_integrity_lock.sql`) | Closes the doors: a student can no longer read `questions` for an exam they sit; can only start a session for an exam open to them, with the exam's own time limit and a database-set start time; can save answers while the session is open but never write marks, scores, the completed status, the release flag or anything on someone else's session; cannot delete sessions or answers; practice-mock questions open only after results are released. | **Only after 066 and the new app are live and one exam has been checked end to end. Not while an exam is being sat.** |
+
+### Rollout order (you run the SQL)
+1. Apply **066** (SQL editor). Nothing changes yet.
+2. I push the app update once you say so; Vercel deploys it.
+3. Sit one final exam and one direct exam as a test student and check the marks and review. (`launch-verify` shows 066 and 067 as PASS or FAIL.)
+4. Apply **067** at a quiet moment. Nobody mid-exam.
+5. Repeat the same test exam. Then try to cheat it (the QA checklist, section 11, lists the attempts).
+
+Rollback is 067 first, then 066 (`scripts/migrations/rollback/`). A rollback restores exactly the previous behaviour.
+
+### How it was tested
+- **Marking equivalence:** the browser's grading code and the database's marking function were run over 24,000 generated answer cases (every question type, marking points, whitespace, capitals, non-breaking spaces): **0 disagreements**. Deliberately breaking the database function made the test fail, so the test does detect a difference.
+- **066 behaviour** (sandbox copy of the live schema): 60 checks as student, other student, teacher and anonymous, on final and direct exams (question order comes from the exam's links; no answer key column exists in what a student receives; server marking exactly as designed; a payload with made-up scores is ignored; wrong shapes and huge payloads are refused; homework has no time limit; two submits at the same instant give one result; review is empty until release; ownership of the violation log; rollback and re-apply).
+- **067 behaviour:** 110 checks, including the original attacks reproduced first (read the answers, start a session with any time limit, complete an exam with a score of 100 and release your own results) and then refused, every field a student must not change, group projects, teacher and server writes unaffected, the practice mock, and rollback and re-apply.
+- **The app module** against a recording fake of the database client (with and without 066; retries; second tab; error handling). This found one real defect (the page would have shown every marking-point question as a single box once 066 was applied), which is fixed.
+- **The real take page** in the browser against a mock backend: it renders from the new function, autosaves only answers, sends one submit call, writes no marks, and ends on the submitted page; then again with the function missing (old-database case): same page, marking in the browser as before; and the review page from the new function.
+
+### Decisions I made that you may want to change
+- **A submission after the time limit is still marked**, but the session is flagged and a "late submission" line (with how many seconds late) is added to its log for the teacher. I first built it to ignore late answers, then changed it: a student who worked offline and reconnects later (the exam page saves offline and retries) would otherwise lose the whole exam. There is a five-minute grace before anything is called late. Homework and assignments have no time limit.
+- **Answers longer than 100,000 characters are refused** (about 15,000 words), far above any exam essay.
+- **The grading teacher chosen at the start must teach that subject.**
+- **Exam start times come from the database clock**, not the student's device, and a timed exam cannot be started without its time limit.
+
+### Still open
+| # | Item | Notes |
+|---|---|---|
+| E5 | **Question-bank answers** are still readable by every student | Unchanged by 067 because it is your decision with the HODs. It is one small separate update when decided (drop the read policy from migration 048; keep Play working from a function). |
+| E6 | A student can still read the **exam's access password** and their **own score before release** through the database's public interface | The password check happens in the browser. Fix: check the password in a function and hide the columns. Not a launch blocker for Manchester, but worth doing before the first big exam. |
+| E7 | **Organisation exams** (external `org_*` tables, the `/take-exam` pages) mark in the browser and let the test-taker write their own marks, the same class of problem as E2 and E3 | Not used by schools. Fix before selling organisation exams; not part of this work. |
+| | Very rare: an essay question that has marking points is marked by keyword in final exams but left for the teacher in direct exams (existing behaviour). The database marks it as final exams do. Marking points are only created for short-answer and fill-in questions, so this does not arise from the normal forms. | Noted for completeness. |
+

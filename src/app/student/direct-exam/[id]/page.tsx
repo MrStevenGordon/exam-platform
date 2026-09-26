@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
+import { loadQuestionCount } from '@/lib/examApi'
 
 type DirectExam = {
   id: string
@@ -74,12 +75,7 @@ export default function DirectExamFrontPage() {
 
     setExam(examData)
 
-    const { count } = await supabase
-      .from('questions')
-      .select('id', { count: 'exact', head: true })
-      .eq('draft_exam_id', examId)
-
-    setQuestionCount(count || 0)
+    setQuestionCount(await loadQuestionCount('direct', examId).catch(() => 0))
 
     const { data: sessionData } = await supabase
       .from('exam_sessions')

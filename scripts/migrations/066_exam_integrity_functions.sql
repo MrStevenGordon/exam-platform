@@ -267,7 +267,11 @@ begin
     if awarded is null then has_essay := true; else score := score + awarded; end if;
     max_score := max_score + q.points;
     insert into responses (session_id, question_id, answer, working, points_awarded, graded_at, integrity_signals)
-    values (s.id, q.id, ans, wrk, awarded, case when awarded is not null then now() end, p_integrity -> q.id::text);
+    values (s.id, q.id, ans, wrk, awarded, case when awarded is not null then now() end, p_integrity -> q.id::text)
+    -- an autosave landing at the same instant must not make the submit fail
+    on conflict (session_id, question_id) do update
+      set answer = excluded.answer, working = excluded.working, points_awarded = excluded.points_awarded,
+          graded_at = excluded.graded_at, integrity_signals = excluded.integrity_signals;
   end loop;
 
   update exam_sessions

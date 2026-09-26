@@ -34,7 +34,12 @@ export const MIGRATIONS = [
   { id: '063', name: 'Curriculum coverage', tables: [], functions: ['learning_coverage', 'learning_coverage_subjects'] },
   { id: '064', name: 'AI tutor conversations', tables: ['learning_tutor_conversations', 'learning_tutor_messages'], functions: ['learning_tutor_conversations', 'learning_tutor_transcript'] },
   { id: '065', name: 'Flagged tutor list', tables: [], functions: ['learning_tutor_flagged', 'learning_tutor_flagged_counts'] },
+  { id: '066', name: 'Exam integrity: server marking and hidden answers', tables: [], functions: ['student_submit_exam', 'student_exam_questions', 'student_exam_review', 'student_exam_meta', 'score_answer'] },
+  // 067 is applied only after the new app is live (see docs/exam-integrity-findings.md), so it is reported separately below.
 ]
+
+// Applied last and on purpose: only after 066 and the matching app update are live.
+export const LOCK_MIGRATION = { id: '067', name: 'Exam integrity: student write lock', functions: ['exam_session_start_problem', 'exam_sessions_student_guard', 'responses_student_guard'] }
 
 export function manchesterClasses() {
   const names = []
@@ -70,6 +75,12 @@ async function main() {
       else { add('FAIL', `${m.id} ${m.name}: not applied (missing ${missing.join(', ')})`); firstMissing ??= m.id }
     }
     if (firstMissing) console.log(`      Apply the missing updates in order, starting with ${firstMissing}, before going further.`)
+    {
+      const missing = LOCK_MIGRATION.functions.filter((f) => !fns.has(f))
+      if (missing.length === 0) add('PASS', `${LOCK_MIGRATION.id} ${LOCK_MIGRATION.name}`)
+      else if (missing.length < LOCK_MIGRATION.functions.length) add('FAIL', `${LOCK_MIGRATION.id} ${LOCK_MIGRATION.name}: only partly applied (missing ${missing.join(', ')})`)
+      else add(firstMissing ? 'INFO' : 'WARN', `${LOCK_MIGRATION.id} ${LOCK_MIGRATION.name}: not applied yet${firstMissing ? '' : ' (apply after the new app is live and a test exam has been checked; students can still read exam answers until it is)'}`)
+    }
 
     // ---- people
     console.log('\nPeople:')

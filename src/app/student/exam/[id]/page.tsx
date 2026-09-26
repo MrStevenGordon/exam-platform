@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
+import { loadQuestionCount } from '@/lib/examApi'
 
 type FinalExam = {
   id: string
@@ -78,12 +79,7 @@ export default function ExamFrontPage() {
       .filter(Boolean)
     setEligibleTeachers(teacherList)
 
-    const { count } = await supabase
-      .from('final_exam_questions')
-      .select('id', { count: 'exact', head: true })
-      .eq('final_exam_id', examId)
-
-    setQuestionCount(count || 0)
+    setQuestionCount(await loadQuestionCount('final', examId).catch(() => 0))
 
     const { data: sessionData } = await supabase
       .from('exam_sessions')

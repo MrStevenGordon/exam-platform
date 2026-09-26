@@ -9,8 +9,8 @@ import {
   initExamRecord, getExamRecord, saveAnswersLocally, markSynced,
   setPendingSubmit as setPendingSubmitLocal, queueViolation, clearQueuedViolations, clearExamRecord,
 } from '@/lib/examOfflineStore'
-import { gradeAnswer, gradeMultiPoint } from '@/lib/grading'
-import { useIntegrityCapture, IntegritySignals } from '@/hooks/useIntegrityCapture'
+import { loadExamQuestions, submitExam, type ExamQuestion, type IntegrityBySlot } from '@/lib/examApi'
+import { useIntegrityCapture } from '@/hooks/useIntegrityCapture'
 
 function mulberry32(seed: number) {
   let a = seed
@@ -40,22 +40,8 @@ function questionSeed(sessionSeed: number, questionId: string): number {
   return hash
 }
 
-type Question = {
-  id: string
-  question_type: string
-  question_text: string
-  points: number
-  options: string[] | null
-  correct_answer: string | null
-  order_index: number
-  marking_points?: any[] | null
-  total_marks?: number | null
-  section_id?: string | null
-  image_url?: string | null
-  audio_url?: string | null
-  video_url?: string | null
-  show_working?: boolean | null
-}
+// Questions as the student sees them: no correct answers or marking guide (see src/lib/examApi.ts).
+type Question = ExamQuestion
 
 type SessionInfo = {
   id: string
@@ -99,6 +85,8 @@ export default function TakeExamPage() {
   const [calculatorEnabled, setCalculatorEnabled] = useState(false)
 
   const violationCount = useRef(0)
+  // Only filled when the database has not had migration 066 yet (see src/lib/examApi.ts).
+  const legacyKeysRef = useRef<Awaited<ReturnType<typeof loadExamQuestions>>['legacyKeys']>(null)
   const handleSubmitRef = useRef<() => void>(() => {})
   const hasBeenFullscreenRef = useRef(false)
   const submittedRef = useRef(false)
@@ -175,34 +163,16 @@ export default function TakeExamPage() {
       .order('order_index', { ascending: true })
     setSections(sectionData || [])
 
-    const { data: linkData, error: linkError } = await supabase
-      .from('final_exam_questions')
-      .select('order_index, questions(id, question_type, question_text, points, options, correct_answer, marking_points, total_marks, section_id, image_url, audio_url, video_url, show_working)')
-      .eq('final_exam_id', examId)
-      .order('order_index', { ascending: true })
-
-    if (linkError) { setErrorMsg(linkError.message); setLoading(false); return }
-
-    const qs = (linkData || []).map((l: any) => {
-      const q = Array.isArray(l.questions) ? l.questions[0] : l.questions
-      if (!q) return null
-      return {
-        id: q.id,
-        question_type: q.question_type,
-        question_text: q.question_text,
-        points: q.points,
-        options: q.options,
-        correct_answer: q.correct_answer,
-        marking_points: q.marking_points,
-        total_marks: q.total_marks,
-        section_id: q.section_id,
-        image_url: q.image_url,
-        audio_url: q.audio_url,
-        video_url: q.video_url,
-        show_working: q.show_working,
-        order_index: l.order_index,
-      }
-    }).filter((q: any) => q && q.id) as Question[]
+    let qs: Question[]
+    try {
+      const loaded = await loadExamQuestions('final', examId)
+      qs = loaded.questions
+      legacyKeysRef.current = loaded.legacyKeys
+    } catch (err) {
+      setErrorMsg(err instanceof Error ? err.message : 'Could not load the questions.')
+      setLoading(false)
+      return
+    }
     setQuestions(qs)
 
     const { data: existingAnswers } = await supabase
@@ -466,67 +436,31 @@ export default function TakeExamPage() {
     setSubmitting(true)
 
     try {
-      let autoScore = 0
-      let autoMax = 0
-      let hasEssay = false
       const allIntegrityFlags = new Set<string>()
+      const integrity: IntegrityBySlot = {}
 
-      const rows = questions.map((q) => {
+      for (const q of questions) {
         const studentAnswer = latestAnswersRef.current[q.id] || ''
-        // For multi-point questions, grade using all answer boxes
-        let awarded: number | null
-        if (q.marking_points && q.marking_points.length > 0) {
-          const answerBoxes = studentAnswer.split('\n').map((a: string) => a.trim()).filter(Boolean)
-          awarded = gradeMultiPoint(q, answerBoxes.length > 0 ? answerBoxes : [studentAnswer])
-        } else {
-          awarded = gradeAnswer(q, studentAnswer)
-        }
-        if (awarded === null) hasEssay = true
-        else autoScore += awarded
-        autoMax += q.points
-
-        let integritySignals: { answer?: IntegritySignals; working?: IntegritySignals } | null = null
         if (q.question_type === 'essay') {
           const answerSignals = capture.summarize(`answer:${q.id}`, studentAnswer)
-          integritySignals = { answer: answerSignals }
+          integrity[q.id] = { answer: answerSignals }
           answerSignals.flags.forEach((f) => allIntegrityFlags.add(f))
         }
         if (q.question_type === 'short_answer' && q.show_working) {
           const workingSignals = capture.summarize(`working:${q.id}`, latestWorkingsRef.current[q.id] || '')
-          integritySignals = { ...integritySignals, working: workingSignals }
+          integrity[q.id] = { ...integrity[q.id], working: workingSignals }
           workingSignals.flags.forEach((f) => allIntegrityFlags.add(f))
         }
+      }
 
-        return { session_id: session.id, question_id: q.id, answer: studentAnswer, working: latestWorkingsRef.current[q.id] || null, points_awarded: awarded, graded_at: awarded !== null ? new Date().toISOString() : null, integrity_signals: integritySignals }
+      // The database marks the exam and records the result; the answers are only sent, never scored here.
+      // Silent, teacher-only integrity signal: nothing is shown to the student and submission is never blocked.
+      await submitExam({
+        kind: 'final', sessionId: session.id, examId, questions,
+        legacyKeys: legacyKeysRef.current,
+        answers: latestAnswersRef.current, workings: latestWorkingsRef.current,
+        integrity, integrityFlags: Array.from(allIntegrityFlags),
       })
-
-      await supabase.from('responses').delete().eq('session_id', session.id)
-      if (rows.length > 0) {
-        const { error } = await supabase.from('responses').insert(rows)
-        if (error) throw error
-      }
-
-      const hasIntegrityFlags = allIntegrityFlags.size > 0
-
-      const { error: sessionError } = await supabase
-        .from('exam_sessions')
-        .update({
-          status: 'completed', completed_at: new Date().toISOString(), total_score: autoScore, max_possible_score: autoMax, fully_graded: !hasEssay,
-          ...(hasIntegrityFlags ? { flagged: true } : {}),
-        })
-        .eq('id', session.id)
-
-      if (sessionError) throw sessionError
-
-      // Silent, teacher-only signal — no overlay/warning shown to the student
-      // and submission is never blocked, unlike the proctoring violations
-      // handled elsewhere in this file.
-      if (hasIntegrityFlags) {
-        await supabase.rpc('append_violation_log', {
-          session_id: session.id,
-          entry: { type: 'integrity', reason: Array.from(allIntegrityFlags).join(', '), timestamp: new Date().toISOString() },
-        })
-      }
 
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
@@ -772,7 +706,7 @@ export default function TakeExamPage() {
 
               {(q.question_type === 'short_answer' || q.question_type === 'fill_blank') && (
                 <div>
-                  {q.marking_points && q.marking_points.length > 0 ? (
+                  {q.has_marking_points ? (
                     // Multiple answer boxes — one per required answer (based on question points)
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                       {Array.from({ length: q.points }).map((_, boxIndex) => {

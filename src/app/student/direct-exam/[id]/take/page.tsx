@@ -5,8 +5,8 @@ import { useRouter, useParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import ScientificCalculator from '@/components/ScientificCalculator'
 import ReadAloudButton from '@/components/ReadAloudButton'
-import { useIntegrityCapture, IntegritySignals } from '@/hooks/useIntegrityCapture'
-import { gradeAnswer as gradeAnswerShared } from '@/lib/grading'
+import { useIntegrityCapture } from '@/hooks/useIntegrityCapture'
+import { loadExamQuestions, submitExam, type ExamQuestion, type IntegrityBySlot } from '@/lib/examApi'
 import {
   initExamRecord, getExamRecord, saveAnswersLocally, markSynced,
   setPendingSubmit as setPendingSubmitLocal, queueViolation, clearQueuedViolations, clearExamRecord,
@@ -40,18 +40,8 @@ function questionSeed(sessionSeed: number, questionId: string): number {
   return hash
 }
 
-type Question = {
-  id: string
-  question_type: string
-  question_text: string
-  points: number
-  options: string[] | null
-  correct_answer: string | null
-  order_index: number
-  marking_points: { text: string; keywords: string[]; marks: number }[] | null
-  total_marks: number | null
-  show_working?: boolean | null
-}
+// Questions as the student sees them: no correct answers or marking guide (see src/lib/examApi.ts).
+type Question = ExamQuestion
 
 type SessionInfo = {
   id: string
@@ -100,6 +90,8 @@ export default function TakeDirectExamPage() {
   const [submitPendingOffline, setSubmitPendingOffline] = useState(false)
 
   const violationCount = useRef(0)
+  // Only filled when the database has not had migration 066 yet (see src/lib/examApi.ts).
+  const legacyKeysRef = useRef<Awaited<ReturnType<typeof loadExamQuestions>>['legacyKeys']>(null)
   const handleSubmitRef = useRef<() => void>(() => {})
   const hasBeenFullscreenRef = useRef(false)
   const submittedRef = useRef(false)
@@ -223,14 +215,15 @@ export default function TakeDirectExamPage() {
     setExam(examData)
     if (examData?.calculator_enabled) setCalculatorEnabled(true)
 
-    const { data: questionData, error: questionError } = await supabase
-      .from('questions')
-      .select('id, question_type, question_text, points, options, correct_answer, order_index, marking_points, total_marks, image_url, audio_url, video_url, show_working')
-      .eq('draft_exam_id', examId)
-      .order('order_index', { ascending: true })
-
-    if (questionError) { setErrorMsg(questionError.message); setLoading(false); return }
-    setQuestions(questionData || [])
+    try {
+      const loaded = await loadExamQuestions('direct', examId)
+      legacyKeysRef.current = loaded.legacyKeys
+      setQuestions(loaded.questions)
+    } catch (err) {
+      setErrorMsg(err instanceof Error ? err.message : 'Could not load the questions.')
+      setLoading(false)
+      return
+    }
 
     const { data: existingAnswers } = await supabase
       .from('responses')
@@ -424,10 +417,6 @@ export default function TakeDirectExamPage() {
     scheduleLocalSave()
   }
 
-  function gradeAnswer(question: Question, studentAnswer: string): number | null {
-    return gradeAnswerShared(question, studentAnswer)
-  }
-
   const FILE_MAX_MB = 25
 
   async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
@@ -481,60 +470,32 @@ export default function TakeDirectExamPage() {
     setSubmitting(true)
 
     try {
-      let autoScore = 0
-      let autoMax = 0
-      let hasEssay = false
       const allIntegrityFlags = new Set<string>()
+      const integrity: IntegrityBySlot = {}
 
-      const rows = questions.map((q) => {
+      for (const q of questions) {
         const studentAnswer = latestAnswersRef.current[q.id] || ''
-        const awarded = gradeAnswer(q, studentAnswer)
-        if (awarded === null) hasEssay = true
-        else autoScore += awarded
-        autoMax += q.points
-
-        let integritySignals: { answer?: IntegritySignals; working?: IntegritySignals } | null = null
         if (q.question_type === 'essay') {
           const answerSignals = capture.summarize(`answer:${q.id}`, studentAnswer)
-          integritySignals = { answer: answerSignals }
+          integrity[q.id] = { answer: answerSignals }
           answerSignals.flags.forEach((f) => allIntegrityFlags.add(f))
         }
         if (q.question_type === 'short_answer' && q.show_working) {
           const workingSignals = capture.summarize(`working:${q.id}`, latestWorkingsRef.current[q.id] || '')
-          integritySignals = { ...integritySignals, working: workingSignals }
+          integrity[q.id] = { ...integrity[q.id], working: workingSignals }
           workingSignals.flags.forEach((f) => allIntegrityFlags.add(f))
         }
+      }
 
-        return { session_id: session.id, question_id: q.id, answer: studentAnswer, working: latestWorkingsRef.current[q.id] || null, points_awarded: awarded, graded_at: awarded !== null ? new Date().toISOString() : null, integrity_signals: integritySignals }
+      // The database marks the exam and records the result; the answers are only sent, never scored here.
+      // Silent, teacher-only integrity signal: nothing is shown to the student and submission is never blocked.
+      await submitExam({
+        kind: 'direct', sessionId: session.id, examId, questions,
+        legacyKeys: legacyKeysRef.current,
+        answers: latestAnswersRef.current, workings: latestWorkingsRef.current,
+        integrity, integrityFlags: Array.from(allIntegrityFlags),
+        file: { url: fileUrl, name: fileName },
       })
-
-      await supabase.from('responses').delete().eq('session_id', session.id)
-      if (rows.length > 0) {
-        const { error } = await supabase.from('responses').insert(rows)
-        if (error) throw error
-      }
-
-      const hasIntegrityFlags = allIntegrityFlags.size > 0
-
-      const { error: sessionError } = await supabase
-        .from('exam_sessions')
-        .update({
-          status: 'completed', completed_at: new Date().toISOString(), total_score: autoScore, max_possible_score: autoMax, fully_graded: !hasEssay,
-          file_submission_url: fileUrl, file_submission_name: fileName,
-          ...(hasIntegrityFlags ? { flagged: true } : {}),
-        })
-        .eq('id', session.id)
-
-      if (sessionError) throw sessionError
-
-      // Silent, teacher-only signal — no overlay/warning shown to the student and
-      // submission is never blocked, unlike the proctoring violations above.
-      if (hasIntegrityFlags) {
-        await supabase.rpc('append_violation_log', {
-          session_id: session.id,
-          entry: { type: 'integrity', reason: Array.from(allIntegrityFlags).join(', '), timestamp: new Date().toISOString() },
-        })
-      }
 
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
@@ -745,7 +706,7 @@ export default function TakeDirectExamPage() {
               )}
               {(q.question_type === 'short_answer' || q.question_type === 'fill_blank') && (
                 <div>
-                  {q.marking_points && q.marking_points.length > 0 ? (
+                  {q.has_marking_points ? (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                       {Array.from({ length: q.points }).map((_, boxIndex) => {
                         const currentAnswers = (answers[q.id] || '').split('\n')
