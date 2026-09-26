@@ -148,6 +148,18 @@ Pages: Overview, Attendance, Alerts, Timetable, Staff, Students, Messages, My Pr
 
 ---
 
+## 7d. Year promotion and class changes (School admin: Settings and Students)
+
+- [ ] Settings: clicking a class (for example 3-1) opens Students filtered to that class, with its students showing
+- [ ] Year promotion preview: each class shows where its students are going; open one to see the names
+- [ ] A class with no next-year partner (for example 3-8 with no 4-8) shows "choose a class": select students, pick a class, Apply; the counts and "How many will be in each class" update
+- [ ] Changing one student's class in the preview is marked "changed", and "Undo my changes" puts everything back to the automatic plan
+- [ ] Students who cannot be placed (several classes, no class) are listed with the reason and what to do
+- [ ] Running the promotion moves exactly the students shown, into exactly the classes shown; check two or three by hand afterwards
+- [ ] Students: "Change class" on a student moves them to the class you choose, and asks before changing their grade
+
+---
+
 ## 8. Owner console (you)
 
 - [ ] **School requests** and **Org requests**: approve and provision
