@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { compareClassNames, CLASS_GRADES } from '@/lib/classNames'
+import { currentAcademicYear } from '@/lib/reportCard'
+import YearPromotionPanel from '@/components/YearPromotionPanel'
 
 export default function SettingsPage() {
   const [classGroups, setClassGroups] = useState<{ id: string; name: string; year_grade: string }[]>([])
@@ -91,7 +93,7 @@ export default function SettingsPage() {
   return (
     <div>
       <p className="portal-page-title">School Settings</p>
-      <p className="portal-page-sub">Manchester High School · Academic year 2026–2027</p>
+      <p className="portal-page-sub">{process.env.NEXT_PUBLIC_SCHOOL_NAME || 'Your school'} · Academic year {currentAcademicYear().replace('-', '–')}</p>
 
       {/* School branding */}
       <div className="card" style={{ marginBottom: 16 }}>
@@ -167,7 +169,12 @@ export default function SettingsPage() {
         })}
       </div>
 
-      <div className="card" style={{ marginTop: 16 }}>
+      <div style={{ marginTop: 28 }}>
+        <p className="section-label" style={{ marginBottom: 0 }}>Year promotion &amp; graduation</p>
+        <YearPromotionPanel />
+      </div>
+
+      <div className="card" style={{ marginTop: 28 }}>
         <RoutingCheckSection />
       </div>
     </div>

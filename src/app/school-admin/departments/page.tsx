@@ -12,6 +12,8 @@ type Department = {
   teacher_count?: number
 }
 
+type Subject = { id: string; subject: string; department_id: string }
+
 type StaffMember = {
   id: string
   full_name: string
@@ -31,6 +33,9 @@ export default function DepartmentsPage() {
   const [successMsg, setSuccessMsg] = useState('')
   const [errorMsg, setErrorMsg] = useState('')
   const [deptTeachers, setDeptTeachers] = useState<Record<string, StaffMember[]>>({})
+  const [subjects, setSubjects] = useState<Subject[]>([])
+  const [newSubject, setNewSubject] = useState<Record<string, string>>({})
+  const [addingSubjectFor, setAddingSubjectFor] = useState<string | null>(null)
 
   useEffect(() => { loadData() }, [])
 
@@ -58,6 +63,9 @@ export default function DepartmentsPage() {
       .order('full_name')
 
     setStaff(staffData || [])
+
+    const { data: subjectData } = await supabase.from('department_subjects').select('id, subject, department_id').order('subject')
+    setSubjects(subjectData || [])
 
     // Group teachers by department
     const byDept: Record<string, StaffMember[]> = {}
@@ -132,6 +140,30 @@ export default function DepartmentsPage() {
     loadData()
   }
 
+  async function handleAddSubject(deptId: string) {
+    const name = (newSubject[deptId] || '').trim()
+    if (!name) return
+    setErrorMsg('')
+    setAddingSubjectFor(deptId)
+    const { data: { user } } = await supabase.auth.getUser()
+    const { error } = await supabase.from('department_subjects').insert({ department_id: deptId, subject: name, created_by: user?.id })
+    setAddingSubjectFor(null)
+    if (error) { setErrorMsg(error.message); return }
+    setNewSubject((prev) => ({ ...prev, [deptId]: '' }))
+    loadData()
+  }
+
+  async function handleRemoveSubject(subject: Subject) {
+    if (!confirm(`Remove ${subject.subject}? Teachers already assigned to it will lose that assignment.`)) return
+    setErrorMsg('')
+    // teacher_subjects.subject is matched by department_id + free-text subject, not a foreign key, so the
+    // assignments are removed here along with the catalogue entry, as the confirmation says.
+    await supabase.from('teacher_subjects').delete().eq('department_id', subject.department_id).eq('subject', subject.subject)
+    const { error } = await supabase.from('department_subjects').delete().eq('id', subject.id)
+    if (error) { setErrorMsg(error.message); return }
+    loadData()
+  }
+
   async function handleDeleteDepartment(deptId: string, name: string) {
     if (!confirm(`Delete the ${name} department?`)) return
     setErrorMsg('')
@@ -152,8 +184,8 @@ export default function DepartmentsPage() {
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
         <div>
-          <p className="portal-page-title" style={{ margin: 0 }}>Departments</p>
-          <p className="portal-page-sub" style={{ margin: '4px 0 0' }}>{departments.length} departments</p>
+          <p className="portal-page-title" style={{ margin: 0 }}>Departments &amp; Subjects</p>
+          <p className="portal-page-sub" style={{ margin: '4px 0 0' }}>{departments.length} departments · {subjects.length} subjects</p>
         </div>
         <button className="btn btn-primary" onClick={() => setShowForm(!showForm)}>+ New department</button>
       </div>
@@ -195,7 +227,7 @@ export default function DepartmentsPage() {
               <div>
                 <div style={{ fontWeight: 700, fontSize: 15 }}>{dept.name}</div>
                 <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 2 }}>
-                  {dept.hods.length === 0 ? 'No HOD assigned' : `HOD${dept.hods.length > 1 ? 's' : ''}: ${dept.hods.map((h) => h.full_name).join(', ')}`} · {dept.teacher_count} staff
+                  {dept.hods.length === 0 ? 'No HOD assigned' : `HOD${dept.hods.length > 1 ? 's' : ''}: ${dept.hods.map((h) => h.full_name).join(', ')}`} · {dept.teacher_count} staff · {subjects.filter((x) => x.department_id === dept.id).length} subjects
                 </div>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -235,6 +267,45 @@ export default function DepartmentsPage() {
                     <option value="">Choose a staff member…</option>
                     {staff.filter((m) => !dept.hods.some((h) => h.id === m.id)).map((m) => <option key={m.id} value={m.id}>{m.full_name} ({m.role === 'supervisor' ? 'HOD' : m.role})</option>)}
                   </select>
+                </div>
+
+                <div style={{ marginBottom: 16 }}>
+                  <div className="section-label" style={{ marginBottom: 8 }}>Subjects</div>
+                  {subjects.filter((x) => x.department_id === dept.id).length === 0 ? (
+                    <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '0 0 8px' }}>No subjects yet. Add the first one below.</p>
+                  ) : (
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 10 }}>
+                      {subjects.filter((x) => x.department_id === dept.id).map((sub) => (
+                        <span key={sub.id} className="badge badge-default" style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                          {sub.subject}
+                          <button
+                            onClick={() => handleRemoveSubject(sub)}
+                            aria-label={`Remove ${sub.subject}`}
+                            style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: 'inherit', fontWeight: 700, padding: 0 }}
+                          >
+                            ×
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <input
+                      value={newSubject[dept.id] || ''}
+                      onChange={(e) => setNewSubject((prev) => ({ ...prev, [dept.id]: e.target.value }))}
+                      onKeyDown={(e) => { if (e.key === 'Enter') handleAddSubject(dept.id) }}
+                      placeholder="e.g. Additional Mathematics"
+                      maxLength={100}
+                      style={{ flex: 1 }}
+                    />
+                    <button
+                      onClick={() => handleAddSubject(dept.id)}
+                      disabled={addingSubjectFor === dept.id || !(newSubject[dept.id] || '').trim()}
+                      className="btn btn-primary"
+                    >
+                      {addingSubjectFor === dept.id ? 'Adding…' : 'Add subject'}
+                    </button>
+                  </div>
                 </div>
 
                 <div style={{ marginBottom: 16 }}>

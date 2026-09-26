@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
+import CsvFormatGuide from '@/components/CsvFormatGuide'
 import { usePresence } from '@/lib/presence'
 import PresenceDot from '@/components/PresenceDot'
 
@@ -369,12 +370,22 @@ export default function StaffPage() {
       {showCsvImport && (
         <div className="card" style={{ marginBottom: 20 }}>
           <h2 style={{ marginBottom: 8 }}>Import staff from CSV</h2>
-          <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 12 }}>
-            CSV format: <code>first_name, last_name, email, role, department, subjects</code>. Separate multiple subjects with a semicolon (e.g. <code>Mathematics;Additional Mathematics</code>)
-          </p>
-          <p style={{ fontSize: 12, color: 'var(--text-secondary)', marginBottom: 12 }}>
-            Role values: <code>teacher</code> or <code>supervisor</code> · Department must match exactly
-          </p>
+          <CsvFormatGuide
+            templateHref="/templates/staff-template.csv"
+            templateName="staff-template.csv"
+            columns={[
+              { name: 'first_name', required: true, description: 'First name', example: 'Jane' },
+              { name: 'last_name', required: true, description: 'Last name', example: 'Brown' },
+              { name: 'email', required: true, description: 'Their sign-in email address', example: 'jane.brown@mhs.smartassess' },
+              { name: 'role', required: true, description: 'teacher or supervisor (supervisor means Head of Department)', example: 'teacher' },
+              { name: 'department', required: false, description: 'Must match an existing department name exactly', example: 'Mathematics' },
+              { name: 'subjects', required: false, description: 'Subjects they teach; separate several with a semicolon', example: 'Mathematics;Additional Mathematics' },
+            ]}
+            notes={[
+              'Principals and vice principals are added one at a time with "Add staff member".',
+              'Everyone starts with the password Staff.Default1 and must change it the first time they sign in.',
+            ]}
+          />
           <input
             type="file"
             accept=".csv"
