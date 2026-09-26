@@ -62,6 +62,7 @@ export default function StudentsPage() {
   // Adding one student
   const [showAddForm, setShowAddForm] = useState(false)
   const [classOptions, setClassOptions] = useState<string[]>([])
+  const [classList, setClassList] = useState<{ id: string; name: string }[]>([])
   const [addFirst, setAddFirst] = useState('')
   const [addMiddle, setAddMiddle] = useState('')
   const [addLast, setAddLast] = useState('')
@@ -73,6 +74,12 @@ export default function StudentsPage() {
   const [adding, setAdding] = useState(false)
   const [addError, setAddError] = useState('')
   const [addSuccess, setAddSuccess] = useState('')
+
+  // Changing one student's class
+  const [classEditId, setClassEditId] = useState<string | null>(null)
+  const [classDraft, setClassDraft] = useState('')
+  const [classError, setClassError] = useState('')
+  const [classSaving, setClassSaving] = useState(false)
 
   // Adding a school email to a student who has none
   const [emailEditId, setEmailEditId] = useState<string | null>(null)
@@ -123,7 +130,8 @@ export default function StudentsPage() {
         accommodations: Array.isArray(s.accommodations) ? s.accommodations : [],
       }))
       setStudents(mapped)
-      const { data: groups } = await supabase.from('class_groups').select('name')
+      const { data: groups } = await supabase.from('class_groups').select('id, name')
+      setClassList((groups || []) as { id: string; name: string }[])
       setClassOptions((groups || []).map((g: { name: string }) => g.name).sort(compareClassNames))
     } catch (err) {
       console.error('Failed to load students', err)
@@ -217,6 +225,45 @@ export default function StudentsPage() {
       setAddError('Could not reach the server. Check your connection and try again.')
     }
     setAdding(false)
+  }
+
+  // Puts a student in a different class, and updates their grade to match the class (the class decides the grade).
+  async function handleChangeClass(student: Student) {
+    const target = classList.find((c) => c.name === classDraft)
+    if (!target) { setClassError('Choose a class.'); return }
+    if (target.name === student.class_name) { setClassEditId(null); return }
+    const newGrade = gradeLevelFromClassName(target.name)
+    if (student.grade_level !== null && newGrade !== null && newGrade !== student.grade_level) {
+      if (!confirm(`${student.full_name} is in Grade ${student.grade_level}. Moving them to ${target.name} also makes them Grade ${newGrade}. Continue?`)) return
+    }
+    setClassError('')
+    setClassSaving(true)
+    try {
+      const { data: rows, error: readError } = await supabase.from('enrollments').select('id, class_group_id').eq('student_id', student.id)
+      if (readError) throw readError
+      if (!rows || rows.length === 0) {
+        const { error } = await supabase.from('enrollments').insert({ student_id: student.id, class_group_id: target.id })
+        if (error) throw error
+      } else {
+        // A student belongs to one class. Keep one enrolment, remove any extra ones, and point it at the new class.
+        const keep = rows[0]
+        if (rows.length > 1) {
+          const { error } = await supabase.from('enrollments').delete().eq('student_id', student.id).neq('id', keep.id)
+          if (error) throw error
+        }
+        const { error } = await supabase.from('enrollments').update({ class_group_id: target.id }).eq('id', keep.id)
+        if (error) throw error
+      }
+      if (newGrade !== null) {
+        const { error } = await supabase.from('profiles').update({ grade_level: newGrade }).eq('id', student.id)
+        if (error) throw error
+      }
+      setClassEditId(null)
+      loadData()
+    } catch (err) {
+      setClassError(err instanceof Error ? err.message : 'The class could not be changed. Please try again.')
+    }
+    setClassSaving(false)
   }
 
   async function handleSaveSchoolEmail(studentId: string) {
@@ -687,11 +734,29 @@ export default function StudentsPage() {
                                     {emailError && <div style={{ fontSize: 11, color: 'var(--danger)', marginTop: 4 }}>{emailError}</div>}
                                   </div>
                                 )}
+                                {classEditId === s.id && (
+                                  <div style={{ marginTop: 6 }}>
+                                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+                                      <select value={classDraft} onChange={(e) => setClassDraft(e.target.value)} aria-label={`New class for ${s.full_name}`} style={{ fontSize: 12, padding: '4px 8px' }}>
+                                        <option value="">Choose a class…</option>
+                                        {classOptions.map((c) => <option key={c} value={c}>{c}</option>)}
+                                      </select>
+                                      <button className="btn btn-primary" style={{ fontSize: 11, padding: '4px 10px' }} disabled={classSaving || !classDraft} onClick={() => handleChangeClass(s)}>{classSaving ? 'Saving…' : 'Save'}</button>
+                                      <button className="btn btn-ghost" style={{ fontSize: 11 }} onClick={() => { setClassEditId(null); setClassError('') }}>Cancel</button>
+                                    </div>
+                                    {classError && <div style={{ fontSize: 11, color: 'var(--danger)', marginTop: 4 }}>{classError}</div>}
+                                  </div>
+                                )}
                               </div>
                               <div style={{ display: 'flex', gap: 6 }}>
                                 {!s.school_email && emailEditId !== s.id && (
                                   <button onClick={() => { setEmailEditId(s.id); setEmailDraft(''); setEmailError('') }} className="btn btn-ghost" style={{ fontSize: 11 }}>
                                     Add school email
+                                  </button>
+                                )}
+                                {classEditId !== s.id && (
+                                  <button onClick={() => { setClassEditId(s.id); setClassDraft(s.class_name || ''); setClassError('') }} className="btn btn-ghost" style={{ fontSize: 11 }}>
+                                    Change class
                                   </button>
                                 )}
                                 <AccommodationsToggle studentId={s.id} initialEnabled={s.accommodations.includes('text_to_speech')} />
