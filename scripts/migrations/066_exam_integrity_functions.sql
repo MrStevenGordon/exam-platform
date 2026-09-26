@@ -192,9 +192,9 @@ $$;
 --   p_workings   { "<question id>": "working shown" }
 --   p_integrity  { "<question id>": { "answer": {...}, "working": {...} } }   (recorded for the teacher only)
 --   p_flagged    true if the browser noticed anything worth a teacher's attention
--- If the time limit (plus a short grace period) has passed, what the student typed at submit time is
--- ignored and the answers already saved by autosave are marked instead. Homework and assignments have no
--- time limit. Submitting twice returns the first result and changes nothing.
+-- If the time limit (plus a short grace period) has passed the answers are still marked (so work done offline
+-- is never lost) but the session is flagged and a late_submission entry is added to its violation log for the
+-- teacher. Homework and assignments have no time limit. Submitting twice returns the first result and changes nothing.
 create or replace function public.student_submit_exam(p_session_id uuid, p_answers jsonb, p_workings jsonb, p_integrity jsonb, p_flagged boolean)
 returns jsonb
 language plpgsql security definer
@@ -212,8 +212,6 @@ declare
   score numeric := 0;
   max_score numeric := 0;
   has_essay boolean := false;
-  stored_a jsonb;
-  stored_w jsonb;
 begin
   if not public.exam_caller_is_student() then raise exception 'Not allowed.' using errcode = '42501'; end if;
   if jsonb_typeof(coalesce(p_answers, '{}'::jsonb)) <> 'object' or jsonb_typeof(coalesce(p_workings, '{}'::jsonb)) <> 'object'
@@ -238,11 +236,16 @@ begin
     late := true;
   end if;
 
+  -- A late submission is still marked (a student who worked offline and reconnects later must not lose their
+  -- exam), but the session is flagged and the lateness is logged so the teacher can review it.
   if late then
-    -- Too late to trust what was typed at the last moment: mark what autosave had already saved.
-    select coalesce(jsonb_object_agg(question_id, coalesce(answer, '')), '{}'::jsonb), coalesce(jsonb_object_agg(question_id, working) filter (where working is not null), '{}'::jsonb)
-      into stored_a, stored_w from responses where session_id = s.id;
-    p_answers := stored_a; p_workings := stored_w;
+    p_flagged := true;
+    update exam_sessions
+       set violation_log = coalesce(violation_log, '[]'::jsonb) || jsonb_build_array(jsonb_build_object(
+             'type', 'late_submission',
+             'reason', 'Submitted ' || (extract(epoch from (now() - (s.started_at + make_interval(secs => s.time_limit_seconds))))::int) || ' seconds after the time limit',
+             'timestamp', now()))
+     where id = s.id;
   end if;
 
   delete from responses where session_id = s.id;
@@ -264,7 +267,7 @@ begin
     if awarded is null then has_essay := true; else score := score + awarded; end if;
     max_score := max_score + q.points;
     insert into responses (session_id, question_id, answer, working, points_awarded, graded_at, integrity_signals)
-    values (s.id, q.id, ans, wrk, awarded, case when awarded is not null then now() end, case when late then null else p_integrity -> q.id::text end);
+    values (s.id, q.id, ans, wrk, awarded, case when awarded is not null then now() end, p_integrity -> q.id::text);
   end loop;
 
   update exam_sessions
