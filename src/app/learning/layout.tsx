@@ -72,6 +72,11 @@ export default function LearningLayout({ children }: { children: React.ReactNode
     return () => { cancelled = true }
   }, [router, pathname])
 
+  // The lesson editor and lesson plans are for the people who teach. Anyone in an oversight role (school admin,
+  // principal / VP) who types one of those addresses is sent to their overview.
+  const blockedForOversight = (role === 'admin' || role === 'principal') && (pathname.startsWith('/learning/lessons') || pathname.startsWith('/learning/lesson-plans'))
+  useEffect(() => { if (blockedForOversight) router.replace('/learning') }, [blockedForOversight, router])
+
   // When someone marks a flagged conversation read, the menu count updates without a page change.
   useEffect(() => {
     if (!flagsOn) return
@@ -80,6 +85,8 @@ export default function LearningLayout({ children }: { children: React.ReactNode
     window.addEventListener(FLAGS_CHANGED_EVENT, refresh)
     return () => { cancelled = true; window.removeEventListener(FLAGS_CHANGED_EVENT, refresh) }
   }, [flagsOn])
+
+  if (blockedForOversight) return null
 
   if (state === 'checking' || !role) return null
 
@@ -93,7 +100,8 @@ export default function LearningLayout({ children }: { children: React.ReactNode
     )
   }
 
-  const base = role === 'student' ? STUDENT_NAV : role === 'principal' ? OVERVIEW_NAV : coverageOn ? [...AUTHOR_NAV, COVERAGE_ITEM] : AUTHOR_NAV
+  // School admins and the principal team oversee Smart Learning (Coverage, flagged tutor chats); they do not teach in it.
+  const base = role === 'student' ? STUDENT_NAV : (role === 'principal' || role === 'admin') ? OVERVIEW_NAV : coverageOn ? [...AUTHOR_NAV, COVERAGE_ITEM] : AUTHOR_NAV
   const nav = flagsOn && (role === 'admin' || role === 'principal') ? [...base, FLAGS_ITEM] : base
   return (
     <div className="portal-layout" style={{ minHeight: '100vh' }}>

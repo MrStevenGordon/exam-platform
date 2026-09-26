@@ -136,6 +136,15 @@ Pages: Overview, Attendance, Alerts, Timetable, Staff, Students, Messages, My Pr
 - [ ] HOD sees only their department's subjects
 - [ ] **Tutor flags** (principal and admin): unread first, wellbeing before other, overdue in red, read a transcript, mark read, menu badge updates; teachers cannot open it
 
+## 7a. Who can use Smart Learning (needs update 070)
+
+- [ ] **Teacher, HOD, student:** Smart Learning works exactly as before (create, publish, assign, do lessons)
+- [ ] **School admin and principal / VP:** the Smart Learning menu shows only Coverage (and Flagged tutor chats when the AI tutor is on); there is no "New lesson", "My lessons" or "Lesson plans"
+- [ ] An admin or principal typing a lesson-editor address (for example `/learning/lessons/new`) is sent back to the overview
+- [ ] Coverage shows the whole school for an admin or principal, and only their own department for a HOD
+
+---
+
 ## 7c. Teacher view for leadership (needs update 069)
 
 - [ ] **School admin:** on Staff, a "View work" button appears on each teacher and HOD row. It opens a read-only page with Overview, Assessments & homework, and Marking tabs
