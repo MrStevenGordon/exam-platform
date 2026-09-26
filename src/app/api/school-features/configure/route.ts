@@ -13,6 +13,7 @@ const schema = z.object({
     lessonPlanLibraryEnabled: z.boolean().optional(),
     smartLearningEnabled: z.boolean().optional(),
     smartPlayEnabled: z.boolean().optional(),
+    aiTutorEnabled: z.boolean().optional(),
   }).strict().optional(),
   accessToken: z.string().min(1).max(4000),
 }).strict()
@@ -41,6 +42,7 @@ export async function POST(req: NextRequest) {
       lesson_plan_library_enabled: !!features?.lessonPlanLibraryEnabled,
       smart_learning_enabled: !!features?.smartLearningEnabled,
       smart_play_enabled: !!features?.smartPlayEnabled,
+      ai_tutor_enabled: !!features?.aiTutorEnabled,
     }
 
     const client = new Client({ connectionString: targetDatabaseUrl.trim(), ssl: { rejectUnauthorized: false } })

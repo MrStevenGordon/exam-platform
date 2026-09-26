@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import EmptyState from '@/components/EmptyState'
 import type { LessonStatus } from '@/lib/learning'
+import { isTutorAvailable } from '@/lib/tutorClient'
 
 type Row = { id: string; title: string; subject: string; grade: number | null; status: LessonStatus; updated_at: string }
 type Stats = { lesson_id: string; assigned_students: number; started: number; completed: number }
@@ -13,6 +14,8 @@ type Stats = { lesson_id: string; assigned_students: number; started: number; co
 export default function TeacherLessonList() {
   const [rows, setRows] = useState<Row[]>([])
   const [stats, setStats] = useState<Record<string, Stats>>({})
+  // Lessons with tutor conversations flagged for an adult to read (empty if the tutor is not installed).
+  const [toReview, setToReview] = useState<Record<string, number>>({})
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
@@ -23,10 +26,13 @@ export default function TeacherLessonList() {
         supabase.from('learning_lessons').select('id, title, subject, grade, status, updated_at').neq('status', 'archived').order('updated_at', { ascending: false }),
         supabase.rpc('learning_lesson_stats'),
       ])
+      // Only asked when the school has the tutor on and migration 064 is applied.
+      const flagRes = (await isTutorAvailable()) ? await supabase.rpc('learning_tutor_flag_counts') : null
       if (cancelled) return
       if (lessonRes.error) setError('Could not load your lessons. Please try again.')
       else setRows((lessonRes.data as Row[]) || [])
       setStats(Object.fromEntries(((statRes.data || []) as Stats[]).map((s) => [s.lesson_id, s])))
+      if (flagRes && !flagRes.error) setToReview(Object.fromEntries(((flagRes.data || []) as { lesson_id: string; to_review: number }[]).map((f) => [f.lesson_id, f.to_review])))
       setLoading(false)
     }
     load()
@@ -56,6 +62,7 @@ export default function TeacherLessonList() {
                   <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 2 }}>{r.subject}{r.grade ? ` · Grade ${r.grade}` : ''}</div>
                 </div>
                 <div style={{ textAlign: 'right' }}>
+                  {toReview[r.id] > 0 && <span className="badge badge-danger" style={{ marginRight: 6 }}>{toReview[r.id]} chat{toReview[r.id] === 1 ? '' : 's'} to read</span>}
                   <span className={`badge ${r.status === 'published' ? 'badge-success' : 'badge-default'}`}>{r.status === 'published' ? 'Published' : 'Draft'}</span>
                   {s && s.assigned_students > 0 && (
                     <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 4 }}>{s.completed} of {s.assigned_students} finished · {s.started} started</div>

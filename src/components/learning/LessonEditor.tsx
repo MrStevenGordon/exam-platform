@@ -12,6 +12,8 @@ import LessonCheckResults from '@/components/learning/LessonCheckResults'
 import LessonCatchupTab from '@/components/learning/LessonCatchupTab'
 import { isChecksAvailable } from '@/lib/learningChecks'
 import { isCatchupAvailable } from '@/lib/learningCatchup'
+import LessonTutorTab from '@/components/learning/LessonTutorTab'
+import { isTutorAvailable } from '@/lib/tutorClient'
 import type { LessonRow } from '@/lib/learning'
 import { useRouter, usePathname } from 'next/navigation'
 
@@ -28,6 +30,9 @@ export default function LessonEditor({ lessonId }: { lessonId: string }) {
   // Catch-up needs migration 062.
   const [catchupOn, setCatchupOn] = useState(false)
   useEffect(() => { isCatchupAvailable().then(setCatchupOn) }, [])
+  // The tutor tab appears only when the school has the AI tutor on and migration 064 is applied.
+  const [tutorOn, setTutorOn] = useState(false)
+  useEffect(() => { isTutorAvailable().then(setTutorOn) }, [])
 
   useEffect(() => {
     let cancelled = false
@@ -68,6 +73,7 @@ export default function LessonEditor({ lessonId }: { lessonId: string }) {
           ...(checksOn ? [{ key: 'checks', label: 'Checks', render: () => <LessonChecksTab lesson={lesson} /> }] : []),
           { key: 'assign', label: 'Assign', render: () => <LessonAssignTab lesson={lesson} onGoBuild={() => goTab('build')} /> },
           ...(catchupOn ? [{ key: 'catchup', label: 'Catch-up', render: () => <LessonCatchupTab lesson={lesson} onGoAssign={() => goTab('assign')} /> }] : []),
+          ...(tutorOn ? [{ key: 'tutor', label: 'Tutor', render: () => <LessonTutorTab lesson={lesson} /> }] : []),
           { key: 'results', label: 'Results', render: () => <><LessonResultsTab lesson={lesson} /><LessonCheckResults lessonId={lesson.id} /></> },
         ]}
       />

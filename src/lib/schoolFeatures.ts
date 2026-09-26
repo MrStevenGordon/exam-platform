@@ -12,6 +12,8 @@ export type SchoolFeatures = {
   // and off for any school whose settings predate them.
   smartLearningEnabled: boolean
   smartPlayEnabled: boolean
+  // Students can ask an AI tutor about a lesson (needs Smart Learning too). Off unless switched on.
+  aiTutorEnabled: boolean
 }
 
 // The full set every school effectively had before this config existed —
@@ -26,6 +28,7 @@ const DEFAULT_FEATURES: SchoolFeatures = {
   lessonPlanLibraryEnabled: true,
   smartLearningEnabled: false,
   smartPlayEnabled: false,
+  aiTutorEnabled: false,
 }
 
 export async function getSchoolFeatures(): Promise<SchoolFeatures> {
@@ -37,6 +40,7 @@ export async function getSchoolFeatures(): Promise<SchoolFeatures> {
     lesson_plan_library_enabled: boolean
     smart_learning_enabled: boolean
     smart_play_enabled: boolean
+    ai_tutor_enabled: boolean
   }> | null
 
   if (!raw) return DEFAULT_FEATURES
@@ -48,5 +52,6 @@ export async function getSchoolFeatures(): Promise<SchoolFeatures> {
     lessonPlanLibraryEnabled: raw.lesson_plan_library_enabled ?? DEFAULT_FEATURES.lessonPlanLibraryEnabled,
     smartLearningEnabled: raw.smart_learning_enabled ?? false,
     smartPlayEnabled: raw.smart_play_enabled ?? false,
+    aiTutorEnabled: raw.ai_tutor_enabled ?? false,
   }
 }

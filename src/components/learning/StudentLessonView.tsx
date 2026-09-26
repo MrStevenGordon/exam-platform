@@ -7,6 +7,7 @@ import { jamaicaDate } from '@/lib/attendance'
 import { STEP_INFO, STEP_KEYS, dueLabel, paragraphs, type Resource, type StepKey } from '@/lib/learning'
 import StudentLessonCheck from '@/components/learning/StudentLessonCheck'
 import PlayTopicLink from '@/components/learning/PlayTopicLink'
+import StudentTutor from '@/components/learning/StudentTutor'
 import { catchupMessage, loadStudentCatchup, type StudentCatchup } from '@/lib/learningCatchup'
 
 type LessonForStudent = {
@@ -170,6 +171,7 @@ export default function StudentLessonView({ lessonId }: { lessonId: string }) {
         )}
       </div>
       <StudentLessonCheck lessonId={lessonId} stepsDone={lesson.steps_done.length} stepsTotal={STEP_KEYS.length} />
+      <StudentTutor lessonId={lessonId} />
       <PlayTopicLink topic={lesson.topic ?? null} />
       <style>{`@media (min-width: 820px) { .learning-grid { grid-template-columns: minmax(0, 1fr) 260px !important; align-items: start; } }`}</style>
     </div>

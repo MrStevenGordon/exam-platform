@@ -3,18 +3,22 @@
 export const AI_MODEL = 'claude-sonnet-5'
 
 export type AiReply = { ok: true; text: string } | { ok: false; status: number; message: string }
+export type ChatMessage = { role: 'user' | 'assistant'; content: string }
+type CallOpts = { maxTokens: number; apiKey: string; fetchImpl?: typeof fetch; baseUrl?: string }
 
-export async function callClaude(
-  prompt: string,
-  opts: { maxTokens: number; apiKey: string; fetchImpl?: typeof fetch; baseUrl?: string },
-): Promise<AiReply> {
+export async function callClaude(prompt: string, opts: CallOpts): Promise<AiReply> {
+  return callClaudeChat({ messages: [{ role: 'user', content: prompt }] }, opts)
+}
+
+// A multi-turn conversation with an optional system prompt (used by the tutor).
+export async function callClaudeChat(input: { system?: string; messages: ChatMessage[] }, opts: CallOpts): Promise<AiReply> {
   const doFetch = opts.fetchImpl ?? fetch
   const base = (opts.baseUrl ?? process.env.ANTHROPIC_BASE_URL ?? 'https://api.anthropic.com').replace(/\/$/, '')
   try {
     const res = await doFetch(`${base}/v1/messages`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-api-key': opts.apiKey, 'anthropic-version': '2023-06-01' },
-      body: JSON.stringify({ model: AI_MODEL, max_tokens: opts.maxTokens, messages: [{ role: 'user', content: prompt }] }),
+      body: JSON.stringify({ model: AI_MODEL, max_tokens: opts.maxTokens, ...(input.system ? { system: input.system } : {}), messages: input.messages }),
     })
     if (!res.ok) {
       const raw = await res.text()

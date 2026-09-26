@@ -115,18 +115,22 @@ export function parseDraft(reply: string): DraftResult | null {
   return { steps, keyTerms, removedLinks }
 }
 
-// What to tell a teacher when the AI service cannot help right now. The raw provider message is
-// logged on the server; teachers get plain words.
-export function friendlyAiError(status: number, message: string): string {
+// What to tell a person when the AI service cannot help right now. The raw provider message is
+// logged on the server and never shown. `for` picks the wording: a teacher drafting a lesson, or a
+// student asking the tutor.
+export function friendlyAiError(status: number, message: string, audience: 'teacher' | 'student' = 'teacher'): string {
   const m = message.toLowerCase()
+  const fallback = audience === 'student' ? 'ask your teacher' : 'write the steps yourself'
   if (m.includes('credit balance') || m.includes('billing') || m.includes('purchase credits')) {
-    return 'The AI assistant is unavailable right now because the school’s AI account has run out of credit. You can still write the steps yourself.'
+    return audience === 'student'
+      ? 'The tutor isn’t available right now. Please ask your teacher for help.'
+      : 'The AI assistant is unavailable right now because the school’s AI account has run out of credit. You can still write the steps yourself.'
   }
   if (status === 429 || m.includes('rate limit') || m.includes('overloaded') || status === 529) {
-    return 'The AI assistant is busy right now. Please try again in a minute.'
+    return audience === 'student' ? 'The tutor is busy right now. Please try again in a minute.' : 'The AI assistant is busy right now. Please try again in a minute.'
   }
   if (status === 401 || status === 403 || m.includes('api key')) {
-    return 'The AI assistant isn’t set up correctly on this server. Please tell your administrator.'
+    return audience === 'student' ? 'The tutor isn’t available right now. Please ask your teacher for help.' : 'The AI assistant isn’t set up correctly on this server. Please tell your administrator.'
   }
-  return 'The AI assistant could not draft this lesson right now. Please try again, or write the steps yourself.'
+  return audience === 'student' ? 'The tutor couldn’t answer just now. Please try again, or ' + fallback + '.' : 'The AI assistant could not draft this lesson right now. Please try again, or ' + fallback + '.'
 }

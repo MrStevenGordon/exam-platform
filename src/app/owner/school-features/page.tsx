@@ -31,6 +31,7 @@ export default function SchoolFeaturesPage() {
   const [lessonPlanLibraryEnabled, setLessonPlanLibraryEnabled] = useState(true)
   const [smartLearningEnabled, setSmartLearningEnabled] = useState(false)
   const [smartPlayEnabled, setSmartPlayEnabled] = useState(false)
+  const [aiTutorEnabled, setAiTutorEnabled] = useState(false)
 
   useEffect(() => { loadData() }, [])
 
@@ -78,6 +79,7 @@ export default function SchoolFeaturesPage() {
           lessonPlanLibraryEnabled,
           smartLearningEnabled,
           smartPlayEnabled,
+          aiTutorEnabled,
         },
         accessToken: session?.access_token,
       }),
@@ -155,6 +157,10 @@ export default function SchoolFeaturesPage() {
           <label style={{ fontSize: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
             <input type="checkbox" checked={smartPlayEnabled} onChange={(e) => setSmartPlayEnabled(e.target.checked)} />
             Smart Play (only once Play is live for this school)
+          </label>
+          <label style={{ fontSize: 14, display: 'flex', alignItems: 'flex-start', gap: 8, marginTop: 6 }}>
+            <input type="checkbox" style={{ marginTop: 3 }} checked={aiTutorEnabled} onChange={(e) => setAiTutorEnabled(e.target.checked)} />
+            <span>AI tutor in Smart Learning (needs Smart Learning on). Students ask an AI about a lesson. Conversations are saved and can be read by the lesson&rsquo;s teacher, school admins and the principal. Switch on only once the school has agreed to this.</span>
           </label>
         </div>
 
