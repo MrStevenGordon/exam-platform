@@ -11,6 +11,7 @@ import { getMfaRedirect } from '@/lib/mfaCheck'
 import { verifyPortalRole } from '@/lib/verifyPortalRole'
 import { getEnabledProducts, productHref } from '@/lib/products'
 import { isCoverageAvailable } from '@/lib/coverage'
+import { FLAGS_CHANGED_EVENT, loadFlagCounts } from '@/lib/tutorFlags'
 
 type Role = 'student' | 'teacher' | 'supervisor' | 'admin' | 'principal'
 const ROLES: Role[] = ['student', 'teacher', 'supervisor', 'admin', 'principal']
@@ -23,6 +24,7 @@ const AUTHOR_NAV = [
 ]
 const OVERVIEW_NAV = [{ label: 'Coverage', icon: 'ti-chart-grid-dots', href: '/learning' }]
 const COVERAGE_ITEM = { label: 'Coverage', icon: 'ti-chart-grid-dots', href: '/learning/coverage' }
+const FLAGS_ITEM = { label: 'Tutor flags', icon: 'ti-shield-check', href: '/learning/flags' }
 
 // Smart Learning's own shell. Everyone signed in can enter (the lessons themselves are
 // protected by the database), but only when the school has switched Smart Learning on.
@@ -33,6 +35,10 @@ export default function LearningLayout({ children }: { children: React.ReactNode
   const [state, setState] = useState<'checking' | 'ready' | 'off'>('checking')
   // Heads of department and school admins get a Coverage page once migration 063 is applied.
   const [coverageOn, setCoverageOn] = useState(false)
+  // The principal team and school admins get the school-wide list of flagged tutor conversations once
+  // migration 065 is applied. `flagCount` is how many are still to be read (shown as a menu badge).
+  const [flagsOn, setFlagsOn] = useState(false)
+  const [flagCount, setFlagCount] = useState(0)
 
   useEffect(() => {
     let cancelled = false
@@ -54,14 +60,26 @@ export default function LearningLayout({ children }: { children: React.ReactNode
 
       const products = await getEnabledProducts()
       const coverage = r === 'supervisor' || r === 'admin' ? await isCoverageAvailable() : false
+      const flags = r === 'admin' || r === 'principal' ? await loadFlagCounts() : null
       if (cancelled) return
       setCoverageOn(coverage)
+      setFlagsOn(!!flags)
+      setFlagCount(flags?.open_total ?? 0)
       setRole(r)
       setState(products.includes('learning') ? 'ready' : 'off')
     }
     check()
     return () => { cancelled = true }
   }, [router, pathname])
+
+  // When someone marks a flagged conversation read, the menu count updates without a page change.
+  useEffect(() => {
+    if (!flagsOn) return
+    let cancelled = false
+    const refresh = () => { loadFlagCounts().then((c) => { if (!cancelled && c) setFlagCount(c.open_total) }) }
+    window.addEventListener(FLAGS_CHANGED_EVENT, refresh)
+    return () => { cancelled = true; window.removeEventListener(FLAGS_CHANGED_EVENT, refresh) }
+  }, [flagsOn])
 
   if (state === 'checking' || !role) return null
 
@@ -75,13 +93,14 @@ export default function LearningLayout({ children }: { children: React.ReactNode
     )
   }
 
-  const nav = role === 'student' ? STUDENT_NAV : role === 'principal' ? OVERVIEW_NAV : coverageOn ? [...AUTHOR_NAV, COVERAGE_ITEM] : AUTHOR_NAV
+  const base = role === 'student' ? STUDENT_NAV : role === 'principal' ? OVERVIEW_NAV : coverageOn ? [...AUTHOR_NAV, COVERAGE_ITEM] : AUTHOR_NAV
+  const nav = flagsOn && (role === 'admin' || role === 'principal') ? [...base, FLAGS_ITEM] : base
   return (
     <div className="portal-layout" style={{ minHeight: '100vh' }}>
       <InactivityLogout />
       <PresenceHeartbeat />
       <main className="portal-content"><PageTransition>{children}</PageTransition></main>
-      <Sidebar navItems={nav} portalLabel="Smart Learning" resolveActivePathname={(p) => (p.startsWith('/learning/lesson/') || p.startsWith('/learning/lessons/') && p !== '/learning/lessons/new' ? '/learning' : p)} />
+      <Sidebar navItems={nav} badges={flagsOn ? { [FLAGS_ITEM.href]: flagCount } : undefined} portalLabel="Smart Learning" resolveActivePathname={(p) => (p.startsWith('/learning/lesson/') || p.startsWith('/learning/lessons/') && p !== '/learning/lessons/new' ? '/learning' : p)} />
     </div>
   )
 }

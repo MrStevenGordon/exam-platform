@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import EmptyState from '@/components/EmptyState'
 import { timeAgo } from '@/lib/presence'
+import TutorTranscript from '@/components/learning/TutorTranscript'
 import { FLAG_LABEL, type TutorConversationRow, type TutorMessage } from '@/lib/tutorClient'
 import type { LessonRow } from '@/lib/learning'
 
@@ -87,16 +88,7 @@ export default function LessonTutorTab({ lesson }: { lesson: LessonRow }) {
 
                 {isOpen && (
                   <div style={{ marginTop: 10, borderTop: '1px solid var(--border)', paddingTop: 10 }}>
-                    {transcript === null ? <div style={{ fontSize: 13 }}>Loading…</div> : (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                        {transcript.map((m, i) => (
-                          <div key={i} style={{ alignSelf: m.role === 'student' ? 'flex-end' : 'flex-start', maxWidth: '85%' }}>
-                            <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 2, textAlign: m.role === 'student' ? 'right' : 'left' }}>{m.role === 'student' ? r.student_name : 'Tutor'}</div>
-                            <div style={{ padding: '8px 12px', borderRadius: 12, fontSize: 14, lineHeight: 1.5, whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', background: m.role === 'student' ? 'var(--accent-light)' : 'var(--page-bg)', border: '1px solid var(--border)' }}>{m.content}</div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
+                    {transcript === null ? <div style={{ fontSize: 13 }}>Loading…</div> : <TutorTranscript messages={transcript} studentName={r.student_name} />}
                     {attention && (
                       <div style={{ marginTop: 12 }}>
                         <button type="button" className="btn btn-primary" disabled={busy} onClick={() => markReviewed(r.conversation_id)}>I have read this</button>
