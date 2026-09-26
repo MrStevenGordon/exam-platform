@@ -4,6 +4,8 @@ import { getPlayAccountId } from '@/lib/playAuth'
 import { leastFullTeamId } from '@/lib/playBoard'
 import { leastFullTugTeamId } from '@/lib/playTug'
 import { invalidateLiveState } from '@/lib/playLive'
+import { invalidateBoardState } from '@/lib/playBoard'
+import { invalidateTugState } from '@/lib/playTug'
 
 const MAX_BAD_CODES = 10
 
@@ -70,6 +72,7 @@ export async function POST(request: Request) {
           await client.query('insert into play_board_players (game_id, account_id, team_id) values ($1, $2, $3) on conflict do nothing', [game.id, accountId, teamId])
         }
         await client.query('commit')
+        invalidateBoardState(code)
         return NextResponse.json({ code, kind })
       } catch (err) {
         await client.query('rollback').catch(() => {})
@@ -100,6 +103,7 @@ export async function POST(request: Request) {
           await client.query('insert into play_tug_players (game_id, account_id, team_id) values ($1, $2, $3) on conflict do nothing', [game.id, accountId, teamId])
         }
         await client.query('commit')
+        invalidateTugState(code)
         return NextResponse.json({ code, kind })
       } catch (err) {
         await client.query('rollback').catch(() => {})

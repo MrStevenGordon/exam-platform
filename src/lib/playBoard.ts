@@ -115,20 +115,36 @@ export type BoardState = {
   }
 }
 
-export async function loadBoardState(code: string, accountId: string, isTeacher: boolean): Promise<BoardState | null> {
+// ---- what a poll costs ---------------------------------------------------------------------------------------
+// Same idea as the live quiz (src/lib/playLive.ts): everything that is the same for every viewer of a board is
+// read from the database once and shared for a short time; what is specific to a viewer is worked out in memory.
+// Buzzing, joining and the host's controls clear the shared copy so the next poll is fresh.
+const SHARED_TTL_MS = 400
+
+type BoardShared = {
+  game: BoardGameRow
+  fetchedAt: number
+  cats: { topic: string }[]
+  clueRows: any[]
+  board: any[]
+  teamRows: any[]
+  memberRows: any[]
+  clueRow: any | null
+  buzzes: any[]
+}
+
+const sharedBoards = new Map<string, { at: number; value: Promise<BoardShared | null> }>()
+
+// Called by anything that changes a board, so the next poll reads fresh state.
+export function invalidateBoardState(code: string) {
+  sharedBoards.delete(code)
+}
+
+async function readBoardShared(code: string): Promise<BoardShared | null> {
   const pool = getPlayPool()
   const game = await findBoardByCode(pool, code)
   if (!game) return null
-
-  const isHost = isTeacher && game.host_id === accountId
-  let myTeamId: string | null = null
-  if (!isHost) {
-    const p = await pool.query('select team_id from play_board_players where game_id = $1 and account_id = $2', [game.id, accountId])
-    if (p.rows.length === 0) return null
-    myTeamId = p.rows[0].team_id
-  }
-
-  const phase = boardPhase(game)
+  const fetchedAt = Date.now()
   const teamMode = game.team_mode
 
   const [cats, clueRows, board, teamRows, memberRows] = await Promise.all([
@@ -173,10 +189,72 @@ export async function loadBoardState(code: string, accountId: string, isTeacher:
         )
       : Promise.resolve({ rows: [] as any[] }),
   ])
-  const categories: string[] = cats.rows.map((r) => r.topic)
-  const rows = board.rows as { account_id: string; display_name: string; team_id: string | null; team_name: string | null; score: number }[]
-  const teamScores = teamRows.rows as { id: string; name: string; position: number; score: number }[]
-  const members = memberRows.rows as { account_id: string; display_name: string; team_id: string | null }[]
+
+  // A clue is open while the stored status is clue, answering or reveal (a running clue may turn into
+  // a reveal by the clock, which is worked out per viewer below, but it is the same clue either way).
+  let clueRow: any | null = null
+  let buzzes: any[] = []
+  if ((game.status === 'clue' || game.status === 'answering' || game.status === 'reveal') && game.current_clue_id) {
+    const q = await pool.query(
+      `select c.value, c.category_position, q.question_text, q.question_type, q.options, q.correct_answer, q.explanation
+         from play_board_clues c join play_questions q on q.id = c.question_id
+        where c.id = $1`,
+      [game.current_clue_id]
+    )
+    clueRow = q.rows[0] ?? null
+    if (clueRow) {
+      buzzes = (await pool.query(
+        `select b.account_id, b.team_id, b.outcome, a.display_name, tm.name as team_name
+           from play_board_buzzes b
+           join play_accounts a on a.id = b.account_id
+           left join play_board_teams tm on tm.id = b.team_id
+          where b.clue_id = $1 order by b.buzzed_at`,
+        [game.current_clue_id]
+      )).rows
+    }
+  }
+  return { game, fetchedAt, cats: cats.rows, clueRows: clueRows.rows, board: board.rows, teamRows: teamRows.rows, memberRows: memberRows.rows, clueRow, buzzes }
+}
+
+function sharedBoardFor(code: string): Promise<BoardShared | null> {
+  const hit = sharedBoards.get(code)
+  if (hit && Date.now() - hit.at < SHARED_TTL_MS) return hit.value
+  const value = readBoardShared(code)
+  const entry = { at: Date.now(), value }
+  sharedBoards.set(code, entry)
+  value.catch(() => { if (sharedBoards.get(code) === entry) sharedBoards.delete(code) })
+  if (sharedBoards.size > 200) for (const [k, v] of sharedBoards) if (Date.now() - v.at > 10_000) sharedBoards.delete(k)
+  return value
+}
+
+export async function loadBoardState(code: string, accountId: string, isTeacher: boolean): Promise<BoardState | null> {
+  if (!/^\d{6}$/.test(code)) return null
+  let sh = await sharedBoardFor(code)
+  if (!sh) return null
+  // Someone not in the copy may have joined a moment ago: look once more with fresh data before "not found".
+  if (!sh.board.some((r) => r.account_id === accountId) && !(isTeacher && sh.game.host_id === accountId) && Date.now() - sh.fetchedAt > 50) {
+    invalidateBoardState(code)
+    sh = await sharedBoardFor(code)
+    if (!sh) return null
+  }
+  // The database's clock at the time it was read, moved forward by the time since.
+  const game: BoardGameRow = { ...sh.game, elapsed_ms: sh.game.elapsed_ms == null ? null : sh.game.elapsed_ms + (Date.now() - sh.fetchedAt) }
+
+  const isHost = isTeacher && game.host_id === accountId
+  let myTeamId: string | null = null
+  if (!isHost) {
+    const me = sh.board.find((r) => r.account_id === accountId)
+    if (!me) return null
+    myTeamId = me.team_id
+  }
+
+  const phase = boardPhase(game)
+  const teamMode = game.team_mode
+
+  const categories: string[] = sh.cats.map((r) => r.topic)
+  const rows = sh.board as { account_id: string; display_name: string; team_id: string | null; team_name: string | null; score: number }[]
+  const teamScores = sh.teamRows as { id: string; name: string; position: number; score: number }[]
+  const members = sh.memberRows as { account_id: string; display_name: string; team_id: string | null }[]
 
   let clue: BoardState['clue'] = null
   let hostAnswer: string | null = null
@@ -187,26 +265,13 @@ export async function loadBoardState(code: string, accountId: string, isTeacher:
 
   const inClue = (phase === 'clue' || phase === 'answering' || phase === 'reveal') && game.current_clue_id
   if (inClue) {
-    const q = await pool.query(
-      `select c.value, c.category_position, q.question_text, q.question_type, q.options, q.correct_answer, q.explanation
-         from play_board_clues c join play_questions q on q.id = c.question_id
-        where c.id = $1`,
-      [game.current_clue_id]
-    )
-    const r = q.rows[0]
+    const r = sh.clueRow
     if (r) {
       const options: string[] | null = r.question_type === 'true_false' ? ['True', 'False'] : r.question_type === 'multiple_choice' ? r.options : null
       clue = { value: r.value, category: categories[r.category_position] ?? '', text: r.question_text, type: r.question_type, options }
       if (isHost && phase !== 'reveal') hostAnswer = r.correct_answer
 
-      const buzzes = await pool.query(
-        `select b.account_id, b.team_id, b.outcome, a.display_name, tm.name as team_name
-           from play_board_buzzes b
-           join play_accounts a on a.id = b.account_id
-           left join play_board_teams tm on tm.id = b.team_id
-          where b.clue_id = $1 order by b.buzzed_at`,
-        [game.current_clue_id]
-      )
+      const buzzes = { rows: sh.buzzes }
       const pending = buzzes.rows.find((b) => b.outcome === 'pending')
       if (pending && phase === 'answering') {
         buzzer = {
@@ -298,7 +363,7 @@ export async function loadBoardState(code: string, accountId: string, isTeacher:
       msRemaining: phase === 'clue' ? Math.max(0, limitMs - (game.elapsed_ms ?? 0)) : null,
     },
     categories,
-    clues: clueRows.rows.map((c) => ({ id: c.id, category: c.category_position, row: c.row_position, value: c.value, used: c.used })),
+    clues: sh.clueRows.map((c: any) => ({ id: c.id, category: c.category_position, row: c.row_position, value: c.value, used: c.used })),
     playerCount: rows.length,
     playerNames: isHost && phase === 'lobby' ? rows.map((r) => r.display_name) : null,
     teams,

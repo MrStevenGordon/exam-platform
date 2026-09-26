@@ -35,7 +35,7 @@ What changed: the parts of a game's state that are the same for everyone (player
 A comparison test ran the old and new code over 195 viewer-and-phase combinations (lobby, running, everyone answered, timer expired, reveal, next question, ended, non-members, a second teacher, ties in score and name) and found **no difference** in what any viewer is shown, including that nobody sees a running question's points or the correct answer early.
 These numbers are from a local copy with an artificial delay; the real hosted database still needs the same run (`node scripts/play/load_test.mjs --database-url ... --allow-remote`) during the pilot.
 
-**Not yet reduced:** Jeopardy boards (about 7 database calls per poll, every second) and Tug of War (about 5, every 0.8 seconds, because it animates). They keep working as before and are fine for one class at a time. Before several classes play them at once they need the same treatment. For the pilot, run Live Quiz and Topic Mastery freely, and boards or Tug for one class at a time.
+**Jeopardy boards and Tug of War** got the same treatment (shared read, per-viewer work in memory; Tug still reads each player's own next question per poll). A comparison test against the old code found no difference in what anyone is shown: 528 comparisons across individual and team boards (with and without penalty for wrong answers, every phase, second buzzers, lock-outs, reveal by the clock) and 66 for Tug (lobby, running, stumbling players, ended, time-up). Boards and Tug were not run through the load script; the shared read makes a poll cost close to nothing whatever the number of players, but rehearse one of each with a real class before relying on them.
 
 ## 1. Where Play is today
 

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getPlayPool } from '@/lib/playDb'
 import { getPlayAccountId } from '@/lib/playAuth'
-import { BOARD_GRACE_MS, findBoardByCode } from '@/lib/playBoard'
+import { BOARD_GRACE_MS, findBoardByCode, invalidateBoardState } from '@/lib/playBoard'
 
 // A student buzzes in. The game row is locked for the whole check-and-write, so
 // two near-simultaneous buzzes are ordered by the database and exactly one
@@ -42,6 +42,7 @@ export async function POST(_request: Request, { params }: { params: Promise<{ co
     await client.query('insert into play_board_buzzes (clue_id, game_id, account_id, team_id) values ($1, $2, $3, $4)', [game.current_clue_id, game.id, accountId, teamId])
     await client.query(`update play_board_games set status = 'answering' where id = $1`, [game.id])
     await client.query('commit')
+    invalidateBoardState(code)
     return NextResponse.json({ ok: true })
   } catch (err) {
     await client.query('rollback').catch(() => {})

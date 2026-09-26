@@ -136,6 +136,25 @@ Pages: Overview, Attendance, Alerts, Timetable, Staff, Students, Messages, My Pr
 - [ ] HOD sees only their department's subjects
 - [ ] **Tutor flags** (principal and admin): unread first, wellbeing before other, overdue in red, read a transcript, mark read, menu badge updates; teachers cannot open it
 
+## 7b. Smart Play (only if switched on for the school)
+
+Sign in as a student and as a teacher who has classes. Smart Play should need no second password.
+
+- [ ] With Smart Play **off** for the school, typing `/play` shows "not found", and there is no Play tile on the sign-in page or menu
+- [ ] With it **on**: a student's sign-in page offers Smart Play; choosing it lands on the Play home with their name, without asking for a password
+- [ ] Opening Play twice, or in two tabs at once, does not create a second account or an error
+- [ ] The student sees only their own classes on the leaderboard; a student from another class cannot see their class's board
+- [ ] A teacher signing in to Play reaches the host screens (Live Quiz, Jeopardy board, Tug of War, Questions, Classes) and sees only their own classes
+- [ ] An HOD, admin or principal picking Play is told it is for students and teachers (they land in Smart Assess instead)
+- [ ] **Live Quiz** with a whole class: everyone joins with the code, answers, sees the reveal together; nobody sees a score jump before the reveal; the timer ends the question on time
+- [ ] **Jeopardy board** (individual and team) and **Tug of War** with one class: buzzing, lock-outs, scores and the rope behave; nothing freezes
+- [ ] **Topic Mastery** from a lesson's "Practise this topic as a game" card opens the right topic; "no questions yet" appears for a topic Play lacks
+- [ ] A deactivated student cannot open Play (within a minute)
+- [ ] After a student is deleted (graduation clean-up), they are gone from Play too (leaderboards, classes)
+- [ ] Sign out of Play returns to the exam sign-in page
+
+---
+
 ## 8. Owner console (you)
 
 - [ ] **School requests** and **Org requests**: approve and provision

@@ -162,21 +162,32 @@ export function questionView(row: { question_text: string; question_type: string
   return { text: row.question_text, type: row.question_type, options }
 }
 
-export async function loadTugState(code: string, accountId: string, isTeacher: boolean): Promise<TugState | null> {
+// ---- what a poll costs ---------------------------------------------------------------------------------------
+// Same idea as the live quiz (src/lib/playLive.ts): the game, the team tallies and the player list are the same
+// for everyone, so they are read once and shared for a short time. Only a player's own next question is read
+// per poll. Answers do not clear the shared copy (players answer constantly); the field is simply up to 0.4
+// seconds behind. Joining and the host's controls do clear it.
+const SHARED_TTL_MS = 400
+
+type TugShared = { game: TugGameRow; fetchedAt: number; tallies: TeamTally[]; members: any[] }
+
+const sharedTugs = new Map<string, { at: number; value: Promise<TugShared | null> }>()
+
+// Called by anything that changes a game other than an answer, so the next poll reads fresh state.
+export function invalidateTugState(code: string) {
+  sharedTugs.delete(code)
+}
+
+async function readTugShared(code: string): Promise<TugShared | null> {
   const pool = getPlayPool()
   let game = await findTugByCode(pool, code)
   if (!game) return null
-
-  const isHost = isTeacher && game.host_id === accountId
-  if (!isHost) {
-    const p = await pool.query('select 1 from play_tug_players where game_id = $1 and account_id = $2', [game.id, accountId])
-    if (p.rows.length === 0) return null
-  }
 
   if (game.status === 'running' && (game.elapsed_ms ?? 0) >= game.duration_seconds * 1000) {
     await finishIfTimeUp(game.id)
     game = (await findTugByCode(pool, code))!
   }
+  const fetchedAt = Date.now()
 
   const [tallies, members] = await Promise.all([
     teamTallies(pool, game.id),
@@ -189,6 +200,39 @@ export async function loadTugState(code: string, accountId: string, isTeacher: b
       [game.id]
     ),
   ])
+  return { game, fetchedAt, tallies, members: members.rows }
+}
+
+function sharedTugFor(code: string): Promise<TugShared | null> {
+  const hit = sharedTugs.get(code)
+  if (hit && Date.now() - hit.at < SHARED_TTL_MS) return hit.value
+  const value = readTugShared(code)
+  const entry = { at: Date.now(), value }
+  sharedTugs.set(code, entry)
+  value.catch(() => { if (sharedTugs.get(code) === entry) sharedTugs.delete(code) })
+  if (sharedTugs.size > 200) for (const [k, v] of sharedTugs) if (Date.now() - v.at > 10_000) sharedTugs.delete(k)
+  return value
+}
+
+export async function loadTugState(code: string, accountId: string, isTeacher: boolean): Promise<TugState | null> {
+  if (!/^\d{6}$/.test(code)) return null
+  let sh = await sharedTugFor(code)
+  if (!sh) return null
+  // Someone not in the copy may have joined a moment ago: look once more with fresh data before "not found".
+  if (!sh.members.some((m) => m.account_id === accountId) && !(isTeacher && sh.game.host_id === accountId) && Date.now() - sh.fetchedAt > 50) {
+    invalidateTugState(code)
+    sh = await sharedTugFor(code)
+    if (!sh) return null
+  }
+  const pool = getPlayPool()
+  // The database's clock at the time it was read, moved forward by the time since.
+  const game: TugGameRow = { ...sh.game, elapsed_ms: sh.game.elapsed_ms == null ? null : sh.game.elapsed_ms + (Date.now() - sh.fetchedAt) }
+
+  const isHost = isTeacher && game.host_id === accountId
+  if (!isHost && !sh.members.some((m) => m.account_id === accountId)) return null
+
+  const tallies = sh.tallies
+  const members = { rows: sh.members }
   const [left, right] = tallies
   const { rope, lead } = ropeFrom(left, right, game.win_margin)
 

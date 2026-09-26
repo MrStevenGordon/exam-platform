@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getPlayPool } from '@/lib/playDb'
 import { getPlayTeacherId, UUID_RE } from '@/lib/playAuth'
-import { boardPhase, findBoardByCode } from '@/lib/playBoard'
+import { boardPhase, findBoardByCode, invalidateBoardState } from '@/lib/playBoard'
 
 const ACTIONS = ['start', 'open', 'correct', 'wrong', 'reveal', 'board', 'end', 'shuffle', 'move']
 
@@ -113,6 +113,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ cod
       await client.query(`update play_board_games set status = 'ended', ended_at = now() where id = $1`, [game.id])
     }
     await client.query('commit')
+    invalidateBoardState(code)
     return NextResponse.json({ ok: true })
   } catch (err) {
     await client.query('rollback').catch(() => {})

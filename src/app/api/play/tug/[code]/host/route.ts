@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getPlayPool } from '@/lib/playDb'
 import { getPlayTeacherId, UUID_RE } from '@/lib/playAuth'
-import { findTugByCode, finishGame, pickQuestion } from '@/lib/playTug'
+import { findTugByCode, finishGame, invalidateTugState, pickQuestion } from '@/lib/playTug'
 
 const ACTIONS = ['start', 'end', 'shuffle', 'move']
 
@@ -76,6 +76,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ cod
       await finishGame(client, game.id, 'host')
     }
     await client.query('commit')
+    invalidateTugState(code)
     return NextResponse.json({ ok: true })
   } catch (err) {
     await client.query('rollback').catch(() => {})
