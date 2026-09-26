@@ -10,7 +10,6 @@ import PresenceHeartbeat from '@/components/PresenceHeartbeat'
 import OnboardingTour, { TourStep } from '@/components/OnboardingTour'
 import { getMfaRedirect } from '@/lib/mfaCheck'
 import { verifyPortalRole } from '@/lib/verifyPortalRole'
-import { isTopicsAvailable } from '@/lib/topics'
 
 const SCHOOL_ADMIN_TOUR_STEPS: TourStep[] = [
   { href: '/school-admin', title: 'Your home base', body: "This is where you'll land every time you sign in, with a school-wide overview." },
@@ -38,6 +37,9 @@ const SCHOOL_ADMIN_NAV = [
   { label: 'My Profile', icon: 'ti-user', href: '/school-admin/profile' },
 ]
 
+// Topics is deliberately not in this menu: the topic list builds itself from what teachers propose and heads of
+// department review it (their portal). The page still exists at /school-admin/topics.
+
 // Pages that share one menu entry and are switched between with tabs.
 const TAB_GROUPS: { tabs: SectionTab[] }[] = [
   { tabs: [{ label: 'Timetable', href: '/school-admin/timetable' }, { label: 'Report Cards', href: '/school-admin/report-cards' }] },
@@ -57,9 +59,7 @@ export default function SchoolAdminLayout({ children }: { children: React.ReactN
   const router = useRouter()
   const pathname = usePathname()
   const [checked, setChecked] = useState(false)
-  const [topicsOn, setTopicsOn] = useState(false)
 
-  useEffect(() => { isTopicsAvailable().then(setTopicsOn) }, [])
 
   useEffect(() => {
     async function checkAccess() {
@@ -84,7 +84,7 @@ export default function SchoolAdminLayout({ children }: { children: React.ReactN
         {tabGroup && <SectionTabs tabs={tabGroup.tabs} pathname={pathname} />}
         <PageTransition>{children}</PageTransition>
       </main>
-      <Sidebar navItems={topicsOn ? SCHOOL_ADMIN_NAV.flatMap((n) => (n.href === '/school-admin/departments' ? [n, { label: 'Topics', icon: 'ti-tags', href: '/school-admin/topics' }] : [n])) : SCHOOL_ADMIN_NAV} portalLabel="School Admin" resolveActivePathname={resolveActivePathname} />
+      <Sidebar navItems={SCHOOL_ADMIN_NAV} portalLabel="School Admin" resolveActivePathname={resolveActivePathname} />
       <OnboardingTour tourKey="admin" steps={SCHOOL_ADMIN_TOUR_STEPS} />
     </div>
   )
