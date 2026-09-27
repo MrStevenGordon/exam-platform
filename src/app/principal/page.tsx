@@ -66,29 +66,28 @@ export default function PrincipalHome() {
   return (
     <div>
       <p className="portal-page-title">School overview</p>
-      <p className="portal-page-sub">{formatDay(today)}</p>
-      <p style={{ color: 'var(--text-secondary)', fontSize: 13, margin: '0 0 20px' }}>{formatDay(today)}</p>
+      <p className="portal-page-sub" style={{ marginBottom: 20 }}>{formatDay(today)}</p>
 
       {error && <p className="banner banner-danger" role="alert">{error}</p>}
 
       <div className="stat-grid">
-        <div className="stat-card"><div className="stat-card-value">{counts.teachers}</div><div className="stat-card-label">Teachers</div></div>
-        <div className="stat-card"><div className="stat-card-value">{counts.hods}</div><div className="stat-card-label">Heads of department</div></div>
-        <div className="stat-card"><div className="stat-card-value">{counts.students}</div><div className="stat-card-label">Students</div></div>
+        <StatLink href="/principal/staff?role=teacher" value={counts.teachers} label="Teachers" hint="See the teachers" />
+        <StatLink href="/principal/staff?role=supervisor" value={counts.hods} label="Heads of department" hint="See the HODs" />
+        <StatLink href="/principal/students" value={counts.students} label="Students" hint="See students by class" />
       </div>
 
       {online && (
         <div className="stat-grid">
-          <div className="stat-card"><div className="stat-card-value">{online.staff_online}</div><div className="stat-card-label">Staff online now{online.staff_away ? ` · ${online.staff_away} away` : ''}</div></div>
-          <div className="stat-card"><div className="stat-card-value">{online.students_online}</div><div className="stat-card-label">Students online now{online.students_away ? ` · ${online.students_away} away` : ''}</div></div>
+          <StatLink href="/principal/staff?online=1" value={online.staff_online} label={`Staff online now${online.staff_away ? ` · ${online.staff_away} away` : ''}`} hint="See who is online" />
+          <StatLink href="/principal/students?online=1" value={online.students_online} label={`Students online now${online.students_away ? ` · ${online.students_away} away` : ''}`} hint="See who is online" />
         </div>
       )}
 
       <div className="stat-grid">
-        <div className="stat-card"><div className="stat-card-value">{board.length}</div><div className="stat-card-label">Classes today</div></div>
-        <div className="stat-card"><div className="stat-card-value">{onTime}</div><div className="stat-card-label">Teacher on time</div></div>
-        <div className={`stat-card ${attention.length > 0 ? 'stat-card-accent' : ''}`}><div className="stat-card-value">{attention.length}</div><div className="stat-card-label">Late / not started</div></div>
-        <div className={`stat-card ${truants.length > 0 ? 'stat-card-accent' : ''}`}><div className="stat-card-value">{truants.length}</div><div className="stat-card-label">Truant today</div></div>
+        <StatLink href="/principal/attendance" value={board.length} label="Classes today" hint="Open the live board" />
+        <StatLink href="/principal/attendance" value={onTime} label="Teacher on time" hint="Open the live board" />
+        <StatLink href="/principal/attendance" value={attention.length} label="Late / not started" hint="See which teachers" accent={attention.length > 0} />
+        <StatLink href="/principal/attendance?tab=truancy" value={truants.length} label="Truant today" hint="Open the truancy report" accent={truants.length > 0} />
       </div>
 
       {board.length === 0 && !error && (
@@ -153,5 +152,16 @@ export default function PrincipalHome() {
         </section>
       )}
     </div>
+  )
+}
+
+// A stat card that opens the page where the detail lives.
+function StatLink({ href, value, label, hint, accent }: { href: string; value: number; label: string; hint: string; accent?: boolean }) {
+  return (
+    <Link href={href} className={`stat-card ${accent ? 'stat-card-accent' : ''}`} aria-label={`${value} ${label}. ${hint}`}>
+      <div className="stat-card-value">{value}</div>
+      <div className="stat-card-label">{label}</div>
+      <div className="stat-card-hint">{hint} →</div>
+    </Link>
   )
 }

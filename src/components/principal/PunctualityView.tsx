@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import EmptyState from '@/components/EmptyState'
 import { jamaicaDate, shiftDate, attendanceError } from '@/lib/attendance'
+import HowItWorks from '@/components/HowItWorks'
 
 export type PunctualityRow = {
   teacher_id: string; teacher_name: string; department_name: string | null
@@ -42,6 +43,10 @@ export default function PunctualityView() {
   // Least punctual first.
   const sorted = [...rows].sort((a, b) => (onTimePercent(a) ?? 101) - (onTimePercent(b) ?? 101) || a.teacher_name.localeCompare(b.teacher_name))
 
+  const belowSeventy = sorted.filter((r) => { const p = onTimePercent(r); return p !== null && p < 70 }).length
+  const totalLate = sorted.reduce((n, r) => n + r.late, 0)
+  const totalMissed = sorted.reduce((n, r) => n + r.missed, 0)
+
   return (
     <div>
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', marginBottom: 12 }}>
@@ -52,16 +57,26 @@ export default function PunctualityView() {
         <button type="button" className="btn btn-ghost" onClick={() => { setFrom(shiftDate(today, -6)); setTo(today) }}>Last 7 days</button>
         <button type="button" className="btn btn-ghost" onClick={() => { setFrom(shiftDate(today, -29)); setTo(today) }}>Last 30 days</button>
       </div>
-      <p style={{ fontSize: 12, color: 'var(--text-secondary)', maxWidth: 680, margin: '0 0 16px' }}>
-        A teacher is on time if they tapped Start class within 10 minutes of the period starting. Only days when attendance was
-        recorded are counted, so weekends and holidays never count against anyone, and a class is only counted once its 10-minute
-        window has passed. &ldquo;No class recorded&rdquo; means nobody started that class.
-      </p>
+      <HowItWorks title="How is on-time worked out?">
+        <ul style={{ margin: 0, paddingLeft: 18 }}>
+          <li>A teacher is <strong>on time</strong> if they tapped Start class within 10 minutes of the period starting.</li>
+          <li>Only days when attendance was recorded are counted, so weekends and holidays never count against anyone.</li>
+          <li>A class is only counted once its 10-minute window has passed.</li>
+          <li><strong>No class recorded</strong> means nobody started that class.</li>
+        </ul>
+      </HowItWorks>
 
       {error && <p className="banner banner-danger" role="alert">{error}</p>}
       {loading && <p style={{ color: 'var(--text-secondary)' }}>Loading…</p>}
       {!loading && !error && sorted.length === 0 && (
         <EmptyState icon="🕘" title="Nothing to report yet" description="Punctuality appears once teachers start recording classes on days the school ran." />
+      )}
+      {!loading && !error && sorted.length > 0 && (
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', margin: '0 0 12px' }}>
+          <span className="badge badge-default" style={{ fontSize: 13 }}>{sorted.length} teacher{sorted.length === 1 ? '' : 's'}</span>
+          <span className={`badge ${belowSeventy > 0 ? 'badge-danger' : 'badge-success'}`} style={{ fontSize: 13 }}>{belowSeventy} below 70% on time</span>
+          <span className="badge badge-default" style={{ fontSize: 13 }}>{totalLate} late, {totalMissed} not recorded</span>
+        </div>
       )}
       {!loading && !error && sorted.length > 0 && (
         <div className="card" style={{ padding: 0, overflowX: 'auto' }}>

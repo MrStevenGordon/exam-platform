@@ -5,13 +5,16 @@ import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import EmptyState from '@/components/EmptyState'
 import { formatDay, formatTime, attendanceError } from '@/lib/attendance'
-import { ALERT_KIND, type AttendanceAlert } from '@/lib/attendanceAlerts'
+import { ALERT_KIND, type AttendanceAlert, type AlertKind } from '@/lib/attendanceAlerts'
+import HowItWorks from '@/components/HowItWorks'
 
 // Attendance alerts: a teacher late or not started, and students at school but missing from class.
 export default function PrincipalAlertsPage() {
   const [alerts, setAlerts] = useState<AttendanceAlert[]>([])
   const [read, setRead] = useState<Set<string>>(new Set())
   const [showResolved, setShowResolved] = useState(false)
+  const [kind, setKind] = useState<'all' | AlertKind>('all')
+  const [openDays, setOpenDays] = useState<Set<string>>(new Set())
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [reload, setReload] = useState(0)
@@ -49,7 +52,9 @@ export default function PrincipalAlertsPage() {
     setReload((n) => n + 1)
   }, [])
 
-  const visible = alerts.filter((a) => showResolved || !a.resolved_at)
+  const byStatus = alerts.filter((a) => showResolved || !a.resolved_at)
+  const kindCount = (k: AlertKind) => byStatus.filter((a) => a.kind === k).length
+  const visible = byStatus.filter((a) => kind === 'all' || a.kind === kind)
   const unread = visible.filter((a) => !a.resolved_at && !read.has(a.id)).length
 
   // Group by school day, newest first.
@@ -72,11 +77,22 @@ export default function PrincipalAlertsPage() {
         </label>
         <button type="button" className="btn btn-secondary" disabled={unread === 0} onClick={() => markRead(null)}>Mark all read</button>
       </div>
-      <p style={{ fontSize: 12, color: 'var(--text-secondary)', maxWidth: 680, margin: '0 0 16px' }}>
-        Alerts appear the moment a teacher starts a class late, when a class has not been started 10 minutes after the bell,
-        and when a student registered present is marked absent from a class. They clear on their own if the teacher starts
-        the class or corrects the mark.{permission === 'granted' ? ' Desktop notifications are on.' : ''}
-      </p>
+      <HowItWorks title="When do alerts appear?">
+        <ul style={{ margin: 0, paddingLeft: 18 }}>
+          <li><strong>Teacher late:</strong> a teacher starts a class after the bell.</li>
+          <li><strong>Not started:</strong> a class has not been started 10 minutes after the bell.</li>
+          <li><strong>Truancy:</strong> a student registered present is marked absent from a class.</li>
+        </ul>
+        <p style={{ margin: '8px 0 0' }}>They clear on their own if the teacher starts the class or corrects the mark.{permission === 'granted' ? ' Desktop notifications are on.' : ''}</p>
+      </HowItWorks>
+
+      <div role="group" aria-label="Type of alert" style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 16 }}>
+        {([['all', 'All', byStatus.length], ['teacher_not_started', ALERT_KIND.teacher_not_started.label, kindCount('teacher_not_started')], ['teacher_late', ALERT_KIND.teacher_late.label, kindCount('teacher_late')], ['truancy', ALERT_KIND.truancy.label, kindCount('truancy')]] as [('all' | AlertKind), string, number][]).map(([k, label, n]) => (
+          <button key={k} type="button" aria-pressed={kind === k} className={kind === k ? 'btn btn-primary' : 'btn btn-ghost'} style={{ fontSize: 12 }} onClick={() => setKind(k)}>
+            {label} ({n})
+          </button>
+        ))}
+      </div>
 
       {error && <p className="banner banner-danger" role="alert">{error}</p>}
       {loading && <p style={{ color: 'var(--text-secondary)' }}>Loading…</p>}
@@ -84,30 +100,45 @@ export default function PrincipalAlertsPage() {
         <EmptyState icon="✓" title="No alerts" description="Everything is on track. New alerts appear here as they happen." />
       )}
 
-      {[...days.entries()].map(([day, list]) => (
-        <section key={day} style={{ marginBottom: 20 }}>
-          <div className="section-label" style={{ marginBottom: 8 }}>{formatDay(day)}</div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {list.map((a) => {
-              const isUnread = !a.resolved_at && !read.has(a.id)
-              return (
-                <div key={a.id} className="card" style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', opacity: a.resolved_at ? 0.6 : 1, borderLeft: isUnread ? '3px solid var(--accent)' : undefined }}>
-                  <div>
-                    <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-                      <span className={`badge ${ALERT_KIND[a.kind].badge}`}>{ALERT_KIND[a.kind].label}</span>
-                      {a.resolved_at && <span className="badge badge-success">Resolved</span>}
-                      <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{formatTime(a.created_at)}</span>
+      {[...days.entries()].map(([day, list], di) => {
+        const dayUnread = list.filter((a) => !a.resolved_at && !read.has(a.id)).length
+        // The newest day, and any day with something unread, starts open; older days start closed.
+        const expanded = openDays.has(day) ? true : openDays.has('!' + day) ? false : di === 0 || dayUnread > 0
+        const toggleDay = () => setOpenDays((prev) => { const next = new Set(prev); next.delete(day); next.delete('!' + day); next.add(expanded ? '!' + day : day); return next })
+        return (
+          <section key={day} style={{ marginBottom: 12, border: '1px solid var(--border)', borderRadius: 'var(--radius)', background: 'var(--card-bg)', overflow: 'hidden' }}>
+            <button type="button" onClick={toggleDay} aria-expanded={expanded} style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, padding: '10px 16px', background: 'transparent', border: 'none', cursor: 'pointer', font: 'inherit', color: 'inherit' }}>
+              <span style={{ fontWeight: 700, fontSize: 14 }}>{formatDay(day)}</span>
+              <span style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 13, color: 'var(--text-secondary)' }}>
+                {dayUnread > 0 && <span className="badge badge-warning">{dayUnread} unread</span>}
+                <span>{list.length} alert{list.length === 1 ? '' : 's'}</span>
+                <span aria-hidden="true">{expanded ? '▲' : '▼'}</span>
+              </span>
+            </button>
+            {expanded && (
+              <div style={{ display: 'flex', flexDirection: 'column', borderTop: '1px solid var(--border)' }}>
+                {list.map((a, i) => {
+                  const isUnread = !a.resolved_at && !read.has(a.id)
+                  return (
+                    <div key={a.id} style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', padding: '10px 16px', borderTop: i > 0 ? '1px solid var(--border)' : undefined, opacity: a.resolved_at ? 0.6 : 1, borderLeft: isUnread ? '3px solid var(--accent)' : '3px solid transparent' }}>
+                      <div style={{ minWidth: 220, flex: 1 }}>
+                        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                          <span className={`badge ${ALERT_KIND[a.kind].badge}`}>{ALERT_KIND[a.kind].label}</span>
+                          {a.resolved_at && <span className="badge badge-success">Resolved</span>}
+                          <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{formatTime(a.created_at)}</span>
+                        </div>
+                        <div style={{ fontSize: 14, marginTop: 4, fontWeight: isUnread ? 700 : 400 }}>{a.message}</div>
+                        {a.student_id && <Link href={`/principal/students/${a.student_id}`} style={{ fontSize: 12, fontWeight: 700 }}>View student →</Link>}
+                      </div>
+                      {isUnread && <button type="button" className="btn btn-ghost" style={{ alignSelf: 'center', fontSize: 12 }} onClick={() => markRead([a.id])}>Mark read</button>}
                     </div>
-                    <div style={{ fontSize: 14, marginTop: 6, fontWeight: isUnread ? 700 : 400 }}>{a.message}</div>
-                    {a.student_id && <Link href={`/principal/students/${a.student_id}`} style={{ fontSize: 12, fontWeight: 700 }}>View student →</Link>}
-                  </div>
-                  {isUnread && <button type="button" className="btn btn-ghost" style={{ alignSelf: 'center', fontSize: 12 }} onClick={() => markRead([a.id])}>Mark read</button>}
-                </div>
-              )
-            })}
-          </div>
-        </section>
-      ))}
+                  )
+                })}
+              </div>
+            )}
+          </section>
+        )
+      })}
     </div>
   )
 }

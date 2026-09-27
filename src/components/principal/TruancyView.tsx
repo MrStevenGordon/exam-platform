@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import EmptyState from '@/components/EmptyState'
 import { jamaicaDate, shiftDate, formatDay, formatTime, attendanceError } from '@/lib/attendance'
+import HowItWorks from '@/components/HowItWorks'
 
 type TruancyRow = {
   class_date: string; student_id: string; student_name: string; student_code: string | null; home_class: string | null
@@ -50,10 +51,10 @@ export default function TruancyView({ linkStudents = true }: { linkStudents?: bo
         <button type="button" className="btn btn-ghost" onClick={() => { setFrom(shiftDate(today, -6)); setTo(today) }}>Last 7 days</button>
         <button type="button" className="btn btn-ghost" onClick={() => { setFrom(shiftDate(today, -29)); setTo(today) }}>Last 30 days</button>
       </div>
-      <p style={{ fontSize: 12, color: 'var(--text-secondary)', maxWidth: 680, margin: '0 0 16px' }}>
-        A student appears here when the morning register marked them present but a teacher marked them absent from a class.
+      <HowItWorks title="What counts as truancy?">
+        A student appears here when the morning register marked them <strong>present</strong> but a teacher marked them <strong>absent</strong> from a class.
         Students marked late in the morning are left out, because the register does not record when they arrived.
-      </p>
+      </HowItWorks>
 
       {error && <p className="banner banner-danger" role="alert">{error}</p>}
       {loading && <p style={{ color: 'var(--text-secondary)' }}>Loading…</p>}
@@ -62,7 +63,10 @@ export default function TruancyView({ linkStudents = true }: { linkStudents?: bo
       )}
       {!loading && !error && rows.length > 0 && (
         <>
-          <p style={{ fontWeight: 700, margin: '0 0 8px' }}>{rows.length} missed class{rows.length !== 1 ? 'es' : ''} by {students} student{students !== 1 ? 's' : ''}</p>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', margin: '0 0 12px' }}>
+            <span className="badge badge-danger" style={{ fontSize: 13 }}>{rows.length} missed class{rows.length !== 1 ? 'es' : ''}</span>
+            <span className="badge badge-default" style={{ fontSize: 13 }}>{students} student{students !== 1 ? 's' : ''}</span>
+          </div>
           <div className="card" style={{ padding: 0, overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
               <thead>

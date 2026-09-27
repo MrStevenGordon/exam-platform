@@ -169,6 +169,17 @@ Pages: Overview, Attendance, Alerts, Timetable, Staff, Students, Messages, My Pr
 
 ---
 
+## 7e. Principal / VP portal tidy-up
+
+- [ ] **Overview:** every card is clickable and opens the right page (Teachers and HODs to Staff filtered by role; Staff / Students online now to the online lists; Classes, Teacher on time, Late and Truant to Attendance)
+- [ ] **Alerts:** a short "When do alerts appear?" note (closed until clicked); filter buttons for All, Not started, Teacher late and Truancy with counts; the newest day (and any day with unread alerts) open, older days collapsed
+- [ ] **Attendance, Truancy and Teacher punctuality:** a short "how is this worked out" note that opens on click, summary badges above each table
+- [ ] **Staff:** grouped by department (or by role, or not at all) with each group collapsible, Expand all / Collapse all, and searching or "Online now" opens the matching groups
+- [ ] **Staff, Message button:** opens the Messages page already in a chat with that person (and creates the chat the first time)
+- [ ] **Students:** grouped by class in order (Grade 7 classes first), each class collapsible with counts of students and of those with absences; "Online now" and the class filter work
+
+---
+
 ## 8. Owner console (you)
 
 - [ ] **School requests** and **Org requests**: approve and provision
