@@ -23,7 +23,7 @@ export default function LearningHome() {
 
   if (role === null) return <div>Loading…</div>
   if (role === 'student') return <StudentLessonList />
-  // The principal team's home is curriculum coverage across the whole school.
-  if (role === 'principal') return <CoverageDashboard />
+  // School admins and the principal team oversee Smart Learning: their home is curriculum coverage across the whole school.
+  if (role === 'principal' || role === 'admin') return <CoverageDashboard />
   return <TeacherLessonList />
 }

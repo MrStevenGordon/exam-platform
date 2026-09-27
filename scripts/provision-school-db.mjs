@@ -124,6 +124,10 @@ const bucketsSql = `
 `
 run(psql, [targetUrl, '-v', 'ON_ERROR_STOP=1', '-c', bucketsSql])
 
+// The rules for who may upload to those buckets live in the storage schema, which the structure copy above does
+// not include; without them every upload (the school logo, question images, task submissions) is refused.
+run(psql, [targetUrl, '-v', 'ON_ERROR_STOP=1', '--single-transaction', '-f', path.join(__dirname, 'data', 'school-storage-policies.sql')])
+
 console.log('4/4 — Seeding setup token…')
 const setupToken = randomBytes(24).toString('base64url')
 run(psql, [targetUrl, '-v', 'ON_ERROR_STOP=1', '-c',

@@ -136,7 +136,51 @@ Pages: Overview, Attendance, Alerts, Timetable, Staff, Students, Messages, My Pr
 - [ ] HOD sees only their department's subjects
 - [ ] **Tutor flags** (principal and admin): unread first, wellbeing before other, overdue in red, read a transcript, mark read, menu badge updates; teachers cannot open it
 
-## 7b. Smart Play (only if switched on for the school)
+## 7a. Who can use Smart Learning (needs update 070)
+
+- [ ] **Teacher, HOD, student:** Smart Learning works exactly as before (create, publish, assign, do lessons)
+- [ ] **School admin and principal / VP:** the Smart Learning menu shows only Coverage (and Flagged tutor chats when the AI tutor is on); there is no "New lesson", "My lessons" or "Lesson plans"
+- [ ] An admin or principal typing a lesson-editor address (for example `/learning/lessons/new`) is sent back to the overview
+- [ ] Coverage shows the whole school for an admin or principal, and only their own department for a HOD
+
+---
+
+## 7c. Teacher view for leadership (needs update 069)
+
+- [ ] **School admin:** on Staff, a "View work" button appears on each teacher and HOD row. It opens a read-only page with Overview, Assessments & homework, and Marking tabs
+- [ ] **Principal / VP:** on Staff, each name and a "View their work" button open the same page
+- [ ] **HOD:** the menu has **My Teachers**, listing only teachers and HODs in their own department; opening one shows the same page
+- [ ] A HOD **cannot** open another department's teacher (typing the address gives "You do not have access to this teacher")
+- [ ] The numbers match reality for a teacher you know: live assessments, submitted vs expected, awaiting marking, oldest wait
+- [ ] Unpublished drafts appear only as a count ("private, not shown"), never by title
+- [ ] Nothing on the page can be edited, and there is no "sign in as this teacher"
+
+---
+
+## 7d. Year promotion and class changes (School admin: Settings and Students)
+
+- [ ] Settings: clicking a class (for example 3-1) opens Students filtered to that class, with its students showing
+- [ ] Year promotion preview: each class shows where its students are going; open one to see the names
+- [ ] A class with no next-year partner (for example 3-8 with no 4-8) shows "choose a class": select students, pick a class, Apply; the counts and "How many will be in each class" update
+- [ ] Changing one student's class in the preview is marked "changed", and "Undo my changes" puts everything back to the automatic plan
+- [ ] Students who cannot be placed (several classes, no class) are listed with the reason and what to do
+- [ ] Running the promotion moves exactly the students shown, into exactly the classes shown; check two or three by hand afterwards
+- [ ] Students: "Change class" on a student moves them to the class you choose, and asks before changing their grade
+
+---
+
+## 7e. Principal / VP portal tidy-up
+
+- [ ] **Overview:** every card is clickable and opens the right page (Teachers and HODs to Staff filtered by role; Staff / Students online now to the online lists; Classes, Teacher on time, Late and Truant to Attendance)
+- [ ] **Alerts:** a short "When do alerts appear?" note (closed until clicked); filter buttons for All, Not started, Teacher late and Truancy with counts; the newest day (and any day with unread alerts) open, older days collapsed
+- [ ] **Attendance, Truancy and Teacher punctuality:** a short "how is this worked out" note that opens on click, summary badges above each table
+- [ ] **Staff:** grouped by department (or by role, or not at all) with each group collapsible, Expand all / Collapse all, and searching or "Online now" opens the matching groups
+- [ ] **Staff, Message button:** opens the Messages page already in a chat with that person (and creates the chat the first time)
+- [ ] **First sign-in:** a new principal or vice principal gets the welcome walkthrough (8 steps, one per menu item) once, on a desktop-size screen, and never again after finishing or skipping it
+- [ ] **Students:** grouped by class in order (Grade 7 classes first), each class collapsible with counts of students and of those with absences; "Online now" and the class filter work
+---
+
+## 7f. Smart Play (only if switched on for the school)
 
 Sign in as a student and as a teacher who has classes. Smart Play should need no second password.
 

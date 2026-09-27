@@ -40,7 +40,8 @@ const schema = z.object({
     email: z.string().trim().email().max(320).optional(),
     role: z.enum(['teacher', 'supervisor', 'admin', 'principal']).optional(),
     leadership_title: z.enum(['Principal', 'Vice Principal']).optional(),
-    department_id: z.string().uuid().optional(),
+    // No department (for example a principal, or staff added before any department exists) arrives as null.
+    department_id: z.string().uuid().nullable().optional(),
     subjects: z.string().max(1000).optional(),
     // reset-password
     user_id: z.string().uuid().optional(),

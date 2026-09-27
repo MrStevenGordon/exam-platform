@@ -149,9 +149,17 @@ export default function TopicsManager() {
   return (
     <div>
       <p className="portal-page-title">Topics</p>
-      <p style={{ color: 'var(--text-secondary)', fontSize: 13, margin: '0 0 16px', maxWidth: 680 }}>
-        One shared list of what is taught, by subject and grade. Questions, lessons and games are tagged with these topics so they all line up.
-      </p>
+      <div className="card" style={{ margin: '0 0 16px', maxWidth: 720, fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+        <p style={{ margin: '0 0 6px', fontWeight: 700, color: 'var(--text-primary)', fontSize: 14 }}>What is the topic list?</p>
+        <p style={{ margin: '0 0 8px' }}>
+          It is the school&apos;s single list of what is taught, by subject and grade, for example <em>Algebra</em> or <em>Fractions</em> in Grade 8 Mathematics.
+          Question banks, Smart Learning lessons and games are tagged with these topics, so they all line up, and the school can see which topics have been covered.
+        </p>
+        <p style={{ margin: 0 }}>
+          <strong>To set it up:</strong> add each department&apos;s subjects first (Departments &amp; Subjects), then pick a subject below and add its topics one at a time or import a list.
+          Heads of department usually maintain it. You can leave it empty until they are ready, and nothing else stops working.
+        </p>
+      </div>
       {error && <p className="banner banner-danger" role="alert">{error}</p>}
       {notice && <p className="banner banner-success" role="status">{notice}</p>}
 

@@ -3,6 +3,9 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { compareClassNames, CLASS_GRADES } from '@/lib/classNames'
+import { currentAcademicYear } from '@/lib/reportCard'
+import YearPromotionPanel from '@/components/YearPromotionPanel'
+import Link from 'next/link'
 
 export default function SettingsPage() {
   const [classGroups, setClassGroups] = useState<{ id: string; name: string; year_grade: string }[]>([])
@@ -91,7 +94,7 @@ export default function SettingsPage() {
   return (
     <div>
       <p className="portal-page-title">School Settings</p>
-      <p className="portal-page-sub">Manchester High School · Academic year 2026–2027</p>
+      <p className="portal-page-sub">{process.env.NEXT_PUBLIC_SCHOOL_NAME || 'Your school'} · Academic year {currentAcademicYear().replace('-', '–')}</p>
 
       {/* School branding */}
       <div className="card" style={{ marginBottom: 16 }}>
@@ -148,7 +151,8 @@ export default function SettingsPage() {
 
       {/* Class groups */}
       <div className="card">
-        <h2 style={{ marginBottom: 16 }}>Class groups ({classGroups.length} total)</h2>
+        <h2 style={{ marginBottom: 4 }}>Class groups ({classGroups.length} total)</h2>
+        <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '0 0 16px' }}>Click a class to see its students.</p>
         {grades.map((grade) => {
           const gradeClasses = classGroups
             .filter((cg) => cg.year_grade === grade)
@@ -159,7 +163,7 @@ export default function SettingsPage() {
               <div className="section-label" style={{ marginBottom: 8 }}>{grade} · {gradeClasses.length} classes</div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                 {gradeClasses.map((cg) => (
-                  <span key={cg.id} className="badge badge-default">{cg.name}</span>
+                  <Link key={cg.id} href={`/school-admin/students?class=${encodeURIComponent(cg.name)}`} className="badge badge-default" title={`See the students in ${cg.name}`} style={{ textDecoration: 'none', cursor: 'pointer' }}>{cg.name}</Link>
                 ))}
               </div>
             </div>
@@ -167,7 +171,12 @@ export default function SettingsPage() {
         })}
       </div>
 
-      <div className="card" style={{ marginTop: 16 }}>
+      <div style={{ marginTop: 28 }}>
+        <p className="section-label" style={{ marginBottom: 0 }}>Year promotion &amp; graduation</p>
+        <YearPromotionPanel />
+      </div>
+
+      <div className="card" style={{ marginTop: 28 }}>
         <RoutingCheckSection />
       </div>
     </div>

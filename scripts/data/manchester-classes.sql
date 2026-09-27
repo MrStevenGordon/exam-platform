@@ -11,7 +11,8 @@
 --      already attached to them stays attached. Their students are NOT redistributed: they
 --      simply sit in the first class of their year until you move or re-import them.
 --   2. Adds every other class from the list above (37 new, 42 in total). Each new class copies
---      the department and academic year of the existing classes.
+--      the department and academic year of the existing classes (on a blank project with no classes it uses the
+--      first department, creating "Mathematics" if there is none, and the current school year).
 --   3. Adds a unique index on the class name, because the app looks classes up by name
 --      (student import and creation) and two classes with the same name would break that.
 --
@@ -24,14 +25,28 @@ begin;
 do $$
 declare
   template record;
+  v_department uuid;
+  v_year text;
 begin
   select department_id, academic_year into template
   from public.class_groups
   order by created_at nulls last, name
   limit 1;
 
-  if template.department_id is null then
-    raise exception 'No existing class to copy the department and academic year from. Create one class first.';
+  if template.department_id is not null then
+    v_department := template.department_id;
+    v_year := template.academic_year;
+  else
+    -- A brand-new school project has no classes yet. Every class belongs to a department, so use the first
+    -- department there is, or create "Mathematics" if there are none (rename it later on the Departments page).
+    select id into v_department from public.departments order by created_at nulls last, name limit 1;
+    if v_department is null then
+      insert into public.departments (name) values ('Mathematics') returning id into v_department;
+    end if;
+    -- The school year that starts in September: 2026-2027 for a September 2026 start.
+    v_year := case when extract(month from now()) >= 8
+                   then extract(year from now())::int || '-' || (extract(year from now())::int + 1)
+                   else (extract(year from now())::int - 1) || '-' || extract(year from now())::int end;
   end if;
 
   -- 1. Rename the placeholders, only when they are exactly what we expect.
@@ -43,7 +58,7 @@ begin
 
   -- 2. Add every class that is not there yet.
   insert into public.class_groups (name, year_grade, department_id, academic_year)
-  select w.name, w.year_grade, template.department_id, template.academic_year
+  select w.name, w.year_grade, v_department, v_year
   from (
     select f || '-' || n as name, 'Grade ' || (f + 6) as year_grade
     from generate_series(1, 5) f

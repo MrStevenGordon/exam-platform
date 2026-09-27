@@ -70,6 +70,17 @@ export default function StaffMessages() {
 
   useEffect(() => { loadAll() }, [])
 
+  // Opened from a "Message" button on a staff list (for example /principal/messages?with=<person>): once everything has
+  // loaded, open the direct chat with that person, creating it if this is the first message between them.
+  const withHandled = useRef(false)
+  useEffect(() => {
+    if (loading || withHandled.current) return
+    withHandled.current = true
+    const wanted = new URLSearchParams(window.location.search).get('with')
+    if (wanted && staff.some((m) => m.id === wanted)) handleStartConversation(wanted)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, staff])
+
   useEffect(() => {
     const channel = supabase
       .channel('staff-messages')

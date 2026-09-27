@@ -1,0 +1,3 @@
+first_name,middle_name,last_name,student_id,class_id,birth_date,gender,birth_year,email
+Example,,Student,900001,1-1,2013-04-20,F,2013,
+Sample,Anthony,Pupil,900002,3-2,2011-09-03,M,2011,
