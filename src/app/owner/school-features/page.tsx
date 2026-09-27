@@ -22,6 +22,8 @@ export default function SchoolFeaturesPage() {
   const [errorMsg, setErrorMsg] = useState('')
   const [successMsg, setSuccessMsg] = useState('')
   const [saving, setSaving] = useState(false)
+  const [loadingCurrent, setLoadingCurrent] = useState(false)
+  const [loadedSummary, setLoadedSummary] = useState('')
 
   const [selectedRequestId, setSelectedRequestId] = useState('')
   const [targetDatabaseUrl, setTargetDatabaseUrl] = useState('')
@@ -52,6 +54,36 @@ export default function SchoolFeaturesPage() {
     setLoading(false)
   }
 
+  async function handleLoadCurrent() {
+    setErrorMsg('')
+    setSuccessMsg('')
+    setLoadedSummary('')
+    if (!targetDatabaseUrl.trim()) { setErrorMsg('Paste that school\'s database connection string first.'); return }
+
+    setLoadingCurrent(true)
+    const { data: { session } } = await supabase.auth.getSession()
+    const res = await fetch('/api/school-features/current', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ targetDatabaseUrl: targetDatabaseUrl.trim(), accessToken: session?.access_token }),
+    })
+    const data = await res.json()
+    setLoadingCurrent(false)
+
+    if (!res.ok) { setErrorMsg(data.error || 'Could not read that school\'s current settings.'); return }
+
+    setTeamLeadsEnabled(data.teamLeadsEnabled)
+    setSeniorTeamLeadsEnabled(data.seniorTeamLeadsEnabled)
+    setExamCategories(new Set(data.examCategories as ExamCategory[]))
+    setLessonPlanLibraryEnabled(data.lessonPlanLibraryEnabled)
+    setSmartLearningEnabled(data.smartLearningEnabled)
+    setSmartPlayEnabled(data.smartPlayEnabled)
+    setAiTutorEnabled(data.aiTutorEnabled)
+    setLoadedSummary(data.configured
+      ? 'Loaded that school\'s current settings below — they matched what is actually live just now.'
+      : 'That school has no settings saved yet, so these are the defaults every school starts with (not yet loaded from anywhere).')
+  }
+
   function toggleCategory(cat: ExamCategory) {
     const next = new Set(examCategories)
     if (next.has(cat)) next.delete(cat)
@@ -63,6 +95,7 @@ export default function SchoolFeaturesPage() {
     setErrorMsg('')
     setSuccessMsg('')
     if (!targetDatabaseUrl.trim()) { setErrorMsg('Paste that school\'s database connection string.'); return }
+    setLoadedSummary('')
 
     setSaving(true)
     const { data: { session } } = await supabase.auth.getSession()
@@ -100,7 +133,7 @@ export default function SchoolFeaturesPage() {
     <div className="page-container">
       <h1 style={{ marginBottom: 4 }}>Configure school tools</h1>
       <p style={{ color: 'var(--text-secondary)', fontSize: 13, marginBottom: 20 }}>
-        Right after provisioning a new school, paste its database connection string here (you'll have it on hand from creating its Supabase project) to set which tools it uses. This isn't stored anywhere; used once, then forgotten.
+        Paste a school&apos;s database connection string, then <strong>Load current settings</strong> to see what it actually has switched on before you change anything — saving always replaces the whole set, so it&apos;s easy to switch something off by accident if you save without checking first. The connection string isn&apos;t stored anywhere; used once, then forgotten.
       </p>
 
       {errorMsg && <div className="banner banner-danger" style={{ marginBottom: 16 }}>{errorMsg}</div>}
@@ -119,13 +152,19 @@ export default function SchoolFeaturesPage() {
 
         <div style={{ marginBottom: 16 }}>
           <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Database connection string</label>
-          <input
-            type="password"
-            value={targetDatabaseUrl}
-            onChange={(e) => setTargetDatabaseUrl(e.target.value)}
-            placeholder="postgresql://postgres...@...pooler.supabase.com:5432/postgres"
-            style={{ width: '100%', marginTop: 6, fontFamily: 'monospace', fontSize: 12 }}
-          />
+          <div style={{ display: 'flex', gap: 8, marginTop: 6, alignItems: 'flex-start' }}>
+            <input
+              type="password"
+              value={targetDatabaseUrl}
+              onChange={(e) => { setTargetDatabaseUrl(e.target.value); setLoadedSummary('') }}
+              placeholder="postgresql://postgres...@...pooler.supabase.com:5432/postgres"
+              style={{ flex: 1, fontFamily: 'monospace', fontSize: 12 }}
+            />
+            <button type="button" className="btn btn-secondary" disabled={loadingCurrent || !targetDatabaseUrl.trim()} onClick={handleLoadCurrent} style={{ whiteSpace: 'nowrap' }}>
+              {loadingCurrent ? 'Loading…' : 'Load current settings'}
+            </button>
+          </div>
+          {loadedSummary && <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: '8px 0 0' }}>{loadedSummary}</p>}
         </div>
 
         <div style={{ marginBottom: 16 }}>
