@@ -15,6 +15,7 @@
 begin;
 
 drop policy if exists "Staff manage their own lessons" on public.learning_lessons;
+drop policy if exists "Teachers and HODs manage their own lessons" on public.learning_lessons;
 create policy "Teachers and HODs manage their own lessons" on public.learning_lessons
   for all
   using (teacher_id = auth.uid() and public.my_role() in ('teacher', 'supervisor'))
