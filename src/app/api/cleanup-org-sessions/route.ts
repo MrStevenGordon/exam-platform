@@ -6,7 +6,7 @@ const supabaseAdmin = createClient(
   (process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY)!
 )
 
-// Deletes respondent data past its exam's retention window. Cascades to
+// Two things run here, both daily: deletes respondent data past its exam's retention window. Cascades to
 // org_exam_responses and org_respondent_field_values automatically (FK
 // ON DELETE CASCADE) — the exam itself and its questions are untouched, so
 // an organization can republish the same exam for its next round.
@@ -50,5 +50,19 @@ export async function GET(req: NextRequest) {
   const rateLimitCutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
   await supabaseAdmin.from('rate_limits').delete().lt('window_start', rateLimitCutoff)
 
-  return NextResponse.json({ deletedSessions: deletedCount })
+  // AI tutor conversations: kept for a fixed number of days after the last message, then the whole
+  // conversation (and its messages, by cascade) is removed. The school agreed 30 days; this is deliberately
+  // a plain constant rather than a school setting, since nothing else asks for it to be configurable — change
+  // it here if the school later asks for a different number. Bundled into this same daily cron (rather than a
+  // second cron entry in vercel.json) since the account is not on a plan that allows more than one.
+  const TUTOR_RETENTION_DAYS = 30
+  const tutorCutoff = new Date(Date.now() - TUTOR_RETENTION_DAYS * 24 * 60 * 60 * 1000).toISOString()
+  const { data: deletedTutorConversations, error: tutorError } = await supabaseAdmin
+    .from('learning_tutor_conversations')
+    .delete()
+    .lt('last_message_at', tutorCutoff)
+    .select('id')
+  if (tutorError) console.error('Tutor conversation cleanup failed:', tutorError.message)
+
+  return NextResponse.json({ deletedSessions: deletedCount, deletedTutorConversations: deletedTutorConversations?.length || 0 })
 }
