@@ -176,6 +176,7 @@ Pages: Overview, Attendance, Alerts, Timetable, Staff, Students, Messages, My Pr
 - [ ] **Attendance, Truancy and Teacher punctuality:** a short "how is this worked out" note that opens on click, summary badges above each table
 - [ ] **Staff:** grouped by department (or by role, or not at all) with each group collapsible, Expand all / Collapse all, and searching or "Online now" opens the matching groups
 - [ ] **Staff, Message button:** opens the Messages page already in a chat with that person (and creates the chat the first time)
+- [ ] **First sign-in:** a new principal or vice principal gets the welcome walkthrough (8 steps, one per menu item) once, on a desktop-size screen, and never again after finishing or skipping it
 - [ ] **Students:** grouped by class in order (Grade 7 classes first), each class collapsible with counts of students and of those with absences; "Online now" and the class filter work
 
 ---

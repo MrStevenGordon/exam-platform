@@ -8,7 +8,8 @@ import InactivityLogout from '@/components/InactivityLogout'
 import PresenceHeartbeat from '@/components/PresenceHeartbeat'
 import { getMfaRedirect } from '@/lib/mfaCheck'
 import { verifyPortalRole } from '@/lib/verifyPortalRole'
-import { PRINCIPAL_NAV } from '@/lib/principalNav'
+import { PRINCIPAL_NAV, PRINCIPAL_TOUR_STEPS } from '@/lib/principalNav'
+import OnboardingTour from '@/components/OnboardingTour'
 import { useAttendanceAlerts } from '@/lib/useAttendanceAlerts'
 
 export default function PrincipalLayout({ children }: { children: React.ReactNode }) {
@@ -42,6 +43,7 @@ export default function PrincipalLayout({ children }: { children: React.ReactNod
       <PresenceHeartbeat />
       <main className="portal-content"><PageTransition>{children}</PageTransition></main>
       <Sidebar navItems={PRINCIPAL_NAV} portalLabel="Leadership Portal" badges={{ '/principal/alerts': unreadAlerts }} />
+      <OnboardingTour tourKey="principal" steps={PRINCIPAL_TOUR_STEPS} />
     </div>
   )
 }
