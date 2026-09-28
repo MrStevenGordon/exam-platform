@@ -54,6 +54,8 @@ export default function SchoolRequestsPage() {
   const [actingOn, setActingOn] = useState('')
   const [errorMsg, setErrorMsg] = useState('')
   const [credentialsForms, setCredentialsForms] = useState<Record<string, CredentialsForm>>({})
+  const [editingPortalId, setEditingPortalId] = useState('')
+  const [portalUrlDraft, setPortalUrlDraft] = useState('')
 
   useEffect(() => { loadData() }, [])
 
@@ -123,6 +125,26 @@ export default function SchoolRequestsPage() {
     setActingOn('')
   }
 
+  async function handleSavePortalUrl(id: string) {
+    if (!portalUrlDraft.trim()) { setErrorMsg('Enter the school\'s real portal address first.'); return }
+
+    setActingOn(id)
+    setErrorMsg('')
+    const { data: { session } } = await supabase.auth.getSession()
+
+    const res = await fetch('/api/school-requests/update-portal-url', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ requestId: id, portalUrl: portalUrlDraft.trim(), accessToken: session?.access_token }),
+    })
+    const data = await res.json()
+
+    if (!res.ok) { setErrorMsg(data.error || 'Something went wrong.') }
+    else setEditingPortalId('')
+    await loadData()
+    setActingOn('')
+  }
+
   if (loading) return <div style={{ padding: 40 }}>Loading...</div>
 
   const actionable = requests.filter((r) => r.status === 'pending' || r.status === 'approved')
@@ -185,7 +207,34 @@ export default function SchoolRequestsPage() {
                   <span style={{ color: 'var(--text-muted)' }}> (every school gets all of these already — not a configuration step)</span>
                 </div>
                 {r.notes && <div style={{ fontSize: 13, marginTop: 4, color: 'var(--text-secondary)' }}>Notes: {r.notes}</div>}
-                {r.portal_url && <div style={{ fontSize: 13, marginTop: 4 }}>Portal: <strong>{r.portal_url}</strong></div>}
+                {r.portal_url && editingPortalId !== r.id && (
+                  <div style={{ fontSize: 13, marginTop: 4 }}>
+                    Portal: <strong>{r.portal_url}</strong>{' '}
+                    <button
+                      type="button"
+                      onClick={() => { setEditingPortalId(r.id); setPortalUrlDraft(r.portal_url || '') }}
+                      style={{ fontSize: 12, color: 'var(--accent-dark)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, textDecoration: 'underline' }}
+                    >
+                      Edit
+                    </button>
+                    <span style={{ color: 'var(--text-muted)' }}> — correct this if the school later moved to its own branded domain</span>
+                  </div>
+                )}
+                {r.portal_url && editingPortalId === r.id && (
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', marginTop: 6 }}>
+                    <input
+                      value={portalUrlDraft}
+                      onChange={(e) => setPortalUrlDraft(e.target.value)}
+                      placeholder="https://mhs.smartassessja.com"
+                      style={{ flex: '1 1 260px', fontSize: 13 }}
+                      autoFocus
+                    />
+                    <button className="btn btn-primary" style={{ fontSize: 12 }} disabled={actingOn === r.id} onClick={() => handleSavePortalUrl(r.id)}>
+                      {actingOn === r.id ? 'Saving…' : 'Save'}
+                    </button>
+                    <button className="btn btn-ghost" style={{ fontSize: 12 }} onClick={() => setEditingPortalId('')}>Cancel</button>
+                  </div>
+                )}
                 <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 6 }}>
                   Submitted {new Date(r.submitted_at).toLocaleString()}
                   {r.reviewed_at && ` · Reviewed ${new Date(r.reviewed_at).toLocaleString()}`}
