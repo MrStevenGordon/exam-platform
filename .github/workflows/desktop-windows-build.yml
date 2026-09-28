@@ -1,0 +1,45 @@
+name: Build desktop app (Windows)
+
+# Manual only — this exists because the Windows installer can't be reliably cross-built from the
+# Mac used for releases (electron-builder needs `wine` for that, and Homebrew's wine-stable cask
+# is disabled on Intel Macs as of Sept 2026 — a Gatekeeper/notarization issue on Homebrew's end,
+# not something reinstalling fixes). Building on an actual Windows runner sidesteps that
+# entirely. The Mac .dmg still builds locally as before — see docs/desktop-release.md.
+#
+# This job does NOT publish anything — it only produces SmartAssess-Setup.exe as a downloadable
+# artifact on the finished run. Download it from the Actions tab and attach it to the release
+# yourself (e.g. `gh release upload v0.2.6 SmartAssess-Setup.exe --repo MrStevenGordon/exam-platform-releases`),
+# same as the .dmg you already built.
+on:
+  workflow_dispatch: {}
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install root dependencies
+        run: npm ci
+
+      - name: Install the desktop shell's own dependencies
+        working-directory: electron
+        run: npm ci
+
+      - name: Build the Windows installer
+        run: npx electron-builder --win
+        env:
+          # electron-builder checks this and refuses to publish anywhere without it even being
+          # set — GITHUB_TOKEN is always available in Actions, and --win alone (no --publish
+          # flag) never uses it to actually publish, but the check still runs.
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SmartAssess-Setup
+          path: electron-dist/SmartAssess-Setup.exe
+          if-no-files-found: error
