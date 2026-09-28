@@ -18,6 +18,7 @@ export default function HomePage() {
   const [submitted, setSubmitted] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
+  const [menuOpen, setMenuOpen] = useState(false)
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
     setFormData({ ...formData, [e.target.name]: e.target.value })
@@ -50,24 +51,36 @@ export default function HomePage() {
 
       {/* Nav */}
       <nav className="site-nav" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1.25rem 3rem', borderBottom: '1px solid var(--border)', background: 'var(--card-bg)', position: 'sticky', top: 0, zIndex: 100 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
           <div style={{ width: 32, height: 32, background: 'var(--accent)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 16 }}>
             <i className="ti ti-clipboard-check" aria-hidden="true" />
           </div>
           <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)' }}>Smart Assess Ja</div>
-        </div>
-        <div className="site-nav-links" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-          <a href="#products" style={{ fontSize: 13, color: 'var(--text-secondary)', textDecoration: 'none', padding: '6px 10px' }}>Products</a>
-          <a href="#how-it-works" style={{ fontSize: 13, color: 'var(--text-secondary)', textDecoration: 'none', padding: '6px 10px' }}>How it works</a>
-          <a href="#contact" style={{ fontSize: 13, color: 'var(--text-secondary)', textDecoration: 'none', padding: '6px 10px' }}>Contact</a>
-          <Link href="/build-my-school" style={{ fontSize: 13, color: 'var(--text-secondary)', textDecoration: 'none', padding: '6px 10px' }}>Build My School</Link>
-          <Link href="/org/signup" style={{ fontSize: 13, color: 'var(--text-secondary)', textDecoration: 'none', padding: '6px 10px' }}>For Organizations</Link>
-          <Link href="/take-exam">
-            <button className="btn btn-secondary" style={{ marginLeft: 8 }}>Take an Exam</button>
-          </Link>
+        </Link>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div className={`site-nav-links${menuOpen ? ' site-nav-links-open' : ''}`} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <a href="#products" onClick={() => setMenuOpen(false)} style={{ fontSize: 13, color: 'var(--text-secondary)', textDecoration: 'none', padding: '6px 10px' }}>Products</a>
+            <a href="#how-it-works" onClick={() => setMenuOpen(false)} style={{ fontSize: 13, color: 'var(--text-secondary)', textDecoration: 'none', padding: '6px 10px' }}>How it works</a>
+            <a href="#contact" onClick={() => setMenuOpen(false)} style={{ fontSize: 13, color: 'var(--text-secondary)', textDecoration: 'none', padding: '6px 10px' }}>Contact</a>
+            <Link href="/build-my-school" style={{ fontSize: 13, color: 'var(--text-secondary)', textDecoration: 'none', padding: '6px 10px' }}>Build My School</Link>
+            <Link href="/org/signup" style={{ fontSize: 13, color: 'var(--text-secondary)', textDecoration: 'none', padding: '6px 10px' }}>For Organizations</Link>
+            <Link href="/take-exam">
+              <button className="btn btn-secondary" style={{ marginLeft: 8 }}>Take an Exam</button>
+            </Link>
+          </div>
           <Link href="/find-my-school">
-            <button className="btn btn-primary" style={{ marginLeft: 8 }}>Find My School</button>
+            <button className="btn btn-primary">Find My School</button>
           </Link>
+          <button
+            type="button"
+            className="nav-menu-toggle"
+            aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+            aria-expanded={menuOpen}
+            onClick={() => setMenuOpen((v) => !v)}
+            style={{ display: 'none', background: 'none', border: '1px solid var(--border)', borderRadius: 8, width: 38, height: 38, alignItems: 'center', justifyContent: 'center', fontSize: 18, color: 'var(--text-primary)', cursor: 'pointer' }}
+          >
+            <i className={menuOpen ? 'ti ti-x' : 'ti ti-menu-2'} aria-hidden="true" />
+          </button>
         </div>
       </nav>
 

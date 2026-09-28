@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
+import MarketingHeader from '@/components/marketing/MarketingHeader'
 
 type School = { name: string; url: string }
 
@@ -29,6 +30,7 @@ export default function FindMySchoolClient() {
 
   return (
     <div style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif', minHeight: '100vh', background: 'var(--page-bg)' }}>
+      <MarketingHeader ctaHref="/build-my-school" ctaLabel="Request a Demo" />
       <section style={{ padding: '4.5rem 1.5rem 3rem', textAlign: 'center' }}>
         <div style={{ display: 'inline-block', background: 'var(--accent-light)', color: 'var(--accent-dark)', fontSize: 11, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', padding: '4px 14px', borderRadius: 20, marginBottom: '1.25rem' }}>
           Find my school
