@@ -1,7 +1,16 @@
 import Link from 'next/link'
 import MarketingHeader from '@/components/marketing/MarketingHeader'
 
-export const metadata = { title: 'Privacy Policy' }
+const TITLE = 'Privacy Policy'
+const DESCRIPTION = 'What data Smart Assess Ja collects, who it’s shared with, and what it’s used for — plainly stated, category by category.'
+
+export const metadata = {
+  title: TITLE,
+  description: DESCRIPTION,
+  alternates: { canonical: 'https://smartassessja.com/privacy' },
+  openGraph: { title: TITLE, description: DESCRIPTION, type: 'website' },
+  twitter: { card: 'summary', title: TITLE, description: DESCRIPTION },
+}
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (

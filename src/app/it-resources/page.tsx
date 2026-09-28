@@ -1,7 +1,16 @@
 import Link from 'next/link'
 import MarketingHeader from '@/components/marketing/MarketingHeader'
 
-export const metadata = { title: 'IT Admin Resources' }
+const TITLE = 'IT Admin Resources'
+const DESCRIPTION = 'Kiosk setup and other tools for school IT staff managing Smart Assess Ja on shared or lab hardware.'
+
+export const metadata = {
+  title: TITLE,
+  description: DESCRIPTION,
+  alternates: { canonical: 'https://smartassessja.com/it-resources' },
+  openGraph: { title: TITLE, description: DESCRIPTION, type: 'website' },
+  twitter: { card: 'summary', title: TITLE, description: DESCRIPTION },
+}
 
 export default function ITResourcesPage() {
   return (

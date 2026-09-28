@@ -7,7 +7,12 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: '*',
       allow: '/',
-      disallow: ['/api/', '/owner/', '/admin-login', '/school-admin/', '/teacher/', '/supervisor/', '/principal/', '/student/', '/dashboard', '/learning/', '/play/', '/org/(portal)/', '/mfa/', '/change-password'],
+      disallow: [
+        '/api/', '/owner/', '/admin-login', '/school-admin/', '/teacher/', '/supervisor/', '/principal/', '/student/', '/dashboard',
+        '/learning/', '/play/', '/org/(portal)/', '/mfa/', '/change-password', '/forgot-password', '/school-setup/', '/org/setup/',
+        // /take-exam itself is the code-entry page (in the sitemap); the exam a code unlocks is not.
+        '/take-exam/',
+      ],
     },
     sitemap: 'https://smartassessja.com/sitemap.xml',
   }
