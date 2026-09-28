@@ -226,7 +226,11 @@ export default function BuildMySchoolPage() {
 
       {step === 3 && (
         <div className="card" style={{ padding: '28px 28px' }}>
-          <h2 style={{ marginBottom: 12 }}>Which features do you need?</h2>
+          <h2 style={{ marginBottom: 4 }}>What matters most to your school?</h2>
+          <p style={{ color: 'var(--text-secondary)', fontSize: 13, marginBottom: 12 }}>
+            Every school gets all of these — nothing here is a paid extra. Telling us what matters most just helps
+            us know what to walk your staff through first.
+          </p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {FEATURES.map((f) => (
               <label
@@ -261,7 +265,7 @@ export default function BuildMySchoolPage() {
               Workflow: <strong>{WORKFLOW_TEMPLATES.find((t) => t.value === workflowTemplate)?.title}</strong>
               {workflowTemplate === 'other' && <span> ({workflowOtherDescription})</span>}
             </div>
-            <div>Features: <strong>{features.length ? features.map((f) => FEATURES.find((x) => x.key === f)?.label).join(', ') : 'None selected'}</strong></div>
+            <div>Matters most: <strong>{features.length ? features.map((f) => FEATURES.find((x) => x.key === f)?.label).join(', ') : 'No particular priority'}</strong></div>
           </div>
           <div style={{ marginBottom: 16 }}>
             <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Anything else we should know? (optional)</label>

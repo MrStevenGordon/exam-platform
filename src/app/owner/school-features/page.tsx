@@ -5,7 +5,25 @@ import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { ALL_EXAM_CATEGORIES, ExamCategory } from '@/lib/schoolFeatures'
 
-type SchoolRequestOption = { id: string; school_name: string; portal_url: string | null }
+type SchoolRequestOption = {
+  id: string; school_name: string; portal_url: string | null
+  workflow_template: string; feature_flags: string[]
+}
+
+const WORKFLOW_LABELS: Record<string, string> = {
+  direct_publish: 'Direct Publish (no review)',
+  department_review: 'Department Head Review',
+  full_review: 'Full Multi-Stage Review',
+  other: 'Other (see their notes)',
+}
+
+// What each workflow a school asked for at sign-up implies for these two checkboxes — a starting
+// point only. "Load current settings" (once there's something to load) always wins over this.
+const WORKFLOW_DEFAULTS: Record<string, { teamLeadsEnabled: boolean; seniorTeamLeadsEnabled: boolean }> = {
+  direct_publish: { teamLeadsEnabled: false, seniorTeamLeadsEnabled: false },
+  department_review: { teamLeadsEnabled: true, seniorTeamLeadsEnabled: false },
+  full_review: { teamLeadsEnabled: true, seniorTeamLeadsEnabled: true },
+}
 
 const CATEGORY_LABELS: Record<ExamCategory, string> = {
   pop_quiz: 'Pop Quiz',
@@ -13,6 +31,18 @@ const CATEGORY_LABELS: Record<ExamCategory, string> = {
   monthly: 'Monthly',
   end_of_term: 'End of Term',
   end_of_year: 'End of Year',
+}
+
+// Matches src/app/build-my-school/page.tsx and src/app/owner/school-requests/page.tsx — what a
+// school said mattered most to them at sign-up. Shown here for context only: every one of these
+// already ships to every school, so there's nothing to actually configure from this list.
+const FEATURE_LABELS: Record<string, string> = {
+  group_projects: 'Group Projects',
+  homework_assignments: 'Homework & Assignments',
+  ai_integrity_flags: 'AI Writing-Integrity Flags',
+  staff_mfa: 'Staff Mandatory MFA',
+  calculator: 'Scientific Calculator',
+  ai_authoring: 'AI Question Polishing / PDF Import',
 }
 
 export default function SchoolFeaturesPage() {
@@ -35,6 +65,8 @@ export default function SchoolFeaturesPage() {
   const [smartPlayEnabled, setSmartPlayEnabled] = useState(false)
   const [aiTutorEnabled, setAiTutorEnabled] = useState(false)
 
+  const selectedRequest = requests.find((r) => r.id === selectedRequestId)
+
   useEffect(() => { loadData() }, [])
 
   async function loadData() {
@@ -46,12 +78,30 @@ export default function SchoolFeaturesPage() {
 
     const { data: requestData } = await supabase
       .from('school_requests')
-      .select('id, school_name, portal_url')
+      .select('id, school_name, portal_url, workflow_template, feature_flags')
       .eq('status', 'provisioned')
       .order('school_name')
-    setRequests(requestData || [])
+    const list = (requestData || []) as SchoolRequestOption[]
+    setRequests(list)
+
+    // Arriving from "Configure school tools →" on a specific request — same effect as picking
+    // it from the dropdown below, just done for you.
+    const requestId = new URLSearchParams(window.location.search).get('request')
+    const match = requestId ? list.find((r) => r.id === requestId) : undefined
+    if (match) selectRequest(match)
 
     setLoading(false)
+  }
+
+  // Picking a school pre-fills the review workflow from what they asked for at sign-up — a
+  // starting point, overridden the moment "Load current settings" reads the real thing.
+  function selectRequest(request: SchoolRequestOption) {
+    setSelectedRequestId(request.id)
+    const defaults = WORKFLOW_DEFAULTS[request.workflow_template]
+    if (defaults) {
+      setTeamLeadsEnabled(defaults.teamLeadsEnabled)
+      setSeniorTeamLeadsEnabled(defaults.seniorTeamLeadsEnabled)
+    }
   }
 
   async function handleLoadCurrent() {
@@ -142,12 +192,27 @@ export default function SchoolFeaturesPage() {
       <div className="card" style={{ marginBottom: 24 }}>
         <div style={{ marginBottom: 16 }}>
           <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>School (for reference)</label>
-          <select value={selectedRequestId} onChange={(e) => setSelectedRequestId(e.target.value)} style={{ width: '100%', marginTop: 6 }}>
+          <select
+            value={selectedRequestId}
+            onChange={(e) => {
+              const request = requests.find((r) => r.id === e.target.value)
+              if (request) selectRequest(request)
+              else setSelectedRequestId('')
+            }}
+            style={{ width: '100%', marginTop: 6 }}
+          >
             <option value="">Select a provisioned school…</option>
             {requests.map((r) => (
               <option key={r.id} value={r.id}>{r.school_name}{r.portal_url ? ` · ${r.portal_url}` : ''}</option>
             ))}
           </select>
+          {selectedRequest && (
+            <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: '8px 0 0' }}>
+              At sign-up, {selectedRequest.school_name} asked for <strong>{WORKFLOW_LABELS[selectedRequest.workflow_template] || selectedRequest.workflow_template}</strong>
+              {selectedRequest.feature_flags.length > 0 && <> and said <strong>{selectedRequest.feature_flags.map((f) => FEATURE_LABELS[f] || f).join(', ')}</strong> mattered most to them (already included for every school)</>}
+              . The Review workflow boxes below are pre-filled from that — check <strong>Load current settings</strong> for what&apos;s actually live.
+            </p>
+          )}
         </div>
 
         <div style={{ marginBottom: 16 }}>

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 
 type SchoolRequest = {
@@ -180,7 +181,8 @@ export default function SchoolRequestsPage() {
                   )}
                 </div>
                 <div style={{ fontSize: 13, marginTop: 4 }}>
-                  Features: {r.feature_flags.length > 0 ? r.feature_flags.map((f) => FEATURE_LABELS[f] || f).join(', ') : 'None selected'}
+                  Cares most about: {r.feature_flags.length > 0 ? r.feature_flags.map((f) => FEATURE_LABELS[f] || f).join(', ') : 'No particular priority'}
+                  <span style={{ color: 'var(--text-muted)' }}> (every school gets all of these already — not a configuration step)</span>
                 </div>
                 {r.notes && <div style={{ fontSize: 13, marginTop: 4, color: 'var(--text-secondary)' }}>Notes: {r.notes}</div>}
                 {r.portal_url && <div style={{ fontSize: 13, marginTop: 4 }}>Portal: <strong>{r.portal_url}</strong></div>}
@@ -228,6 +230,14 @@ export default function SchoolRequestsPage() {
                 <button className="btn btn-primary" style={{ fontSize: 12 }} disabled={actingOn === r.id} onClick={() => handleSendCredentials(r.id)}>
                   {actingOn === r.id ? 'Sending…' : 'Send setup link'}
                 </button>
+              </div>
+            )}
+
+            {r.status === 'provisioned' && (
+              <div style={{ marginTop: 14, paddingTop: 14, borderTop: '1px solid var(--border)' }}>
+                <Link href={`/owner/school-features?request=${r.id}`} className="btn btn-secondary" style={{ fontSize: 12 }}>
+                  Configure school tools →
+                </Link>
               </div>
             )}
           </div>
