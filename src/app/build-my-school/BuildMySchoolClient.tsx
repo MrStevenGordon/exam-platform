@@ -112,9 +112,40 @@ export default function BuildMySchoolClient() {
   return (
     <div>
       <MarketingHeader />
-      <div className="page-container" style={{ maxWidth: 640 }}>
+
+      {/* Overview — what "Build My School" actually means, before the form asks for anything.
+          Linked from the homepage's Build My School dropdown ("Overview" -> #overview). */}
+      <section id="overview" style={{ padding: '4rem 2rem 3.5rem', textAlign: 'center', background: 'var(--page-bg)' }}>
+        <div className="eyebrow-tag" style={{ marginBottom: 14 }}>Overview</div>
+        <h1 style={{ fontFamily: "'Fraunces', serif", textTransform: 'none', fontSize: 'clamp(28px, 4vw, 40px)', fontWeight: 500, letterSpacing: -0.6, maxWidth: 620, margin: '0 auto 16px' }}>
+          Your school. Your structure. Your system.
+        </h1>
+        <p style={{ fontSize: 16, color: 'var(--text-secondary)', maxWidth: 520, margin: '0 auto 3rem', lineHeight: 1.6 }}>
+          Smart Assess isn&apos;t a one-size-fits-all template. Your portal is configured around how your school actually reviews and publishes exams, department by department.
+        </p>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 20, maxWidth: 900, margin: '0 auto' }}>
+          <div className="card" style={{ padding: '1.75rem', textAlign: 'left' }}>
+            <div style={{ width: 36, height: 36, borderRadius: 10, background: 'var(--accent-light)', color: 'var(--accent-dark)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 700, marginBottom: 14 }}>1</div>
+            <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 6 }}>Tell us about your school</div>
+            <p style={{ fontSize: 13.5, color: 'var(--text-secondary)', lineHeight: 1.6, margin: 0 }}>Your school&apos;s name, how you currently review and publish exams, and what matters most to you.</p>
+          </div>
+          <div className="card" style={{ padding: '1.75rem', textAlign: 'left' }}>
+            <div style={{ width: 36, height: 36, borderRadius: 10, background: 'var(--accent-light)', color: 'var(--accent-dark)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 700, marginBottom: 14 }}>2</div>
+            <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 6 }}>We set up your environment</div>
+            <p style={{ fontSize: 13.5, color: 'var(--text-secondary)', lineHeight: 1.6, margin: 0 }}>A dedicated, private portal is provisioned just for your school, with your review workflow built in from day one.</p>
+          </div>
+          <div className="card" style={{ padding: '1.75rem', textAlign: 'left' }}>
+            <div style={{ width: 36, height: 36, borderRadius: 10, background: 'var(--accent-light)', color: 'var(--accent-dark)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 700, marginBottom: 14 }}>3</div>
+            <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 6 }}>Your school is ready</div>
+            <p style={{ fontSize: 13.5, color: 'var(--text-secondary)', lineHeight: 1.6, margin: 0 }}>We send your admin team a link to create their account and start adding departments, classes and staff.</p>
+          </div>
+        </div>
+        <a href="#start" className="btn btn-primary" style={{ marginTop: '2.5rem', fontSize: 14 }}>Start Building My School</a>
+      </section>
+
+      <div id="start" className="page-container" style={{ maxWidth: 640 }}>
       <div style={{ textAlign: 'center', marginBottom: 8 }}>
-        <h1 style={{ marginBottom: 8 }}>Build My School</h1>
+        <h2 style={{ marginBottom: 8 }}>Build My School</h2>
         <p style={{ color: 'var(--text-secondary)', maxWidth: 480, margin: '0 auto' }}>
           Tell us how your school runs exams and which features you need. We&apos;ll review and set you up.
         </p>

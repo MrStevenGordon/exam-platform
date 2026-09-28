@@ -1,4 +1,8 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+/* Fraunces — the display serif used for the public site's logo wordmark and marketing headlines
+   (src/components/marketing/Logo.tsx and the redesigned homepage), paired with Inter for
+   everything else. Inter alone stays the portal/app typeface throughout. */
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap');
 /* Tabler Icons — every `ti ti-…` icon across the app (Sidebar, ProductSwitcher, login,
    Smart Learning) was referencing this class convention with no font ever loaded to back it,
    so every one of those icons was rendering as nothing. Self-hosted (bundled at build time)
@@ -203,6 +207,17 @@ select {
   color: var(--accent-dark);
 }
 
+/* Dark variant — used on light backgrounds where the usual orange primary would sit too close in
+   tone to a nearby accent-colored section (e.g. the homepage's final CTA, set on --accent-light). */
+.btn-dark {
+  background: #1A0E06;
+  color: white;
+}
+
+.btn-dark:hover:not(:disabled) {
+  background: #2A1810;
+}
+
 /* Cards — cleaner, more genuine */
 .card {
   background: var(--card-bg);
@@ -253,6 +268,68 @@ select {
   background: var(--danger-bg);
   color: var(--danger);
 }
+
+/* Homepage nav — small uppercase label used above a hero/section headline, and the
+   hover-opened dropdowns for "Build My School" / "For Organizations" / "About" (desktop only;
+   below 1024px these collapse into the flat mobile menu instead — see the 1024px block below). */
+.eyebrow-tag {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.nav-link {
+  font-size: 14px;
+  font-weight: 500;
+  padding: 10px 14px;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  border-radius: 8px;
+  cursor: default;
+}
+
+.nav-dropdown { position: relative; }
+
+.nav-dropdown-panel {
+  display: none;
+  flex-direction: column;
+  gap: 2px;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 4px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 8px;
+  min-width: 190px;
+  box-shadow: 0 16px 32px -12px rgba(30, 18, 8, 0.18);
+  z-index: 20;
+}
+
+.nav-dropdown:hover .nav-dropdown-panel { display: flex; }
+.nav-dropdown:hover .nav-link { color: var(--text-primary); background: var(--accent-light); }
+
+.nav-dropdown-panel a {
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  text-decoration: none;
+  padding: 10px 12px;
+  border-radius: 7px;
+}
+
+.nav-dropdown-panel a:hover { background: var(--accent-light); color: var(--accent-dark); }
+
+/* The mobile menu panel (.site-nav-links) sets its own inline display:flex so it's ready to open
+   the instant menuOpen flips true, but that means nothing hides it by default above the 1024px
+   breakpoint — without this rule it rendered permanently, stacked on top of the desktop dropdown
+   nav, at every width. The 1024px block below re-shows it (site-nav-links-open) only there. */
+.site-nav-links { display: none !important; }
 
 /* Page container */
 .page-container {
@@ -500,16 +577,17 @@ body.exam-fullscreen .portal-content {
 }
 
 /* Homepage-style top nav — its own breakpoint, deliberately wider than the 768px one above.
-   The full link row (Products / How it works / Contact / Build My School / For Organizations /
-   Take an Exam / Find My School) has more text in it than that breakpoint accounts for: between
-   roughly 1000px and 768px there was no rule for it at all, so the row just did what a cramped
-   flex row does — wrapped every item's own text onto two or three lines ("Smart Assess Ja",
-   "How it works", "Build My School" all broke mid-phrase). Confirmed by resizing through that
-   range. 1024px gives real clearance above where that started. Below it, the row becomes a
-   dropdown panel toggled by a hamburger button (site-nav-links-open added in React state),
-   leaving only the logo, the one primary CTA, and the toggle always visible in the bar itself. */
+   The full link row has more text in it than that breakpoint accounts for: between roughly
+   1000px and 768px there was no rule for it at all, so the row just did what a cramped flex row
+   does — wrapped every item's own text onto two or three lines. Confirmed by resizing through
+   that range. 1024px gives real clearance above where that started. Below it, the desktop
+   dropdown row (.home-nav-desktop) is replaced entirely by a flat mobile menu panel toggled by a
+   hamburger button (site-nav-links-open added in React state) — hover dropdowns don't have a
+   touch equivalent, so the mobile panel lists every item (including each dropdown's children, as
+   .mobile-nav-group / .mobile-nav-sublink) already expanded, nothing to hover. */
 @media (max-width: 1024px) {
   .site-nav { padding: 12px 16px !important; position: relative; }
+  .home-nav-desktop { display: none !important; }
   .site-nav-links {
     display: none !important;
     position: absolute;
@@ -528,6 +606,20 @@ body.exam-fullscreen .portal-content {
   .site-nav-links a { font-size: 14px !important; padding: 10px 6px !important; }
   .site-nav-links .btn { width: 100%; justify-content: center; margin-left: 0 !important; margin-top: 6px; }
   .nav-menu-toggle { display: inline-flex !important; }
+  /* "Request a Demo" already reappears as its own full-width button inside the open mobile
+     panel — keeping it in the persistent top bar too, alongside Find My School AND the hamburger,
+     was three elements fighting for a ~340px-wide row and overflowed the viewport on any real
+     phone. Only Find My School (the single most-needed action) plus the toggle stay pinned. */
+  .nav-demo-btn { display: none !important; }
+  .mobile-nav-group {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    padding: 14px 6px 2px;
+  }
+  .site-nav-links a.mobile-nav-sublink { padding-left: 20px !important; font-size: 13.5px !important; color: var(--text-secondary); }
 }
 
 @media (max-width: 480px) {
@@ -537,6 +629,15 @@ body.exam-fullscreen .portal-content {
   .portal-page-title { font-size: 15px; }
   .card { padding: 10px 12px; }
   .btn { font-size: 13px; padding: 9px 14px; }
+  /* The logo (Smart Assess Ja, in Fraunces) is sized in JS from a single `size` prop meant for a
+     roomy nav bar — at real phone widths, next to the hamburger toggle and Find My School, it had
+     nowhere near enough room and wrapped "Ja" onto its own line, then "Assess" onto a third.
+     Shrinking the mark and both wordmark spans here (they can't be reached by the `size` prop
+     itself, which only runs once at render) plus the nowrap already on .logo-wordmark keeps it to
+     one line at any phone width. */
+  .logo-mark { width: 28px !important; height: 28px !important; }
+  .logo-mark svg { width: 15px !important; height: 15px !important; }
+  .logo-wordmark span { font-size: 15px !important; }
 }
 
 /* Scientific calculator — protect from mobile overrides */
