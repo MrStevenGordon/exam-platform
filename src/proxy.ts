@@ -19,6 +19,17 @@ const PITCH_HOST = 'pitch.smartassessja.com'
 const ADMIN_HOST = 'admin.smartassessja.com'
 const ADMIN_ALLOWED_PREFIXES = ['/admin-login', '/owner', '/change-password', '/mfa/', '/forgot-password', '/api/', '/_next/']
 
+// This exact codebase is deployed once per school (a separate Vercel project each, per
+// scripts/provision-school-db.mjs) as well as on the platform's own site — so without this,
+// every school's own domain (e.g. mhs.smartassessja.com) serves the same public marketing
+// homepage as smartassessja.com: "Find My School", "Build My School" (asking a school that
+// already has an account to sign up for one), and links to every other school. Set
+// SCHOOL_DEPLOYMENT=1 in a school's own Vercel project env vars (done once, at provisioning) to
+// send those pages to /login instead — applies to every future school automatically, not just
+// ones hardcoded here by hostname.
+const SCHOOL_DEPLOYMENT = ['1', 'true'].includes((process.env.SCHOOL_DEPLOYMENT || '').toLowerCase())
+const PLATFORM_ONLY_PATHS = ['/', '/find-my-school', '/build-my-school', '/org/signup', '/coming-soon']
+
 // Site-wide kill switch for planned/emergency downtime. Set MAINTENANCE_MODE
 // to a truthy value and redeploy (env var changes are snapshotted per
 // deployment, so a plain env var edit alone doesn't take effect) to gate
@@ -74,6 +85,10 @@ export async function proxy(request: NextRequest) {
     if (!allowed) {
       return NextResponse.rewrite(new URL('/admin-login', request.url))
     }
+  }
+
+  if (SCHOOL_DEPLOYMENT && PLATFORM_ONLY_PATHS.includes(request.nextUrl.pathname)) {
+    return NextResponse.redirect(new URL('/login', request.url))
   }
 
   // Smart Play is reachable only for a school that has switched it on. Anything else is "not found",
