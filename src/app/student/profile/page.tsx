@@ -78,12 +78,10 @@ export default function StudentProfilePage() {
         .single()
 
       if (classEnrollment) {
-        const { data: teacherData, error: teacherError } = await supabase
+        const { data: teacherData } = await supabase
           .from('teacher_class_groups')
           .select('teacher_id, class_group_id')
           .eq('class_group_id', classEnrollment.class_group_id)
-
-        console.log('teacherData:', JSON.stringify(teacherData), 'error:', teacherError)
 
         if (teacherData && teacherData.length > 0) {
           const teacherIds = teacherData.map((t: any) => t.teacher_id)

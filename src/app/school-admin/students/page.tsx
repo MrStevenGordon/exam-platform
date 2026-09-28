@@ -328,7 +328,6 @@ export default function StudentsPage() {
           body: JSON.stringify({ type: 'student', data: payload, accessToken: session?.access_token }),
         })
         const result = await res.json()
-        console.log('Create user result:', res.status, JSON.stringify(result))
         if (!res.ok || result.error) {
           results.push({ name: fullName, email, status: 'failed', reason: result.error })
         } else {
