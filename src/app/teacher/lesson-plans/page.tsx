@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { getSchoolFeatures } from '@/lib/schoolFeatures'
+import { ASSESS_HOME } from '@/lib/products'
 import { downloadLessonPlanDocx } from '@/lib/lessonPlanDocx'
 import { downloadLessonPlanPdf } from '@/lib/lessonPlanPdf'
 import TopicPicker from '@/components/TopicPicker'
@@ -181,7 +182,13 @@ export default function LessonPlansPage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.push('/login'); return }
       const features = await getSchoolFeatures()
-      if (!features.lessonPlanLibraryEnabled) { router.push('/teacher'); return }
+      if (!features.lessonPlanLibraryEnabled) {
+        // This page is also reached at /learning/lesson-plans by heads of department, so
+        // "not enabled" must send each role back to its own home, not always /teacher.
+        const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
+        router.push(ASSESS_HOME[profile?.role || ''] || '/teacher')
+        return
+      }
       setHasAccess(true)
       setCheckingAccess(false)
       loadPlans(user.id)
