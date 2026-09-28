@@ -29,9 +29,12 @@ export async function POST(req: NextRequest) {
         return { userId: userData.user.id, role: profile.role, active: profile.is_active !== false }
       },
       tutorEnabled: async () => {
-        const { data } = await supabaseAdmin.from('school_settings').select('enabled_features').limit(1).maybeSingle()
+        const { data } = await supabaseAdmin.from('school_settings').select('enabled_features, ai_tutor_consent').limit(1).maybeSingle()
         const f = data?.enabled_features as { ai_tutor_enabled?: boolean; smart_learning_enabled?: boolean } | null
-        return f?.ai_tutor_enabled === true && f?.smart_learning_enabled === true
+        // Two separate approvals required: the platform owner switching it on, and the school's own
+        // leadership accepting its terms (migration 071 — see /principal/ai-tutor). This is the real
+        // enforcement point; tutorClient.ts's client-side check is only there to skip the UI cleanly.
+        return f?.ai_tutor_enabled === true && f?.smart_learning_enabled === true && data?.ai_tutor_consent === 'accepted'
       },
       hasApiKey: () => !!process.env.ANTHROPIC_API_KEY,
       getLesson: async (token, lessonId): Promise<LessonAccess> => {

@@ -24,14 +24,18 @@ export const FLAG_LABEL: Record<'wellbeing' | 'inappropriate', string> = {
 
 let availability: Promise<boolean> | null = null
 
-// The tutor is offered only when the school has switched it on (with Smart Learning) AND its database
-// tables exist (migration 064). Anything else means it is simply not there, and nothing breaks.
+// The tutor is offered only when the platform owner has switched it on (with Smart Learning), the
+// school's own leadership has separately agreed to its terms (migration 071 — see
+// /principal/ai-tutor), AND its database tables exist (migration 064). Anything else means it is
+// simply not there, and nothing breaks.
 export function isTutorAvailable(): Promise<boolean> {
   if (!availability) {
     availability = (async () => {
       try {
         const f = await getSchoolFeatures()
         if (!f.aiTutorEnabled || !f.smartLearningEnabled) return false
+        const { data: settings } = await supabase.from('school_settings').select('ai_tutor_consent').limit(1).maybeSingle()
+        if (settings?.ai_tutor_consent !== 'accepted') return false
         const { error } = await supabase.from('learning_tutor_conversations').select('id').limit(1)
         return !error || error.code === '42501'
       } catch {

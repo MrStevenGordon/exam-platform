@@ -264,7 +264,7 @@ export default function SchoolFeaturesPage() {
           </label>
           <label style={{ fontSize: 14, display: 'flex', alignItems: 'flex-start', gap: 8, marginTop: 6 }}>
             <input type="checkbox" style={{ marginTop: 3 }} checked={aiTutorEnabled} onChange={(e) => setAiTutorEnabled(e.target.checked)} />
-            <span>AI tutor in Smart Learning (needs Smart Learning on). Students ask an AI about a lesson. Conversations are saved and can be read by the lesson&rsquo;s teacher, school admins and the principal. Switch on only once the school has agreed to this.</span>
+            <span>AI tutor in Smart Learning (needs Smart Learning on). Students ask an AI about a lesson. Conversations are saved and can be read by the lesson&rsquo;s teacher, school admins and the principal. This makes it <em>available</em> to the school &mdash; the principal or vice principal still has to accept its terms on their own AI Tutor page before any student can actually use it.</span>
           </label>
         </div>
 

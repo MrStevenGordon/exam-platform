@@ -8,6 +8,7 @@ export const PRINCIPAL_NAV = [
   { label: 'Staff', icon: 'ti-users', href: '/principal/staff' },
   { label: 'Students', icon: 'ti-school', href: '/principal/students' },
   { label: 'Messages', icon: 'ti-message-circle', href: '/principal/messages' },
+  { label: 'AI Tutor', icon: 'ti-sparkles', href: '/principal/ai-tutor' },
   { label: 'My Profile', icon: 'ti-user', href: '/principal/profile' },
 ]
 
@@ -20,5 +21,6 @@ export const PRINCIPAL_TOUR_STEPS: TourStep[] = [
   { href: '/principal/staff', title: 'Staff', body: 'Every teacher and head of department, grouped by department. See who is online, open a teacher to see their assessments and marking, or send them a message from here.' },
   { href: '/principal/students', title: 'Students', body: 'Attendance for every student, grouped by class. Open a class to see its students, or a student for their full record.' },
   { href: '/principal/messages', title: 'Messages', body: "Message staff directly, or the whole staff group. That badge shows how many you haven't read yet." },
+  { href: '/principal/ai-tutor', title: 'AI Tutor', body: 'If Smart Learning offers an AI tutor to your school, this is where you decide whether students can use it, and turn it off again at any time.' },
   { href: '/principal/profile', title: "You're all set", body: 'Your profile and password live here. That covers the essentials. Explore the rest as you go.' },
 ]
