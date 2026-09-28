@@ -1,23 +1,22 @@
+import Image from 'next/image'
 import Link from 'next/link'
 
-// The brand mark: three ascending rounded bars (growth/progress), replacing the earlier
-// clipboard-check placeholder icon. Same mark at every size so the nav, footer, and any future
-// use stay visually identical — only the scale changes.
-function LogoMark({ badgeSize, iconSize }: { badgeSize: number; iconSize: number }) {
+// The brand mark: the supplied graduation-cap / open-book / checkmark artwork, cropped to just
+// the icon (public/brand/logo-mark.png, transparent background, 411x375 source). Same mark at
+// every size so the nav, footer, and any future use stay visually identical — only the scale
+// changes.
+function LogoMark({ size }: { size: number }) {
+  const height = size * (375 / 411)
   return (
-    <div
+    <Image
+      src="/brand/logo-mark.png"
+      alt=""
+      width={411}
+      height={375}
+      priority
       className="logo-mark"
-      style={{
-        width: badgeSize, height: badgeSize, background: '#1A0E06', borderRadius: badgeSize * 0.27,
-        display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-      }}
-    >
-      <svg width={iconSize} height={iconSize} viewBox="0 0 24 24" fill="none" aria-hidden="true">
-        <rect x="3.5" y="13" width="4.5" height="7.5" rx="1.5" fill="var(--accent)" opacity="0.5" />
-        <rect x="9.75" y="8.5" width="4.5" height="12" rx="1.5" fill="var(--accent)" opacity="0.78" />
-        <rect x="16" y="3.5" width="4.5" height="17" rx="1.5" fill="var(--accent)" />
-      </svg>
-    </div>
+      style={{ width: size, height, flexShrink: 0 }}
+    />
   )
 }
 
@@ -37,7 +36,7 @@ export function Wordmark({ size = 16 }: { size?: number }) {
 export default function Logo({ size = 36, href = '/' }: { size?: number; href?: string }) {
   return (
     <Link href={href} style={{ display: 'flex', alignItems: 'center', gap: size * 0.29, textDecoration: 'none' }}>
-      <LogoMark badgeSize={size} iconSize={size * 0.53} />
+      <LogoMark size={size} />
       <Wordmark size={size * 0.6} />
     </Link>
   )

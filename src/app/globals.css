@@ -635,8 +635,7 @@ body.exam-fullscreen .portal-content {
      Shrinking the mark and both wordmark spans here (they can't be reached by the `size` prop
      itself, which only runs once at render) plus the nowrap already on .logo-wordmark keeps it to
      one line at any phone width. */
-  .logo-mark { width: 28px !important; height: 28px !important; }
-  .logo-mark svg { width: 15px !important; height: 15px !important; }
+  .logo-mark { width: 28px !important; height: 26px !important; }
   .logo-wordmark span { font-size: 15px !important; }
 }
 
