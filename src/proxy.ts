@@ -2,11 +2,14 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 import { isPlayEnabled, isPlayPath } from '@/lib/playEnabled'
 
-// The marketing domain goes live before the app is ready for public traffic —
-// visitors there see a splash page while the existing *.vercel.app URLs
-// (used by pilot schools right now) keep working normally. Remove this
-// block once smartassessja.com is ready to serve the real app.
-const COMING_SOON_HOSTS = ['smartassessja.com', 'www.smartassessja.com']
+// smartassessja.com is live — the real app, not the coming-soon splash. That page still exists
+// at /coming-soon (reachable directly, just no longer the default for every path) in case it's
+// ever needed again.
+//
+// Every canonical URL / sitemap entry / OG url added while the site was still gated used the
+// bare apex domain (https://smartassessja.com, no www) — redirect www there rather than let it
+// serve the exact same content as a second, duplicate origin.
+const WWW_HOST = 'www.smartassessja.com'
 
 // Dedicated subdomain serving the schools/organizations pitch deck as a static
 // file, standing in for a live site while the main domain stays gated above.
@@ -65,14 +68,10 @@ export async function proxy(request: NextRequest) {
   }
 
   const host = request.headers.get('host') || ''
-  if (
-    COMING_SOON_HOSTS.includes(host) &&
-    request.nextUrl.pathname !== '/coming-soon' &&
-    request.nextUrl.pathname !== '/demo-exam' &&
-    !request.nextUrl.pathname.startsWith('/demo-exam/') &&
-    !request.nextUrl.pathname.startsWith('/api/')
-  ) {
-    return NextResponse.rewrite(new URL('/coming-soon', request.url))
+
+  if (host === WWW_HOST) {
+    const target = new URL(request.nextUrl.pathname + request.nextUrl.search, 'https://smartassessja.com')
+    return NextResponse.redirect(target, 308)
   }
 
   if (host === PITCH_HOST && request.nextUrl.pathname === '/') {
