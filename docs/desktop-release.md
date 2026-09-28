@@ -12,12 +12,15 @@ with no code change needed here.
 
 ## Before you start
 
-- **This has to run on a Mac** to build the Mac `.dmg`. The Windows `.exe` (NSIS installer) can
-  build there too — `electron-builder` cross-builds Windows targets from macOS. You don't need a
-  separate Windows machine.
-- A **GitHub personal access token** with `repo` scope on `exam-platform-releases`, if you want
-  `electron-builder` to publish directly (see step 4). Without one, you can still build locally and
-  upload the two files by hand through `gh release create` or the GitHub web UI.
+- **The Mac `.dmg` builds locally, on a Mac.** The Windows `.exe` does **not** — `electron-builder`
+  can in principle cross-build it from macOS, but that needs `wine`, and Homebrew's `wine-stable`
+  cask is disabled on Intel Macs (a Gatekeeper/notarization issue on Homebrew's end — reinstalling
+  or retrying doesn't fix it). Instead, the Windows installer builds on GitHub Actions, on an
+  actual Windows runner — see step 3b. No wine, no cross-build fragility, and it'll keep working
+  even if this Mac's setup changes.
+- `gh` (the GitHub CLI) needs to be installed and logged in as an account with push access to both
+  this repo and `exam-platform-releases`, for the Actions trigger and the publish step. Already the
+  case on this machine — `gh auth status` confirms it.
 - **Code signing**: builds today are **unsigned** on both platforms. That's why `/download`'s own
   instructions tell people to right-click → Open on Mac, and click through the Windows SmartScreen
   warning — this is a known, accepted state, not a bug to fix as part of a routine release. Signing
@@ -48,7 +51,7 @@ cd electron && npm install && cd ..
 Only needed if you've pulled changes that touch `electron/package.json`, or `electron/node_modules`
 doesn't exist yet.
 
-## 3. Build
+## 3a. Build the Mac installer (local)
 
 From the repo root:
 
@@ -57,31 +60,38 @@ npm run electron:build
 ```
 
 This runs `electron-builder`, which packages `electron/` (per `directories.app` in the root
-`package.json`'s `build` config) and outputs to `electron-dist/`:
+`package.json`'s `build` config) and outputs to `electron-dist/`. On a Mac without wine, it
+produces just:
 
-- `electron-dist/SmartAssess.dmg` (Mac)
-- `electron-dist/SmartAssess-Setup.exe` (Windows)
+- `electron-dist/SmartAssess.dmg`
 
-Those exact filenames matter — `/download`'s links and `electron-updater`'s auto-update feed both
-depend on them staying exactly `SmartAssess.dmg` / `SmartAssess-Setup.exe` (see `artifactName` in
-the `build` config). Don't rename them when uploading.
+(It will also *try* the Windows target and silently fail to produce `SmartAssess-Setup.exe` — that's expected now, see below.)
+
+## 3b. Build the Windows installer (GitHub Actions)
+
+1. Make sure `.github/workflows/desktop-windows-build.yml` is pushed to `main` (only needs doing
+   once, the first time this is used).
+2. Trigger it:
+   ```bash
+   gh workflow run desktop-windows-build.yml --repo MrStevenGordon/exam-platform
+   ```
+3. Wait for it to finish (a couple of minutes), then check:
+   ```bash
+   gh run watch --repo MrStevenGordon/exam-platform
+   ```
+4. Download the result into `electron-dist/` (same place the Mac build puts its file):
+   ```bash
+   gh run download --repo MrStevenGordon/exam-platform -n SmartAssess-Setup -D electron-dist
+   ```
+
+Either way you get to it, **the exact filenames matter** — `/download`'s links and
+`electron-updater`'s auto-update feed both depend on them staying exactly `SmartAssess.dmg` /
+`SmartAssess-Setup.exe` (see `artifactName` in the `build` config). Don't rename them.
 
 ## 4. Publish to the releases repo
 
-**Option A — let electron-builder publish it directly** (needs the GitHub token from above):
-
 ```bash
-GH_TOKEN=<your token> npm run electron:build -- --publish always
-```
-
-This builds *and* creates a new GitHub Release on `exam-platform-releases`, tagged from the version
-in `electron/package.json`, with both artifacts attached — in one step.
-
-**Option B — build locally, publish by hand:**
-
-```bash
-npm run electron:build
-gh release create "desktop-v<version>" \
+gh release create "v<version>" \
   electron-dist/SmartAssess.dmg \
   electron-dist/SmartAssess-Setup.exe \
   --repo MrStevenGordon/exam-platform-releases \
@@ -89,8 +99,16 @@ gh release create "desktop-v<version>" \
   --notes "<what changed>"
 ```
 
-Either way, once the release is published, it's automatically what `/download` and every existing
-installed copy's auto-update check (`electron-updater`) will fetch — nothing else to flip.
+(Matches the tag naming the most recent releases actually used — check `gh release list --repo
+MrStevenGordon/exam-platform-releases` if unsure.) If the Windows file isn't ready yet, publish
+with just the `.dmg` and add the `.exe` once it is:
+
+```bash
+gh release upload "v<version>" electron-dist/SmartAssess-Setup.exe --repo MrStevenGordon/exam-platform-releases
+```
+
+Once the release is published, it's automatically what `/download` and every existing installed
+copy's auto-update check (`electron-updater`) will fetch — nothing else to flip.
 
 ## 5. Verify
 
