@@ -4,8 +4,10 @@ import HomeClient from './HomeClient'
 const TITLE = 'Smart Assess Ja'
 const DESCRIPTION = 'Exams, lessons and practice for schools and organizations across Jamaica — Smart Assess, Smart Learning and Smart Play, all in one platform.'
 const URL = 'https://smartassessja.com'
-const IMAGE = `${URL}/og/coming-soon.png`
 
+// og:image/twitter:image come from opengraph-image.tsx / twitter-image.tsx (generated, not a
+// static file) — Next.js auto-injects those tags for this route, so they're deliberately not
+// repeated here; setting both would risk two conflicting og:image tags on the same page.
 export const metadata: Metadata = {
   title: { absolute: TITLE },
   description: DESCRIPTION,
@@ -17,13 +19,11 @@ export const metadata: Metadata = {
     siteName: TITLE,
     type: 'website',
     locale: 'en_JM',
-    images: [{ url: IMAGE, width: 1200, height: 630, alt: TITLE }],
   },
   twitter: {
     card: 'summary_large_image',
     title: TITLE,
     description: DESCRIPTION,
-    images: [IMAGE],
   },
 }
 
