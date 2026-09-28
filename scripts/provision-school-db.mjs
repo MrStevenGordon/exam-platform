@@ -137,6 +137,14 @@ console.log('\nBefore sending the link — in the NEW project\'s Supabase dashbo
 console.log('  Authentication → Sign In / Providers → Email → turn OFF "Confirm email"')
 console.log('  (new projects default this ON, which would break the bootstrap signup)\n')
 
+console.log('Also required — in the NEW school\'s own Vercel project (not this one):')
+console.log('  Settings → Environment Variables → add SCHOOL_DEPLOYMENT=1 for Production,')
+console.log('  then deploy fresh from real source with `vercel deploy --prod --project <name>`')
+console.log('  (a plain `vercel redeploy` reuses the ORIGINAL build\'s env snapshot and will')
+console.log('  NOT pick this up). Without it, the school\'s own domain shows the platform\'s')
+console.log('  public marketing homepage — Find My School, Build My School, other schools —')
+console.log('  instead of going straight to /login.\n')
+
 console.log('Done. Bootstrap link for this school\'s first admin:\n')
 console.log(`${deploymentUrl}/school-setup/${setupToken}\n`)
 console.log('Paste this into the owner queue\'s "Setup link" field to email it.')
