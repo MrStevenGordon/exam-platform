@@ -1,4 +1,9 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+/* Tabler Icons — every `ti ti-…` icon across the app (Sidebar, ProductSwitcher, login,
+   Smart Learning) was referencing this class convention with no font ever loaded to back it,
+   so every one of those icons was rendering as nothing. Self-hosted (bundled at build time)
+   rather than a runtime CDN link, same as everything else in this stylesheet is self-authored. */
+@import '@tabler/icons-webfont/dist/tabler-icons.css';
 
 :root {
   /* Core palette — warm, deep, Caribbean */
