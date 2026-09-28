@@ -12,6 +12,13 @@ const COMING_SOON_HOSTS = ['smartassessja.com', 'www.smartassessja.com']
 // file, standing in for a live site while the main domain stays gated above.
 const PITCH_HOST = 'pitch.smartassessja.com'
 
+// The platform administrator's own domain — deliberately separate from every school's own
+// site, so "Administrator" never appears as something a school's staff could pick. Anything on
+// this host other than the owner console itself, its login, or its own API calls is sent to
+// that login instead, so the domain never quietly serves a school's pages.
+const ADMIN_HOST = 'admin.smartassessja.com'
+const ADMIN_ALLOWED_PREFIXES = ['/admin-login', '/owner', '/change-password', '/mfa/', '/forgot-password', '/api/', '/_next/']
+
 // Site-wide kill switch for planned/emergency downtime. Set MAINTENANCE_MODE
 // to a truthy value and redeploy (env var changes are snapshotted per
 // deployment, so a plain env var edit alone doesn't take effect) to gate
@@ -59,6 +66,14 @@ export async function proxy(request: NextRequest) {
 
   if (host === PITCH_HOST && request.nextUrl.pathname === '/') {
     return NextResponse.rewrite(new URL('/pitch/schools.html', request.url))
+  }
+
+  if (host === ADMIN_HOST) {
+    const path = request.nextUrl.pathname
+    const allowed = ADMIN_ALLOWED_PREFIXES.some((prefix) => path === prefix || path.startsWith(prefix))
+    if (!allowed) {
+      return NextResponse.rewrite(new URL('/admin-login', request.url))
+    }
   }
 
   // Smart Play is reachable only for a school that has switched it on. Anything else is "not found",

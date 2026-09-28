@@ -37,10 +37,10 @@ export default function OwnerLayout({ children }: { children: React.ReactNode })
   useEffect(() => {
     async function check() {
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) { router.push('/login'); return }
+      if (!user) { router.push('/admin-login'); return }
 
       const { data: profile } = await supabase.from('profiles').select('is_system_admin').eq('id', user.id).single()
-      if (!profile?.is_system_admin) { router.push('/login'); return }
+      if (!profile?.is_system_admin) { router.push('/admin-login'); return }
 
       const mfaRedirect = await getMfaRedirect('owner')
       if (mfaRedirect) { router.push(`${mfaRedirect}?from=${encodeURIComponent(pathname)}`); return }
@@ -52,7 +52,7 @@ export default function OwnerLayout({ children }: { children: React.ReactNode })
 
   async function handleLogout() {
     await supabase.auth.signOut()
-    router.push('/login')
+    router.push('/admin-login')
   }
 
   if (!checked) return null

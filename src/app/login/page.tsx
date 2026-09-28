@@ -14,14 +14,13 @@ const ROLE_OPTIONS = [
   { value: 'supervisor', label: 'HOD (Head of Department)' },
   { value: 'principal', label: 'Principal / Vice Principal' },
   { value: 'school_admin', label: 'School Admin' },
-  { value: 'owner', label: 'Administrator' },
 ]
 
-// 'owner' isn't a profiles.role value at all — it's the is_system_admin
-// flag, handled as its own branch below (see isOwner). Every other
-// selection maps to a real role value; 'school_admin' is a friendlier label
-// for role='admin' (a single school's own admin — departments/staff/
-// students), which is distinct from the platform owner.
+// Platform administrators don't sign in here at all — every school's own login page runs this
+// same code, so offering "Administrator" here would show it on every school's site. They have
+// their own dedicated site instead (see /admin-login); see the isOwner check below.
+// 'school_admin' is a friendlier label for role='admin' (a single school's own admin —
+// departments/staff/students), which is distinct from the platform owner.
 const SELECTION_TO_ROLE: Record<string, string> = {
   student: 'student',
   teacher: 'teacher',
@@ -66,8 +65,7 @@ export default function LoginPage() {
     return () => { cancelled = true }
   }, [])
 
-  // Not offered to the platform owner, who always signs in to the owner portal.
-  const showProductPicker = productOptions.length > 1 && selectedRole !== 'owner'
+  const showProductPicker = productOptions.length > 1
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault()
@@ -174,49 +172,35 @@ export default function LoginPage() {
     }
 
     // Owner check — is_system_admin is the platform-owner flag, entirely
-    // separate from any school's own role='admin' staff.
-    const isOwner = profile.is_system_admin === true
-    const selectedOwner = selectedRole === 'owner'
-
-    // Subscription gate — replaces the desktop app's old license-key
-    // screen. Every account here belongs to this one school (each school
-    // runs its own separate database), so a single subscription flag on
-    // school_settings blocks every login uniformly, on web or desktop,
-    // the moment it lapses — no per-account key needed. The owner is
-    // exempt: they're not "this school's" account, they're the platform
-    // owner, who happens to share this database only because Manchester
-    // High predates full multi-tenant provisioning.
-    if (!isOwner) {
-      const { data: settings } = await supabase
-        .from('school_settings')
-        .select('subscription_active, subscription_expires_at')
-        .limit(1)
-        .maybeSingle()
-
-      const expired = settings?.subscription_expires_at ? new Date(settings.subscription_expires_at) < new Date() : false
-      if (settings && (settings.subscription_active === false || expired)) {
-        setError('This school\'s subscription is not currently active. Contact your school administrator.')
-        await supabase.auth.signOut()
-        setLoading(false)
-        return false
-      }
-    }
-
-    if (isOwner && !selectedOwner) {
-      setError('Please select "Administrator" and try again.')
+    // separate from any school's own role='admin' staff. Administrators have
+    // their own dedicated sign-in (see /admin-login) and never sign in here,
+    // even if they land on this page by mistake.
+    if (profile.is_system_admin === true) {
+      setError('Administrator accounts sign in at admin.smartassessja.com, not here.')
       await supabase.auth.signOut()
       setLoading(false)
       return false
     }
 
-    if (!isOwner && selectedOwner) {
-      setError('This account is not an administrator.')
+    // Subscription gate — replaces the desktop app's old license-key screen. Every account here
+    // belongs to this one school (each school runs its own separate database), so a single
+    // subscription flag on school_settings blocks every login uniformly, on web or desktop, the
+    // moment it lapses — no per-account key needed.
+    const { data: settings } = await supabase
+      .from('school_settings')
+      .select('subscription_active, subscription_expires_at')
+      .limit(1)
+      .maybeSingle()
+
+    const expired = settings?.subscription_expires_at ? new Date(settings.subscription_expires_at) < new Date() : false
+    if (settings && (settings.subscription_active === false || expired)) {
+      setError('This school\'s subscription is not currently active. Contact your school administrator.')
       await supabase.auth.signOut()
       setLoading(false)
       return false
     }
 
-    if (!isOwner && profile.role !== SELECTION_TO_ROLE[selectedRole]) {
+    if (profile.role !== SELECTION_TO_ROLE[selectedRole]) {
       const correctSelection = Object.keys(SELECTION_TO_ROLE).find((key) => SELECTION_TO_ROLE[key] === profile.role)
       const correctLabel = ROLE_OPTIONS.find((r) => r.value === correctSelection)?.label || profile.role
       setError(`Incorrect role selected. Please select "${correctLabel}" and try again.`)
@@ -293,19 +277,8 @@ export default function LoginPage() {
       }).eq('id', userId)
     }
 
-    // Platform owner goes to the owner portal — separate from every school's
-    // own admin, which is handled by ROLE_REDIRECTS.admin below instead.
-    if (profile.is_system_admin) {
-      if (password === 'Staff.Default1' || password === 'Student.Test') {
-        router.push('/change-password?first=true')
-        return
-      }
-      const mfaRedirect = await getMfaRedirect('owner')
-      if (mfaRedirect) { router.push(mfaRedirect); return }
-      router.push('/owner')
-      return
-    }
-
+    // The platform owner is blocked from getting this far at all (see verifyAccountAccess) —
+    // they sign in at /admin-login instead, which has this same default-password/MFA handling.
     const defaultPasswords = ['Staff.Default1', 'Student.Test', 'Demo.Default']
     if (defaultPasswords.includes(password)) {
       router.push('/change-password?first=true')
