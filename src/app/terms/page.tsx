@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import MarketingHeader from '@/components/marketing/MarketingHeader'
 
 export const metadata = { title: 'Terms of Service' }
 
@@ -14,12 +15,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 export default function TermsOfServicePage() {
   return (
     <div style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif', color: 'var(--text-primary)' }}>
-      <nav style={{ padding: '1.25rem 3rem', borderBottom: '1px solid var(--border)', background: 'var(--card-bg)' }}>
-        <Link href="/" style={{ textDecoration: 'none' }}>
-          <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.5, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Smart Assess Ja</div>
-          <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', marginTop: -2 }}>Smart Assess</div>
-        </Link>
-      </nav>
+      <MarketingHeader ctaHref="/find-my-school" ctaLabel="Find My School" />
 
       <div style={{ maxWidth: 720, margin: '0 auto', padding: '4rem 24px' }}>
         <h1 style={{ fontSize: 32, fontWeight: 800, marginBottom: 8, textTransform: 'none' }}>Terms of Service</h1>

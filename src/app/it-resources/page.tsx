@@ -1,16 +1,12 @@
 import Link from 'next/link'
+import MarketingHeader from '@/components/marketing/MarketingHeader'
 
 export const metadata = { title: 'IT Admin Resources' }
 
 export default function ITResourcesPage() {
   return (
     <div style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif', color: 'var(--text-primary)' }}>
-      <nav style={{ padding: '1.25rem 3rem', borderBottom: '1px solid var(--border)', background: 'var(--card-bg)' }}>
-        <Link href="/" style={{ textDecoration: 'none' }}>
-          <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.5, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Smart Assess Ja</div>
-          <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', marginTop: -2 }}>Smart Assess</div>
-        </Link>
-      </nav>
+      <MarketingHeader ctaHref="/find-my-school" ctaLabel="Find My School" />
 
       <div style={{ maxWidth: 680, margin: '0 auto', padding: '4rem 24px' }}>
         <div style={{ display: 'inline-block', background: 'var(--accent-light)', color: 'var(--accent-dark)', fontSize: 11, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', padding: '4px 14px', borderRadius: 20, marginBottom: '1.25rem' }}>
