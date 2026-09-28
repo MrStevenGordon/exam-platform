@@ -128,7 +128,7 @@ export default function HomePage() {
       <section id="home" style={{ padding: '5.5rem 3rem 6rem', display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '4rem' }}>
         <div style={{ flex: '1 1 480px', display: 'flex', flexDirection: 'column', gap: 24, maxWidth: 560 }}>
           <div className="eyebrow-tag">Learn &middot; Assess &middot; Play</div>
-          <h1 style={{ fontFamily: "'Fraunces', serif", textTransform: 'none', fontSize: 'clamp(38px, 5vw, 62px)', fontWeight: 600, lineHeight: 1.08, letterSpacing: -1.2, color: 'var(--text-primary)', margin: 0 }}>
+          <h1 className="hero-title" style={{ fontFamily: "'Fraunces', serif", textTransform: 'none', fontSize: 62, fontWeight: 600, lineHeight: 1.08, letterSpacing: -1.2, color: 'var(--text-primary)', margin: 0 }}>
             Smarter Assessments.<br />Better Learning.
           </h1>
           <p style={{ fontSize: 18, lineHeight: 1.6, color: 'var(--text-secondary)', margin: 0 }}>
@@ -179,7 +179,7 @@ export default function HomePage() {
       {/* The problem */}
       <section style={{ padding: '4.5rem 3rem', background: 'var(--card-bg)', borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)', textAlign: 'center' }}>
         <div className="eyebrow-tag" style={{ marginBottom: 16 }}>The problem</div>
-        <h2 style={{ fontFamily: "'Fraunces', serif", textTransform: 'none', fontSize: 'clamp(28px, 4vw, 38px)', fontWeight: 500, letterSpacing: -0.5, maxWidth: 720, margin: '0 auto 16px' }}>Assessment shouldn&apos;t stop at a grade.</h2>
+        <h2 className="problem-title" style={{ fontFamily: "'Fraunces', serif", textTransform: 'none', fontSize: 38, fontWeight: 500, letterSpacing: -0.5, maxWidth: 720, margin: '0 auto 16px' }}>Assessment shouldn&apos;t stop at a grade.</h2>
         <p style={{ fontSize: 16, color: 'var(--text-secondary)', maxWidth: 480, margin: '0 auto', lineHeight: 1.6 }}>A score alone doesn&apos;t tell a teacher what to do next. The result should point straight back to the lesson, the practice, and the students who need it.</p>
       </section>
 
@@ -187,7 +187,7 @@ export default function HomePage() {
       <section id="how-it-works" style={{ padding: '5.5rem 3rem' }}>
         <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
           <div className="eyebrow-tag" style={{ marginBottom: 12 }}>The idea</div>
-          <h2 style={{ fontFamily: "'Fraunces', serif", textTransform: 'none', fontSize: 'clamp(26px, 3.5vw, 34px)', fontWeight: 500, letterSpacing: -0.5, margin: 0 }}>From assessment to action.</h2>
+          <h2 className="idea-title" style={{ fontFamily: "'Fraunces', serif", textTransform: 'none', fontSize: 34, fontWeight: 500, letterSpacing: -0.5, margin: 0 }}>From assessment to action.</h2>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 32, maxWidth: 1100, margin: '0 auto' }}>
           {IDEA_STEPS.map((step) => (
@@ -207,7 +207,7 @@ export default function HomePage() {
       <section style={{ padding: '5.5rem 3rem', background: '#1A0E06' }}>
         <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
           <div className="eyebrow-tag" style={{ color: '#E8A868', marginBottom: 12 }}>The platform</div>
-          <h2 style={{ fontFamily: "'Fraunces', serif", textTransform: 'none', fontSize: 'clamp(26px, 3.5vw, 34px)', fontWeight: 500, color: 'white', letterSpacing: -0.5, margin: '0 0 10px' }}>One place, not five different logins.</h2>
+          <h2 className="platform-title" style={{ fontFamily: "'Fraunces', serif", textTransform: 'none', fontSize: 34, fontWeight: 500, color: 'white', letterSpacing: -0.5, margin: '0 0 10px' }}>One place, not five different logins.</h2>
           <p style={{ fontSize: 15, color: 'rgba(255,255,255,0.6)', maxWidth: 480, margin: '0 auto', lineHeight: 1.6 }}>Available on the web and as a dedicated desktop app, built to keep working through a dropped connection.</p>
         </div>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 24, maxWidth: 1100, margin: '0 auto' }}>
@@ -257,7 +257,7 @@ export default function HomePage() {
       <section id="products" style={{ padding: '5.5rem 3rem' }}>
         <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
           <div className="eyebrow-tag" style={{ marginBottom: 12 }}>The ecosystem</div>
-          <h2 style={{ fontFamily: "'Fraunces', serif", textTransform: 'none', fontSize: 'clamp(26px, 3.5vw, 34px)', fontWeight: 500, letterSpacing: -0.5, margin: '0 0 10px' }}>Three products, one sign-in.</h2>
+          <h2 className="ecosystem-title" style={{ fontFamily: "'Fraunces', serif", textTransform: 'none', fontSize: 34, fontWeight: 500, letterSpacing: -0.5, margin: '0 0 10px' }}>Three products, one sign-in.</h2>
           <p style={{ fontSize: 15, color: 'var(--text-secondary)', maxWidth: 520, margin: '0 auto', lineHeight: 1.6 }}>
             Every school starts with Smart Assess. Smart Learning and Smart Play switch on whenever you&apos;re ready, at no extra cost to set up.
           </p>
@@ -299,7 +299,7 @@ export default function HomePage() {
 
       {/* Final CTA */}
       <section style={{ padding: '4.5rem 3rem', background: 'var(--accent-light)', textAlign: 'center' }}>
-        <h2 style={{ fontFamily: "'Fraunces', serif", textTransform: 'none', fontSize: 'clamp(28px, 4vw, 40px)', fontWeight: 500, letterSpacing: -0.6, maxWidth: 560, margin: '0 auto 22px' }}>Ready to rethink assessment?</h2>
+        <h2 className="cta-title" style={{ fontFamily: "'Fraunces', serif", textTransform: 'none', fontSize: 40, fontWeight: 500, letterSpacing: -0.6, maxWidth: 560, margin: '0 auto 22px' }}>Ready to rethink assessment?</h2>
         <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
           <Link href="/build-my-school">
             <button className="btn btn-dark" style={{ fontSize: 15, padding: '14px 30px' }}>Request a Demo</button>
@@ -314,7 +314,7 @@ export default function HomePage() {
       <section id="contact" style={{ padding: '5.5rem 3rem', background: 'var(--card-bg)' }}>
         <div style={{ maxWidth: 480, margin: '0 auto', textAlign: 'center' }}>
           <div className="eyebrow-tag" style={{ marginBottom: 12 }}>Contact Us</div>
-          <h2 style={{ fontFamily: "'Fraunces', serif", textTransform: 'none', fontSize: 'clamp(24px, 3vw, 30px)', fontWeight: 500, margin: '0 0 12px' }}>Let&apos;s build something smarter.</h2>
+          <h2 className="contact-title" style={{ fontFamily: "'Fraunces', serif", textTransform: 'none', fontSize: 30, fontWeight: 500, margin: '0 0 12px' }}>Let&apos;s build something smarter.</h2>
           <p style={{ fontSize: 15, color: 'var(--text-secondary)', margin: '0 0 8px', lineHeight: 1.6 }}>Send us a message and we&apos;ll get back to you within one business day.</p>
           <div style={{ display: 'flex', gap: 24, justifyContent: 'center', flexWrap: 'wrap', fontSize: 13, color: 'var(--text-secondary)', margin: '0 0 28px' }}>
             <span>sales@smartassessja.com</span>

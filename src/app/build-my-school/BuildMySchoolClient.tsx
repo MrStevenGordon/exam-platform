@@ -117,7 +117,7 @@ export default function BuildMySchoolClient() {
           Linked from the homepage's Build My School dropdown ("Overview" -> #overview). */}
       <section id="overview" style={{ padding: '4rem 2rem 3.5rem', textAlign: 'center', background: 'var(--page-bg)' }}>
         <div className="eyebrow-tag" style={{ marginBottom: 14 }}>Overview</div>
-        <h1 style={{ fontFamily: "'Fraunces', serif", textTransform: 'none', fontSize: 'clamp(28px, 4vw, 40px)', fontWeight: 500, letterSpacing: -0.6, maxWidth: 620, margin: '0 auto 16px' }}>
+        <h1 className="overview-title" style={{ fontFamily: "'Fraunces', serif", textTransform: 'none', fontSize: 40, fontWeight: 500, letterSpacing: -0.6, maxWidth: 620, margin: '0 auto 16px' }}>
           Your school. Your structure. Your system.
         </h1>
         <p style={{ fontSize: 16, color: 'var(--text-secondary)', maxWidth: 520, margin: '0 auto 3rem', lineHeight: 1.6 }}>

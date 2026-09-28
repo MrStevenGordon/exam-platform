@@ -483,6 +483,12 @@ body.exam-fullscreen .portal-content {
   h2 { font-size: 15px; }
 
   .card { padding: 14px 16px; }
+
+  /* Hero title's range (62px desktop down to 38px on phones, set in the 768px-and-below block)
+     is wide enough to want a middle step here rather than jumping straight to the phone size.
+     Scoped to 769-1024px specifically (not max-width: 1024px) so it doesn't also win, by source
+     order, against the phone-size rule below 768px. */
+  .hero-title { font-size: 50px !important; }
 }
 
 /* ===== MOBILE RESPONSIVE ===== */
@@ -574,6 +580,16 @@ body.exam-fullscreen .portal-content {
   [style*="grid-template-columns: 1fr 1fr"] {
     grid-template-columns: 1fr !important;
   }
+
+  /* Homepage editorial headings were sized with clamp(min, Nvw, max), which smoothly resizes the
+     text as the window is dragged — reported as "the words resize" while resizing the browser.
+     Fixed sizes per breakpoint instead: the same min/max values from the old clamp(), just as a
+     step instead of continuous interpolation. */
+  .hero-title { font-size: 38px !important; }
+  .problem-title { font-size: 28px !important; }
+  .idea-title, .platform-title, .ecosystem-title { font-size: 26px !important; }
+  .cta-title, .overview-title { font-size: 28px !important; }
+  .contact-title { font-size: 24px !important; }
 }
 
 /* Homepage-style top nav — its own breakpoint, deliberately wider than the 768px one above.
