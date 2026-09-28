@@ -1,6 +1,6 @@
 import Link from 'next/link'
 
-export const metadata = { title: 'Privacy Policy | Smart Assess' }
+export const metadata = { title: 'Privacy Policy' }
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (

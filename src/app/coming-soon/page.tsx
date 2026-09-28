@@ -2,16 +2,18 @@ import type { Metadata } from 'next'
 import WaitlistForm from '@/components/WaitlistForm'
 import InvestorForm from '@/components/InvestorForm'
 
-const TITLE = 'Smart Assess Ja: Coming Soon'
+const TAB_TITLE = 'Coming Soon' // the root layout's template adds "| Smart Assess Ja"
+const SHARE_TITLE = 'Smart Assess Ja: Coming Soon' // OG/Twitter previews don't get that template, so this stays full
 const DESCRIPTION = 'A modern exam and assessment platform, built from the ground up for schools and organizations across Jamaica. Join the waitlist to be first to know when we launch.'
 const URL = 'https://smartassessja.com'
 const IMAGE = `${URL}/og/coming-soon.png`
 
 export const metadata: Metadata = {
-  title: TITLE,
+  title: TAB_TITLE,
   description: DESCRIPTION,
+  alternates: { canonical: URL },
   openGraph: {
-    title: TITLE,
+    title: SHARE_TITLE,
     description: DESCRIPTION,
     url: URL,
     siteName: 'Smart Assess Ja',
@@ -21,7 +23,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: TITLE,
+    title: SHARE_TITLE,
     description: DESCRIPTION,
     images: [IMAGE],
   },

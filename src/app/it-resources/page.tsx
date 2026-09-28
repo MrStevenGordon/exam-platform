@@ -1,6 +1,6 @@
 import Link from 'next/link'
 
-export const metadata = { title: 'IT Admin Resources | Smart Assess' }
+export const metadata = { title: 'IT Admin Resources' }
 
 export default function ITResourcesPage() {
   return (

@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Smart Assess: Down for Maintenance',
+  title: 'Down for Maintenance',
   description: 'Smart Assess is briefly offline for maintenance. We will be back shortly.',
 }
 
