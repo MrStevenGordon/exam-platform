@@ -115,7 +115,7 @@ export default function VettingPage() {
 
   return (
     <div>
-      <p className="portal-page-title">Vetting</p>
+      <h1 className="portal-page-title">Vetting</h1>
       <p className="portal-page-sub">Exams submitted for senior team lead review</p>
 
       {exams.length === 0 && (

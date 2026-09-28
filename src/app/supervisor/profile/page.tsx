@@ -137,7 +137,7 @@ export default function SupervisorProfilePage() {
 
   return (
     <div>
-      <p className="portal-page-title">My Profile</p>
+      <h1 className="portal-page-title">My Profile</h1>
       <p className="portal-page-sub">Manage your account and class assignments</p>
 
       <div className="card" style={{ marginBottom: 20 }}>

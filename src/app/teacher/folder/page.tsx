@@ -66,7 +66,7 @@ export default function TeacherFolderPage() {
 
   return (
     <div>
-      <p className="portal-page-title" style={{ margin: 0 }}>Folder</p>
+      <h1 className="portal-page-title" style={{ margin: 0 }}>Folder</h1>
       <p className="portal-page-sub" style={{ margin: '4px 0 0' }}>Everything you've published</p>
 
       {items.length === 0 && (

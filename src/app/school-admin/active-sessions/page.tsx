@@ -79,7 +79,7 @@ export default function ActiveSessionsPage() {
 
   return (
     <div>
-      <p className="portal-page-title">Active Sessions</p>
+      <h1 className="portal-page-title">Active Sessions</h1>
       <p className="portal-page-sub">Students currently locked to one device during an in-progress exam</p>
 
       {students.length === 0 && (

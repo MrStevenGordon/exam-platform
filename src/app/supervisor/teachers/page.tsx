@@ -32,7 +32,7 @@ export default function HodTeachersPage() {
 
   return (
     <div>
-      <p className="portal-page-title">My Teachers</p>
+      <h1 className="portal-page-title">My Teachers</h1>
       <p className="portal-page-sub">Teachers in your department. Open one to see what they have set and how their marking stands.</p>
       {error && <p className="banner banner-danger" role="alert">{error}</p>}
       {!error && rows.length === 0 && <EmptyState icon="🧑‍🏫" title="No teachers in your department yet" />}

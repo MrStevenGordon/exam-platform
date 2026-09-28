@@ -100,7 +100,7 @@ export default function MyClassesPage() {
 
   return (
     <div>
-      <p className="portal-page-title">My Classes</p>
+      <h1 className="portal-page-title">My Classes</h1>
       <p className="portal-page-sub">
         {classes.length} class{classes.length !== 1 ? 'es' : ''} · {classes.reduce((sum, c) => sum + c.students.length, 0)} students
       </p>

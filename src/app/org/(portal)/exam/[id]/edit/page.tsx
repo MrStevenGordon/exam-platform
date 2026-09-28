@@ -218,7 +218,7 @@ export default function OrgExamEditPage() {
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-        <p className="portal-page-title" style={{ margin: 0 }}>{title || 'Untitled exam'}</p>
+        <h1 className="portal-page-title" style={{ margin: 0 }}>{title || 'Untitled exam'}</h1>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <span className={`badge ${status === 'published' ? 'badge-success' : 'badge-default'}`}>
             {status === 'published' ? 'Published' : 'Draft'}

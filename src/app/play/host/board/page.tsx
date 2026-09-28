@@ -79,7 +79,7 @@ export default function BoardSetupPage() {
   return (
     <div className="page-container" style={{ maxWidth: 680 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-        <p className="portal-page-title" style={{ margin: 0 }}>Jeopardy board</p>
+        <h1 className="portal-page-title" style={{ margin: 0 }}>Jeopardy board</h1>
         <Link href="/play/host" className="btn btn-secondary" style={{ fontSize: 13, padding: '6px 14px' }}>Back</Link>
       </div>
       <p style={{ margin: '4px 0 20px', fontSize: 14, color: 'var(--text-secondary)' }}>

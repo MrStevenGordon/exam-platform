@@ -110,7 +110,7 @@ export default function ManageQuestionsPage() {
   return (
     <div className="page-container" style={{ maxWidth: 820 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap', marginBottom: 6 }}>
-        <p className="portal-page-title" style={{ margin: 0 }}>Game questions</p>
+        <h1 className="portal-page-title" style={{ margin: 0 }}>Game questions</h1>
         <div style={{ display: 'flex', gap: 8 }}>
           <Link href="/play/host" className="btn btn-secondary" style={{ fontSize: 13, padding: '6px 14px' }}>Back</Link>
           <Link href="/play/host/questions/import" className="btn btn-secondary" style={{ fontSize: 13, padding: '6px 14px' }}>Import from spreadsheet</Link>

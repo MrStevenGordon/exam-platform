@@ -83,7 +83,7 @@ export default function PrincipalStudentsPage() {
 
   return (
     <div>
-      <p className="portal-page-title">Students</p>
+      <h1 className="portal-page-title">Students</h1>
       <p className="portal-page-sub">Attendance by student, grouped by class</p>
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', marginBottom: 12 }}>
         <input type="search" placeholder="Search by name or student ID…" value={search} onChange={(e) => setSearch(e.target.value)} aria-label="Search students" style={{ flex: 1, minWidth: 220 }} />

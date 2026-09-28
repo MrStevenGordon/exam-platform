@@ -130,7 +130,7 @@ export default function ActivityPage() {
 
   return (
     <div>
-      <p className="portal-page-title">Activity Monitor</p>
+      <h1 className="portal-page-title">Activity Monitor</h1>
       <p className="portal-page-sub">Exam sessions</p>
 
       <div className="stat-grid" style={{ marginBottom: 20 }}>

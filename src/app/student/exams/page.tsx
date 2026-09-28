@@ -40,7 +40,7 @@ export default function StudentExamsPage() {
 
   return (
     <div>
-      <p className="portal-page-title">All Exams</p>
+      <h1 className="portal-page-title">All Exams</h1>
       {exams.length === 0 && <EmptyState icon="📚" title="No exams available yet" description="Final exams your school schedules will show up here when they're published." />}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         {exams.map((exam) => {

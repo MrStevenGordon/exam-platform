@@ -120,7 +120,7 @@ export default function HostGamePage() {
 
       {g.status === 'ended' && (
         <div>
-          <p className="portal-page-title" style={{ margin: '0 0 12px' }}>Final leaderboard</p>
+          <h1 className="portal-page-title" style={{ margin: '0 0 12px' }}>Final leaderboard</h1>
           <Leaderboard rows={state.leaderboard} big />
           <div style={{ display: 'flex', gap: 10, marginTop: 20 }}>
             <Link href="/play/host" className="btn btn-primary">Host another game</Link>

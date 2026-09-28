@@ -132,7 +132,7 @@ export default function TeacherHome() {
 
   return (
     <div>
-      <p className="portal-page-title">Overview</p>
+      <h1 className="portal-page-title">Overview</h1>
       <p className="portal-page-sub">Academic year 2026–2027</p>
 
       <div className="stat-grid">

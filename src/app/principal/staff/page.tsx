@@ -103,7 +103,7 @@ export default function PrincipalStaffPage() {
 
   return (
     <div>
-      <p className="portal-page-title">Staff</p>
+      <h1 className="portal-page-title">Staff</h1>
       <p className="portal-page-sub">Teachers and heads of department</p>
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', marginBottom: 12 }}>
         <input type="search" placeholder="Search by name, department or subject…" value={search} onChange={(e) => setSearch(e.target.value)} aria-label="Search staff" style={{ flex: 1, minWidth: 220 }} />

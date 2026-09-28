@@ -86,7 +86,7 @@ export default function ClassProgressPage() {
   return (
     <div className="page-container" style={{ maxWidth: 860 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-        <p className="portal-page-title" style={{ margin: 0 }}>Class progress</p>
+        <h1 className="portal-page-title" style={{ margin: 0 }}>Class progress</h1>
         <Link href="/play/home" className="btn btn-secondary" style={{ fontSize: 13, padding: '6px 14px' }}>Back</Link>
       </div>
       <p style={{ margin: '4px 0 16px', fontSize: 14, color: 'var(--text-secondary)' }}>

@@ -184,7 +184,7 @@ export default function DepartmentsPage() {
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
         <div>
-          <p className="portal-page-title" style={{ margin: 0 }}>Departments &amp; Subjects</p>
+          <h1 className="portal-page-title" style={{ margin: 0 }}>Departments &amp; Subjects</h1>
           <p className="portal-page-sub" style={{ margin: '4px 0 0' }}>{departments.length} departments · {subjects.length} subjects</p>
         </div>
         <button className="btn btn-primary" onClick={() => setShowForm(!showForm)}>+ New department</button>

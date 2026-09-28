@@ -83,7 +83,7 @@ export default function SupervisorHome() {
 
   return (
     <div>
-      <p className="portal-page-title">Department overview</p>
+      <h1 className="portal-page-title">Department overview</h1>
       <p className="portal-page-sub">Academic year 2026–2027</p>
 
       <div className="stat-grid">

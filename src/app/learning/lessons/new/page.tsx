@@ -71,7 +71,7 @@ export default function NewLessonPage() {
   return (
     <div style={{ maxWidth: 640 }}>
       <Link href="/learning" style={{ color: 'var(--text-secondary)', fontSize: 14 }}>&larr; My lessons</Link>
-      <p className="portal-page-title" style={{ marginTop: 8 }}>New lesson</p>
+      <h1 className="portal-page-title" style={{ marginTop: 8 }}>New lesson</h1>
 
       {plans.length > 0 && (
         <div role="group" aria-label="Start from" style={{ display: 'flex', gap: 6, marginBottom: 16 }}>

@@ -69,7 +69,7 @@ export default function SchoolAdminHome() {
 
   return (
     <div>
-      <p className="portal-page-title">School Overview</p>
+      <h1 className="portal-page-title">School Overview</h1>
       <p className="portal-page-sub">Manchester High School · Academic year 2026–2027</p>
 
       <div className="stat-grid">

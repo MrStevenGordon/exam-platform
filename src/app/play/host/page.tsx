@@ -67,7 +67,7 @@ export default function HostLandingPage() {
   return (
     <div className="page-container" style={{ maxWidth: 680 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-        <p className="portal-page-title" style={{ margin: 0 }}>Host a live game</p>
+        <h1 className="portal-page-title" style={{ margin: 0 }}>Host a live game</h1>
         <div style={{ display: 'flex', gap: 8 }}>
           <Link href="/play/host/tug" className="btn btn-secondary" style={{ fontSize: 13, padding: '6px 14px' }}>Tug of War</Link>
           <Link href="/play/host/board" className="btn btn-secondary" style={{ fontSize: 13, padding: '6px 14px' }}>Jeopardy board</Link>

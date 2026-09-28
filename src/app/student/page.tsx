@@ -169,7 +169,7 @@ export default function StudentHome() {
 
   return (
     <div>
-      <p className="portal-page-title">{greeting}, {firstName}</p>
+      <h1 className="portal-page-title">{greeting}, {firstName}</h1>
       <p className="portal-page-sub">Academic year 2026–2027 · Manchester High School</p>
 
       {/* Stats */}

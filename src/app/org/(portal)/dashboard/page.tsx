@@ -75,7 +75,7 @@ export default function OrgDashboardPage() {
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
         <div>
-          <p className="portal-page-title" style={{ margin: 0 }}>Your exams</p>
+          <h1 className="portal-page-title" style={{ margin: 0 }}>Your exams</h1>
           <p className="portal-page-sub" style={{ margin: '4px 0 0' }}>Build and publish one-off assessments</p>
         </div>
         <button onClick={handleCreate} disabled={creating} className="btn btn-primary">

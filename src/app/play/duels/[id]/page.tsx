@@ -116,7 +116,7 @@ export default function PlayDuelPage() {
   if (duel.status === 'declined') {
     return (
       <div className="page-container" style={{ maxWidth: 560 }}>
-        <p className="portal-page-title" style={{ margin: 0 }}>{heading}</p>
+        <h1 className="portal-page-title" style={{ margin: 0 }}>{heading}</h1>
         <p style={{ fontSize: 14, color: 'var(--text-secondary)' }}>{duel.isCreator ? `${duel.opponentName} declined this challenge.` : 'You declined this challenge.'}</p>
         {back}
       </div>
@@ -126,7 +126,7 @@ export default function PlayDuelPage() {
   if (duel.status === 'pending' && !duel.isCreator) {
     return (
       <div className="page-container" style={{ maxWidth: 560 }}>
-        <p className="portal-page-title" style={{ margin: 0 }}>{duel.opponentName} challenged you</p>
+        <h1 className="portal-page-title" style={{ margin: 0 }}>{duel.opponentName} challenged you</h1>
         <p style={{ fontSize: 14, color: 'var(--text-secondary)', margin: '4px 0 16px' }}>{sub} · {duel.questionCount} questions</p>
         {error && <p className="banner banner-danger" role="alert" style={{ marginBottom: 12 }}>{error}</p>}
         <div style={{ display: 'flex', gap: 10 }}>
@@ -142,7 +142,7 @@ export default function PlayDuelPage() {
     const color = r.outcome === 'win' ? 'var(--success)' : r.outcome === 'loss' ? 'var(--danger)' : 'var(--text-secondary)'
     return (
       <div className="page-container" style={{ maxWidth: 560 }}>
-        <p className="portal-page-title" style={{ margin: 0 }}>{heading}</p>
+        <h1 className="portal-page-title" style={{ margin: 0 }}>{heading}</h1>
         <p style={{ fontSize: 14, color: 'var(--text-secondary)', margin: '4px 0 16px' }}>{sub}</p>
         <div className="card" style={{ textAlign: 'center', marginBottom: 16 }}>
           <div style={{ fontSize: 30, fontWeight: 800, color }}>{r.outcome === 'win' ? 'You won!' : r.outcome === 'loss' ? 'You lost this one' : 'It is a tie'}</div>
@@ -162,7 +162,7 @@ export default function PlayDuelPage() {
   if (duel.myFinished && finishedView) {
     return (
       <div className="page-container" style={{ maxWidth: 560 }}>
-        <p className="portal-page-title" style={{ margin: 0 }}>{heading}</p>
+        <h1 className="portal-page-title" style={{ margin: 0 }}>{heading}</h1>
         <p style={{ fontSize: 14, color: 'var(--text-secondary)', margin: '4px 0 16px' }}>{sub}</p>
         <div className="card" style={{ marginBottom: 16, textAlign: 'center' }}>
           <div style={{ fontSize: 15, fontWeight: 700 }}>You finished!</div>

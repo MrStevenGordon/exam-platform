@@ -128,7 +128,7 @@ export default function TeacherReportCardsPage() {
 
   return (
     <div className="page-container">
-      <p className="portal-page-title" style={{ margin: 0 }}>Report Cards</p>
+      <h1 className="portal-page-title" style={{ margin: 0 }}>Report Cards</h1>
       <p className="portal-page-sub" style={{ margin: '4px 0 20px' }}>Write comments for the subjects you teach</p>
 
       {students.length === 0 ? (

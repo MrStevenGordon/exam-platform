@@ -169,7 +169,7 @@ export default function TeacherAttendancePage() {
 
   return (
     <div>
-      <p className="portal-page-title">Attendance</p>
+      <h1 className="portal-page-title">Attendance</h1>
       <p style={{ color: 'var(--text-secondary)', fontSize: 13, margin: '0 0 16px' }}>{formatDay(today)}</p>
       {error && <p className="banner banner-danger" role="alert">{error}</p>}
       {notice && <p className="banner banner-success" role="status">{notice}</p>}

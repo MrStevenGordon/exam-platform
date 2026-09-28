@@ -48,7 +48,7 @@ export default function SupervisorReportCardsPage() {
 
   return (
     <div className="page-container">
-      <p className="portal-page-title" style={{ margin: 0 }}>Report Cards</p>
+      <h1 className="portal-page-title" style={{ margin: 0 }}>Report Cards</h1>
       <p className="portal-page-sub" style={{ margin: '4px 0 20px' }}>{students.length} students</p>
 
       <div style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>

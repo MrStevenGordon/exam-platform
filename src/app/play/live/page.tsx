@@ -32,7 +32,7 @@ export default function JoinLiveGamePage() {
 
   return (
     <div className="page-container" style={{ maxWidth: 400, marginTop: 48 }}>
-      <p className="portal-page-title" style={{ margin: 0 }}>Join a live game</p>
+      <h1 className="portal-page-title" style={{ margin: 0 }}>Join a live game</h1>
       <p style={{ margin: '4px 0 20px', fontSize: 14, color: 'var(--text-secondary)' }}>Enter the 6-digit code shown on your teacher's screen.</p>
       <form onSubmit={join} className="card" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
         {error && <p className="banner banner-danger" role="alert" style={{ margin: 0 }}>{error}</p>}

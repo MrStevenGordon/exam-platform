@@ -137,7 +137,7 @@ export default function SchoolAnalyticsPage() {
 
   return (
     <div>
-      <p className="portal-page-title">School Analytics</p>
+      <h1 className="portal-page-title">School Analytics</h1>
       <p className="portal-page-sub">Performance across all graded exams</p>
 
       {totalGraded === 0 ? (

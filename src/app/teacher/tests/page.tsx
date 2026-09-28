@@ -44,7 +44,7 @@ export default function TeacherTestsPage() {
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
         <div>
-          <p className="portal-page-title" style={{ margin: 0 }}>Tests</p>
+          <h1 className="portal-page-title" style={{ margin: 0 }}>Tests</h1>
           <p className="portal-page-sub" style={{ margin: '4px 0 0' }}>Pop quizzes, class tests, and weekly tests</p>
         </div>
         <Link href="/teacher/new?kind=test"><button className="btn btn-primary">+ New test</button></Link>

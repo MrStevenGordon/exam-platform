@@ -65,7 +65,7 @@ export default function PrincipalHome() {
 
   return (
     <div>
-      <p className="portal-page-title">School overview</p>
+      <h1 className="portal-page-title">School overview</h1>
       <p className="portal-page-sub" style={{ marginBottom: 20 }}>{formatDay(today)}</p>
 
       {error && <p className="banner banner-danger" role="alert">{error}</p>}

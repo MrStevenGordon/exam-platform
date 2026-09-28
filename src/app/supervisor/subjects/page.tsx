@@ -80,7 +80,7 @@ export default function DepartmentSubjectsPage() {
 
   return (
     <div>
-      <p className="portal-page-title">Department Subjects</p>
+      <h1 className="portal-page-title">Department Subjects</h1>
       <p className="portal-page-sub">{deptName} · {subjects.length} subjects</p>
 
       <div className="card" style={{ marginBottom: 20 }}>

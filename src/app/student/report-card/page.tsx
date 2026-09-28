@@ -44,7 +44,7 @@ export default function StudentReportCardPage() {
 
   return (
     <div className="page-container" style={{ maxWidth: 700 }}>
-      <p className="portal-page-title" style={{ margin: 0 }}>My Report Card</p>
+      <h1 className="portal-page-title" style={{ margin: 0 }}>My Report Card</h1>
       <p className="portal-page-sub" style={{ margin: '4px 0 20px' }}>{terms.length} term(s) available</p>
 
       {terms.length === 0 ? (

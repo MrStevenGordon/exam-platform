@@ -83,7 +83,7 @@ export default function AdminReportCardsPage() {
     <div className="page-container">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
         <div>
-          <p className="portal-page-title" style={{ margin: 0 }}>Report Cards</p>
+          <h1 className="portal-page-title" style={{ margin: 0 }}>Report Cards</h1>
           <p className="portal-page-sub" style={{ margin: '4px 0 0' }}>{terms.length} terms</p>
         </div>
         <button className="btn btn-primary" onClick={() => setShowForm(!showForm)}>+ New term</button>

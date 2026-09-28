@@ -52,7 +52,7 @@ export default function BillingPage() {
 
   return (
     <div>
-      <p className="portal-page-title" style={{ margin: 0 }}>Billing</p>
+      <h1 className="portal-page-title" style={{ margin: 0 }}>Billing</h1>
       <p className="portal-page-sub" style={{ margin: '4px 0 20px' }}>Manage your subscription</p>
 
       <div className="card" style={{ marginBottom: 20 }}>

@@ -51,7 +51,7 @@ export default function PrincipalProfilePage() {
 
   return (
     <div>
-      <p className="portal-page-title">My Profile</p>
+      <h1 className="portal-page-title">My Profile</h1>
       <p className="portal-page-sub">Account information and settings</p>
 
       <div className="card" style={{ marginBottom: 16 }}>

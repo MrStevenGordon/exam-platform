@@ -63,7 +63,7 @@ export default function PrincipalAlertsPage() {
 
   return (
     <div>
-      <p className="portal-page-title">Alerts</p>
+      <h1 className="portal-page-title">Alerts</h1>
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', marginBottom: 16 }}>
         <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>{unread === 0 ? 'Nothing unread' : `${unread} unread`}</span>
         <div style={{ flex: 1 }} />

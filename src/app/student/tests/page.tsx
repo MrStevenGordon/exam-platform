@@ -51,7 +51,7 @@ export default function StudentTestsPage() {
 
   return (
     <div>
-      <p className="portal-page-title">Tests</p>
+      <h1 className="portal-page-title">Tests</h1>
       <p className="portal-page-sub">Pop quizzes, midterms, and direct teacher assessments</p>
       {exams.length === 0 && <EmptyState icon="✏️" title="No tests available yet" description="Pop quizzes, midterms, and direct teacher assessments will show up here once assigned." />}
       {['pop_quiz', 'class_test', 'weekly_test', 'midterm', 'end_of_year'].map((kind) => {

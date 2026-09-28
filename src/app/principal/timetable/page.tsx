@@ -74,7 +74,7 @@ export default function PrincipalTimetablePage() {
 
   return (
     <div>
-      <p className="portal-page-title">Timetable</p>
+      <h1 className="portal-page-title">Timetable</h1>
       <p style={{ color: 'var(--text-secondary)', fontSize: 13, margin: '0 0 16px' }}>Academic year {schoolYear(today)} · read-only</p>
       {error && <p className="banner banner-danger" role="alert">{error}</p>}
       {!error && periods.length === 0 && (

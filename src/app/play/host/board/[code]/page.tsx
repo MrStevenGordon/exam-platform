@@ -221,7 +221,7 @@ export default function HostBoardPage() {
 
       {g.status === 'ended' && (
         <div>
-          <p className="portal-page-title" style={{ margin: '0 0 12px' }}>{g.teamMode ? 'Final team scores' : 'Final scores'}</p>
+          <h1 className="portal-page-title" style={{ margin: '0 0 12px' }}>{g.teamMode ? 'Final team scores' : 'Final scores'}</h1>
           <Leaderboard rows={state.scoreboard} big />
           {state.individuals.length > 0 && (
             <div style={{ marginTop: 20 }}>

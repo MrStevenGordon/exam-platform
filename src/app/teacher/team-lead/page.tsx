@@ -171,7 +171,7 @@ export default function TeamLeadPage() {
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
         <div>
-          <p className="portal-page-title" style={{ margin: 0 }}>Team Lead Exams</p>
+          <h1 className="portal-page-title" style={{ margin: 0 }}>Team Lead Exams</h1>
           <p className="portal-page-sub" style={{ margin: '4px 0 0' }}>
             Standardized exams for {appointments.map((a) => `Grade ${a.year_grade} ${a.subject}`).join(', ')}
           </p>

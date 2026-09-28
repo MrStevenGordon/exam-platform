@@ -384,7 +384,7 @@ export default function StudentsPage() {
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
         <div>
-          <p className="portal-page-title" style={{ margin: 0 }}>Students</p>
+          <h1 className="portal-page-title" style={{ margin: 0 }}>Students</h1>
           <p className="portal-page-sub" style={{ margin: '4px 0 0' }}>{students.length} enrolled students</p>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>

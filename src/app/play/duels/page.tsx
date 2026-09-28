@@ -124,7 +124,7 @@ export default function PlayDuelsPage() {
   return (
     <div className="page-container" style={{ maxWidth: 680 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-        <p className="portal-page-title" style={{ margin: 0 }}>Math Duels</p>
+        <h1 className="portal-page-title" style={{ margin: 0 }}>Math Duels</h1>
         <Link href="/play/home" className="btn btn-secondary" style={{ fontSize: 13, padding: '6px 14px' }}>Back to games</Link>
       </div>
       <p style={{ margin: '4px 0 20px', fontSize: 14, color: 'var(--text-secondary)' }}>

@@ -24,7 +24,7 @@ export default function NewQuestionPage() {
   return (
     <div className="page-container" style={{ maxWidth: 680 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-        <p className="portal-page-title" style={{ margin: 0 }}>Add a question</p>
+        <h1 className="portal-page-title" style={{ margin: 0 }}>Add a question</h1>
         <Link href="/play/host/questions" className="btn btn-secondary" style={{ fontSize: 13, padding: '6px 14px' }}>Back</Link>
       </div>
       {error && <p className="banner banner-danger" role="alert">{error}</p>}

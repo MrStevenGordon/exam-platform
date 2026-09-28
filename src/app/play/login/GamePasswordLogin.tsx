@@ -37,7 +37,7 @@ export default function GamePasswordLogin() {
 
   return (
     <div className="page-container" style={{ maxWidth: 400, marginTop: 64 }}>
-      <p className="portal-page-title" style={{ margin: 0 }}>Smart Assess Play</p>
+      <h1 className="portal-page-title" style={{ margin: 0 }}>Smart Assess Play</h1>
       <p style={{ margin: '4px 0 24px', fontSize: 14, color: 'var(--text-secondary)' }}>
         Sign in with your ID# (teachers: your username) and your game password.
       </p>

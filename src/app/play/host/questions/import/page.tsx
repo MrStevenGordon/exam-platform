@@ -71,7 +71,7 @@ export default function ImportQuestionsPage() {
   return (
     <div className="page-container" style={{ maxWidth: 780 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, marginBottom: 6 }}>
-        <p className="portal-page-title" style={{ margin: 0 }}>Import questions</p>
+        <h1 className="portal-page-title" style={{ margin: 0 }}>Import questions</h1>
         <Link href="/play/host/questions" className="btn btn-secondary" style={{ fontSize: 13, padding: '6px 14px' }}>Back</Link>
       </div>
       <p style={{ margin: '4px 0 16px', fontSize: 14, color: 'var(--text-secondary)' }}>

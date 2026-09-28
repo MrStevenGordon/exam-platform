@@ -64,7 +64,7 @@ export default function PrincipalStudentDetail() {
   return (
     <div>
       <Link href="/principal/students" style={{ color: 'var(--text-secondary)', fontSize: 14 }}>&larr; All students</Link>
-      <p className="portal-page-title" style={{ marginTop: 8 }}>{name || 'Student'}</p>
+      <h1 className="portal-page-title" style={{ marginTop: 8 }}>{name || 'Student'}</h1>
       <p style={{ color: 'var(--text-secondary)', fontSize: 13, margin: '0 0 16px' }}>{code ? `ID ${code}` : ''}</p>
       <div style={{ marginBottom: 16 }}>
         <select value={days} onChange={(e) => setDays(Number(e.target.value))} aria-label="Period">

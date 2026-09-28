@@ -260,7 +260,7 @@ export default function StaffPage() {
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
         <div>
-          <p className="portal-page-title" style={{ margin: 0 }}>Staff</p>
+          <h1 className="portal-page-title" style={{ margin: 0 }}>Staff</h1>
           <p className="portal-page-sub" style={{ margin: '4px 0 0' }}>{staff.length} staff accounts</p>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>

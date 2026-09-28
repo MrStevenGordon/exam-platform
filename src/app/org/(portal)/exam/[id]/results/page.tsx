@@ -112,7 +112,7 @@ export default function OrgExamResultsPage() {
       <Link href="/org/dashboard" style={{ color: 'var(--text-secondary)', fontSize: 14 }}>&larr; Back to dashboard</Link>
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '16px 0 20px' }}>
-        <p className="portal-page-title" style={{ margin: 0 }}>{examTitle}: Results</p>
+        <h1 className="portal-page-title" style={{ margin: 0 }}>{examTitle}: Results</h1>
         <button onClick={exportCsv} disabled={rows.length === 0} className="btn btn-secondary">Export CSV</button>
       </div>
 

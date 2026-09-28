@@ -39,7 +39,7 @@ export default function PlaySsoPage() {
 
   return (
     <div className="page-container" style={{ maxWidth: 420, marginTop: 64 }}>
-      <p className="portal-page-title" style={{ margin: 0 }}>Smart Assess Play</p>
+      <h1 className="portal-page-title" style={{ margin: 0 }}>Smart Assess Play</h1>
       <p role={failed ? 'alert' : 'status'} className={failed ? 'banner banner-danger' : undefined} style={{ margin: '12px 0', fontSize: 14, color: failed ? undefined : 'var(--text-secondary)' }}>{message}</p>
       {failed && <Link href="/login" className="btn btn-secondary">Back to sign in</Link>}
     </div>

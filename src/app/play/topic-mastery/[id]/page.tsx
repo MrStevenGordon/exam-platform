@@ -112,7 +112,7 @@ export default function PlayPracticePage() {
     const color = pct >= 80 ? 'var(--success)' : pct >= 50 ? 'var(--accent)' : 'var(--danger)'
     return (
       <div className="page-container" style={{ maxWidth: 560 }}>
-        <p className="portal-page-title" style={{ margin: 0 }}>{session.topic}: round complete</p>
+        <h1 className="portal-page-title" style={{ margin: 0 }}>{session.topic}: round complete</h1>
         <div className="card" style={{ margin: '16px 0', textAlign: 'center' }}>
           <div style={{ fontSize: 44, fontWeight: 800, color }}>{pct}%</div>
           <div style={{ fontSize: 14, color: 'var(--text-secondary)' }}>{score} of {max} points</div>

@@ -48,7 +48,7 @@ export default async function PlayHomePage() {
     <div className="page-container" style={{ maxWidth: 680 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
         <div>
-          <p className="portal-page-title" style={{ margin: 0 }}>Smart Assess Play</p>
+          <h1 className="portal-page-title" style={{ margin: 0 }}>Smart Assess Play</h1>
           <p style={{ margin: '4px 0 0', fontSize: 14, color: 'var(--text-secondary)' }}>Welcome, {account.displayName}</p>
         </div>
         <SignOutButton />

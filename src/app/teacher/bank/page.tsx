@@ -52,7 +52,7 @@ export default function TeacherBankPage() {
 
   return (
     <div>
-      <p className="portal-page-title">Question Bank</p>
+      <h1 className="portal-page-title">Question Bank</h1>
       <p className="portal-page-sub">{filtered.length} of {questions.length} saved questions</p>
       <div style={{ display: 'flex', gap: 10, marginBottom: 16, flexWrap: 'wrap' }}>
         <input

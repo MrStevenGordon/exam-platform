@@ -93,7 +93,7 @@ export default function SettingsPage() {
 
   return (
     <div>
-      <p className="portal-page-title">School Settings</p>
+      <h1 className="portal-page-title">School Settings</h1>
       <p className="portal-page-sub">{process.env.NEXT_PUBLIC_SCHOOL_NAME || 'Your school'} · Academic year {currentAcademicYear().replace('-', '–')}</p>
 
       {/* School branding */}

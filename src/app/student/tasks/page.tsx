@@ -53,7 +53,7 @@ export default function StudentTasksPage() {
 
   return (
     <div>
-      <p className="portal-page-title">Tasks</p>
+      <h1 className="portal-page-title">Tasks</h1>
       <p className="portal-page-sub">Homework and assignments</p>
       {exams.length === 0 && <EmptyState icon="📝" title="No tasks available yet" description="Homework, assignments, and group projects from your teachers will show up here." />}
       {TASK_KINDS.map((kind) => {
