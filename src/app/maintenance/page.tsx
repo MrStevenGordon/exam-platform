@@ -115,7 +115,7 @@ export default function MaintenancePage() {
         }
 
         .mnt-headline {
-          font-size: clamp(28px, 4.5vw, 40px);
+          font-size: 40px;
           font-weight: 800;
           letter-spacing: -0.7px;
           color: #1E1208;
@@ -152,6 +152,7 @@ export default function MaintenancePage() {
         @media (max-width: 480px) {
           .mnt-sub { font-size: 14.5px; }
           .mnt-note { font-size: 12.5px; padding: 12px 14px; }
+          .mnt-headline { font-size: 28px; }
         }
       `}</style>
     </div>

@@ -346,7 +346,7 @@ export default function ComingSoonPage() {
         }
 
         .cs-headline {
-          font-size: clamp(30px, 4.5vw, 48px);
+          font-size: 48px;
           font-weight: 800;
           letter-spacing: -0.8px;
           color: #1E1208;
@@ -548,6 +548,8 @@ export default function ComingSoonPage() {
             max-width: 420px;
             margin-top: 4px;
           }
+
+          .cs-headline { font-size: 36px; }
         }
 
         @media (max-width: 480px) {
@@ -556,6 +558,7 @@ export default function ComingSoonPage() {
           .cs-feature { font-size: 11.5px; padding: 6px 12px; }
           .cs-visual { max-width: 340px; }
           .cs-footer { margin-top: 28px; }
+          .cs-headline { font-size: 30px; }
         }
 
         @media (prefers-reduced-motion: reduce) {

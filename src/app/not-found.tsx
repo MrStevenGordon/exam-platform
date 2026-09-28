@@ -90,7 +90,7 @@ export default function NotFound() {
         }
 
         .nf-headline {
-          font-size: clamp(28px, 4.5vw, 40px);
+          font-size: 40px;
           font-weight: 800;
           letter-spacing: -0.7px;
           color: #1E1208;
@@ -127,6 +127,7 @@ export default function NotFound() {
 
         @media (max-width: 480px) {
           .nf-sub { font-size: 14.5px; }
+          .nf-headline { font-size: 28px; }
         }
       `}</style>
     </div>
