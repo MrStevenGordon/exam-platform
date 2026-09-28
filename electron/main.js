@@ -1,18 +1,57 @@
-const { app, BrowserWindow, globalShortcut, dialog, ipcMain } = require('electron')
+const { app, BrowserWindow, globalShortcut, dialog, ipcMain, Menu } = require('electron')
 const { autoUpdater } = require('electron-updater')
 const path = require('path')
 const fs = require('fs')
 
-// Points at the deployed Smart Assess site — this shell never bundles the
-// Next.js app itself, it just loads the real site in a native window. All
-// the actual offline-resilience logic (local autosave, sync, resume) lives
-// in the web app and works the same way here as in a regular browser.
-// Access control lives entirely in the web app too (login checks each
-// school's own subscription status) — this shell has no activation step
-// of its own.
-const APP_URL = process.env.SMART_ASSESS_URL || 'https://exam-platform-chi.vercel.app'
+// This shell never bundles the Next.js app itself — it just loads a school's real site in a
+// native window. All the actual offline-resilience logic (local autosave, sync, resume) lives in
+// the web app and works the same way here as in a regular browser. Access control lives entirely
+// in the web app too (login checks each school's own subscription status) — this shell has no
+// activation step of its own.
+//
+// One installer serves every school (today's and every one added later), rather than a separate
+// build per school: on first launch there's no saved school yet, so the local picker below runs
+// instead of loading any remote URL. Once chosen, it's remembered on this computer — see
+// SCHOOL_FILE — and every later launch skips straight to that school's own login. A dev override
+// (SMART_ASSESS_URL) always wins over a saved school, same as before this existed.
+const PLATFORM_DIRECTORY_URL = 'https://exam-platform-chi.vercel.app/api/schools/directory'
+const DEV_APP_URL = process.env.SMART_ASSESS_URL || null
 
 const STATE_FILE = path.join(app.getPath('userData'), 'last-route.json')
+const SCHOOL_FILE = path.join(app.getPath('userData'), 'school.json')
+
+// The current session's resolved backend — null while the picker is showing (nothing chosen
+// yet). Read fresh by the navigation guards below rather than captured once, since it can change
+// mid-session via "Change School."
+let currentAppUrl = DEV_APP_URL
+
+function getSavedSchoolUrl() {
+  try {
+    const data = fs.readFileSync(SCHOOL_FILE, 'utf8')
+    return JSON.parse(data).url || null
+  } catch {
+    return null
+  }
+}
+
+function saveSchoolUrl(url) {
+  try {
+    fs.writeFileSync(SCHOOL_FILE, JSON.stringify({ url }))
+  } catch {
+    // Best-effort — worst case, the picker just runs again next launch.
+  }
+}
+
+function clearSavedSchoolUrl() {
+  try { fs.unlinkSync(SCHOOL_FILE) } catch {
+    // Nothing saved yet — fine.
+  }
+}
+
+// Populated by the last successful school:list fetch, and the only thing school:choose accepts
+// a URL from — so a compromised or malicious page calling chooseSchool() can't redirect the
+// shell to an arbitrary origin, only to a school that's genuinely in the platform's own directory.
+let lastFetchedSchools = []
 
 // If the app crashes or is closed mid-exam and reopened, it should land
 // back on the same page rather than login — combined with the web app's
@@ -101,6 +140,22 @@ function exitExamLockdown(win) {
   }
 }
 
+// Both helpers key off currentAppUrl rather than a parameter, since it can change mid-session
+// (Change School) and every caller should always mean "wherever we're pointed right now."
+function loadApp(win, pathname) {
+  win.loadURL(new URL(pathname, currentAppUrl).toString())
+}
+
+function loadPicker(win) {
+  currentAppUrl = null
+  win.loadFile(path.join(__dirname, 'school-picker.html'))
+}
+
+function changeSchool(win) {
+  clearSavedSchoolUrl()
+  loadPicker(win)
+}
+
 function createWindow() {
   const win = new BrowserWindow({
     width: 1280,
@@ -114,12 +169,19 @@ function createWindow() {
     },
   })
 
-  win.loadURL(new URL(getLastRoute(), APP_URL).toString())
+  const savedSchoolUrl = DEV_APP_URL || getSavedSchoolUrl()
+  if (savedSchoolUrl) {
+    currentAppUrl = savedSchoolUrl
+    loadApp(win, getLastRoute())
+  } else {
+    loadPicker(win)
+  }
 
   function trackNavigation(_event, url) {
+    if (!currentAppUrl) return
     try {
       const parsed = new URL(url)
-      if (parsed.origin !== new URL(APP_URL).origin) return
+      if (parsed.origin !== new URL(currentAppUrl).origin) return
 
       // Most in-app navigation (including the login page's own logo link)
       // is Next.js client-side routing via history.pushState, not a real
@@ -129,7 +191,7 @@ function createWindow() {
       // catches it here and bounces straight back rather than leaving the
       // marketing site loaded with no way back to the app.
       if (MARKETING_ONLY_ROUTES.includes(parsed.pathname)) {
-        win.loadURL(new URL('/login', APP_URL).toString())
+        loadApp(win, '/login')
         return
       }
 
@@ -153,12 +215,13 @@ function createWindow() {
   // these — this one fires early enough to prevent it outright rather
   // than redirecting after the fact.
   win.webContents.on('will-navigate', (event, url) => {
+    if (!currentAppUrl) return
     try {
       const parsed = new URL(url)
-      if (parsed.origin !== new URL(APP_URL).origin) return
+      if (parsed.origin !== new URL(currentAppUrl).origin) return
       if (MARKETING_ONLY_ROUTES.includes(parsed.pathname)) {
         event.preventDefault()
-        win.loadURL(new URL('/login', APP_URL).toString())
+        loadApp(win, '/login')
       }
     } catch {
       // Non-http(s) URL — nothing to guard.
@@ -178,6 +241,74 @@ function createWindow() {
 // the desktop shell, never on the regular website, so this is exposed via
 // preload rather than baked into the page itself.
 ipcMain.handle('app:get-version', () => app.getVersion())
+
+// Backs the local school-picker page (electron/school-picker.html). Fetched here in the main
+// process, not by the picker page itself, so it isn't subject to a renderer's CORS restrictions
+// against a file:// origin — this is a plain Node fetch, same as any server-side call.
+ipcMain.handle('school:list', async () => {
+  try {
+    const res = await fetch(PLATFORM_DIRECTORY_URL)
+    if (!res.ok) throw new Error(`status ${res.status}`)
+    const data = await res.json()
+    lastFetchedSchools = Array.isArray(data.schools) ? data.schools : []
+    return { ok: true, schools: lastFetchedSchools }
+  } catch (err) {
+    console.error('Could not load the school directory:', err)
+    return { ok: false, error: 'Could not load the school list. Check your connection and try again.' }
+  }
+})
+
+// Only accepts a URL that was actually in the last school:list response — never the caller's raw
+// input — so this can't be used to point the shell at an arbitrary origin (see preload.js).
+ipcMain.handle('school:choose', (event, url) => {
+  const match = lastFetchedSchools.find((s) => s && s.url === url)
+  if (!match) return { ok: false }
+
+  saveSchoolUrl(match.url)
+  currentAppUrl = match.url
+  const win = BrowserWindow.fromWebContents(event.sender)
+  if (win) loadApp(win, '/login')
+  return { ok: true }
+})
+
+// One menu item, reachable on both platforms, for a shared/lab computer that needs to switch
+// which school it's signed in for. Everything else here is Electron's own built-in role handling
+// (About, Cut/Copy/Paste, Quit) — without a custom menu at all, those still exist via Electron's
+// default template, so replacing it only for the sake of one extra item needs to keep them too.
+function buildMenu() {
+  const isMac = process.platform === 'darwin'
+  const changeSchoolItem = {
+    label: 'Change School…',
+    click: () => {
+      const win = BrowserWindow.getFocusedWindow()
+      if (win) changeSchool(win)
+    },
+  }
+
+  const template = [
+    ...(isMac ? [{
+      label: app.name,
+      submenu: [
+        { role: 'about' },
+        { type: 'separator' },
+        changeSchoolItem,
+        { type: 'separator' },
+        { role: 'quit' },
+      ],
+    }] : [{
+      label: 'File',
+      submenu: [changeSchoolItem, { type: 'separator' }, { role: 'quit' }],
+    }]),
+    {
+      label: 'Edit',
+      submenu: [
+        { role: 'undo' }, { role: 'redo' }, { type: 'separator' },
+        { role: 'cut' }, { role: 'copy' }, { role: 'paste' }, { role: 'selectAll' },
+      ],
+    },
+  ]
+  Menu.setApplicationMenu(Menu.buildFromTemplate(template))
+}
 
 // Checked once at launch only — never mid-session, so a background update
 // check can't interrupt someone partway through an exam. Downloads
@@ -217,6 +348,7 @@ function checkForUpdates() {
 }
 
 app.whenReady().then(() => {
+  buildMenu()
   createWindow()
   checkForUpdates()
   app.on('activate', () => {

@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Find your school</title>
+<style>
+  :root { color-scheme: light; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: #FDF8F3;
+    color: #1E1208;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 32px 24px;
+  }
+  .mark {
+    width: 56px; height: 56px; border-radius: 14px; background: #1A0E06;
+    display: flex; align-items: center; justify-content: center; margin-bottom: 20px;
+  }
+  h1 { font-size: 24px; font-weight: 800; margin: 0 0 6px; letter-spacing: -0.3px; }
+  p.sub { font-size: 14px; color: #6B4F35; margin: 0 0 28px; text-align: center; max-width: 380px; line-height: 1.5; }
+  .search-wrap { position: relative; width: 100%; max-width: 380px; margin-bottom: 16px; }
+  input[type="search"] {
+    width: 100%; padding: 13px 16px 13px 40px; font-size: 15px; border-radius: 10px;
+    border: 1.5px solid #EAD9C4; background: white; color: #1E1208; outline: none;
+  }
+  input[type="search"]:focus { border-color: #D4762A; }
+  .search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); opacity: 0.5; }
+  .list { width: 100%; max-width: 380px; display: flex; flex-direction: column; gap: 8px; }
+  .school-btn {
+    display: flex; justify-content: space-between; align-items: center; width: 100%;
+    padding: 14px 16px; border-radius: 10px; border: 1px solid #EAD9C4; background: white;
+    font-size: 15px; font-weight: 700; color: #1E1208; cursor: pointer; text-align: left;
+  }
+  .school-btn:hover { border-color: #D4762A; background: #FEF5E4; }
+  .empty, .error { font-size: 13px; color: #6B4F35; text-align: center; padding: 20px 0; }
+  .error { color: #B3261E; }
+  .skeleton { height: 50px; border-radius: 10px; background: #F1E7D8; }
+</style>
+</head>
+<body>
+  <div class="mark">
+    <svg width="30" height="30" viewBox="0 0 32 32">
+      <path d="M9 16.5l4.5 4.5L23 11" stroke="#D4762A" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+    </svg>
+  </div>
+  <h1>Find your school</h1>
+  <p class="sub">Search for your school below. This is remembered on this computer — you won't need to do it again.</p>
+  <div class="search-wrap">
+    <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6B4F35" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+    <input type="search" id="search" placeholder="Start typing your school's name…" autofocus />
+  </div>
+  <div class="list" id="list"><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div></div>
+
+  <script>
+    let schools = []
+    const listEl = document.getElementById('list')
+    const searchEl = document.getElementById('search')
+
+    function render(items) {
+      if (items.length === 0) {
+        listEl.innerHTML = '<div class="empty">No school matches that name.</div>'
+        return
+      }
+      listEl.innerHTML = ''
+      for (const s of items) {
+        const btn = document.createElement('button')
+        btn.className = 'school-btn'
+        btn.textContent = s.name
+        btn.onclick = () => window.electronAPI.chooseSchool(s.url)
+        listEl.appendChild(btn)
+      }
+    }
+
+    searchEl.addEventListener('input', () => {
+      const q = searchEl.value.trim().toLowerCase()
+      render(q ? schools.filter((s) => s.name.toLowerCase().includes(q)) : schools)
+    })
+
+    window.electronAPI.listSchools().then((result) => {
+      if (!result.ok) {
+        listEl.innerHTML = '<div class="error">' + (result.error || 'Could not load the school list. Check your connection and reopen the app.') + '</div>'
+        return
+      }
+      schools = result.schools
+      render(schools)
+    })
+  </script>
+</body>
+</html>
