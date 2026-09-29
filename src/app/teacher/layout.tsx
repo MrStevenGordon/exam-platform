@@ -42,6 +42,9 @@ const BASE_NAV = [
   { label: 'Timetable', icon: 'ti-calendar', href: '/teacher/timetable' },
   { label: 'Report Cards', icon: 'ti-report', href: '/teacher/report-cards' },
   { label: 'Messages', icon: 'ti-message-circle', href: '/teacher/messages' },
+  // A teaser page only — Smart Play itself is not live yet. Remove this once the real product
+  // (gated by smart_play_enabled + installed) replaces it in the ProductSwitcher.
+  { label: 'Smart Play', icon: 'ti-device-gamepad-2', href: '/teacher/play-preview' },
   { label: 'My Profile', icon: 'ti-user', href: '/teacher/profile' },
 ]
 
