@@ -4,6 +4,7 @@ import { z } from 'zod'
 import { rateLimit } from '@/lib/rateLimit'
 import { validateBody } from '@/lib/validateBody'
 import { mergeIntegrityFlags, INTEGRITY_FLAG_LABELS } from '@/lib/essayIntegrity'
+import { extractText } from '@/lib/ai'
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -106,7 +107,7 @@ Respond ONLY with valid JSON in this exact format, no other text:
     }
 
     const data = await aiResponse.json()
-    const text = data.content?.[0]?.text || ''
+    const text = extractText(data) || ''
     const cleaned = text.replace(/```json|```/g, '').trim()
 
     let verdict: 'likely_human' | 'possibly_ai_assisted' | 'inconclusive' = 'inconclusive'

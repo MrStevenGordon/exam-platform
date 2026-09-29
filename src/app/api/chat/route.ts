@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { z } from 'zod'
 import { rateLimit, getClientIp } from '@/lib/rateLimit'
 import { validateBody } from '@/lib/validateBody'
+import { extractText } from '@/lib/ai'
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -166,7 +167,7 @@ export async function POST(req: NextRequest) {
     }
 
     const data = await response.json()
-    const reply = data.content?.[0]?.text || "Sorry, I didn't catch that — could you try rephrasing?"
+    const reply = extractText(data) || "Sorry, I didn't catch that — could you try rephrasing?"
 
     await supabaseAdmin.from('chat_messages').insert([
       { conversation_id: activeConversationId, role: 'user', content: message },

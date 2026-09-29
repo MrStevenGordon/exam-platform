@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { z } from 'zod'
 import { rateLimit } from '@/lib/rateLimit'
 import { validateBody } from '@/lib/validateBody'
+import { extractText } from '@/lib/ai'
 
 const MONTHLY_LIMIT = 10
 const MAX_PDF_BASE64_CHARS = 27_000_000 // ~20MB decoded
@@ -153,7 +154,7 @@ Respond ONLY with valid JSON in this exact format, no other text or markdown:
     }
 
     const data = await response.json()
-    const text = data.content?.[0]?.text || ''
+    const text = extractText(data) || ''
     const cleaned = text.replace(/```json|```/g, '').trim()
 
     let parsed

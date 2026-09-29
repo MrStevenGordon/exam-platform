@@ -4,6 +4,8 @@
 // null return the same as no draft (a person still has to review the raw
 // request either way), not as a reason to fail the submission.
 
+import { extractText } from '@/lib/ai'
+
 type RequestFields = Record<string, string>
 
 function buildPrompt(kind: 'school' | 'org', fields: RequestFields): string {
@@ -43,7 +45,7 @@ export async function generateRequestDraft(kind: 'school' | 'org', fields: Reque
     }
 
     const data = await response.json()
-    return data.content?.[0]?.text?.trim() || null
+    return extractText(data)?.trim() || null
   } catch (err) {
     console.error('generateRequestDraft failed:', err)
     return null

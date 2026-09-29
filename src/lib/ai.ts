@@ -10,6 +10,18 @@ export async function callClaude(prompt: string, opts: CallOpts): Promise<AiRepl
   return callClaudeChat({ messages: [{ role: 'user', content: prompt }] }, opts)
 }
 
+// An Anthropic reply's `content` is a list of typed blocks, not always a single text block at
+// index 0 — grabbing content[0].text directly fails whenever a non-text block (for example a
+// refusal note) comes first, even though a usable text block exists later in the array. Every
+// Anthropic call site in this app should read its reply through this, not content[0].text.
+export function extractText(data: { content?: unknown; stop_reason?: unknown }): string | null {
+  const blocks = Array.isArray(data?.content) ? data.content : []
+  const textBlock = blocks.find((b: unknown): b is { type: string; text: string } => (
+    !!b && typeof b === 'object' && (b as { type?: unknown }).type === 'text' && typeof (b as { text?: unknown }).text === 'string'
+  ))
+  return textBlock ? textBlock.text : null
+}
+
 // A multi-turn conversation with an optional system prompt (used by the tutor).
 export async function callClaudeChat(input: { system?: string; messages: ChatMessage[] }, opts: CallOpts): Promise<AiReply> {
   const doFetch = opts.fetchImpl ?? fetch
@@ -27,8 +39,11 @@ export async function callClaudeChat(input: { system?: string; messages: ChatMes
       return { ok: false, status: res.status, message }
     }
     const data = await res.json()
-    const text = data?.content?.[0]?.text
-    if (typeof text !== 'string') return { ok: false, status: 502, message: 'The AI reply had no text.' }
+    const text = extractText(data)
+    if (text === null) {
+      const blocks = Array.isArray(data?.content) ? data.content : []
+      return { ok: false, status: 502, message: `The AI reply had no text (stop_reason: ${data?.stop_reason ?? 'unknown'}, blocks: ${blocks.map((b: { type?: unknown }) => b?.type).join(',') || 'none'}).` }
+    }
     return { ok: true, text }
   } catch (e) {
     return { ok: false, status: 0, message: e instanceof Error ? e.message : 'Could not reach the AI service.' }

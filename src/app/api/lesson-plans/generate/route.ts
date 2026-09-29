@@ -4,6 +4,7 @@ import { z } from 'zod'
 import { rateLimit } from '@/lib/rateLimit'
 import { validateBody } from '@/lib/validateBody'
 import { normalizeGeneratedPlan } from '@/lib/lessonPlan'
+import { extractText } from '@/lib/ai'
 
 // A multi-lesson draft is a long response; the platform default is too short.
 export const maxDuration = 60
@@ -132,7 +133,7 @@ Respond ONLY with valid JSON in this exact format, no other text:
     }
 
     const data = await response.json()
-    const text = data.content?.[0]?.text || ''
+    const text = extractText(data) || ''
     const cleaned = text.replace(/```json|```/g, '').trim()
 
     let parsed
