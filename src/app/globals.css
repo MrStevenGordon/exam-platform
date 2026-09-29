@@ -631,13 +631,35 @@ body.exam-fullscreen .portal-content {
      was three elements fighting for a ~340px-wide row and overflowed the viewport on any real
      phone. Only Find My School (the single most-needed action) plus the toggle stay pinned. */
   .nav-demo-btn { display: none !important; }
+  /* Groups (Build My School, For Organizations, About) are real accordions in the mobile panel —
+     the desktop nav reveals children on hover, which has no touch equivalent, so here a tap on
+     the group header toggles its own .mobile-nav-sublinks open/closed instead of listing every
+     child expanded at once. */
   .mobile-nav-group {
+    width: 100%;
+    background: none;
+    border: none;
+    font-family: inherit;
+    text-align: left;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
     font-size: 12px;
     font-weight: 700;
     letter-spacing: 0.5px;
     text-transform: uppercase;
     color: var(--text-muted);
-    padding: 14px 6px 2px;
+    padding: 14px 6px 10px;
+    cursor: pointer;
+  }
+  .mobile-nav-group svg { transition: transform 0.2s ease; }
+  .mobile-nav-group[aria-expanded="true"] svg { transform: rotate(180deg); }
+  .mobile-nav-sublinks {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    max-height: 0;
+    transition: max-height 0.25s ease;
   }
   .site-nav-links a.mobile-nav-sublink { padding-left: 20px !important; font-size: 13.5px !important; color: var(--text-secondary); }
 }

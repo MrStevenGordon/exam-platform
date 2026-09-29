@@ -36,6 +36,32 @@ function NavDropdown({ label, items }: { label: string; items: { label: string; 
   )
 }
 
+// The mobile panel's equivalent of NavDropdown — no hover on touch, so each group is a real
+// collapsible accordion (closed by default) instead of listing every sub-item expanded at once.
+function MobileNavGroup({
+  label, items, open, onToggle, onNavigate,
+}: {
+  label: string
+  items: { label: string; href: string }[]
+  open: boolean
+  onToggle: () => void
+  onNavigate: () => void
+}) {
+  return (
+    <div className="mobile-nav-accordion">
+      <button type="button" className="mobile-nav-group" aria-expanded={open} onClick={onToggle}>
+        {label}
+        <ChevronDown />
+      </button>
+      <div className="mobile-nav-sublinks" style={{ maxHeight: open ? items.length * 48 : 0 }}>
+        {items.map((item) => (
+          <Link key={item.href} href={item.href} className="mobile-nav-sublink" onClick={onNavigate}>{item.label}</Link>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 export default function HomePage() {
   const [formData, setFormData] = useState({ name: '', org: '', email: '', message: '' })
   const [website, setWebsite] = useState('') // honeypot — real users never see or fill this
@@ -44,6 +70,11 @@ export default function HomePage() {
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
   const [menuOpen, setMenuOpen] = useState(false)
+  const [openMobileGroups, setOpenMobileGroups] = useState<Record<string, boolean>>({})
+
+  function toggleMobileGroup(key: string) {
+    setOpenMobileGroups((g) => ({ ...g, [key]: !g[key] }))
+  }
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
     setFormData({ ...formData, [e.target.name]: e.target.value })
@@ -106,20 +137,33 @@ export default function HomePage() {
           </button>
         </div>
 
-        {/* Mobile menu panel (< 1024px) — flat, every link visible at once, dropdown children shown as an indented sub-line since there's no hover on touch */}
+        {/* Mobile menu panel (< 1280px) — flat top-level links, each dropdown's children collapsed
+            into an accordion (closed by default) since there's no hover on touch. */}
         <div className={`site-nav-links${menuOpen ? ' site-nav-links-open' : ''}`} style={{ display: 'flex', flexDirection: 'column' }}>
           <Link href="/" onClick={() => setMenuOpen(false)}>Home</Link>
           <Link href="/download" onClick={() => setMenuOpen(false)}>Software</Link>
           <a href="#products" onClick={() => setMenuOpen(false)}>Products</a>
-          <div className="mobile-nav-group">Build My School</div>
-          <Link href="/build-my-school#overview" className="mobile-nav-sublink" onClick={() => setMenuOpen(false)}>Overview</Link>
-          <Link href="/build-my-school" className="mobile-nav-sublink" onClick={() => setMenuOpen(false)}>Start Building</Link>
-          <div className="mobile-nav-group">For Organizations</div>
-          <a href="#organizations" className="mobile-nav-sublink" onClick={() => setMenuOpen(false)}>Overview</a>
-          <Link href="/org/signup" className="mobile-nav-sublink" onClick={() => setMenuOpen(false)}>Request Access</Link>
-          <div className="mobile-nav-group">About</div>
-          <a href="#how-it-works" className="mobile-nav-sublink" onClick={() => setMenuOpen(false)}>How It Works</a>
-          <a href="#contact" className="mobile-nav-sublink" onClick={() => setMenuOpen(false)}>Contact Us</a>
+          <MobileNavGroup
+            label="Build My School"
+            items={[{ label: 'Overview', href: '/build-my-school#overview' }, { label: 'Start Building', href: '/build-my-school' }]}
+            open={!!openMobileGroups['build']}
+            onToggle={() => toggleMobileGroup('build')}
+            onNavigate={() => setMenuOpen(false)}
+          />
+          <MobileNavGroup
+            label="For Organizations"
+            items={[{ label: 'Overview', href: '#organizations' }, { label: 'Request Access', href: '/org/signup' }]}
+            open={!!openMobileGroups['orgs']}
+            onToggle={() => toggleMobileGroup('orgs')}
+            onNavigate={() => setMenuOpen(false)}
+          />
+          <MobileNavGroup
+            label="About"
+            items={[{ label: 'How It Works', href: '#how-it-works' }, { label: 'Contact Us', href: '#contact' }]}
+            open={!!openMobileGroups['about']}
+            onToggle={() => toggleMobileGroup('about')}
+            onNavigate={() => setMenuOpen(false)}
+          />
           <Link href="/build-my-school" className="btn btn-primary" style={{ marginTop: 10, justifyContent: 'center' }} onClick={() => setMenuOpen(false)}>Request a Demo</Link>
         </div>
       </nav>
