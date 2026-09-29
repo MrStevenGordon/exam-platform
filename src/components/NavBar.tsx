@@ -13,13 +13,15 @@ export default function NavBar() {
   const [role, setRole] = useState('')
   const [authed, setAuthed] = useState(false)
   const portalPrefixes = ['/student', '/teacher', '/supervisor', '/principal', '/learning', '/dashboard', '/school-admin', '/org', '/owner', '/school-setup', '/take-exam', '/build-my-school', '/play']
-  const shouldHideForPortal = portalPrefixes.some((p) => pathname.startsWith(p))
-  const shouldHide = ['/login', '/', '/coming-soon', '/maintenance', '/terms', '/privacy', '/demo-exam', '/download', '/it-resources'].includes(pathname) || pathname.startsWith('/demo-exam/') || shouldHideForPortal
+  const shouldHide = [
+    '/login', '/', '/coming-soon', '/maintenance', '/terms', '/privacy', '/demo-exam', '/download', '/it-resources',
+    '/change-password', '/forgot-password', '/mfa',
+  ].includes(pathname) || pathname.startsWith('/demo-exam/') || portalPrefixes.some((p) => pathname.startsWith(p))
 
   useEffect(() => {
     async function loadUser() {
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
+      if (!user) { setAuthed(false); setName(''); setRole(''); return }
       const { data: profile } = await supabase
         .from('profiles')
         .select('full_name, role')
@@ -32,6 +34,15 @@ export default function NavBar() {
       setAuthed(true)
     }
     loadUser()
+
+    // A previous sign-in's name/role otherwise stuck around in this component's state across a
+    // client-side log out + log back in as someone else, since the effect above only ever ran
+    // once on mount — this keeps it in sync with whoever is actually signed in right now.
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'SIGNED_OUT') { setAuthed(false); setName(''); setRole(''); return }
+      loadUser()
+    })
+    return () => subscription.unsubscribe()
   }, [])
 
   async function handleLogout() {
