@@ -37,6 +37,9 @@ export default function StaffDetailPage() {
   const [nameError, setNameError] = useState('')
   const [nameSaving, setNameSaving] = useState(false)
 
+  // Sign-in email lives in auth.users, not profiles, so it's fetched separately.
+  const [email, setEmail] = useState<string | null>(null)
+
   useEffect(() => { loadData() }, [staffId])
 
   async function loadData() {
@@ -65,6 +68,16 @@ export default function StaffDetailPage() {
       return
     }
     setStaff(staffData as any)
+
+    const { data: { session } } = await supabase.auth.getSession()
+    fetch('/api/create-user', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: 'get-staff-emails', data: { user_ids: [staffId] }, accessToken: session?.access_token }),
+    })
+      .then((res) => res.json())
+      .then((result) => setEmail(result.emails?.[staffId] ?? null))
+      .catch(() => {})
 
     const [{ data: deptData }, { data: subData }, { data: currentSubjects }] = await Promise.all([
       supabase.from('departments').select('id, name').order('name'),
@@ -183,6 +196,7 @@ export default function StaffDetailPage() {
             {roleLabel[staff.role] || staff.role}
             {staff.departments?.name && ` · ${staff.departments.name}`}
             {staff.is_system_admin && ' · System Admin'}
+            {email && ` · ${email}`}
           </p>
         </div>
       </div>

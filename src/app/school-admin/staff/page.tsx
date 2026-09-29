@@ -36,6 +36,8 @@ export default function StaffPage() {
   const [csvProgress, setCsvProgress] = useState({ done: 0, total: 0 })
   const [csvResults, setCsvResults] = useState<{name: string; email: string; status: string; reason?: string}[]>([])
   const [bulkResetting, setBulkResetting] = useState(false)
+  // Sign-in email lives in auth.users, not profiles, so it's fetched separately by id.
+  const [emails, setEmails] = useState<Record<string, string | null>>({})
 
   // New staff form
   const [newFirstName, setNewFirstName] = useState('')
@@ -57,7 +59,9 @@ export default function StaffPage() {
         .in('role', ['teacher', 'supervisor', 'principal'])
         .neq('is_system_admin', true)
         .order('full_name')
-      setStaff((data as any) || [])
+      const staffList = (data as any) || []
+      setStaff(staffList)
+      if (staffList.length > 0) loadEmails(staffList.map((s: StaffMember) => s.id))
 
       const { data: deptData } = await supabase.from('departments').select('id, name').order('name')
       setDepartments(deptData || [])
@@ -68,6 +72,21 @@ export default function StaffPage() {
       console.error('Failed to load staff', err)
     } finally {
       setLoading(false)
+    }
+  }
+
+  async function loadEmails(staffIds: string[]) {
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      const res = await fetch('/api/create-user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'get-staff-emails', data: { user_ids: staffIds }, accessToken: session?.access_token }),
+      })
+      const result = await res.json()
+      if (result.emails) setEmails(result.emails)
+    } catch (err) {
+      console.error('Failed to load staff emails', err)
     }
   }
 
@@ -486,6 +505,7 @@ export default function StaffPage() {
                           <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 2 }}>
                             {roleLabel[s.role] || s.role}
                             {s.is_system_admin && <span style={{ marginLeft: 6, color: 'var(--accent-dark)', fontWeight: 700 }}>· System Admin</span>}
+                            {emails[s.id] && ` · ${emails[s.id]}`}
                           </div>
                         </div>
                       </div>

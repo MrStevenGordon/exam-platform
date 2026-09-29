@@ -23,7 +23,7 @@ function deriveSchoolEmail(firstName: string, lastName: string): string {
 }
 
 const schema = z.object({
-  type: z.enum(['student', 'staff', 'reset-password']),
+  type: z.enum(['student', 'staff', 'reset-password', 'get-staff-emails']),
   accessToken: z.string().min(1).max(4000),
   data: z.object({
     // student
@@ -46,6 +46,8 @@ const schema = z.object({
     // reset-password
     user_id: z.string().uuid().optional(),
     password: z.string().min(8).max(200).optional(),
+    // get-staff-emails
+    user_ids: z.array(z.string().uuid()).min(1).max(500).optional(),
   }).strict(),
 }).strict()
 
@@ -262,6 +264,22 @@ export async function POST(req: NextRequest) {
       // account creation.
       await supabaseAdmin.from('profiles').update({ must_change_password: true }).eq('id', user_id)
       return NextResponse.json({ success: true })
+    }
+
+    if (type === 'get-staff-emails') {
+      // A staff member's real sign-in email lives only in auth.users, not profiles — the school
+      // admin console never had a way to read it back after account creation. Fetched with the
+      // same admin client reset-password already uses; there's no bulk "get many users by id" in
+      // the Supabase admin API, so this is one call per id, run in parallel.
+      const { user_ids } = data
+      if (!user_ids || user_ids.length === 0) {
+        return NextResponse.json({ error: 'user_ids is required.' }, { status: 400 })
+      }
+      const results = await Promise.all(user_ids.map(async (id) => {
+        const { data: userData } = await supabaseAdmin.auth.admin.getUserById(id)
+        return [id, userData.user?.email ?? null] as const
+      }))
+      return NextResponse.json({ emails: Object.fromEntries(results) })
     }
 
     return NextResponse.json({ error: 'Invalid type' }, { status: 400 })
