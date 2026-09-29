@@ -31,6 +31,12 @@ export default function StaffDetailPage() {
   const [saved, setSaved] = useState(false)
   const [errorMsg, setErrorMsg] = useState('')
 
+  // Fixing a staff member's name (e.g. a typo made when they were added)
+  const [editingName, setEditingName] = useState(false)
+  const [nameDraft, setNameDraft] = useState('')
+  const [nameError, setNameError] = useState('')
+  const [nameSaving, setNameSaving] = useState(false)
+
   useEffect(() => { loadData() }, [staffId])
 
   async function loadData() {
@@ -72,6 +78,18 @@ export default function StaffDetailPage() {
     setOriginalSubjects(currentSet)
     setSelectedSubjects(new Set(currentSet))
     setLoading(false)
+  }
+
+  async function handleSaveName() {
+    const value = nameDraft.trim()
+    if (!value) { setNameError('Enter a name.'); return }
+    setNameSaving(true)
+    setNameError('')
+    const { error } = await supabase.from('profiles').update({ full_name: value }).eq('id', staffId)
+    setNameSaving(false)
+    if (error) { setNameError(error.message); return }
+    setStaff((prev) => (prev ? { ...prev, full_name: value } : prev))
+    setEditingName(false)
   }
 
   function toggleSubject(subject: string) {
@@ -138,8 +156,29 @@ export default function StaffDetailPage() {
         <div style={{ width: 56, height: 56, borderRadius: '50%', background: staff.role === 'supervisor' ? 'var(--success-bg)' : 'var(--accent-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 700, color: staff.role === 'supervisor' ? 'var(--success)' : 'var(--accent-dark)', flexShrink: 0 }}>
           {initials}
         </div>
-        <div>
-          <h1 style={{ margin: 0 }}>{staff.full_name}</h1>
+        <div style={{ flex: 1 }}>
+          {editingName ? (
+            <div>
+              <div style={{ display: 'flex', gap: 6 }}>
+                <input
+                  type="text"
+                  value={nameDraft}
+                  onChange={(e) => setNameDraft(e.target.value)}
+                  autoFocus
+                  onKeyDown={(e) => { if (e.key === 'Enter') handleSaveName() }}
+                  style={{ fontSize: 16, padding: '6px 10px', width: 260 }}
+                />
+                <button className="btn btn-primary" style={{ fontSize: 12 }} disabled={nameSaving} onClick={handleSaveName}>{nameSaving ? 'Saving…' : 'Save'}</button>
+                <button className="btn btn-ghost" style={{ fontSize: 12 }} onClick={() => { setEditingName(false); setNameError('') }}>Cancel</button>
+              </div>
+              {nameError && <div style={{ fontSize: 12, color: 'var(--danger)', marginTop: 4 }}>{nameError}</div>}
+            </div>
+          ) : (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <h1 style={{ margin: 0 }}>{staff.full_name}</h1>
+              <button className="btn btn-ghost" style={{ fontSize: 11 }} onClick={() => { setEditingName(true); setNameDraft(staff.full_name); setNameError('') }}>Edit name</button>
+            </div>
+          )}
           <p style={{ color: 'var(--text-secondary)', margin: '4px 0 0', fontSize: 13 }}>
             {roleLabel[staff.role] || staff.role}
             {staff.departments?.name && ` · ${staff.departments.name}`}

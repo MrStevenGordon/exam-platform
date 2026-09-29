@@ -86,6 +86,11 @@ export default function StudentsPage() {
   const [emailDraft, setEmailDraft] = useState('')
   const [emailError, setEmailError] = useState('')
 
+  // Fixing a student's name (e.g. a typo made when they were added)
+  const [nameEditId, setNameEditId] = useState<string | null>(null)
+  const [nameDraft, setNameDraft] = useState('')
+  const [nameError, setNameError] = useState('')
+
   useEffect(() => { loadData() }, [])
 
   // Arriving from a link such as /school-admin/students?class=3-1 (the class chips in Settings): show that class,
@@ -274,6 +279,17 @@ export default function StudentsPage() {
     if (error) { setEmailError(error.message); return }
     setEmailEditId(null)
     setEmailDraft('')
+    loadData()
+  }
+
+  async function handleSaveName(studentId: string) {
+    const value = nameDraft.trim()
+    if (!value) { setNameError('Enter a name.'); return }
+    setNameError('')
+    const { error } = await supabase.from('profiles').update({ full_name: value }).eq('id', studentId)
+    if (error) { setNameError(error.message); return }
+    setNameEditId(null)
+    setNameDraft('')
     loadData()
   }
 
@@ -710,7 +726,23 @@ export default function StudentsPage() {
                           {classStudents.map((s) => (
                             <div key={s.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', background: 'var(--card-bg)', borderRadius: 8, border: '1px solid var(--border)' }}>
                               <div>
-                                <div style={{ fontWeight: 600, fontSize: 13 }}>{s.full_name}</div>
+                                {nameEditId === s.id ? (
+                                  <div style={{ display: 'flex', gap: 6 }}>
+                                    <input
+                                      type="text"
+                                      value={nameDraft}
+                                      onChange={(e) => setNameDraft(e.target.value)}
+                                      autoFocus
+                                      onKeyDown={(e) => { if (e.key === 'Enter') handleSaveName(s.id) }}
+                                      style={{ fontSize: 13, padding: '4px 8px', width: 200 }}
+                                    />
+                                    <button className="btn btn-primary" style={{ fontSize: 11, padding: '4px 10px' }} onClick={() => handleSaveName(s.id)}>Save</button>
+                                    <button className="btn btn-ghost" style={{ fontSize: 11 }} onClick={() => { setNameEditId(null); setNameError('') }}>Cancel</button>
+                                  </div>
+                                ) : (
+                                  <div style={{ fontWeight: 600, fontSize: 13 }}>{s.full_name}</div>
+                                )}
+                                {nameError && nameEditId === s.id && <div style={{ fontSize: 11, color: 'var(--danger)', marginTop: 4 }}>{nameError}</div>}
                                 <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 2 }}>
                                   ID: {s.student_id}
                                   {s.school_email ? ` · ${s.school_email}` : ' · No school email on file'}
@@ -748,6 +780,11 @@ export default function StudentsPage() {
                                 )}
                               </div>
                               <div style={{ display: 'flex', gap: 6 }}>
+                                {nameEditId !== s.id && (
+                                  <button onClick={() => { setNameEditId(s.id); setNameDraft(s.full_name); setNameError('') }} className="btn btn-ghost" style={{ fontSize: 11 }}>
+                                    Edit name
+                                  </button>
+                                )}
                                 {!s.school_email && emailEditId !== s.id && (
                                   <button onClick={() => { setEmailEditId(s.id); setEmailDraft(''); setEmailError('') }} className="btn btn-ghost" style={{ fontSize: 11 }}>
                                     Add school email
