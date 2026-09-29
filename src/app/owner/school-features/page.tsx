@@ -57,6 +57,12 @@ export default function SchoolFeaturesPage() {
 
   const [selectedRequestId, setSelectedRequestId] = useState('')
   const [targetDatabaseUrl, setTargetDatabaseUrl] = useState('')
+  // Which connection string the checkboxes below actually reflect — '' until "Load current
+  // settings" succeeds. Picking a school from the dropdown does NOT set this: it only pre-fills
+  // the two Review workflow boxes from what the school asked for at sign-up, which looks like
+  // "these are Manchester's settings" but is not the same thing as what's actually live.
+  const [loadedForUrl, setLoadedForUrl] = useState('')
+  const isLoadedForCurrentUrl = loadedForUrl !== '' && loadedForUrl === targetDatabaseUrl.trim()
   const [teamLeadsEnabled, setTeamLeadsEnabled] = useState(true)
   const [seniorTeamLeadsEnabled, setSeniorTeamLeadsEnabled] = useState(true)
   const [examCategories, setExamCategories] = useState<Set<ExamCategory>>(new Set(ALL_EXAM_CATEGORIES))
@@ -102,6 +108,11 @@ export default function SchoolFeaturesPage() {
       setTeamLeadsEnabled(defaults.teamLeadsEnabled)
       setSeniorTeamLeadsEnabled(defaults.seniorTeamLeadsEnabled)
     }
+    // Switching schools invalidates whatever was loaded for the previous one — the tool
+    // checkboxes must go back to "not loaded" rather than silently keep showing another school's
+    // settings under a new name.
+    setLoadedForUrl('')
+    setLoadedSummary('')
   }
 
   async function handleLoadCurrent() {
@@ -129,6 +140,7 @@ export default function SchoolFeaturesPage() {
     setSmartLearningEnabled(data.smartLearningEnabled)
     setSmartPlayEnabled(data.smartPlayEnabled)
     setAiTutorEnabled(data.aiTutorEnabled)
+    setLoadedForUrl(targetDatabaseUrl.trim())
     setLoadedSummary(data.configured
       ? 'Loaded that school\'s current settings below — they matched what is actually live just now.'
       : 'That school has no settings saved yet, so these are the defaults every school starts with (not yet loaded from anywhere).')
@@ -145,6 +157,7 @@ export default function SchoolFeaturesPage() {
     setErrorMsg('')
     setSuccessMsg('')
     if (!targetDatabaseUrl.trim()) { setErrorMsg('Paste that school\'s database connection string.'); return }
+    if (!isLoadedForCurrentUrl) { setErrorMsg('Click "Load current settings" first — saving replaces everything at once, so it needs to start from what this school actually has on, not the defaults shown here.'); return }
     setLoadedSummary('')
 
     setSaving(true)
@@ -244,6 +257,12 @@ export default function SchoolFeaturesPage() {
           </label>
         </div>
 
+        {!isLoadedForCurrentUrl && (
+          <div className="banner banner-warning" style={{ marginBottom: 16, fontSize: 13 }}>
+            <strong>Not loaded yet.</strong> Every checkbox below is just this form&rsquo;s starting default, not what this school actually has on — picking a school from the list above only fills in the Review workflow boxes. Paste the connection string and click <strong>Load current settings</strong> to see the truth before changing anything.
+          </div>
+        )}
+
         <div style={{ marginBottom: 20 }}>
           <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', display: 'block', marginBottom: 8 }}>Included tools</label>
           <label style={{ fontSize: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -280,7 +299,7 @@ export default function SchoolFeaturesPage() {
           </div>
         </div>
 
-        <button className="btn btn-primary" disabled={saving} onClick={handleSave}>
+        <button className="btn btn-primary" disabled={saving || !isLoadedForCurrentUrl} title={isLoadedForCurrentUrl ? undefined : 'Load current settings first'} onClick={handleSave}>
           {saving ? 'Saving…' : 'Save configuration'}
         </button>
       </div>
