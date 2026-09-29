@@ -11,7 +11,7 @@ Run `node scripts/launch-verify.mjs --school manchester` at any point. It is rea
 | Smart Learning (lessons, checks, catch-up, coverage, AI student-draft, AI tutor, flagged list) | Built and pushed. Hidden until its updates are applied |
 | Login picker, topic list, class structure, attendance, principal portal, presence | Built and pushed |
 | Launch reset and launch check tools | Built (this document) |
-| Smart Play go-live | Built and tested locally on branch `feature/play-golive`, switched off, not pushed. Needs your steps in `docs/play-pilot-guide.md` |
+| Smart Play go-live | Built, tested, merged, and pushed — switched off for every school. A one-shot provisioning script now exists too (`scripts/play/provision-play-db.mjs`). Needs your steps in `docs/play-pilot-guide.md`, starting with creating its hosted database |
 | Tutor conversation retention | Needs your number of days. Not scheduled |
 | Question-bank answer exposure (Play plan finding A) | Update 068 is written and tested; needs your decision before launch |
 

@@ -2,6 +2,8 @@
 
 Written 26 September 2026. Based on reading the Play branch (`gamification-wip`), the live exam database (read-only) and the current `main`.
 
+**Status update (29 September 2026):** everything below is now merged into `main` and pushed — it shipped dark alongside the exam integrity fix. For your actual remaining steps, see `docs/play-pilot-guide.md`, which also now points at `scripts/play/provision-play-db.mjs`, a one-shot script that applies all of Phase 2's hardened schema instead of pasting 12 files into the SQL editor by hand. This document is kept as the build record.
+
 ## Build status (25 to 26 September 2026): phases 1 to 5 built and tested locally, NOT pushed, NOT applied anywhere
 
 Everything is on the local branch `feature/play-golive` (the Play branch merged into the current work). Nothing has been pushed, nothing applied to the live exam database, no Play database hosted yet.

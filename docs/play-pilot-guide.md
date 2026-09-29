@@ -1,25 +1,28 @@
 # Smart Play: your steps, the pilot, and the whole-school launch
 
-Everything below the line "What is already built" is done and tested locally (see `docs/play-go-live-plan.md`). Nothing is pushed, nothing is applied anywhere. Smart Play is switched off for every school and reachable by nobody.
+Everything below the line "What is already built" is done, merged, and **already pushed to `main`** (it was carried along with the exam integrity fix and everything since — see `docs/play-go-live-plan.md` for how it was built). It ships dark: every Play page and API still answers "not found" until a school's `smart_play_enabled` switch is on, so nothing has changed for anyone yet. What's left is entirely on your side: infrastructure only you can create, and decisions only you can make.
 
 ## Your steps, in order
 
 Each is small and reversible. Do not do a later step before an earlier one.
 
 1. **Decide the bank-question question.** Are question-bank questions meant as open practice material for students? If any could ever appear in a real exam, apply `scripts/migrations/068_bank_questions_closed_to_students.sql` (rollback alongside). If you rely on students reading bank questions, leave it. (Smart Play keeps its own copy of questions either way.)
-2. **Exam integrity first.** Play is not launched before the exam integrity updates (066, 067) are live and checked. See `docs/exam-integrity-findings.md`.
-3. **Create the Play database.** A new **paid** Supabase project (separate from the exam one; free projects pause after a week of inactivity, which would break Play over a holiday; check current pricing). In its SQL editor run, in order, every file in `scripts/play/` from `001` to `012`, then `scripts/play/rollback` is only for undoing. Nothing here needs the exam database.
-4. **Prove it is closed.** From this folder:
+2. **Exam integrity first.** Play should not launch before the exam integrity updates (066, 067) are applied and checked live — run `node scripts/launch-verify.mjs --school manchester` to see their current PASS/FAIL status; if either shows FAIL, that comes before anything below. See `docs/exam-integrity-findings.md`.
+3. **Create the Play database.** A new **paid** Supabase project (separate from the exam one; free projects pause after a week of inactivity, which would break Play over a holiday; check current pricing). Then, from this folder, one command instead of pasting 12 files into the SQL editor by hand:
+   ```bash
+   node scripts/play/provision-play-db.mjs --database-url "<the new project's DIRECT connection string>" --seed-questions
+   ```
+   `--seed-questions` is optional — it loads an original starter Topic Mastery question bank (not copied from any school's exams) so there's something to play on day one; leave it off if you'd rather start from teacher-authored or imported questions only. Applies all 12 files in one transaction (a failure partway leaves the project untouched), then runs the same lock-down check as step 4 automatically. `scripts/play/rollback` is only for undoing by hand later.
+4. **Prove it is closed to the public API too.** Step 3 already checked the database directly; this checks it from the outside, the way anyone on the internet could:
    ```bash
    node scripts/play/check_hosted.mjs --database-url "<the project's direct connection string>" --api-url "https://<project>.supabase.co" --public-key "<the project's public (anon) key>"
    ```
    It must print `PASS`. (The public key is public by design; do not paste secrets into chat.)
-5. **Set three values in Vercel** (Production and Preview): `PLAY_DATABASE_URL` = the project's **pooler** address (transaction mode, port 6543), `PLAY_SESSION_SECRET` = a new random string of 32 or more characters, `NEXT_PUBLIC_SCHOOL_NAME` = the school's name as it should show in Play. Do not set `PLAY_GAME_PASSWORD_LOGIN` (it exists only for local development).
-6. **Ask me to push** the branch `feature/play-golive` (after the exam integrity work is out). It ships dark: nothing changes for anyone. Check the live site behaves as before and `/play` says not found.
-7. **Import the game questions.** Play has its own question list. Import from the exam bank with `scripts/play/import_bank_questions.mjs` (uses the exam database's direct connection, from your laptop, read-only), or have teachers add and import questions in Play's own screens. Topic names should match the shared topic list (Play matches by name).
-8. **Choose the pilot**: two teachers and their classes, about two weeks. Get the school's sign-off on student data in Play (name, ID#, grade, classes, answers) and tell parents; Jamaica's Data Protection Act (2020) applies (a prompt to check, not legal advice).
-9. **Switch it on** on `/owner/school-features` (that page saves all switches at once: set Smart Learning, AI tutor and Smart Play together). Teachers and students now see Smart Play on the sign-in page and the product menu.
-10. **Rehearse before the pilot**: one class, one of each game, with you watching. Then run the load script against the real database while a class plays (`node scripts/play/load_test.mjs --database-url ... --allow-remote --games 1 --players 35`) only if you want numbers; it writes test data and cleans it up.
+5. **Set three values in Vercel** (Production and Preview): `PLAY_DATABASE_URL` = the project's **pooler** address (transaction mode, port 6543 — different from the direct connection used in step 3), `PLAY_SESSION_SECRET` = a new random string of 32 or more characters, `NEXT_PUBLIC_SCHOOL_NAME` = the school's name as it should show in Play. Do not set `PLAY_GAME_PASSWORD_LOGIN` (it exists only for local development).
+6. **Import the game questions**, if you didn't use `--seed-questions` above (or want more). Play has its own question list. Import from the exam bank with `scripts/play/import_bank_questions.mjs` (uses the exam database's direct connection, from your laptop, read-only), or have teachers add and import questions in Play's own screens. Topic names should match the shared topic list (Play matches by name).
+7. **Choose the pilot**: two teachers and their classes, about two weeks. Get the school's sign-off on student data in Play (name, ID#, grade, classes, answers) and tell parents; Jamaica's Data Protection Act (2020) applies (a prompt to check, not legal advice).
+8. **Switch it on** on `/owner/school-features` (that page saves all switches at once: set Smart Learning, AI tutor and Smart Play together). Teachers and students now see Smart Play on the sign-in page and the product menu.
+9. **Rehearse before the pilot**: one class, one of each game, with you watching. Then run the load script against the real database while a class plays (`node scripts/play/load_test.mjs --database-url ... --allow-remote --games 1 --players 35`) only if you want numbers; it writes test data and cleans it up.
 
 ## During the pilot (about two weeks)
 
