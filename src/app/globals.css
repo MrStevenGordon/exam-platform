@@ -290,6 +290,8 @@ select {
   align-items: center;
   border-radius: 8px;
   cursor: default;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .nav-dropdown { position: relative; }
@@ -593,15 +595,17 @@ body.exam-fullscreen .portal-content {
 }
 
 /* Homepage-style top nav — its own breakpoint, deliberately wider than the 768px one above.
-   The full link row has more text in it than that breakpoint accounts for: between roughly
-   1000px and 768px there was no rule for it at all, so the row just did what a cramped flex row
-   does — wrapped every item's own text onto two or three lines. Confirmed by resizing through
-   that range. 1024px gives real clearance above where that started. Below it, the desktop
-   dropdown row (.home-nav-desktop) is replaced entirely by a flat mobile menu panel toggled by a
-   hamburger button (site-nav-links-open added in React state) — hover dropdowns don't have a
-   touch equivalent, so the mobile panel lists every item (including each dropdown's children, as
-   .mobile-nav-group / .mobile-nav-sublink) already expanded, nothing to hover. */
-@media (max-width: 1024px) {
+   The full link row (logo, 6 nav items including 3 dropdown triggers, and 2 buttons) needs about
+   1200px to lay out in one line without crowding; 1024px wasn't enough — .nav-link items lacked
+   white-space: nowrap, so mid-width windows (confirmed by resizing through the range) wrapped
+   labels like "Build My School" onto 2-3 lines, and even after adding nowrap, "Request a Demo"
+   still overflowed off the right edge below ~1200px. 1280px gives real clearance above that
+   measured threshold. Below it, the desktop dropdown row (.home-nav-desktop) is replaced entirely
+   by a flat mobile menu panel toggled by a hamburger button (site-nav-links-open added in React
+   state) — hover dropdowns don't have a touch equivalent, so the mobile panel lists every item
+   (including each dropdown's children, as .mobile-nav-group / .mobile-nav-sublink) already
+   expanded, nothing to hover. */
+@media (max-width: 1280px) {
   .site-nav { padding: 12px 16px !important; position: relative; }
   .home-nav-desktop { display: none !important; }
   .site-nav-links {
