@@ -57,6 +57,30 @@ export function defaultResourceTitle(url: string): string {
   }
 }
 
+// A distinctive icon per subject, for the student lesson view — a symbol, not a literal mascot,
+// matched by keyword since subjects are free text (e.g. "Mathematics", "Regular Math", "Integrated
+// Science"). Falls back to a generic school icon for anything unrecognized.
+const SUBJECT_ICON_RULES: [RegExp, string][] = [
+  [/math/i, 'ti-math-function'],
+  [/(english|literature)/i, 'ti-book-2'],
+  [/(biology|chemistry|physics|science)/i, 'ti-flask'],
+  [/geography/i, 'ti-world'],
+  [/history/i, 'ti-hourglass'],
+  [/(information technology|computer|\bict\b)/i, 'ti-device-desktop'],
+  [/(spanish|french|language)/i, 'ti-language'],
+  [/(business|account|economics)/i, 'ti-report-money'],
+  [/agricultur/i, 'ti-plant-2'],
+  [/(visual arts|\bart\b)/i, 'ti-palette'],
+  [/music/i, 'ti-music'],
+  [/physical education/i, 'ti-run'],
+  [/social studies/i, 'ti-users'],
+]
+
+export function subjectIcon(subject: string): string {
+  for (const [re, icon] of SUBJECT_ICON_RULES) if (re.test(subject)) return icon
+  return 'ti-school'
+}
+
 export function readyCount(steps: LessonStep[]): number {
   return steps.filter((s) => s.approved && s.text.trim().length > 0).length
 }
