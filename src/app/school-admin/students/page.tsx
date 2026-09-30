@@ -747,7 +747,7 @@ export default function StudentsPage() {
                                   ID: {s.student_id}
                                   {s.school_email ? ` · ${s.school_email}` : ' · No school email on file'}
                                 </div>
-                                {!s.school_email && emailEditId === s.id && (
+                                {emailEditId === s.id && (
                                   <div style={{ marginTop: 6 }}>
                                     <div style={{ display: 'flex', gap: 6 }}>
                                       <input
@@ -785,9 +785,9 @@ export default function StudentsPage() {
                                     Edit name
                                   </button>
                                 )}
-                                {!s.school_email && emailEditId !== s.id && (
-                                  <button onClick={() => { setEmailEditId(s.id); setEmailDraft(''); setEmailError('') }} className="btn btn-ghost" style={{ fontSize: 11 }}>
-                                    Add school email
+                                {emailEditId !== s.id && (
+                                  <button onClick={() => { setEmailEditId(s.id); setEmailDraft(s.school_email || ''); setEmailError('') }} className="btn btn-ghost" style={{ fontSize: 11 }}>
+                                    {s.school_email ? 'Edit email' : 'Add school email'}
                                   </button>
                                 )}
                                 {classEditId !== s.id && (

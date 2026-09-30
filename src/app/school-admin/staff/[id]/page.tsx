@@ -39,6 +39,10 @@ export default function StaffDetailPage() {
 
   // Sign-in email lives in auth.users, not profiles, so it's fetched separately.
   const [email, setEmail] = useState<string | null>(null)
+  const [editingEmail, setEditingEmail] = useState(false)
+  const [emailDraft, setEmailDraft] = useState('')
+  const [emailError, setEmailError] = useState('')
+  const [emailSaving, setEmailSaving] = useState(false)
 
   useEffect(() => { loadData() }, [staffId])
 
@@ -103,6 +107,24 @@ export default function StaffDetailPage() {
     if (error) { setNameError(error.message); return }
     setStaff((prev) => (prev ? { ...prev, full_name: value } : prev))
     setEditingName(false)
+  }
+
+  async function handleSaveEmail() {
+    const value = emailDraft.trim()
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) { setEmailError('Enter a full email address.'); return }
+    setEmailSaving(true)
+    setEmailError('')
+    const { data: { session } } = await supabase.auth.getSession()
+    const res = await fetch('/api/create-user', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: 'update-staff-email', data: { user_id: staffId, email: value }, accessToken: session?.access_token }),
+    })
+    const result = await res.json()
+    setEmailSaving(false)
+    if (!res.ok) { setEmailError(result.error || 'Could not update the email. Please try again.'); return }
+    setEmail(value)
+    setEditingEmail(false)
   }
 
   function toggleSubject(subject: string) {
@@ -196,8 +218,27 @@ export default function StaffDetailPage() {
             {roleLabel[staff.role] || staff.role}
             {staff.departments?.name && ` · ${staff.departments.name}`}
             {staff.is_system_admin && ' · System Admin'}
-            {email && ` · ${email}`}
           </p>
+          {editingEmail ? (
+            <div style={{ display: 'flex', gap: 6, marginTop: 6, alignItems: 'center' }}>
+              <input
+                type="email"
+                value={emailDraft}
+                onChange={(e) => setEmailDraft(e.target.value)}
+                autoFocus
+                onKeyDown={(e) => { if (e.key === 'Enter') handleSaveEmail() }}
+                style={{ fontSize: 13, padding: '4px 8px', width: 240 }}
+              />
+              <button className="btn btn-primary" style={{ fontSize: 11 }} disabled={emailSaving} onClick={handleSaveEmail}>{emailSaving ? 'Saving…' : 'Save'}</button>
+              <button className="btn btn-ghost" style={{ fontSize: 11 }} onClick={() => { setEditingEmail(false); setEmailError('') }}>Cancel</button>
+            </div>
+          ) : email ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
+              <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>{email}</span>
+              <button className="btn btn-ghost" style={{ fontSize: 11 }} onClick={() => { setEditingEmail(true); setEmailDraft(email); setEmailError('') }}>Edit email</button>
+            </div>
+          ) : null}
+          {emailError && <div style={{ fontSize: 12, color: 'var(--danger)', marginTop: 4 }}>{emailError}</div>}
         </div>
       </div>
 

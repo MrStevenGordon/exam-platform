@@ -23,7 +23,7 @@ function deriveSchoolEmail(firstName: string, lastName: string): string {
 }
 
 const schema = z.object({
-  type: z.enum(['student', 'staff', 'reset-password', 'get-staff-emails']),
+  type: z.enum(['student', 'staff', 'reset-password', 'get-staff-emails', 'update-staff-email']),
   accessToken: z.string().min(1).max(4000),
   data: z.object({
     // student
@@ -79,10 +79,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Not authorized.' }, { status: 403 })
     }
 
-    if (type === 'reset-password') {
-      // A school admin must never be able to reset the platform owner's
-      // password — is_system_admin is a separate, higher-privilege flag
-      // that role='admin' alone doesn't grant.
+    if (type === 'reset-password' || type === 'update-staff-email') {
+      // A school admin must never be able to touch the platform owner's account —
+      // is_system_admin is a separate, higher-privilege flag that role='admin' alone doesn't grant.
       const { data: targetProfile } = await supabaseAdmin
         .from('profiles')
         .select('is_system_admin')
@@ -280,6 +279,20 @@ export async function POST(req: NextRequest) {
         return [id, userData.user?.email ?? null] as const
       }))
       return NextResponse.json({ emails: Object.fromEntries(results) })
+    }
+
+    if (type === 'update-staff-email') {
+      // Changing a staff member's sign-in identity, not a contact-info field on their profile —
+      // same admin client as reset-password, for the same reason: auth.users can't be reached
+      // any other way from here. email_confirm: true matches how the account was created, so this
+      // never triggers Supabase's own "confirm your new email" flow for an admin-initiated change.
+      const { user_id, email } = data
+      if (!user_id || !email) {
+        return NextResponse.json({ error: 'user_id and email are required.' }, { status: 400 })
+      }
+      const { error } = await supabaseAdmin.auth.admin.updateUserById(user_id, { email, email_confirm: true })
+      if (error) return NextResponse.json({ error: error.message }, { status: 400 })
+      return NextResponse.json({ success: true })
     }
 
     return NextResponse.json({ error: 'Invalid type' }, { status: 400 })
