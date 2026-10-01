@@ -12,7 +12,6 @@ import { getMfaRedirect } from '@/lib/mfaCheck'
 import { verifyPortalRoleDetailed } from '@/lib/verifyPortalRole'
 import { hodNavItems, HOD_TOUR_STEPS, isOpenToHods, resolveHodActivePathname } from '@/lib/hodNav'
 import { isAttendanceAvailable } from '@/lib/attendance'
-import { isSubstitutionAvailable } from '@/lib/substitution'
 import { isTopicsAvailable } from '@/lib/topics'
 import { getEnabledProducts } from '@/lib/products'
 import { getSchoolFeatures } from '@/lib/schoolFeatures'
@@ -53,10 +52,6 @@ const ATTENDANCE_NAV = [
   { label: 'Attendance', icon: 'ti-checklist', href: '/teacher/attendance' },
 ]
 
-const SUBSTITUTION_NAV = [
-  { label: 'Report Absence', icon: 'ti-user-off', href: '/teacher/report-absence' },
-]
-
 const LESSON_PLANS_NAV = [
   { label: 'Lesson Plans', icon: 'ti-notebook', href: '/teacher/lesson-plans' },
 ]
@@ -91,12 +86,10 @@ export default function TeacherLayout({ children }: { children: React.ReactNode 
   // plans) open for them. They get their own sidebar there, not this one.
   const [isHod, setIsHod] = useState(false)
   const [attendanceOn, setAttendanceOn] = useState(false)
-  const [substitutionOn, setSubstitutionOn] = useState(false)
 
   const [topicsOn, setTopicsOn] = useState(false)
 
   useEffect(() => { isAttendanceAvailable().then(setAttendanceOn) }, [])
-  useEffect(() => { isSubstitutionAvailable().then(setSubstitutionOn) }, [])
   useEffect(() => { isTopicsAvailable().then(setTopicsOn) }, [])
   const [learningOn, setLearningOn] = useState(false)
   useEffect(() => { getEnabledProducts().then((p) => setLearningOn(p.includes('learning'))) }, [])
@@ -155,13 +148,11 @@ export default function TeacherLayout({ children }: { children: React.ReactNode 
       if (stlData && stlData.length > 0) nav.splice(nav.length - 1, 0, ...SENIOR_TL_NAV)
       // Only once the attendance tables exist (see isAttendanceAvailable).
       if (attendanceOn) nav.splice(nav.indexOf(BASE_NAV[6]) + 1, 0, ...ATTENDANCE_NAV)
-      // Only once the substitution tables exist (see isSubstitutionAvailable).
-      if (substitutionOn) nav.splice(nav.indexOf(BASE_NAV[6]) + 1, 0, ...SUBSTITUTION_NAV)
       setNavItems(nav)
       setNavReady(true)
     }
     checkAppointments()
-  }, [mfaChecked, isHod, attendanceOn, substitutionOn])
+  }, [mfaChecked, isHod, attendanceOn])
 
   if (!mfaChecked) return null
 

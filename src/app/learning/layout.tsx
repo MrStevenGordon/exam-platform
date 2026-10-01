@@ -11,6 +11,7 @@ import { getMfaRedirect } from '@/lib/mfaCheck'
 import { verifyPortalRole } from '@/lib/verifyPortalRole'
 import { getEnabledProducts, productHref } from '@/lib/products'
 import { isCoverageAvailable } from '@/lib/coverage'
+import { isSubstitutionAvailable } from '@/lib/substitution'
 import { FLAGS_CHANGED_EVENT, loadFlagCounts } from '@/lib/tutorFlags'
 
 type Role = 'student' | 'teacher' | 'supervisor' | 'admin' | 'principal'
@@ -25,6 +26,7 @@ const AUTHOR_NAV = [
 const OVERVIEW_NAV = [{ label: 'Coverage', icon: 'ti-chart-grid-dots', href: '/learning' }]
 const COVERAGE_ITEM = { label: 'Coverage', icon: 'ti-chart-grid-dots', href: '/learning/coverage' }
 const FLAGS_ITEM = { label: 'Tutor flags', icon: 'ti-shield-check', href: '/learning/flags' }
+const REPORT_ABSENCE_ITEM = { label: 'Report Absence', icon: 'ti-user-off', href: '/teacher/report-absence' }
 
 // Smart Learning's own shell. Everyone signed in can enter (the lessons themselves are
 // protected by the database), but only when the school has switched Smart Learning on.
@@ -39,6 +41,8 @@ export default function LearningLayout({ children }: { children: React.ReactNode
   // migration 065 is applied. `flagCount` is how many are still to be read (shown as a menu badge).
   const [flagsOn, setFlagsOn] = useState(false)
   const [flagCount, setFlagCount] = useState(0)
+  // Teachers and HODs who teach can report their own absence from here once migration 073 is applied.
+  const [substitutionOn, setSubstitutionOn] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -61,10 +65,12 @@ export default function LearningLayout({ children }: { children: React.ReactNode
       const products = await getEnabledProducts()
       const coverage = r === 'supervisor' || r === 'admin' ? await isCoverageAvailable() : false
       const flags = r === 'admin' || r === 'principal' ? await loadFlagCounts() : null
+      const substitution = r === 'teacher' || r === 'supervisor' ? await isSubstitutionAvailable() : false
       if (cancelled) return
       setCoverageOn(coverage)
       setFlagsOn(!!flags)
       setFlagCount(flags?.open_total ?? 0)
+      setSubstitutionOn(substitution)
       setRole(r)
       setState(products.includes('learning') ? 'ready' : 'off')
     }
@@ -102,7 +108,8 @@ export default function LearningLayout({ children }: { children: React.ReactNode
 
   // School admins and the principal team oversee Smart Learning (Coverage, flagged tutor chats); they do not teach in it.
   const base = role === 'student' ? STUDENT_NAV : (role === 'principal' || role === 'admin') ? OVERVIEW_NAV : coverageOn ? [...AUTHOR_NAV, COVERAGE_ITEM] : AUTHOR_NAV
-  const nav = flagsOn && (role === 'admin' || role === 'principal') ? [...base, FLAGS_ITEM] : base
+  const withSubstitution = (role === 'teacher' || role === 'supervisor') && substitutionOn ? [...base, REPORT_ABSENCE_ITEM] : base
+  const nav = flagsOn && (role === 'admin' || role === 'principal') ? [...withSubstitution, FLAGS_ITEM] : withSubstitution
   return (
     <div className="portal-layout" style={{ minHeight: '100vh' }}>
       <InactivityLogout />
