@@ -23,7 +23,7 @@ function deriveSchoolEmail(firstName: string, lastName: string): string {
 }
 
 const schema = z.object({
-  type: z.enum(['student', 'staff', 'reset-password', 'get-staff-emails', 'update-staff-email']),
+  type: z.enum(['student', 'staff', 'reset-password', 'get-staff-emails', 'update-staff-email', 'update-staff-role', 'update-student-id']),
   accessToken: z.string().min(1).max(4000),
   data: z.object({
     // student
@@ -79,7 +79,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Not authorized.' }, { status: 403 })
     }
 
-    if (type === 'reset-password' || type === 'update-staff-email') {
+    if (type === 'reset-password' || type === 'update-staff-email' || type === 'update-staff-role') {
       // A school admin must never be able to touch the platform owner's account —
       // is_system_admin is a separate, higher-privilege flag that role='admin' alone doesn't grant.
       const { data: targetProfile } = await supabaseAdmin
@@ -292,6 +292,79 @@ export async function POST(req: NextRequest) {
       }
       const { error } = await supabaseAdmin.auth.admin.updateUserById(user_id, { email, email_confirm: true })
       if (error) return NextResponse.json({ error: error.message }, { status: 400 })
+      return NextResponse.json({ success: true })
+    }
+
+    if (type === 'update-student-id') {
+      // A student's sign-in email is derived from their student ID (id@mhs.smartassess), so
+      // correcting the ID means correcting both the profile row and the auth.users email. Update
+      // the profile first and roll it back if the auth update fails, so the two can't disagree.
+      const { user_id, student_id: newStudentId } = data
+      if (!user_id || !newStudentId) {
+        return NextResponse.json({ error: 'user_id and student_id are required.' }, { status: 400 })
+      }
+      const { data: existing } = await supabaseAdmin
+        .from('profiles')
+        .select('id')
+        .eq('student_id', newStudentId)
+        .neq('id', user_id)
+        .maybeSingle()
+      if (existing) {
+        return NextResponse.json({ error: 'That student ID is already in use by another student.' }, { status: 400 })
+      }
+      const { data: current } = await supabaseAdmin.from('profiles').select('student_id').eq('id', user_id).single()
+      const { error: profileError } = await supabaseAdmin.from('profiles').update({ student_id: newStudentId }).eq('id', user_id)
+      if (profileError) return NextResponse.json({ error: profileError.message }, { status: 400 })
+      const { error: authError } = await supabaseAdmin.auth.admin.updateUserById(user_id, {
+        email: `${newStudentId}@mhs.smartassess`,
+        email_confirm: true,
+      })
+      if (authError) {
+        if (current?.student_id) await supabaseAdmin.from('profiles').update({ student_id: current.student_id }).eq('id', user_id)
+        return NextResponse.json({ error: authError.message }, { status: 400 })
+      }
+      return NextResponse.json({ success: true })
+    }
+
+    if (type === 'update-staff-role') {
+      const { user_id, role, department_id, leadership_title } = data
+      if (!user_id || !role) {
+        return NextResponse.json({ error: 'user_id and role are required.' }, { status: 400 })
+      }
+      const { data: current } = await supabaseAdmin
+        .from('profiles')
+        .select('role, department_id')
+        .eq('id', user_id)
+        .single()
+      if (!current) return NextResponse.json({ error: 'Staff member not found.' }, { status: 404 })
+
+      const { error: updateError } = await supabaseAdmin
+        .from('profiles')
+        .update({
+          role,
+          department_id: department_id || null,
+          leadership_title: role === 'principal' ? (leadership_title || 'Vice Principal') : null,
+        })
+        .eq('id', user_id)
+      if (updateError) return NextResponse.json({ error: updateError.message }, { status: 400 })
+
+      // Every RLS policy that scopes a supervisor's access checks departments.head_id, not
+      // profiles.department_id — keep both in sync the same way staff creation does: drop a
+      // department's head when its supervisor is moved elsewhere, and give an unheaded
+      // department the new supervisor, without disturbing a department that already has one.
+      if (current.role === 'supervisor' && current.department_id && (role !== 'supervisor' || department_id !== current.department_id)) {
+        const { data: oldDept } = await supabaseAdmin.from('departments').select('head_id').eq('id', current.department_id).single()
+        if (oldDept?.head_id === user_id) {
+          await supabaseAdmin.from('departments').update({ head_id: null }).eq('id', current.department_id)
+        }
+      }
+      if (role === 'supervisor' && department_id) {
+        const { data: newDept } = await supabaseAdmin.from('departments').select('head_id').eq('id', department_id).single()
+        if (newDept && !newDept.head_id) {
+          await supabaseAdmin.from('departments').update({ head_id: user_id }).eq('id', department_id)
+        }
+      }
+
       return NextResponse.json({ success: true })
     }
 

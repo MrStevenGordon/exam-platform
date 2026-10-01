@@ -10,6 +10,7 @@ type StaffProfile = {
   full_name: string
   role: string
   department_id: string | null
+  leadership_title: string | null
   is_system_admin: boolean
   departments: { name: string } | null
 }
@@ -44,6 +45,14 @@ export default function StaffDetailPage() {
   const [emailError, setEmailError] = useState('')
   const [emailSaving, setEmailSaving] = useState(false)
 
+  // Changing a staff member's role, department, or (for principals) title
+  const [editingRole, setEditingRole] = useState(false)
+  const [roleDraft, setRoleDraft] = useState('')
+  const [departmentDraft, setDepartmentDraft] = useState('')
+  const [leadershipDraft, setLeadershipDraft] = useState('Vice Principal')
+  const [roleError, setRoleError] = useState('')
+  const [roleSaving, setRoleSaving] = useState(false)
+
   useEffect(() => { loadData() }, [staffId])
 
   async function loadData() {
@@ -62,7 +71,7 @@ export default function StaffDetailPage() {
 
     const { data: staffData, error } = await supabase
       .from('profiles')
-      .select('id, full_name, role, department_id, is_system_admin, departments!profiles_department_id_fkey(name)')
+      .select('id, full_name, role, department_id, leadership_title, is_system_admin, departments!profiles_department_id_fkey(name)')
       .eq('id', staffId)
       .single()
 
@@ -125,6 +134,38 @@ export default function StaffDetailPage() {
     if (!res.ok) { setEmailError(result.error || 'Could not update the email. Please try again.'); return }
     setEmail(value)
     setEditingEmail(false)
+  }
+
+  async function handleSaveRole() {
+    setRoleSaving(true)
+    setRoleError('')
+    const { data: { session } } = await supabase.auth.getSession()
+    const res = await fetch('/api/create-user', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        type: 'update-staff-role',
+        data: {
+          user_id: staffId,
+          role: roleDraft,
+          department_id: departmentDraft || null,
+          ...(roleDraft === 'principal' ? { leadership_title: leadershipDraft } : {}),
+        },
+        accessToken: session?.access_token,
+      }),
+    })
+    const result = await res.json()
+    setRoleSaving(false)
+    if (!res.ok) { setRoleError(result.error || 'Could not update the role. Please try again.'); return }
+    const deptMatch = departments.find((d) => d.id === departmentDraft)
+    setStaff((prev) => prev ? {
+      ...prev,
+      role: roleDraft,
+      department_id: departmentDraft || null,
+      leadership_title: roleDraft === 'principal' ? leadershipDraft : null,
+      departments: deptMatch ? { name: deptMatch.name } : null,
+    } : prev)
+    setEditingRole(false)
   }
 
   function toggleSubject(subject: string) {
@@ -214,11 +255,47 @@ export default function StaffDetailPage() {
               <button className="btn btn-ghost" style={{ fontSize: 11 }} onClick={() => { setEditingName(true); setNameDraft(staff.full_name); setNameError('') }}>Edit name</button>
             </div>
           )}
-          <p style={{ color: 'var(--text-secondary)', margin: '4px 0 0', fontSize: 13 }}>
-            {roleLabel[staff.role] || staff.role}
-            {staff.departments?.name && ` · ${staff.departments.name}`}
-            {staff.is_system_admin && ' · System Admin'}
-          </p>
+          {editingRole ? (
+            <div style={{ marginTop: 6 }}>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+                <select value={roleDraft} onChange={(e) => setRoleDraft(e.target.value)} style={{ fontSize: 13, padding: '4px 8px' }}>
+                  <option value="teacher">Teacher</option>
+                  <option value="supervisor">HOD (Head of Department)</option>
+                  <option value="principal">Principal / Vice Principal</option>
+                </select>
+                <select value={departmentDraft} onChange={(e) => setDepartmentDraft(e.target.value)} style={{ fontSize: 13, padding: '4px 8px' }}>
+                  <option value="">No department</option>
+                  {departments.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
+                </select>
+                {roleDraft === 'principal' && (
+                  <select value={leadershipDraft} onChange={(e) => setLeadershipDraft(e.target.value)} aria-label="Title" style={{ fontSize: 13, padding: '4px 8px' }}>
+                    <option value="Principal">Principal</option>
+                    <option value="Vice Principal">Vice Principal</option>
+                  </select>
+                )}
+                <button className="btn btn-primary" style={{ fontSize: 11 }} disabled={roleSaving} onClick={handleSaveRole}>{roleSaving ? 'Saving…' : 'Save'}</button>
+                <button className="btn btn-ghost" style={{ fontSize: 11 }} onClick={() => { setEditingRole(false); setRoleError('') }}>Cancel</button>
+              </div>
+              {roleError && <div style={{ fontSize: 12, color: 'var(--danger)', marginTop: 4 }}>{roleError}</div>}
+            </div>
+          ) : (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
+              <p style={{ color: 'var(--text-secondary)', margin: 0, fontSize: 13 }}>
+                {roleLabel[staff.role] || staff.role}
+                {staff.departments?.name && ` · ${staff.departments.name}`}
+                {staff.is_system_admin && ' · System Admin'}
+              </p>
+              {!staff.is_system_admin && staff.role !== 'admin' && (
+                <button className="btn btn-ghost" style={{ fontSize: 11 }} onClick={() => {
+                  setEditingRole(true)
+                  setRoleDraft(staff.role)
+                  setDepartmentDraft(staff.department_id || '')
+                  setLeadershipDraft(staff.leadership_title || 'Vice Principal')
+                  setRoleError('')
+                }}>Edit role</button>
+              )}
+            </div>
+          )}
           {editingEmail ? (
             <div style={{ display: 'flex', gap: 6, marginTop: 6, alignItems: 'center' }}>
               <input

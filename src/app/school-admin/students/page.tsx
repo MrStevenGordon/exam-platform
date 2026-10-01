@@ -15,6 +15,8 @@ type Student = {
   grade_level: number | null
   class_name?: string
   school_email: string | null
+  birth_date: string | null
+  gender: string | null
   accommodations: string[]
 }
 
@@ -91,6 +93,19 @@ export default function StudentsPage() {
   const [nameDraft, setNameDraft] = useState('')
   const [nameError, setNameError] = useState('')
 
+  // Correcting a student's ID — this is also their sign-in (id@mhs.smartassess), so it goes through the server
+  const [studentIdEditId, setStudentIdEditId] = useState<string | null>(null)
+  const [studentIdDraft, setStudentIdDraft] = useState('')
+  const [studentIdError, setStudentIdError] = useState('')
+  const [studentIdSaving, setStudentIdSaving] = useState(false)
+
+  // Fixing a student's date of birth / gender
+  const [detailsEditId, setDetailsEditId] = useState<string | null>(null)
+  const [birthDateDraft, setBirthDateDraft] = useState('')
+  const [genderDraft, setGenderDraft] = useState('')
+  const [detailsError, setDetailsError] = useState('')
+  const [detailsSaving, setDetailsSaving] = useState(false)
+
   useEffect(() => { loadData() }, [])
 
   // Arriving from a link such as /school-admin/students?class=3-1 (the class chips in Settings): show that class,
@@ -121,7 +136,7 @@ export default function StudentsPage() {
     try {
       const { data } = await supabase
         .from('profiles')
-        .select('id, full_name, student_id, grade_level, school_email, accommodations, enrollments(class_groups(name))')
+        .select('id, full_name, student_id, grade_level, school_email, birth_date, gender, accommodations, enrollments(class_groups(name))')
         .eq('role', 'student')
         .order('grade_level', { ascending: true })
 
@@ -132,6 +147,8 @@ export default function StudentsPage() {
         grade_level: s.grade_level,
         class_name: s.enrollments?.[0]?.class_groups?.name || null,
         school_email: s.school_email,
+        birth_date: s.birth_date,
+        gender: s.gender,
         accommodations: Array.isArray(s.accommodations) ? s.accommodations : [],
       }))
       setStudents(mapped)
@@ -290,6 +307,41 @@ export default function StudentsPage() {
     if (error) { setNameError(error.message); return }
     setNameEditId(null)
     setNameDraft('')
+    loadData()
+  }
+
+  async function handleSaveStudentId(student: Student) {
+    const value = studentIdDraft.trim()
+    if (!value) { setStudentIdError('Enter a student ID.'); return }
+    if (value === student.student_id) { setStudentIdEditId(null); return }
+    if (!confirm(`Change ${student.full_name}'s student ID from ${student.student_id} to ${value}? This also changes their sign-in to ${value}@mhs.smartassess.`)) return
+    setStudentIdError('')
+    setStudentIdSaving(true)
+    const { data: { session } } = await supabase.auth.getSession()
+    const res = await fetch('/api/create-user', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: 'update-student-id', data: { user_id: student.id, student_id: value }, accessToken: session?.access_token }),
+    })
+    const result = await res.json()
+    setStudentIdSaving(false)
+    if (!res.ok) { setStudentIdError(result.error || 'Could not update the student ID. Please try again.'); return }
+    setStudentIdEditId(null)
+    loadData()
+  }
+
+  async function handleSaveDetails(studentId: string) {
+    setDetailsError('')
+    setDetailsSaving(true)
+    const birthYear = birthDateDraft ? parseInt(birthDateDraft.slice(0, 4), 10) : null
+    const { error } = await supabase.from('profiles').update({
+      birth_date: birthDateDraft || null,
+      birth_year: birthYear,
+      gender: genderDraft || null,
+    }).eq('id', studentId)
+    setDetailsSaving(false)
+    if (error) { setDetailsError(error.message); return }
+    setDetailsEditId(null)
     loadData()
   }
 
@@ -724,7 +776,7 @@ export default function StudentsPage() {
                       {expandedClasses.has(classKey) && (
                         <div style={{ paddingLeft: 12, display: 'flex', flexDirection: 'column', gap: 6 }}>
                           {classStudents.map((s) => (
-                            <div key={s.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', background: 'var(--card-bg)', borderRadius: 8, border: '1px solid var(--border)' }}>
+                            <div key={s.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, padding: '8px 12px', background: 'var(--card-bg)', borderRadius: 8, border: '1px solid var(--border)' }}>
                               <div>
                                 {nameEditId === s.id ? (
                                   <div style={{ display: 'flex', gap: 6 }}>
@@ -743,10 +795,44 @@ export default function StudentsPage() {
                                   <div style={{ fontWeight: 600, fontSize: 13 }}>{s.full_name}</div>
                                 )}
                                 {nameError && nameEditId === s.id && <div style={{ fontSize: 11, color: 'var(--danger)', marginTop: 4 }}>{nameError}</div>}
-                                <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 2 }}>
-                                  ID: {s.student_id}
-                                  {s.school_email ? ` · ${s.school_email}` : ' · No school email on file'}
-                                </div>
+                                {studentIdEditId === s.id ? (
+                                  <div style={{ display: 'flex', gap: 6, marginTop: 2, alignItems: 'center' }}>
+                                    <span style={{ fontSize: 11, color: 'var(--text-secondary)' }}>ID:</span>
+                                    <input
+                                      type="text"
+                                      value={studentIdDraft}
+                                      onChange={(e) => setStudentIdDraft(e.target.value)}
+                                      autoFocus
+                                      onKeyDown={(e) => { if (e.key === 'Enter') handleSaveStudentId(s) }}
+                                      style={{ fontSize: 11, padding: '3px 6px', width: 100 }}
+                                    />
+                                    <button className="btn btn-primary" style={{ fontSize: 10, padding: '3px 8px' }} disabled={studentIdSaving} onClick={() => handleSaveStudentId(s)}>{studentIdSaving ? 'Saving…' : 'Save'}</button>
+                                    <button className="btn btn-ghost" style={{ fontSize: 10 }} onClick={() => { setStudentIdEditId(null); setStudentIdError('') }}>Cancel</button>
+                                  </div>
+                                ) : (
+                                  <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 2 }}>
+                                    ID: {s.student_id}
+                                    {s.school_email ? ` · ${s.school_email}` : ' · No school email on file'}
+                                    {s.birth_date && ` · DOB: ${s.birth_date}`}
+                                    {s.gender && ` · ${s.gender === 'M' ? 'Male' : s.gender === 'F' ? 'Female' : s.gender}`}
+                                  </div>
+                                )}
+                                {studentIdError && studentIdEditId === s.id && <div style={{ fontSize: 11, color: 'var(--danger)', marginTop: 4 }}>{studentIdError}</div>}
+                                {detailsEditId === s.id && (
+                                  <div style={{ marginTop: 6 }}>
+                                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+                                      <input type="date" value={birthDateDraft} onChange={(e) => setBirthDateDraft(e.target.value)} aria-label={`Date of birth for ${s.full_name}`} style={{ fontSize: 12, padding: '4px 8px' }} />
+                                      <select value={genderDraft} onChange={(e) => setGenderDraft(e.target.value)} aria-label={`Gender for ${s.full_name}`} style={{ fontSize: 12, padding: '4px 8px' }}>
+                                        <option value="">Not stated</option>
+                                        <option value="M">Male</option>
+                                        <option value="F">Female</option>
+                                      </select>
+                                      <button className="btn btn-primary" style={{ fontSize: 11, padding: '4px 10px' }} disabled={detailsSaving} onClick={() => handleSaveDetails(s.id)}>{detailsSaving ? 'Saving…' : 'Save'}</button>
+                                      <button className="btn btn-ghost" style={{ fontSize: 11 }} onClick={() => { setDetailsEditId(null); setDetailsError('') }}>Cancel</button>
+                                    </div>
+                                    {detailsError && <div style={{ fontSize: 11, color: 'var(--danger)', marginTop: 4 }}>{detailsError}</div>}
+                                  </div>
+                                )}
                                 {emailEditId === s.id && (
                                   <div style={{ marginTop: 6 }}>
                                     <div style={{ display: 'flex', gap: 6 }}>
@@ -779,10 +865,20 @@ export default function StudentsPage() {
                                   </div>
                                 )}
                               </div>
-                              <div style={{ display: 'flex', gap: 6 }}>
+                              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
                                 {nameEditId !== s.id && (
                                   <button onClick={() => { setNameEditId(s.id); setNameDraft(s.full_name); setNameError('') }} className="btn btn-ghost" style={{ fontSize: 11 }}>
                                     Edit name
+                                  </button>
+                                )}
+                                {studentIdEditId !== s.id && (
+                                  <button onClick={() => { setStudentIdEditId(s.id); setStudentIdDraft(s.student_id || ''); setStudentIdError('') }} className="btn btn-ghost" style={{ fontSize: 11 }}>
+                                    Edit ID
+                                  </button>
+                                )}
+                                {detailsEditId !== s.id && (
+                                  <button onClick={() => { setDetailsEditId(s.id); setBirthDateDraft(s.birth_date || ''); setGenderDraft(s.gender || ''); setDetailsError('') }} className="btn btn-ghost" style={{ fontSize: 11 }}>
+                                    Edit details
                                   </button>
                                 )}
                                 {emailEditId !== s.id && (
