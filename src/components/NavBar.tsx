@@ -23,6 +23,8 @@ export default function NavBar() {
   const shouldHide = [
     '/login', '/', '/coming-soon', '/maintenance', '/terms', '/privacy', '/demo-exam', '/download', '/it-resources',
     '/change-password', '/forgot-password', '/mfa',
+    // The marketing pages that carry their own site menu, same as the home page.
+    '/products', '/how-it-works', '/for-organizations', '/contact',
   ].includes(pathname) || pathname.startsWith('/demo-exam/') || portalPrefixes.some((p) => pathname.startsWith(p))
 
   useEffect(() => {
