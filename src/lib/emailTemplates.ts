@@ -274,6 +274,72 @@ export function substitutionUnfilledEmail(absentName: string, classes: Array<{ w
   }
 }
 
+// Cover emails. `classes` rows are already worded for reading: `when` is a day like "Mon 5 Oct", `what` is
+// "Period 2 · Mathematics · 3-1", and `note` is the rest of the line (who it is for, the lesson, who covers).
+type CoverLine = { when: string; what: string; note?: string }
+const coverRows = (classes: CoverLine[]): Array<[string, string]> =>
+  classes.map((c): [string, string] => [escapeHtml(c.when), escapeHtml(c.what) + (c.note ? `<br /><span style="font-weight: 400; color: ${COLOR.textSecondary}; font-size: 13px;">${escapeHtml(c.note)}</span>` : '')])
+const classCount = (n: number) => `${n} ${n === 1 ? 'class' : 'classes'}`
+
+// To a substitute, when they are given classes to cover.
+export function substitutionCoverEmail(name: string, classes: CoverLine[], coverUrl: string) {
+  const n = classes.length
+  return {
+    subject: `Cover arranged for you: ${classCount(n)}`,
+    html: wrapper(`
+      ${badge('Cover arranged')}
+      <p>Hi ${escapeHtml(name)},</p>
+      <p>You have been given ${classCount(n)} to cover.</p>
+      ${infoBox(coverRows(classes))}
+      <p>Open My Cover to read the lesson for each class.</p>
+      ${button('Open My Cover', coverUrl)}
+    `),
+  }
+}
+
+// To a substitute who has been swapped out of classes.
+export function substitutionReleasedEmail(name: string, classes: CoverLine[]) {
+  const n = classes.length
+  return {
+    subject: `You are no longer covering ${classCount(n)}`,
+    html: wrapper(`
+      ${badge('Cover changed', 'warning')}
+      <p>Hi ${escapeHtml(name)},</p>
+      <p>Someone else is now covering ${n === 1 ? 'this class' : 'these classes'}, so you do not need to take ${n === 1 ? 'it' : 'them'}.</p>
+      ${infoBox(coverRows(classes))}
+    `),
+  }
+}
+
+// To an absent teacher, when an HOD or admin arranged their cover.
+export function substitutionAbsentToldEmail(name: string, classes: CoverLine[]) {
+  const n = classes.length
+  return {
+    subject: `Cover for your ${classCount(n)}`,
+    html: wrapper(`
+      ${badge('Cover arranged')}
+      <p>Hi ${escapeHtml(name)},</p>
+      <p>Here is who is taking ${n === 1 ? 'your class' : 'your classes'}.</p>
+      ${infoBox(coverRows(classes))}
+    `),
+  }
+}
+
+// To a substitute on the morning they are covering.
+export function substitutionReminderEmail(name: string, classes: CoverLine[], coverUrl: string) {
+  const n = classes.length
+  return {
+    subject: `Today's cover: ${classCount(n)}`,
+    html: wrapper(`
+      ${badge('Cover today')}
+      <p>Good morning ${escapeHtml(name)},</p>
+      <p>You are covering ${classCount(n)} today.</p>
+      ${infoBox(coverRows(classes))}
+      ${button('Open My Cover', coverUrl)}
+    `),
+  }
+}
+
 export function orgRequestReceivedEmail(orgName: string, contactName: string) {
   return {
     subject: `We've received your Smart Assess request for ${orgName}`,
