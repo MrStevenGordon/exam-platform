@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { jamaicaDate, schoolYear, shiftDate, formatDay } from '@/lib/attendance'
-import { substitutionError, notifyUnfilled, notifyCover, SUBSTITUTION_CHANGED_EVENT } from '@/lib/substitution'
+import { substitutionError, notifyUnfilled, notifyCover, cancelAbsence, isCancelAbsenceAvailable, SUBSTITUTION_CHANGED_EVENT } from '@/lib/substitution'
 
 type Staff = { staff_id: string; staff_name: string; staff_role: string; department_name: string | null }
 type Period = { id: string; name: string; order_index: number }
@@ -68,6 +68,10 @@ export default function SubstitutionManager({ scope }: { scope: 'department' | '
   const [swapOptions, setSwapOptions] = useState<Option[]>([])
   const [swapChoice, setSwapChoice] = useState('')
   const [rowBusy, setRowBusy] = useState<string | null>(null)
+  // Cancelling a whole absence (needs migration 076)
+  const [cancelOn, setCancelOn] = useState(false)
+  const [cancelBusy, setCancelBusy] = useState<string | null>(null)
+  const [cancelError, setCancelError] = useState('')
   const [rowMessage, setRowMessage] = useState<Record<string, string>>({})
 
   const tellBadge = () => window.dispatchEvent(new Event(SUBSTITUTION_CHANGED_EVENT))
@@ -90,6 +94,7 @@ export default function SubstitutionManager({ scope }: { scope: 'department' | '
       setLoading(false)
     }
     loadBase()
+    isCancelAbsenceAvailable().then((ok) => { if (!cancelled) setCancelOn(ok) })
     return () => { cancelled = true }
   }, [])
 
@@ -281,10 +286,30 @@ export default function SubstitutionManager({ scope }: { scope: 'department' | '
     }
   }
 
+  async function cancelWholeAbsence(a: { absenceId: string; name: string }) {
+    if (!confirm(`Cancel ${a.name}'s absence? Cover from today onward is removed and the substitutes are told they are free.`)) return
+    setCancelBusy(a.absenceId)
+    setCancelError('')
+    const failure = await cancelAbsence(a.absenceId)
+    setCancelBusy(null)
+    if (failure) { setCancelError(failure); return }
+    setNotice(`${a.name}'s absence is cancelled and the cover has been removed.`)
+    tellBadge()
+    reloadBoard()
+  }
+
   const visibleStaff = staff.filter((p) => !search || p.staff_name.toLowerCase().includes(search.toLowerCase()))
   const upcoming = board.filter((r) => r.class_date >= today)
   const needsCover = upcoming.filter((r) => r.status === 'unfilled')
   const dates = Array.from(new Set(board.map((r) => r.class_date)))
+  // One entry per absence that still has classes from today on, so a mistaken report can be cancelled in one go.
+  const openAbsences = Array.from(upcoming.reduce((m, r) => {
+    const cur = m.get(r.absence_id) || { absenceId: r.absence_id, name: r.absent_name, classes: 0, first: r.class_date, last: r.class_date }
+    cur.classes += 1
+    if (r.class_date < cur.first) cur.first = r.class_date
+    if (r.class_date > cur.last) cur.last = r.class_date
+    return m.set(r.absence_id, cur)
+  }, new Map<string, { absenceId: string; name: string; classes: number; first: string; last: string }>()).values())
 
   function renderRow(r: BoardRow) {
     const canChange = r.class_date >= today
@@ -448,6 +473,23 @@ export default function SubstitutionManager({ scope }: { scope: 'department' | '
         {needsCover.length > 0 && (
           <div className="banner banner-warning" style={{ marginBottom: 14 }}>
             {needsCover.length} upcoming {needsCover.length === 1 ? 'class has' : 'classes have'} no substitute. They are marked below.
+          </div>
+        )}
+        {cancelOn && openAbsences.length > 0 && (
+          <div style={{ marginBottom: 16 }}>
+            <div className="section-label" style={{ marginBottom: 6 }}>Absences with upcoming cover</div>
+            {cancelError && <div className="banner banner-danger" style={{ marginBottom: 8 }}>{cancelError}</div>}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {openAbsences.map((a) => (
+                <div key={a.absenceId} style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center', padding: '8px 12px', border: '1px solid var(--border)', borderRadius: 8 }}>
+                  <div style={{ flex: 1, minWidth: 200, fontSize: 13 }}>
+                    <span style={{ fontWeight: 700 }}>{a.name}</span>
+                    <span style={{ color: 'var(--text-secondary)' }}> · {a.classes} {a.classes === 1 ? 'class' : 'classes'} · {a.first === a.last ? formatDay(a.first) : `${formatDay(a.first)} to ${formatDay(a.last)}`}</span>
+                  </div>
+                  <button className="btn btn-ghost" style={{ fontSize: 11 }} disabled={cancelBusy === a.absenceId} onClick={() => cancelWholeAbsence(a)}>{cancelBusy === a.absenceId ? 'Cancelling…' : 'Cancel absence'}</button>
+                </div>
+              ))}
+            </div>
           </div>
         )}
         {board.length === 0 && <p style={{ fontSize: 13, color: 'var(--text-secondary)' }}>No cover arranged between these dates.</p>}

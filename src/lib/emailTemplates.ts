@@ -325,6 +325,34 @@ export function substitutionAbsentToldEmail(name: string, classes: CoverLine[]) 
   }
 }
 
+// To a substitute whose cover was removed because the absence was cancelled.
+export function substitutionCancelledEmail(name: string, absentName: string, classes: CoverLine[]) {
+  const n = classes.length
+  return {
+    subject: `Cover cancelled: ${classCount(n)}`,
+    html: wrapper(`
+      ${badge('Cover cancelled', 'warning')}
+      <p>Hi ${escapeHtml(name)},</p>
+      <p>${escapeHtml(absentName)} is no longer absent, so you do not need to take ${n === 1 ? 'this class' : 'these classes'}.</p>
+      ${infoBox(coverRows(classes))}
+    `),
+  }
+}
+
+// To an absent teacher whose absence was cancelled by an HOD or admin.
+export function substitutionAbsenceCancelledEmail(name: string, cancelledBy: string, classes: CoverLine[]) {
+  const n = classes.length
+  return {
+    subject: 'Your absence was cancelled',
+    html: wrapper(`
+      ${badge('Absence cancelled', 'warning')}
+      <p>Hi ${escapeHtml(name)},</p>
+      <p>${escapeHtml(cancelledBy)} cancelled your absence. ${n === 1 ? 'This class is' : 'These classes are'} back with you and the cover has been removed.</p>
+      ${infoBox(coverRows(classes))}
+    `),
+  }
+}
+
 // To a substitute on the morning they are covering.
 export function substitutionReminderEmail(name: string, classes: CoverLine[], coverUrl: string) {
   const n = classes.length

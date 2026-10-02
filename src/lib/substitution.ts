@@ -130,3 +130,38 @@ export async function notifyCover(absenceId: string): Promise<void> {
     // The in-app message and My Cover page already carry the same information.
   }
 }
+
+// Cancelling needs migration 076. Asking about an absence that cannot exist tells us whether the function is there:
+// "Absence not found" means it is, a missing function means it is not.
+let cancelAvailability: Promise<boolean> | null = null
+export function isCancelAbsenceAvailable(): Promise<boolean> {
+  if (!cancelAvailability) {
+    cancelAvailability = (async () => {
+      try {
+        const { error } = await supabase.rpc('cancel_teacher_absence', { p_absence_id: '00000000-0000-0000-0000-000000000000' })
+        return !error || (error.code !== 'PGRST202' && error.code !== '42883')
+      } catch {
+        return false
+      }
+    })()
+  }
+  return cancelAvailability
+}
+
+// Cancels an absence (today and every later day) through the server, which also sends the emails. Returns an error
+// message for the screen, or null on success.
+export async function cancelAbsence(absenceId: string): Promise<string | null> {
+  try {
+    const { data: { session } } = await supabase.auth.getSession()
+    const res = await fetch('/api/substitution/cancel-absence', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ absence_id: absenceId, accessToken: session?.access_token }),
+    })
+    if (res.ok) return null
+    const body = await res.json().catch(() => null)
+    return body?.error || 'Something went wrong. Please try again.'
+  } catch {
+    return 'Could not reach the server. Please try again.'
+  }
+}

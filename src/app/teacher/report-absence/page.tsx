@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { jamaicaDate, isoWeekday, schoolYear, shiftDate, formatDay } from '@/lib/attendance'
-import { substitutionError, notifyUnfilled, notifyCover } from '@/lib/substitution'
+import { substitutionError, notifyUnfilled, notifyCover, cancelAbsence, isCancelAbsenceAvailable } from '@/lib/substitution'
 
 type Period = { id: string; name: string; order_index: number }
 
@@ -22,6 +22,8 @@ type AffectedGroup = {
 }
 
 type LessonOption = { value: string; label: string }
+
+type MyAbsence = { id: string; start_date: string; end_date: string; period_ids: string[] | null }
 
 type ResultRow = {
   class_date: string
@@ -63,6 +65,14 @@ export default function ReportAbsencePage() {
   const [submitError, setSubmitError] = useState('')
   const [results, setResults] = useState<ResultRow[] | null>(null)
 
+  // The person's own upcoming absences, with a way to cancel one (needs migration 076).
+  const [cancelOn, setCancelOn] = useState(false)
+  const [myAbsences, setMyAbsences] = useState<MyAbsence[]>([])
+  const [absenceTick, setAbsenceTick] = useState(0)
+  const [cancelBusy, setCancelBusy] = useState<string | null>(null)
+  const [cancelError, setCancelError] = useState('')
+  const [cancelNotice, setCancelNotice] = useState('')
+
   useEffect(() => {
     async function loadBase() {
       const { data: { user } } = await supabase.auth.getUser()
@@ -87,6 +97,37 @@ export default function ReportAbsencePage() {
     }
     loadBase()
   }, [])
+
+  useEffect(() => {
+    let cancelled = false
+    async function loadMine() {
+      if (!userId) return
+      const ok = await isCancelAbsenceAvailable()
+      if (cancelled || !ok) return
+      setCancelOn(true)
+      const { data } = await supabase
+        .from('teacher_absences')
+        .select('id, start_date, end_date, period_ids')
+        .eq('teacher_id', userId)
+        .gte('end_date', jamaicaDate())
+        .order('start_date')
+      if (!cancelled) setMyAbsences((data || []) as MyAbsence[])
+    }
+    loadMine()
+    return () => { cancelled = true }
+  }, [userId, absenceTick])
+
+  async function handleCancel(a: MyAbsence) {
+    if (!confirm('Cancel this absence? Any cover arranged for your classes from today onward is removed and the substitutes are told.')) return
+    setCancelBusy(a.id)
+    setCancelError('')
+    setCancelNotice('')
+    const failure = await cancelAbsence(a.id)
+    setCancelBusy(null)
+    if (failure) { setCancelError(failure); return }
+    setCancelNotice('Your absence is cancelled and the cover has been removed.')
+    setAbsenceTick((n) => n + 1)
+  }
 
   useEffect(() => {
     let cancelled = false
@@ -183,6 +224,7 @@ export default function ReportAbsencePage() {
     setResults(rows)
     if (out?.absence_id && rows.some((r) => r.status === 'unfilled')) notifyUnfilled(out.absence_id)
     if (out?.absence_id) notifyCover(out.absence_id)
+    setAbsenceTick((n) => n + 1)
   }
 
   function startOver() {
@@ -304,6 +346,26 @@ export default function ReportAbsencePage() {
       <button className="btn btn-primary" disabled={submitting || groups.length === 0} onClick={handleSubmit}>
         {submitting ? 'Reporting…' : 'Report absence'}
       </button>
+
+      {cancelOn && (myAbsences.length > 0 || cancelNotice) && (
+        <div className="card" style={{ marginTop: 28 }}>
+          <h2 style={{ margin: '0 0 4px' }}>Your upcoming absences</h2>
+          <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '0 0 12px' }}>Reported by mistake, or back sooner than planned? Cancel it and the cover is removed from today onward.</p>
+          {cancelNotice && <div className="banner banner-success" style={{ marginBottom: 10 }}>{cancelNotice}</div>}
+          {cancelError && <div className="banner banner-danger" style={{ marginBottom: 10 }}>{cancelError}</div>}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {myAbsences.map((a) => (
+              <div key={a.id} style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center', padding: '8px 12px', border: '1px solid var(--border)', borderRadius: 8 }}>
+                <div style={{ flex: 1, minWidth: 180, fontSize: 13 }}>
+                  <span style={{ fontWeight: 700 }}>{a.start_date === a.end_date ? formatDay(a.start_date) : `${formatDay(a.start_date)} to ${formatDay(a.end_date)}`}</span>
+                  <span style={{ color: 'var(--text-secondary)' }}> · {a.period_ids ? 'Some periods' : 'Whole day'}</span>
+                </div>
+                <button className="btn btn-ghost" style={{ fontSize: 11 }} disabled={cancelBusy === a.id} onClick={() => handleCancel(a)}>{cancelBusy === a.id ? 'Cancelling…' : 'Cancel absence'}</button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   )
 }
