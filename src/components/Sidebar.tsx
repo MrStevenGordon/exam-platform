@@ -23,6 +23,13 @@ type SidebarProps = {
   // should be treated as active for cases like that; return the pathname
   // unchanged otherwise.
   resolveActivePathname?: (pathname: string, searchParams: URLSearchParams) => string
+  // Where "Log out" sends the person afterwards (everyone but the platform owner signs in at /login).
+  logoutHref?: string
+  // Replaces the role line under the person's name, for accounts the role value doesn't describe
+  // (the platform owner's profile role is "admin", which would read as School Admin).
+  roleLabel?: string
+  // The Smart Assess / Learning / Play menu belongs to a school; the platform owner has none.
+  hideProductSwitcher?: boolean
 }
 
 // What to show under a person's name in the sidebar (never the raw role value:
@@ -46,7 +53,7 @@ export default function Sidebar(props: SidebarProps) {
   )
 }
 
-function SidebarInner({ navItems, portalLabel, resolveActivePathname, badges }: SidebarProps) {
+function SidebarInner({ navItems, portalLabel, resolveActivePathname, badges, logoutHref, roleLabel, hideProductSwitcher }: SidebarProps) {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -103,7 +110,7 @@ function SidebarInner({ navItems, portalLabel, resolveActivePathname, badges }: 
     }
     await presenceSignOut()
     await supabase.auth.signOut()
-    router.push('/login')
+    router.push(logoutHref ?? '/login')
   }
 
   const initials = profile?.full_name?.split(' ').map(n => n[0]).slice(0, 2).join('') || '?'
@@ -124,7 +131,7 @@ function SidebarInner({ navItems, portalLabel, resolveActivePathname, badges }: 
         <div style={{ fontSize: 15, fontWeight: 700, color: 'white', marginTop: 2 }}>
           {portalLabel}
         </div>
-        <ProductSwitcher role={profile?.role} />
+        {!hideProductSwitcher && <ProductSwitcher role={profile?.role} />}
       </div>
 
       {/* Nav */}
@@ -208,9 +215,9 @@ function SidebarInner({ navItems, portalLabel, resolveActivePathname, badges }: 
               {profile?.full_name || '…'}
             </div>
             <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: 0.5, marginTop: 1 }}>
-              {profile?.student_id ? `ID: ${profile.student_id}` : roleDisplay(profile?.role, leadershipTitle)}
-              {profile?.grade_level ? ` · Grade ${profile.grade_level}` : ''}
-              {!profile?.student_id && (profile?.departments as any)?.name ? ` · ${(profile?.departments as any)?.name}` : ''}
+              {roleLabel ?? (profile?.student_id ? `ID: ${profile.student_id}` : roleDisplay(profile?.role, leadershipTitle))}
+              {!roleLabel && profile?.grade_level ? ` · Grade ${profile.grade_level}` : ''}
+              {!roleLabel && !profile?.student_id && (profile?.departments as any)?.name ? ` · ${(profile?.departments as any)?.name}` : ''}
             </div>
           </div>
         </div>

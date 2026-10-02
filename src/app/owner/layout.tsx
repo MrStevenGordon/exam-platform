@@ -2,19 +2,19 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
-import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
+import Sidebar from '@/components/Sidebar'
 import PageTransition from '@/components/PageTransition'
 import InactivityLogout from '@/components/InactivityLogout'
 import OnboardingTour, { TourStep } from '@/components/OnboardingTour'
 import { getMfaRedirect } from '@/lib/mfaCheck'
 
 const OWNER_NAV = [
-  { label: 'School requests', href: '/owner/school-requests' },
-  { label: 'Org requests', href: '/owner/org-requests' },
-  { label: 'Configure school tools', href: '/owner/school-features' },
-  { label: 'School subscriptions', href: '/owner/school-subscriptions' },
-  { label: 'Org subscriptions & payments', href: '/owner/organization-payments' },
+  { label: 'School requests', icon: 'ti-building-community', href: '/owner/school-requests' },
+  { label: 'Org requests', icon: 'ti-briefcase', href: '/owner/org-requests' },
+  { label: 'Configure school tools', icon: 'ti-adjustments', href: '/owner/school-features' },
+  { label: 'School subscriptions', icon: 'ti-id-badge-2', href: '/owner/school-subscriptions' },
+  { label: 'Org subscriptions & payments', icon: 'ti-receipt', href: '/owner/organization-payments' },
 ]
 
 const OWNER_TOUR_STEPS: TourStep[] = [
@@ -50,48 +50,13 @@ export default function OwnerLayout({ children }: { children: React.ReactNode })
     check()
   }, [router])
 
-  async function handleLogout() {
-    await supabase.auth.signOut()
-    router.push('/admin-login')
-  }
-
   if (!checked) return null
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--page-bg)' }}>
+    <div className="portal-layout" style={{ minHeight: '100vh' }}>
       <InactivityLogout />
-      <div style={{
-        background: '#1A0E06',
-        padding: '14px 24px',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        flexWrap: 'wrap',
-        gap: 12,
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
-          <div>
-            <div style={{ fontSize: 10, letterSpacing: 1.5, color: 'rgba(255,255,255,0.4)', fontWeight: 700, textTransform: 'uppercase' }}>Smart Assess Ja</div>
-            <div style={{ fontSize: 15, fontWeight: 700, color: 'white' }}>Administrator</div>
-          </div>
-          <nav style={{ display: 'flex', gap: 4 }}>
-            {OWNER_NAV.map((item) => (
-              <Link key={item.href} href={item.href} style={{
-                fontSize: 13, padding: '6px 12px', borderRadius: 6, textDecoration: 'none',
-                color: pathname?.startsWith(item.href) ? '#FAC882' : 'rgba(255,255,255,0.6)',
-                background: pathname?.startsWith(item.href) ? 'rgba(212,118,42,0.25)' : 'transparent',
-                fontWeight: pathname?.startsWith(item.href) ? 600 : 400,
-              }}>
-                {item.label}
-              </Link>
-            ))}
-          </nav>
-        </div>
-        <button onClick={handleLogout} className="btn btn-ghost">Log out</button>
-      </div>
-      <div style={{ maxWidth: 1000, margin: '0 auto', padding: 24 }}>
-        <PageTransition>{children}</PageTransition>
-      </div>
+      <main className="portal-content"><PageTransition>{children}</PageTransition></main>
+      <Sidebar navItems={OWNER_NAV} portalLabel="Owner Portal" logoutHref="/admin-login" roleLabel="Platform owner" hideProductSwitcher />
       <OnboardingTour tourKey="owner" steps={OWNER_TOUR_STEPS} />
     </div>
   )
