@@ -7,6 +7,12 @@ import { supabase } from '@/lib/supabase'
 import { presenceSignOut } from '@/lib/presence'
 import { ASSESS_HOME } from '@/lib/products'
 
+// The same names as each portal's own sidebar heading.
+const PORTAL_NAMES: Record<string, string> = {
+  student: 'Student Portal', teacher: 'Teacher Portal', supervisor: 'HOD Portal',
+  principal: 'Leadership Portal', admin: 'School Admin Portal', system_admin: 'Owner Portal',
+}
+
 export default function NavBar() {
   const router = useRouter()
   const pathname = usePathname()
@@ -25,12 +31,12 @@ export default function NavBar() {
       if (!user) { setAuthed(false); setName(''); setRole(''); return }
       const { data: profile } = await supabase
         .from('profiles')
-        .select('full_name, role')
+        .select('full_name, role, is_system_admin')
         .eq('id', user.id)
         .single()
       if (profile) {
         setName(profile.full_name)
-        setRole(profile.role)
+        setRole(profile.is_system_admin ? 'system_admin' : profile.role)
       }
       setAuthed(true)
     }
@@ -63,13 +69,13 @@ export default function NavBar() {
       justifyContent: 'space-between',
       alignItems: 'center',
     }}>
-      <Link href={ASSESS_HOME[role] || '/'} style={{ textDecoration: 'none' }}>
+      <Link href={role === 'system_admin' ? '/owner' : ASSESS_HOME[role] || '/'} style={{ textDecoration: 'none' }}>
         <div>
           <div style={{ fontSize: 11, letterSpacing: 0.5, color: 'var(--text-secondary)', fontWeight: 700 }}>
             SMART ASSESS JA
           </div>
           <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)' }}>
-            {role ? role.charAt(0).toUpperCase() + role.slice(1) : ''} Portal
+            {PORTAL_NAMES[role] ?? ''}
           </div>
         </div>
       </Link>
