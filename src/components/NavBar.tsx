@@ -5,6 +5,7 @@ import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { presenceSignOut } from '@/lib/presence'
+import { ASSESS_HOME } from '@/lib/products'
 
 export default function NavBar() {
   const router = useRouter()
@@ -12,7 +13,7 @@ export default function NavBar() {
   const [name, setName] = useState('')
   const [role, setRole] = useState('')
   const [authed, setAuthed] = useState(false)
-  const portalPrefixes = ['/student', '/teacher', '/supervisor', '/principal', '/learning', '/dashboard', '/school-admin', '/org', '/owner', '/school-setup', '/take-exam', '/build-my-school', '/play']
+  const portalPrefixes = ['/student', '/teacher', '/supervisor', '/principal', '/learning', '/school-admin', '/org', '/owner', '/school-setup', '/take-exam', '/build-my-school', '/play']
   const shouldHide = [
     '/login', '/', '/coming-soon', '/maintenance', '/terms', '/privacy', '/demo-exam', '/download', '/it-resources',
     '/change-password', '/forgot-password', '/mfa',
@@ -51,13 +52,6 @@ export default function NavBar() {
     router.push('/login')
   }
 
-  const roleHome: Record<string, string> = {
-    student: '/student',
-    teacher: '/teacher',
-    supervisor: '/supervisor',
-    admin: '/school-admin',
-  }
-
   if (shouldHide || !authed) return null
 
   return (
@@ -69,7 +63,7 @@ export default function NavBar() {
       justifyContent: 'space-between',
       alignItems: 'center',
     }}>
-      <Link href={roleHome[role] || '/dashboard'} style={{ textDecoration: 'none' }}>
+      <Link href={ASSESS_HOME[role] || '/'} style={{ textDecoration: 'none' }}>
         <div>
           <div style={{ fontSize: 11, letterSpacing: 0.5, color: 'var(--text-secondary)', fontWeight: 700 }}>
             SMART ASSESS JA

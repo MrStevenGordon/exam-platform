@@ -95,7 +95,7 @@ Menu: Overview, Departments, Subjects, Timetable, Active Sessions, Staff, Studen
 - [ ] **Password requests**: approve and reset
 - [ ] **Active Sessions**: see who is signed in; release a student's device lock
 - [ ] **Analytics**, **Report Cards** (create a term, release), **Integrity**, **Activity** log
-- [ ] **Year Promotion** (`/dashboard`): **Preview** lists exactly who moves where and who is held back; run it on **test data only** and confirm no student moves twice; graduation review lists Grade 11 only
+- [ ] **Year Promotion** (School Settings, `/school-admin/settings`): **Preview** lists exactly who moves where and who is held back; run it on **test data only** and confirm no student moves twice; graduation review lists Grade 11 only
 - [ ] **Settings**: class list shows all 42 classes in order; school details
 - [ ] **Topics**: same checks as the HOD page, for all subjects
 - [ ] Messages, My Profile

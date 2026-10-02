@@ -288,7 +288,7 @@ export default function LoginPage() {
     const mfaRedirect = await getMfaRedirect(profile.role)
     if (mfaRedirect) { router.push(mfaRedirect); return }
 
-    router.push((await landingFor(profile.role)) || '/dashboard')
+    router.push((await landingFor(profile.role)) || '/login')
   }
 
   return (
