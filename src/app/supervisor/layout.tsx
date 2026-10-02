@@ -12,6 +12,7 @@ import { verifyPortalRole } from '@/lib/verifyPortalRole'
 import { hodNavItems, HOD_TOUR_STEPS, resolveHodActivePathname } from '@/lib/hodNav'
 import { isAttendanceAvailable } from '@/lib/attendance'
 import { isTopicsAvailable } from '@/lib/topics'
+import { isSubstitutionToolsAvailable, useSubstitutionUnfilledCount } from '@/lib/substitution'
 import { getEnabledProducts } from '@/lib/products'
 
 export default function SupervisorLayout({ children }: { children: React.ReactNode }) {
@@ -26,6 +27,9 @@ export default function SupervisorLayout({ children }: { children: React.ReactNo
   useEffect(() => { isTopicsAvailable().then(setTopicsOn) }, [])
   const [learningOn, setLearningOn] = useState(false)
   useEffect(() => { getEnabledProducts().then((p) => setLearningOn(p.includes('learning'))) }, [])
+  const [toolsOn, setToolsOn] = useState(false)
+  useEffect(() => { isSubstitutionToolsAvailable().then(setToolsOn) }, [])
+  const unfilled = useSubstitutionUnfilledCount(toolsOn)
 
   useEffect(() => {
     async function checkAccess() {
@@ -45,7 +49,7 @@ export default function SupervisorLayout({ children }: { children: React.ReactNo
       <InactivityLogout />
       <PresenceHeartbeat />
       <main className="portal-content"><PageTransition>{children}</PageTransition></main>
-      <Sidebar navItems={hodNavItems(attendanceOn, topicsOn, learningOn)} portalLabel="HOD Portal" resolveActivePathname={resolveHodActivePathname} />
+      <Sidebar navItems={hodNavItems(attendanceOn, topicsOn, learningOn, toolsOn)} portalLabel="HOD Portal" badges={{ '/supervisor/substitution': unfilled }} resolveActivePathname={resolveHodActivePathname} />
       <OnboardingTour tourKey="supervisor" steps={HOD_TOUR_STEPS} />
     </div>
   )

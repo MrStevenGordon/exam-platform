@@ -11,7 +11,7 @@ import { getMfaRedirect } from '@/lib/mfaCheck'
 import { verifyPortalRole } from '@/lib/verifyPortalRole'
 import { getEnabledProducts, productHref } from '@/lib/products'
 import { isCoverageAvailable } from '@/lib/coverage'
-import { isSubstitutionAvailable } from '@/lib/substitution'
+import { isSubstitutionAvailable, isSubstitutionToolsAvailable, useSubstitutionUnfilledCount } from '@/lib/substitution'
 import { FLAGS_CHANGED_EVENT, loadFlagCounts } from '@/lib/tutorFlags'
 
 type Role = 'student' | 'teacher' | 'supervisor' | 'admin' | 'principal'
@@ -43,6 +43,9 @@ export default function LearningLayout({ children }: { children: React.ReactNode
   const [flagCount, setFlagCount] = useState(0)
   // Teachers and HODs who teach can report their own absence from here once migration 073 is applied.
   const [substitutionOn, setSubstitutionOn] = useState(false)
+  // HODs and school admins can arrange cover from here once migration 074 is applied.
+  const [toolsOn, setToolsOn] = useState(false)
+  const unfilled = useSubstitutionUnfilledCount(toolsOn)
 
   useEffect(() => {
     let cancelled = false
@@ -66,11 +69,13 @@ export default function LearningLayout({ children }: { children: React.ReactNode
       const coverage = r === 'supervisor' || r === 'admin' ? await isCoverageAvailable() : false
       const flags = r === 'admin' || r === 'principal' ? await loadFlagCounts() : null
       const substitution = r === 'teacher' || r === 'supervisor' ? await isSubstitutionAvailable() : false
+      const tools = r === 'supervisor' || r === 'admin' ? await isSubstitutionToolsAvailable() : false
       if (cancelled) return
       setCoverageOn(coverage)
       setFlagsOn(!!flags)
       setFlagCount(flags?.open_total ?? 0)
       setSubstitutionOn(substitution)
+      setToolsOn(tools)
       setRole(r)
       setState(products.includes('learning') ? 'ready' : 'off')
     }
@@ -109,13 +114,16 @@ export default function LearningLayout({ children }: { children: React.ReactNode
   // School admins and the principal team oversee Smart Learning (Coverage, flagged tutor chats); they do not teach in it.
   const base = role === 'student' ? STUDENT_NAV : (role === 'principal' || role === 'admin') ? OVERVIEW_NAV : coverageOn ? [...AUTHOR_NAV, COVERAGE_ITEM] : AUTHOR_NAV
   const withSubstitution = (role === 'teacher' || role === 'supervisor') && substitutionOn ? [...base, REPORT_ABSENCE_ITEM] : base
-  const nav = flagsOn && (role === 'admin' || role === 'principal') ? [...withSubstitution, FLAGS_ITEM] : withSubstitution
+  const manageItem = { label: 'Substitution', icon: 'ti-replace', href: role === 'supervisor' ? '/supervisor/substitution' : '/school-admin/substitution' }
+  const withTools = toolsOn && (role === 'supervisor' || role === 'admin') ? [...withSubstitution, manageItem] : withSubstitution
+  const nav = flagsOn && (role === 'admin' || role === 'principal') ? [...withTools, FLAGS_ITEM] : withTools
+  const badges = { ...(flagsOn ? { [FLAGS_ITEM.href]: flagCount } : {}), ...(toolsOn ? { [manageItem.href]: unfilled } : {}) }
   return (
     <div className="portal-layout" style={{ minHeight: '100vh' }}>
       <InactivityLogout />
       <PresenceHeartbeat />
       <main className="portal-content"><PageTransition>{children}</PageTransition></main>
-      <Sidebar navItems={nav} badges={flagsOn ? { [FLAGS_ITEM.href]: flagCount } : undefined} portalLabel="Smart Learning" resolveActivePathname={(p) => (p.startsWith('/learning/lesson/') || p.startsWith('/learning/lessons/') && p !== '/learning/lessons/new' ? '/learning' : p)} />
+      <Sidebar navItems={nav} badges={badges} portalLabel="Smart Learning" resolveActivePathname={(p) => (p.startsWith('/learning/lesson/') || p.startsWith('/learning/lessons/') && p !== '/learning/lessons/new' ? '/learning' : p)} />
     </div>
   )
 }

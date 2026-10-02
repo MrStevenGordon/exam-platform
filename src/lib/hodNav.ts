@@ -33,12 +33,17 @@ export const HOD_NAV = [
 
 // HODs teach classes too, so once attendance is installed they get the same
 // Attendance page teachers use (register, Start class, roll call).
-export function hodNavItems(attendanceOn: boolean, topicsOn = false, learningOn = false) {
+export function hodNavItems(attendanceOn: boolean, topicsOn = false, learningOn = false, substitutionOn = false) {
   // Lesson plans live in Smart Learning once a school has it switched on.
   let items = learningOn ? HOD_NAV.filter((n) => n.href !== '/teacher/lesson-plans') : HOD_NAV
   if (topicsOn) {
     // The shared topic list, next to the department's subjects.
     items = items.flatMap((n) => (n.href === '/supervisor/subjects' ? [n, { label: 'Topics', icon: 'ti-tags', href: '/supervisor/topics' }] : [n]))
+  }
+  if (substitutionOn) {
+    // Arranging cover for the department's absent teachers, once migration 074 is applied.
+    const t = items.findIndex((n) => n.href === '/supervisor/timetable')
+    items = [...items.slice(0, t + 1), { label: 'Substitution', icon: 'ti-replace', href: '/supervisor/substitution' }, ...items.slice(t + 1)]
   }
   if (!attendanceOn) return items
   const i = items.findIndex((n) => n.href === '/supervisor/timetable')

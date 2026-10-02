@@ -10,6 +10,7 @@ import PresenceHeartbeat from '@/components/PresenceHeartbeat'
 import OnboardingTour, { TourStep } from '@/components/OnboardingTour'
 import { getMfaRedirect } from '@/lib/mfaCheck'
 import { verifyPortalRole } from '@/lib/verifyPortalRole'
+import { isSubstitutionToolsAvailable, useSubstitutionUnfilledCount } from '@/lib/substitution'
 
 const SCHOOL_ADMIN_TOUR_STEPS: TourStep[] = [
   { href: '/school-admin', title: 'Your home base', body: "This is where you'll land every time you sign in, with a school-wide overview." },
@@ -59,7 +60,9 @@ export default function SchoolAdminLayout({ children }: { children: React.ReactN
   const router = useRouter()
   const pathname = usePathname()
   const [checked, setChecked] = useState(false)
-
+  const [toolsOn, setToolsOn] = useState(false)
+  useEffect(() => { isSubstitutionToolsAvailable().then(setToolsOn) }, [])
+  const unfilled = useSubstitutionUnfilledCount(toolsOn)
 
   useEffect(() => {
     async function checkAccess() {
@@ -74,6 +77,10 @@ export default function SchoolAdminLayout({ children }: { children: React.ReactN
 
   if (!checked) return null
 
+  // Arranging cover for absent teachers, once migration 074 is applied.
+  const navItems = toolsOn
+    ? SCHOOL_ADMIN_NAV.flatMap((n) => (n.href === '/school-admin/timetable' ? [n, { label: 'Substitution', icon: 'ti-replace', href: '/school-admin/substitution' }] : [n]))
+    : SCHOOL_ADMIN_NAV
   const tabGroup = TAB_GROUPS.find((g) => g.tabs.some((t) => pathname === t.href || pathname.startsWith(t.href + '/')))
 
   return (
@@ -84,7 +91,7 @@ export default function SchoolAdminLayout({ children }: { children: React.ReactN
         {tabGroup && <SectionTabs tabs={tabGroup.tabs} pathname={pathname} />}
         <PageTransition>{children}</PageTransition>
       </main>
-      <Sidebar navItems={SCHOOL_ADMIN_NAV} portalLabel="School Admin Portal" resolveActivePathname={resolveActivePathname} />
+      <Sidebar navItems={navItems} portalLabel="School Admin Portal" badges={{ '/school-admin/substitution': unfilled }} resolveActivePathname={resolveActivePathname} />
       <OnboardingTour tourKey="admin" steps={SCHOOL_ADMIN_TOUR_STEPS} />
     </div>
   )
