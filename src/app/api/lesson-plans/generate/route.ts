@@ -28,7 +28,7 @@ const schema = z.object({
   attainmentTarget: z.string().trim().max(1000).optional(),
   // How many lessons the unit should have. One keeps the original
   // single-lesson behaviour.
-  lessonCount: z.number().int().min(1).max(5).optional(),
+  lessonCount: z.number().int().min(1).max(10).optional(),
   duration: z.string().trim().max(100).optional(),
   accessToken: z.string().min(1).max(4000),
 }).strict()

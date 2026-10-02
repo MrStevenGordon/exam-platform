@@ -218,7 +218,7 @@ export default function LessonPlansPage() {
     setEditingId(plan.id)
     const next = formFromPlan(plan)
     setForm(next)
-    setLessonCount(Math.min(5, Math.max(1, next.lessons.length)))
+    setLessonCount(Math.min(10, Math.max(1, next.lessons.length)))
     setGenerateError('')
     setErrorMsg('')
     setView('form')
@@ -361,7 +361,7 @@ export default function LessonPlansPage() {
     setEditingId(null)
     const next = formFromPlan(plan)
     setForm(next)
-    setLessonCount(Math.min(5, Math.max(1, next.lessons.length)))
+    setLessonCount(Math.min(10, Math.max(1, next.lessons.length)))
     setViewingPlan(null)
     setGenerateError('')
     setErrorMsg('')
@@ -625,7 +625,7 @@ export default function LessonPlansPage() {
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <label style={{ fontSize: 13, color: 'var(--text-secondary)' }} htmlFor="lesson-count">Lessons</label>
               <select id="lesson-count" value={lessonCount} onChange={(e) => setLessonCount(Number(e.target.value))} disabled={generating}>
-                {[1, 2, 3, 4, 5].map((n) => <option key={n} value={n}>{n}</option>)}
+                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => <option key={n} value={n}>{n}</option>)}
               </select>
               <button type="button" onClick={handleGenerate} disabled={generating} className="btn btn-secondary" style={{ fontSize: 13 }}>
                 {generating ? 'Drafting…' : '✨ AI-assist plan'}
@@ -634,7 +634,7 @@ export default function LessonPlansPage() {
           </div>
           {generating && lessonCount > 1 && (
             <p className="banner banner-warning" style={{ marginBottom: 14 }}>
-              Drafting {lessonCount} lessons can take a minute or two. Please keep this page open.
+              Drafting {lessonCount} lessons can take {lessonCount > 5 ? 'a few minutes' : 'a minute or two'}. Please keep this page open.
             </p>
           )}
           {generateError && <p className="banner banner-danger" style={{ marginBottom: 14 }}>{generateError}</p>}
