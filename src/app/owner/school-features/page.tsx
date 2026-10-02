@@ -194,7 +194,7 @@ export default function SchoolFeaturesPage() {
 
   return (
     <div className="page-container">
-      <h1 style={{ marginBottom: 4 }}>Configure school tools</h1>
+      <h1 className="portal-page-title" style={{ marginBottom: 4 }}>Configure school tools</h1>
       <p style={{ color: 'var(--text-secondary)', fontSize: 13, marginBottom: 20 }}>
         Paste a school&apos;s database connection string, then <strong>Load current settings</strong> to see what it actually has switched on before you change anything — saving always replaces the whole set, so it&apos;s easy to switch something off by accident if you save without checking first. The connection string isn&apos;t stored anywhere; used once, then forgotten.
       </p>

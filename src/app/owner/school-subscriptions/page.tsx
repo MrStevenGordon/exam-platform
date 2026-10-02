@@ -100,7 +100,7 @@ export default function SchoolSubscriptionsPage() {
 
   return (
     <div className="page-container">
-      <h1 style={{ marginBottom: 4 }}>School subscriptions</h1>
+      <h1 className="portal-page-title" style={{ marginBottom: 4 }}>School subscriptions</h1>
       <p style={{ color: 'var(--text-secondary)', fontSize: 13, marginBottom: 20 }}>
         Schools pay by wire transfer and email proof of payment directly. Grant or renew a subscription here once you&apos;ve verified it landed in the account. Paste that school&apos;s database connection string to push the status directly to their login gate; used once, then forgotten, never stored.
       </p>

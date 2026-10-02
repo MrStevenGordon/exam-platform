@@ -130,7 +130,7 @@ export default function AddFromBankPage() {
     <div className="page-container" style={{ maxWidth: 640 }}>
       <Link href={`/teacher/exam/${examId}`} style={{ color: 'var(--text-secondary)', fontSize: 14 }}>&larr; Back to exam</Link>
 
-      <h1 style={{ marginTop: 16 }}>Add from question bank</h1>
+      <h1 className="portal-page-title" style={{ marginTop: 16 }}>Add from question bank</h1>
 
       {errorMsg && <p className="banner banner-danger" style={{ marginTop: 16 }}>{errorMsg}</p>}
       {bankQuestions.length === 0 && !errorMsg && (

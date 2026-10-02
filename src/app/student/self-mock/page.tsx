@@ -156,7 +156,7 @@ export default function GenerateSelfMockPage() {
 
   return (
     <div className="page-container" style={{ maxWidth: 480 }}>
-      <h1>Practice mock exam</h1>
+      <h1 className="portal-page-title">Practice mock exam</h1>
       <p style={{ color: 'var(--text-secondary)', marginTop: 4 }}>
         Pulls real past questions for self-practice. No proctoring, this is just for you.
       </p>

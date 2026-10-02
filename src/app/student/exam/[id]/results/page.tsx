@@ -74,7 +74,7 @@ export default function FinalExamResultsPage() {
         ← Back to exams
       </Link>
 
-      <h1 style={{ marginBottom: 4 }}>{exam?.title}</h1>
+      <h1 className="portal-page-title" style={{ marginBottom: 4 }}>{exam?.title}</h1>
       <p style={{ color: 'var(--text-secondary)', fontSize: 13, marginBottom: 24 }}>{exam?.subject}</p>
 
       {result.status !== 'completed' && (

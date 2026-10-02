@@ -110,7 +110,7 @@ export default function ManageGroupsPage() {
   return (
     <div className="page-container">
       <Link href={`/teacher/exam/${examId}`} style={{ color: 'var(--text-secondary)', fontSize: 14 }}>&larr; Back to {examTitle}</Link>
-      <h1 style={{ marginTop: 16 }}>Manage Groups</h1>
+      <h1 className="portal-page-title" style={{ marginTop: 16 }}>Manage Groups</h1>
 
       {errorMsg && <div className="banner banner-danger" style={{ marginBottom: 16 }}>{errorMsg}</div>}
 

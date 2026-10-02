@@ -140,7 +140,7 @@ export default function GradeEssaysPage() {
 
   return (
     <div className="page-container">
-      <h1>Grade essay responses</h1>
+      <h1 className="portal-page-title">Grade essay responses</h1>
 
       {errorMsg && <p className="banner banner-danger" style={{ marginTop: 16 }}>{errorMsg}</p>}
       {items.length === 0 && !errorMsg && (

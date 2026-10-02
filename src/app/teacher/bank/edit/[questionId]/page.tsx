@@ -71,7 +71,7 @@ export default function EditBankQuestionPage() {
   return (
     <div style={{ maxWidth: 700, margin: '0 auto' }}>
       <Link href="/teacher/bank" style={{ color: 'var(--text-secondary)', fontSize: 14 }}>Back to question bank</Link>
-      <h1 style={{ marginTop: 16, marginBottom: 4 }}>Edit bank question</h1>
+      <h1 className="portal-page-title" style={{ marginTop: 16, marginBottom: 4 }}>Edit bank question</h1>
       {errorMsg && <div className="banner banner-danger" style={{ marginBottom: 16 }}>{errorMsg}</div>}
       <div className="card">
         <div style={{ marginBottom: 14 }}>

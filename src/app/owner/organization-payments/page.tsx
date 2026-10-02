@@ -176,7 +176,7 @@ export default function OrganizationPaymentsPage() {
 
   return (
     <div className="page-container">
-      <h1 style={{ marginBottom: 4 }}>Subscriptions & payments</h1>
+      <h1 className="portal-page-title" style={{ marginBottom: 4 }}>Subscriptions & payments</h1>
       <p style={{ color: 'var(--text-secondary)', fontSize: 13, marginBottom: 20 }}>
         Organizations pay by wire transfer and email proof of payment directly. Grant or renew their subscription here once you&apos;ve verified it landed in the account.
       </p>

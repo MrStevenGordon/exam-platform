@@ -83,7 +83,7 @@ export default function EditQuestionPage() {
       <Link href={`/teacher/exam/${examId}`} style={{ color: 'var(--text-secondary)', fontSize: 14 }}>
         ← Back to exam
       </Link>
-      <h1 style={{ marginTop: 16, marginBottom: 4 }}>Edit question</h1>
+      <h1 className="portal-page-title" style={{ marginTop: 16, marginBottom: 4 }}>Edit question</h1>
 
       {errorMsg && <div className="banner banner-danger" style={{ marginBottom: 16 }}>{errorMsg}</div>}
 

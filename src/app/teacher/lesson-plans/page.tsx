@@ -426,7 +426,7 @@ export default function LessonPlansPage() {
 
   return (
     <div className="page-container" style={{ maxWidth: 720 }}>
-      <h1 style={{ marginBottom: 4 }}>Lesson Plans</h1>
+      <h1 className="portal-page-title" style={{ marginBottom: 4 }}>Lesson Plans</h1>
       <p style={{ color: 'var(--text-secondary)', fontSize: 13, marginBottom: 20 }}>
         Build and AI-assist NSC-style lesson plans, or browse plans shared by other schools.
       </p>

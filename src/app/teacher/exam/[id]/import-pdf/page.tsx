@@ -185,7 +185,7 @@ export default function ImportPDFPage() {
         <Link href={`/teacher/exam/${examId}`} style={{ color: 'var(--text-secondary)', fontSize: 14 }}>
           ← Back to exam
         </Link>
-        <h1 style={{ marginTop: 16, marginBottom: 4 }}>Import from PDF</h1>
+        <h1 className="portal-page-title" style={{ marginTop: 16, marginBottom: 4 }}>Import from PDF</h1>
         <p style={{ color: 'var(--text-secondary)', marginBottom: 24 }}>
           Upload a PDF exam paper and Claude AI will extract the questions automatically. You'll review and edit before saving.
         </p>
@@ -243,7 +243,7 @@ export default function ImportPDFPage() {
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginTop: 16, marginBottom: 20 }}>
         <div>
-          <h1 style={{ margin: 0 }}>Review extracted questions</h1>
+          <h1 className="portal-page-title" style={{ margin: 0 }}>Review extracted questions</h1>
           <p style={{ color: 'var(--text-secondary)', marginTop: 4 }}>
             {questions.length} questions found · {selectedCount} selected to import
           </p>

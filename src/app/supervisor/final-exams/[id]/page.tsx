@@ -135,7 +135,7 @@ export default function SupervisorExamPublishPage() {
       <div style={{ marginTop: 16, marginBottom: 24 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div>
-            <h1 style={{ margin: 0 }}>{exam.title}</h1>
+            <h1 className="portal-page-title" style={{ margin: 0 }}>{exam.title}</h1>
             <p style={{ color: 'var(--text-secondary)', fontSize: 13, marginTop: 4 }}>
               {exam.subject} · {KIND_LABELS[exam.exam_kind] || exam.exam_kind}
               {exam.target_grade && ` · Grade ${exam.target_grade}`}

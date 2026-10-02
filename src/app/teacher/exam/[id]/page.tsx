@@ -297,7 +297,7 @@ export default function ExamEditorPage() {
 
       <div style={{ marginTop: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
-          <h1 style={{ margin: 0 }}>{exam.title}</h1>
+          <h1 className="portal-page-title" style={{ margin: 0 }}>{exam.title}</h1>
           <p style={{ color: '#666', margin: '4px 0' }}>{exam.subject} · {kindLabels[exam.exam_kind]}</p>
           {isGroupProject && (
             <Link href={`/teacher/exam/${examId}/groups`}>

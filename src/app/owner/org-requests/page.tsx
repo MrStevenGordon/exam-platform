@@ -77,7 +77,7 @@ export default function OrgRequestsPage() {
     <div className="page-container">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20, flexWrap: 'wrap', gap: 12 }}>
         <div>
-          <h1 style={{ marginBottom: 4 }}>Organization requests</h1>
+          <h1 className="portal-page-title" style={{ marginBottom: 4 }}>Organization requests</h1>
           <p style={{ color: 'var(--text-secondary)', fontSize: 13, margin: 0 }}>
             {actionable.length} need action · {completed.length} completed
           </p>

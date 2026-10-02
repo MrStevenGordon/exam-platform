@@ -136,7 +136,7 @@ export default function TeacherReviewSessionPage() {
       <Link href={`/teacher/exam/${examId}/sessions`} style={{ color: 'var(--text-secondary)', fontSize: 14 }}>← Back to sessions</Link>
 
       <div style={{ marginTop: 16, marginBottom: 24 }}>
-        <h1 style={{ marginBottom: 4 }}>{studentName}</h1>
+        <h1 className="portal-page-title" style={{ marginBottom: 4 }}>{studentName}</h1>
         <p style={{ color: 'var(--text-secondary)', fontSize: 13, margin: 0 }}>
           ID: {studentIdNum}
           {totalScore !== null && ` · Score: ${totalScore} / ${maxScore} (${Math.round((totalScore / (maxScore || 1)) * 100)}%)`}

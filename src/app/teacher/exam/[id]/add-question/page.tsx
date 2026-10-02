@@ -278,7 +278,7 @@ export default function AddQuestionPage() {
 
   return (
     <div className="page-container" style={{ maxWidth: 520 }}>
-      <h1>Add question</h1>
+      <h1 className="portal-page-title">Add question</h1>
 
       <div className="card" style={{ marginTop: 20 }}>
       <form onSubmit={handleSubmit}>

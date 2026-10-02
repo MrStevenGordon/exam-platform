@@ -127,7 +127,7 @@ export default function ExamSessionsPage() {
       <Link href="/supervisor/final-exams" style={{ color: 'var(--text-secondary)', fontSize: 14 }}>&larr; Back to final exams</Link>
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginTop: 16 }}>
-        <h1>{examTitle}: Student sessions</h1>
+        <h1 className="portal-page-title">{examTitle}: Student sessions</h1>
         <div style={{ display: 'flex', gap: 8 }}>
           <Link href={`/supervisor/final-exams/${finalExamId}/analytics`}>
             <button className="btn btn-secondary">View analytics</button>

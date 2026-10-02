@@ -171,7 +171,7 @@ export default function SelfMockPage() {
     <div className="page-container" style={{ maxWidth: 640 }}>
       <Link href="/student/self-mock" style={{ color: 'var(--text-secondary)', fontSize: 14 }}>&larr; Generate another</Link>
 
-      <h1 style={{ marginTop: 16 }}>{subject}: Practice mock</h1>
+      <h1 className="portal-page-title" style={{ marginTop: 16 }}>{subject}: Practice mock</h1>
 
       {completed && (
         <div className="card" style={{ background: 'var(--success-bg)', marginBottom: 20 }}>

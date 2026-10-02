@@ -88,7 +88,7 @@ function NewExamForm() {
   return (
     <div className="page-container" style={{ maxWidth: 520 }}>
       <Link href={returnPath} style={{ color: 'var(--text-secondary)', fontSize: 14 }}>&larr; Back</Link>
-      <h1 style={{ marginTop: 12 }}>{pageTitle}</h1>
+      <h1 className="portal-page-title" style={{ marginTop: 12 }}>{pageTitle}</h1>
       <div className="card" style={{ marginTop: 20 }}>
         <form onSubmit={handleSubmit}>
           <div style={{ marginBottom: 16 }}>

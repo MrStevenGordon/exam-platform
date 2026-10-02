@@ -213,7 +213,7 @@ export default function GroupProjectPage() {
     <div className="page-container">
       <Link href="/student/tasks" style={{ color: 'var(--text-secondary)', fontSize: 14 }}>&larr; Back to tasks</Link>
 
-      <h1 style={{ marginTop: 16 }}>{examTitle}</h1>
+      <h1 className="portal-page-title" style={{ marginTop: 16 }}>{examTitle}</h1>
       <p style={{ color: 'var(--text-secondary)', marginBottom: 20 }}>{groupName} · {members.length + 1} members</p>
 
       {alreadySubmitted && (

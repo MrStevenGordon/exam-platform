@@ -95,7 +95,7 @@ export default function ScoreHistoryPage() {
     <div className="page-container" style={{ maxWidth: 700 }}>
       <Link href="/student" style={{ color: 'var(--text-secondary)', fontSize: 14 }}>&larr; Back to my exams</Link>
 
-      <h1 style={{ marginTop: 16 }}>My score history</h1>
+      <h1 className="portal-page-title" style={{ marginTop: 16 }}>My score history</h1>
       <p style={{ color: 'var(--text-secondary)', marginTop: 4 }}>{entries.length} released results</p>
 
       {entries.length === 0 && (

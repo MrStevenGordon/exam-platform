@@ -116,7 +116,7 @@ export default function ExamSessionsPage() {
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginTop: 16, marginBottom: 20, flexWrap: 'wrap', gap: 12 }}>
         <div>
-          <h1 style={{ marginBottom: 4 }}>{examTitle}</h1>
+          <h1 className="portal-page-title" style={{ marginBottom: 4 }}>{examTitle}</h1>
           <p style={{ color: 'var(--text-secondary)', fontSize: 13, margin: 0 }}>
             {completed.length} submitted · {inProgress.length} in progress · {unreleased.length} results pending release
           </p>

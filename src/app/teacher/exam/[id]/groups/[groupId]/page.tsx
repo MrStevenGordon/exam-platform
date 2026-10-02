@@ -156,7 +156,7 @@ export default function GroupGradingPage() {
     <div className="page-container">
       <Link href={`/teacher/exam/${examId}/groups`} style={{ color: 'var(--text-secondary)', fontSize: 14 }}>&larr; Back to groups</Link>
 
-      <h1 style={{ marginTop: 16 }}>{groupName}</h1>
+      <h1 className="portal-page-title" style={{ marginTop: 16 }}>{groupName}</h1>
       <p style={{ color: 'var(--text-secondary)', marginBottom: 20 }}>{examTitle}</p>
 
       {saved && <div className="banner banner-success" style={{ marginBottom: 16 }}>Grades saved.</div>}

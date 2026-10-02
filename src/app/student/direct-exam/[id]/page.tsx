@@ -155,7 +155,7 @@ export default function DirectExamFrontPage() {
     <div className="page-container" style={{ maxWidth: 640 }}>
       <Link href="/student" style={{ color: 'var(--text-secondary)', fontSize: 14 }}>&larr; Back to my exams</Link>
 
-      <h1 style={{ marginTop: 16 }}>{exam.title}</h1>
+      <h1 className="portal-page-title" style={{ marginTop: 16 }}>{exam.title}</h1>
       <p style={{ color: 'var(--text-secondary)', marginTop: 4 }}>{exam.subject} · {kindLabels[exam.exam_kind] || exam.exam_kind}</p>
 
       <div className="card" style={{ display: 'flex', gap: 32, margin: '20px 0' }}>

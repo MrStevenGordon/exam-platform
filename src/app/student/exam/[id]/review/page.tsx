@@ -156,7 +156,7 @@ export default function ReviewExamPage() {
     <div className="page-container" style={{ maxWidth: 640 }}>
       <Link href="/student" style={{ color: 'var(--text-secondary)', fontSize: 14 }}>&larr; Back to my exams</Link>
 
-      <h1 style={{ marginTop: 16 }}>{examTitle}: Review</h1>
+      <h1 className="portal-page-title" style={{ marginTop: 16 }}>{examTitle}: Review</h1>
       <p style={{ color: 'var(--text-secondary)', marginTop: 4 }}>
         Score: {session.total_score} / {session.max_possible_score}
       </p>
