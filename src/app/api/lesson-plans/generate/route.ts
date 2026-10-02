@@ -6,8 +6,12 @@ import { validateBody } from '@/lib/validateBody'
 import { normalizeGeneratedPlan } from '@/lib/lessonPlan'
 import { extractText } from '@/lib/ai'
 
-// A multi-lesson draft is a long response; the platform default is too short.
-export const maxDuration = 60
+// A multi-lesson draft is a long response: the AI writes it all in one go, and several lessons took longer than the
+// old 60 seconds. 300 is the most the Hobby plan allows (with Fluid compute, which both projects have on).
+export const maxDuration = 300
+
+// Stop waiting a little before the platform would cut us off, so the teacher gets a clear message instead of an error page.
+const AI_TIMEOUT_MS = 280_000
 
 const MONTHLY_LIMIT = 15
 
@@ -119,6 +123,7 @@ Respond ONLY with valid JSON in this exact format, no other text:
         max_tokens: 1500 + 900 * lessonCount,
         messages: [{ role: 'user', content: prompt }],
       }),
+      signal: AbortSignal.timeout(AI_TIMEOUT_MS),
     })
 
     if (!response.ok) {
@@ -155,6 +160,10 @@ Respond ONLY with valid JSON in this exact format, no other text:
     })
 
   } catch (err: any) {
+    if (err?.name === 'TimeoutError' || err?.name === 'AbortError') {
+      console.error('Lesson plan generate: the AI did not answer in time')
+      return NextResponse.json({ error: 'The AI took too long to draft this. Try again, or ask for fewer lessons at a time.' }, { status: 504 })
+    }
     console.error('Lesson plan generate error:', err)
     return NextResponse.json({ error: 'Something went wrong.' }, { status: 500 })
   }

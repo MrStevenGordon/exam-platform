@@ -268,9 +268,10 @@ export default function LessonPlansPage() {
           accessToken: session?.access_token,
         }),
       })
-      const data = await res.json()
-      if (!res.ok) {
-        setGenerateError(data.error || 'Something went wrong.')
+      // A timeout comes back as the platform's own error page, not JSON, so read it defensively.
+      const data = await res.json().catch(() => null)
+      if (!res.ok || !data) {
+        setGenerateError(data?.error || (res.status === 504 || res.status === 502 ? 'The AI took too long to draft this. Try again, or ask for fewer lessons at a time.' : 'Something went wrong. Please try again.'))
         setGenerating(false)
         return
       }
@@ -631,6 +632,11 @@ export default function LessonPlansPage() {
               </button>
             </div>
           </div>
+          {generating && lessonCount > 1 && (
+            <p className="banner banner-warning" style={{ marginBottom: 14 }}>
+              Drafting {lessonCount} lessons can take a minute or two. Please keep this page open.
+            </p>
+          )}
           {generateError && <p className="banner banner-danger" style={{ marginBottom: 14 }}>{generateError}</p>}
 
           <div className="card" style={{ marginBottom: 16 }}>
