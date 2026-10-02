@@ -84,7 +84,7 @@ export default function SchoolAdminLayout({ children }: { children: React.ReactN
         {tabGroup && <SectionTabs tabs={tabGroup.tabs} pathname={pathname} />}
         <PageTransition>{children}</PageTransition>
       </main>
-      <Sidebar navItems={SCHOOL_ADMIN_NAV} portalLabel="School Admin" resolveActivePathname={resolveActivePathname} />
+      <Sidebar navItems={SCHOOL_ADMIN_NAV} portalLabel="School Admin Portal" resolveActivePathname={resolveActivePathname} />
       <OnboardingTour tourKey="admin" steps={SCHOOL_ADMIN_TOUR_STEPS} />
     </div>
   )
