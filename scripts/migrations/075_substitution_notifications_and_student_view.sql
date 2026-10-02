@@ -423,3 +423,6 @@ grant execute on function
 to authenticated;
 
 commit;
+
+-- Only reached when everything above committed. If this row does not appear, nothing was applied.
+select 'Migration 075 applied' as result;
