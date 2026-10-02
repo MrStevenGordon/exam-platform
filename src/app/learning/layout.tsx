@@ -11,7 +11,7 @@ import { getMfaRedirect } from '@/lib/mfaCheck'
 import { verifyPortalRole } from '@/lib/verifyPortalRole'
 import { getEnabledProducts, productHref } from '@/lib/products'
 import { isCoverageAvailable } from '@/lib/coverage'
-import { isSubstitutionAvailable, isSubstitutionToolsAvailable, useSubstitutionUnfilledCount } from '@/lib/substitution'
+import { isSubstitutionAvailable, isSubstitutionToolsAvailable, isCoverAvailable, useSubstitutionUnfilledCount, useCoverCount } from '@/lib/substitution'
 import { FLAGS_CHANGED_EVENT, loadFlagCounts } from '@/lib/tutorFlags'
 
 type Role = 'student' | 'teacher' | 'supervisor' | 'admin' | 'principal'
@@ -27,6 +27,7 @@ const OVERVIEW_NAV = [{ label: 'Coverage', icon: 'ti-chart-grid-dots', href: '/l
 const COVERAGE_ITEM = { label: 'Coverage', icon: 'ti-chart-grid-dots', href: '/learning/coverage' }
 const FLAGS_ITEM = { label: 'Tutor flags', icon: 'ti-shield-check', href: '/learning/flags' }
 const REPORT_ABSENCE_ITEM = { label: 'Report Absence', icon: 'ti-user-off', href: '/teacher/report-absence' }
+const MY_COVER_ITEM = { label: 'My Cover', icon: 'ti-calendar-event', href: '/teacher/cover' }
 
 // Smart Learning's own shell. Everyone signed in can enter (the lessons themselves are
 // protected by the database), but only when the school has switched Smart Learning on.
@@ -46,6 +47,9 @@ export default function LearningLayout({ children }: { children: React.ReactNode
   // HODs and school admins can arrange cover from here once migration 074 is applied.
   const [toolsOn, setToolsOn] = useState(false)
   const unfilled = useSubstitutionUnfilledCount(toolsOn)
+  // Teachers and HODs can see the classes they have been asked to cover once migration 075 is applied.
+  const [coverOn, setCoverOn] = useState(false)
+  const coverCount = useCoverCount(coverOn)
 
   useEffect(() => {
     let cancelled = false
@@ -70,11 +74,13 @@ export default function LearningLayout({ children }: { children: React.ReactNode
       const flags = r === 'admin' || r === 'principal' ? await loadFlagCounts() : null
       const substitution = r === 'teacher' || r === 'supervisor' ? await isSubstitutionAvailable() : false
       const tools = r === 'supervisor' || r === 'admin' ? await isSubstitutionToolsAvailable() : false
+      const cover = r === 'teacher' || r === 'supervisor' ? await isCoverAvailable() : false
       if (cancelled) return
       setCoverageOn(coverage)
       setFlagsOn(!!flags)
       setFlagCount(flags?.open_total ?? 0)
       setSubstitutionOn(substitution)
+      setCoverOn(cover)
       setToolsOn(tools)
       setRole(r)
       setState(products.includes('learning') ? 'ready' : 'off')
@@ -113,11 +119,11 @@ export default function LearningLayout({ children }: { children: React.ReactNode
 
   // School admins and the principal team oversee Smart Learning (Coverage, flagged tutor chats); they do not teach in it.
   const base = role === 'student' ? STUDENT_NAV : (role === 'principal' || role === 'admin') ? OVERVIEW_NAV : coverageOn ? [...AUTHOR_NAV, COVERAGE_ITEM] : AUTHOR_NAV
-  const withSubstitution = (role === 'teacher' || role === 'supervisor') && substitutionOn ? [...base, REPORT_ABSENCE_ITEM] : base
+  const withSubstitution = (role === 'teacher' || role === 'supervisor') && substitutionOn ? [...base, REPORT_ABSENCE_ITEM, ...(coverOn ? [MY_COVER_ITEM] : [])] : base
   const manageItem = { label: 'Substitution', icon: 'ti-replace', href: role === 'supervisor' ? '/supervisor/substitution' : '/school-admin/substitution' }
   const withTools = toolsOn && (role === 'supervisor' || role === 'admin') ? [...withSubstitution, manageItem] : withSubstitution
   const nav = flagsOn && (role === 'admin' || role === 'principal') ? [...withTools, FLAGS_ITEM] : withTools
-  const badges = { ...(flagsOn ? { [FLAGS_ITEM.href]: flagCount } : {}), ...(toolsOn ? { [manageItem.href]: unfilled } : {}) }
+  const badges = { ...(flagsOn ? { [FLAGS_ITEM.href]: flagCount } : {}), ...(toolsOn ? { [manageItem.href]: unfilled } : {}), ...(coverOn ? { [MY_COVER_ITEM.href]: coverCount } : {}) }
   return (
     <div className="portal-layout" style={{ minHeight: '100vh' }}>
       <InactivityLogout />

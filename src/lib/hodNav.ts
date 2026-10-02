@@ -57,7 +57,7 @@ export function hodNavItems(attendanceOn: boolean, topicsOn = false, learningOn 
 
 // Pages under /teacher that HODs may also open. Everything else under
 // /teacher stays teacher-only.
-export const TEACHER_AREAS_OPEN_TO_HODS = ['/teacher/tasks', '/teacher/tests', '/teacher/exam', '/teacher/new', '/teacher/lesson-plans', '/teacher/bank', '/teacher/grade', '/teacher/attendance', '/teacher/report-absence']
+export const TEACHER_AREAS_OPEN_TO_HODS = ['/teacher/tasks', '/teacher/tests', '/teacher/exam', '/teacher/new', '/teacher/lesson-plans', '/teacher/bank', '/teacher/grade', '/teacher/attendance', '/teacher/report-absence', '/teacher/cover']
 
 export function isOpenToHods(pathname: string): boolean {
   return TEACHER_AREAS_OPEN_TO_HODS.some((p) => pathname === p || pathname.startsWith(p + '/'))

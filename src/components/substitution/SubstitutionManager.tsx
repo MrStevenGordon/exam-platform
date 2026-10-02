@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { jamaicaDate, schoolYear, shiftDate, formatDay } from '@/lib/attendance'
-import { substitutionError, notifyUnfilled, SUBSTITUTION_CHANGED_EVENT } from '@/lib/substitution'
+import { substitutionError, notifyUnfilled, notifyCover, SUBSTITUTION_CHANGED_EVENT } from '@/lib/substitution'
 
 type Staff = { staff_id: string; staff_name: string; staff_role: string; department_name: string | null }
 type Period = { id: string; name: string; order_index: number }
@@ -235,6 +235,7 @@ export default function SubstitutionManager({ scope }: { scope: 'department' | '
     const rows = out?.results || []
     setResults(rows)
     if (out?.absence_id && rows.some((r) => r.status === 'unfilled')) notifyUnfilled(out.absence_id)
+    if (out?.absence_id) notifyCover(out.absence_id)
     tellBadge()
     reloadBoard()
   }
@@ -258,6 +259,7 @@ export default function SubstitutionManager({ scope }: { scope: 'department' | '
     const name = (data as unknown as { substitute_name?: string } | null)?.substitute_name
     setSwapId(null)
     setNotice(`${row.subject} (${row.period_name}) is now covered by ${name || 'the new substitute'}.`)
+    notifyCover(row.absence_id)
     tellBadge()
     reloadBoard()
   }
@@ -271,6 +273,7 @@ export default function SubstitutionManager({ scope }: { scope: 'department' | '
     const out = data as unknown as { status: string; substitute_name?: string | null } | null
     if (out?.status === 'assigned') {
       setNotice(`${row.subject} (${row.period_name}) is now covered by ${out.substitute_name}.`)
+      notifyCover(row.absence_id)
       tellBadge()
       reloadBoard()
     } else {

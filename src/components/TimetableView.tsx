@@ -1,7 +1,9 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
+import { jamaicaDate, isoWeekday, shiftDate } from '@/lib/attendance'
 
 const DAYS = [
   { value: 1, label: 'Mon' },
@@ -25,10 +27,25 @@ type Section = {
   class_group: { name: string } | null
 }
 
+// A class a substitute is taking on a particular day this week (from student_cover, migration 075).
+type Cover = { class_date: string; section_id: string; substitute_name: string; absent_name: string; lesson_label: string | null; lesson_id: string | null }
+
+// The timetable is a weekly pattern with no dates, so cover is shown against this school week: Monday to Friday of
+// the current week, or of the coming week once the weekend has arrived.
+function schoolWeekDates(): string[] {
+  const today = jamaicaDate()
+  const wd = isoWeekday(today)
+  const monday = wd >= 6 ? shiftDate(today, 8 - wd) : shiftDate(today, 1 - wd)
+  return [0, 1, 2, 3, 4].map((i) => shiftDate(monday, i))
+}
+const shortDate = (d: string) => new Intl.DateTimeFormat('en-JM', { timeZone: 'UTC', day: 'numeric', month: 'short' }).format(new Date(`${d}T12:00:00Z`))
+
 export default function TimetableView({ viewerRole }: { viewerRole: 'teacher' | 'student' }) {
   const [loading, setLoading] = useState(true)
   const [periods, setPeriods] = useState<Period[]>([])
   const [sections, setSections] = useState<Section[]>([])
+  const [covers, setCovers] = useState<Record<string, Cover>>({})
+  const weekDates = viewerRole === 'student' ? schoolWeekDates() : []
 
   useEffect(() => {
     async function load() {
@@ -42,10 +59,20 @@ export default function TimetableView({ viewerRole }: { viewerRole: 'teacher' | 
       ])
       setPeriods(periodData || [])
       setSections((sectionData as any) || [])
+      if (viewerRole === 'student') {
+        // Before migration 075 this simply errors and no cover is shown.
+        const week = schoolWeekDates()
+        const { data: coverData, error: coverError } = await supabase.rpc('student_cover', { p_from: week[0], p_to: week[4] })
+        if (!coverError) {
+          const byKey: Record<string, Cover> = {}
+          for (const c of (coverData || []) as Cover[]) byKey[`${c.section_id}|${c.class_date}`] = c
+          setCovers(byKey)
+        }
+      }
       setLoading(false)
     }
     load()
-  }, [])
+  }, [viewerRole])
 
   if (loading) return <div className="page-container">Loading…</div>
 
@@ -57,6 +84,11 @@ export default function TimetableView({ viewerRole }: { viewerRole: 'teacher' | 
     <div className="page-container">
       <p className="portal-page-title" style={{ margin: 0 }}>My Timetable</p>
       <p className="portal-page-sub" style={{ margin: '4px 0 20px' }}>{currentAcademicYear()}</p>
+      {Object.keys(covers).length > 0 && (
+        <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '-8px 0 16px' }}>
+          A class marked <strong>Covered</strong> has a substitute teacher on that day this week.
+        </p>
+      )}
 
       {periods.length === 0 ? (
         <p style={{ fontSize: 13, color: 'var(--text-secondary)' }}>No timetable has been set up yet.</p>
@@ -67,7 +99,10 @@ export default function TimetableView({ viewerRole }: { viewerRole: 'teacher' | 
               <tr>
                 <th style={{ textAlign: 'left', padding: '8px 10px', fontSize: 12, color: 'var(--text-secondary)', textTransform: 'uppercase', borderBottom: '1px solid var(--border)' }}>Period</th>
                 {DAYS.map((d) => (
-                  <th key={d.value} style={{ textAlign: 'left', padding: '8px 10px', fontSize: 12, color: 'var(--text-secondary)', textTransform: 'uppercase', borderBottom: '1px solid var(--border)' }}>{d.label}</th>
+                  <th key={d.value} style={{ textAlign: 'left', padding: '8px 10px', fontSize: 12, color: 'var(--text-secondary)', textTransform: 'uppercase', borderBottom: '1px solid var(--border)' }}>
+                    {d.label}
+                    {weekDates[d.value - 1] && <div style={{ fontWeight: 400, fontSize: 10, textTransform: 'none' }}>{shortDate(weekDates[d.value - 1])}</div>}
+                  </th>
                 ))}
               </tr>
             </thead>
@@ -79,14 +114,30 @@ export default function TimetableView({ viewerRole }: { viewerRole: 'teacher' | 
                   </td>
                   {DAYS.map((d) => {
                     const s = sectionFor(p.id, d.value)
+                    const cover = s ? covers[`${s.id}|${weekDates[d.value - 1]}`] : undefined
                     return (
                       <td key={d.value} style={{ padding: '10px', borderBottom: '1px solid var(--border)', verticalAlign: 'top' }}>
                         {s ? (
-                          <div style={{ background: 'var(--accent-light)', border: '1px solid var(--border)', borderRadius: 8, padding: '8px 10px' }}>
+                          <div style={{ background: cover ? 'var(--warning-bg)' : 'var(--accent-light)', border: `1px solid ${cover ? 'var(--warning)' : 'var(--border)'}`, borderRadius: 8, padding: '8px 10px' }}>
                             <div style={{ fontWeight: 700, fontSize: 13 }}>{s.subject}</div>
-                            <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 2 }}>
-                              {viewerRole === 'student' ? (s.teacher?.full_name || '') : (s.class_group?.name || 'Individual')}
-                            </div>
+                            {cover ? (
+                              <>
+                                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase', color: 'var(--warning)', marginTop: 2 }}>Covered</div>
+                                <div style={{ fontSize: 12, marginTop: 2 }}>{cover.substitute_name}</div>
+                                <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 2 }}>For {cover.absent_name}</div>
+                                {cover.lesson_label && (
+                                  <div style={{ fontSize: 11, marginTop: 2 }}>
+                                    {cover.lesson_id
+                                      ? <Link href={`/learning/lesson/${cover.lesson_id}`}>Open lesson: {cover.lesson_label}</Link>
+                                      : <>Lesson: {cover.lesson_label}</>}
+                                  </div>
+                                )}
+                              </>
+                            ) : (
+                              <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 2 }}>
+                                {viewerRole === 'student' ? (s.teacher?.full_name || '') : (s.class_group?.name || 'Individual')}
+                              </div>
+                            )}
                             {s.room && <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>{s.room}</div>}
                           </div>
                         ) : (

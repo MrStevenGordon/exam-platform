@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { jamaicaDate, isoWeekday, schoolYear, shiftDate, formatDay } from '@/lib/attendance'
-import { substitutionError, notifyUnfilled } from '@/lib/substitution'
+import { substitutionError, notifyUnfilled, notifyCover } from '@/lib/substitution'
 
 type Period = { id: string; name: string; order_index: number }
 
@@ -182,6 +182,7 @@ export default function ReportAbsencePage() {
     const rows = out?.results || []
     setResults(rows)
     if (out?.absence_id && rows.some((r) => r.status === 'unfilled')) notifyUnfilled(out.absence_id)
+    if (out?.absence_id) notifyCover(out.absence_id)
   }
 
   function startOver() {

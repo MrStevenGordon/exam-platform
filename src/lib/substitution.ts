@@ -82,3 +82,51 @@ export async function notifyUnfilled(absenceId: string): Promise<void> {
     // Nothing to do: the board still lists the class.
   }
 }
+
+// My Cover (the classes a teacher is covering) needs migration 075. Until it is applied it is not offered.
+let coverAvailability: Promise<boolean> | null = null
+export function isCoverAvailable(): Promise<boolean> {
+  if (!coverAvailability) {
+    coverAvailability = (async () => {
+      try {
+        const { error } = await supabase.rpc('my_cover_count')
+        return !error
+      } catch {
+        return false
+      }
+    })()
+  }
+  return coverAvailability
+}
+
+// How many classes the signed-in teacher is covering from today on. Shown as a menu badge.
+export function useCoverCount(enabled: boolean): number {
+  const pathname = usePathname()
+  const [count, setCount] = useState(0)
+
+  useEffect(() => {
+    if (!enabled) return
+    let cancelled = false
+    supabase.rpc('my_cover_count').then(({ data, error }) => {
+      if (!cancelled && !error) setCount(typeof data === 'number' ? data : 0)
+    })
+    return () => { cancelled = true }
+  }, [enabled, pathname])
+
+  return enabled ? count : 0
+}
+
+// Asks the server to email whoever now needs to know about an absence's cover: a new substitute, a swapped-out one,
+// and the absent teacher when somebody else arranged it. Best effort, and safe to call as often as you like.
+export async function notifyCover(absenceId: string): Promise<void> {
+  try {
+    const { data: { session } } = await supabase.auth.getSession()
+    await fetch('/api/substitution/notify-cover', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ absence_id: absenceId, accessToken: session?.access_token }),
+    })
+  } catch {
+    // The in-app message and My Cover page already carry the same information.
+  }
+}
