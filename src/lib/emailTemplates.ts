@@ -258,6 +258,22 @@ export function newOrgRequestStaffEmail(orgName: string, contactName: string, co
   }
 }
 
+// Sent to an absent teacher's HOD when some of their classes could not be given a substitute.
+// `classes` is already formatted for reading, e.g. { when: 'Mon 5 Oct', what: 'Period 2 · Mathematics · 3-1' }.
+export function substitutionUnfilledEmail(absentName: string, classes: Array<{ when: string; what: string }>, reviewUrl: string) {
+  const n = classes.length
+  return {
+    subject: `No substitute found: ${absentName} (${n} ${n === 1 ? 'class' : 'classes'})`,
+    html: wrapper(`
+      ${badge('Needs cover', 'warning')}
+      <p><strong>${escapeHtml(absentName)}</strong> is absent and ${n === 1 ? '1 class has' : `${n} classes have`} no substitute, because no teacher is free at that time.</p>
+      ${infoBox(classes.map((c): [string, string] => [escapeHtml(c.when), escapeHtml(c.what)]))}
+      <p>You can pick someone yourself, or retry in case a teacher has since become free.</p>
+      ${button('Review and assign', reviewUrl)}
+    `),
+  }
+}
+
 export function orgRequestReceivedEmail(orgName: string, contactName: string) {
   return {
     subject: `We've received your Smart Assess request for ${orgName}`,
