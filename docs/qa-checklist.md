@@ -219,6 +219,15 @@ Setup first: `docs/library-setup.md`. Use only titles you are allowed to share (
 - [ ] A **draft** book's file link cannot be opened by a student
 - [ ] Phone width: covers do not overlap, the player and reader fit the screen
 
+Reading assignments (needs migration 078):
+- [ ] **Teacher or HOD:** a book page has **Assign to a class**. It lists only the classes they teach. A student, admin or principal does not get the button
+- [ ] Assign with the end of a chapter (for example Act II): the label fills in and the book shows on the students' **Assigned to you** row with the due date, teacher and a late marker once it is overdue
+- [ ] A student's book page shows who assigned it, the part, the due date, the note, and whether they may read, listen or both. After they reach the target it shows **Done**
+- [ ] **Reading assignments** lists each assignment with how many of the class are done and started. Open one: the student list shows Not started, In progress or Done with a progress bar and when they last opened it
+- [ ] The class teacher and the head of department can open it; another department's teacher and any student cannot (try the address)
+- [ ] Change the due date and remove an assignment: students keep their place in the book
+- [ ] A student who has left the school or is inactive does not appear in the class list
+
 ---
 
 ## 8. Owner console (you)

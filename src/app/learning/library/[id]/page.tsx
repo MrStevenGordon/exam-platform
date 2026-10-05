@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import BookCover from '@/components/library/BookCover'
 import AudioPlayer from '@/components/library/AudioPlayer'
+import { dueLabel, getMyRole, isAssignmentsAvailable, loadMyAssignments, type MyAssignment } from '@/lib/libraryAssignments'
 import {
   libraryGet, libraryErrorText, loadBookProgress, formatDuration, LEVEL_LABEL, LICENCE_LABEL, SHELF_LABEL,
   type LibraryBook, type LibraryFile, type LibraryProgress,
@@ -18,13 +19,18 @@ export default function BookPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [listening, setListening] = useState(false)
+  const [given, setGiven] = useState<MyAssignment[]>([])
+  const [canAssign, setCanAssign] = useState(false)
 
   useEffect(() => {
     let cancelled = false
     async function load() {
       try {
-        const [detail, mine] = await Promise.all([libraryGet<{ book: LibraryBook; files: LibraryFile[] }>(`/api/library/books/${id}`), loadBookProgress(id).catch(() => null)])
+        const [detail, mine, role, on] = await Promise.all([libraryGet<{ book: LibraryBook; files: LibraryFile[] }>(`/api/library/books/${id}`), loadBookProgress(id).catch(() => null), getMyRole(), isAssignmentsAvailable()])
+        const mineGiven = on && role?.role === 'student' ? (await loadMyAssignments().catch(() => [] as MyAssignment[])).filter((a) => a.book_id === id) : []
         if (cancelled) return
+        setGiven(mineGiven)
+        setCanAssign(on && !!role && ['teacher', 'supervisor'].includes(role.role))
         setBook(detail.book)
         setFiles(detail.files)
         setProgress(mine)
@@ -74,7 +80,22 @@ export default function BookPage() {
             {levels.map((l) => <span key={l} className="badge badge-default">{l}</span>)}
           </div>
 
+          {given.map((a) => {
+            const due = dueLabel(a.due_date)
+            return (
+              <div key={a.assignment_id} className={`banner ${a.done ? 'banner-success' : 'banner-warning'}`} style={{ marginBottom: 12, display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                <i className={`ti ${a.done ? 'ti-circle-check' : 'ti-bookmark'}`} aria-hidden="true" style={{ marginTop: 2 }} />
+                <div>
+                  <b>{a.done ? 'Done:' : 'Assigned by'} {a.teacher_name}{a.done ? '' : ':'}</b> {a.part_label ? `${a.part_label}. ` : ''}{a.done ? '' : `${due.text}${due.late ? ' (late)' : ''}. `}
+                  {!a.done && `You can ${a.allow_read && a.allow_listen ? 'read or listen' : a.allow_read ? 'read' : 'listen'}.`}
+                  {a.note && <div style={{ marginTop: 4 }}>{a.note}</div>}
+                </div>
+              </div>
+            )
+          })}
+
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 12 }}>
+            {canAssign && <Link href={`/learning/library/${book.id}/assign`} className="btn btn-secondary"><i className="ti ti-users" aria-hidden="true" /> Assign to a class</Link>}
             {readFile && (
               <Link href={`/learning/library/${book.id}/read?file=${readFile.id}&page=${startPage}`} className="btn btn-primary">
                 <i className="ti ti-book-2" aria-hidden="true" /> {startPage > 1 ? `Continue reading, page ${startPage}` : 'Read'}

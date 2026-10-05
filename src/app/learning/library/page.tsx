@@ -1,14 +1,18 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
+import Link from 'next/link'
 import BookCard from '@/components/library/BookCard'
 import { libraryGet, libraryErrorText, loadMyProgress, SHELF_LABEL, type LibraryBook, type LibraryProgress, type LibraryShelf } from '@/lib/library'
+import { dueLabel, getMyRole, isAssignmentsAvailable, loadMyAssignments, type MyAssignment } from '@/lib/libraryAssignments'
 
 type Tab = 'all' | LibraryShelf
 
 export default function LibraryHome() {
   const [books, setBooks] = useState<LibraryBook[]>([])
   const [progress, setProgress] = useState<LibraryProgress[]>([])
+  const [assignments, setAssignments] = useState<MyAssignment[]>([])
+  const [staffRole, setStaffRole] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [tab, setTab] = useState<Tab>('all')
@@ -19,10 +23,13 @@ export default function LibraryHome() {
     let cancelled = false
     async function load() {
       try {
-        const [list, mine] = await Promise.all([libraryGet<{ books: LibraryBook[] }>('/api/library/books'), loadMyProgress().catch(() => [] as LibraryProgress[])])
+        const [list, mine, role, on] = await Promise.all([libraryGet<{ books: LibraryBook[] }>('/api/library/books'), loadMyProgress().catch(() => [] as LibraryProgress[]), getMyRole(), isAssignmentsAvailable()])
+        const given = on && role?.role === 'student' ? await loadMyAssignments().catch(() => [] as MyAssignment[]) : []
         if (cancelled) return
         setBooks(list.books)
         setProgress(mine)
+        setAssignments(given)
+        setStaffRole(on && role && ['teacher', 'supervisor', 'admin'].includes(role.role) ? role.role : null)
       } catch (err) {
         if (!cancelled) setError(libraryErrorText(err))
       } finally {
@@ -55,10 +62,13 @@ export default function LibraryHome() {
           <h1 className="portal-page-title">Library</h1>
           <div style={{ fontSize: 13, color: 'var(--text-secondary)' }}>Read it. Listen to it. Pick up where you left off.</div>
         </div>
+        <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+        {staffRole && <Link href="/learning/library/assignments" className="btn btn-secondary"><i className="ti ti-list-check" aria-hidden="true" /> Reading assignments</Link>}
         <label style={{ display: 'flex', alignItems: 'center', gap: 8, border: '1px solid var(--border-strong)', background: '#fff', borderRadius: 100, padding: '8px 14px', width: 280, maxWidth: '100%' }}>
           <i className="ti ti-search" aria-hidden="true" style={{ color: 'var(--text-muted)' }} />
           <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search books, authors, topics" aria-label="Search the Library" style={{ border: 0, outline: 'none', background: 'transparent', fontSize: 13, width: '100%', padding: 0 }} />
         </label>
+        </div>
       </div>
 
       <div className="lib-tabs" role="tablist" aria-label="Shelves">
@@ -79,6 +89,21 @@ export default function LibraryHome() {
 
       {!loading && !error && books.length > 0 && visible.length === 0 && (
         <p style={{ color: 'var(--text-secondary)', marginTop: 20 }}>Nothing matches that search.</p>
+      )}
+
+      {tab === 'all' && !term && assignments.some((a) => !a.done) && (
+        <>
+          <div className="lib-shelf-head"><h2>Assigned to you</h2></div>
+          <div className="lib-shelf">
+            {assignments.filter((a) => !a.done).map((a) => {
+              const due = dueLabel(a.due_date)
+              return (
+                <BookCard key={a.assignment_id} id={a.book_id} title={a.book_title} author={a.book_author} coverBg={a.cover_bg} coverFg={a.cover_fg} percent={a.my_percent}
+                  note={`${a.part_label ? `${a.part_label} · ` : ''}${due.text}${due.late ? ' (late)' : ''} · ${a.teacher_name}`} />
+              )
+            })}
+          </div>
+        </>
       )}
 
       {showContinue && (

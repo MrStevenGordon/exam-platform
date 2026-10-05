@@ -24,7 +24,8 @@ Then redeploy both. Adding the first two to Manchester also connects the existin
 ## 3. Each school (Manchester first)
 
 1. Run `scripts/migrations/077_library_progress.sql` in the school's SQL editor (`pbcopy < scripts/migrations/077_library_progress.sql`). You should see **Migration 077 applied**.
-2. In the **Owner console, Configure school tools**, load that school's current settings, tick **Library in Smart Learning**, and save. Smart Learning must be on too.
+2. To let teachers assign reading, also run `scripts/migrations/078_library_assignments.sql` (run it after 077): `pbcopy < scripts/migrations/078_library_assignments.sql`. You should see **Migration 078 applied**. Until it is applied, the Assign buttons and the Reading assignments page stay hidden and everything else works as before.
+3. In the **Owner console, Configure school tools**, load that school's current settings, tick **Library in Smart Learning**, and save. Smart Learning must be on too.
 
 ## 4. Add books
 
@@ -32,4 +33,4 @@ Owner console, **Library catalog**: add a book, tick the rights confirmation onl
 
 ## Undoing it
 
-`scripts/migrations/rollback/077_library_progress_rollback.sql` removes the progress table. `scripts/migrations/rollback/central_001_library_catalog_rollback.sql` removes the catalog tables (files in storage are not deleted). Untick the Library switch to hide it without losing anything.
+`scripts/migrations/rollback/078_library_assignments_rollback.sql` removes reading assignments (progress is kept). `scripts/migrations/rollback/077_library_progress_rollback.sql` removes the progress table. `scripts/migrations/rollback/central_001_library_catalog_rollback.sql` removes the catalog tables (files in storage are not deleted). Untick the Library switch to hide it without losing anything.
