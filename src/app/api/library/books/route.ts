@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { authorizeLibraryUser, cleanSearch, formatsOf, PUBLIC_BOOK_COLUMNS } from '@/lib/libraryServer'
+import { authorizeLibraryUser, bookVisible, cleanSearch, filesAllowed, formatsOf, PUBLIC_BOOK_COLUMNS } from '@/lib/libraryServer'
 
 const LIMIT = 200
 
@@ -9,7 +9,7 @@ export async function GET(req: NextRequest) {
   try {
     const access = await authorizeLibraryUser(req)
     if (!access.ok) return access.response
-    const { library } = access
+    const { library, settings, hidden } = access
 
     const shelf = req.nextUrl.searchParams.get('shelf')
     const subject = req.nextUrl.searchParams.get('subject')?.trim().slice(0, 100)
@@ -33,7 +33,8 @@ export async function GET(req: NextRequest) {
 
     // Only titles a student can actually open are worth showing.
     const readable = (books || [])
-      .map((b) => ({ ...b, formats: formatsOf(formats.get(b.id as string) || []) }))
+      .filter((b) => bookVisible({ id: b.id as string, shelf: b.shelf as string, levels: b.levels as string[] }, settings, hidden))
+      .map((b) => ({ ...b, formats: formatsOf(filesAllowed(formats.get(b.id as string) || [], settings)) }))
       .filter((b) => b.formats.length > 0)
 
     return NextResponse.json({ books: readable })

@@ -228,6 +228,17 @@ Reading assignments (needs migration 078):
 - [ ] Change the due date and remove an assignment: students keep their place in the book
 - [ ] A student who has left the school or is inactive does not appear in the class list
 
+School controls and notes (needs migration 079):
+- [ ] **School admin:** a **Library** item appears in the menu once the school has the Library on. The settings page shows the four switches, the age bands and the list of titles
+- [ ] Turn **Curriculum shelf** off: students no longer see those books and cannot open one by its address. Turn it back on and they return. Do the same for **Read for fun**
+- [ ] Turn **Audio books** off: books show Read only, and an audio-only book disappears. A listen link that was already open stops working
+- [ ] Switch off an **age band**: books that belong only to that band disappear; a book in several bands stays while any of them is on. The last band cannot be switched off
+- [ ] **Hide** a title: it disappears for students and teachers and shows "Hidden by you" here; **Show** brings it back
+- [ ] Switch **Teachers can assign reading** off: the Assign button disappears and a teacher cannot create an assignment (existing ones stay visible)
+- [ ] **Student:** in the reader, **Bookmark** marks the page (the button changes) and **Notes** lists bookmarks and notes; a note saves and a page link jumps to it; delete works; reopening the book shows them again
+- [ ] Notes are private: a teacher, an admin or another student cannot see them (try as each)
+- [ ] The 300th note in a book saves; the 301st is refused with a clear message
+
 ---
 
 ## 8. Owner console (you)

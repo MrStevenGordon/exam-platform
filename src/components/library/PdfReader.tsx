@@ -3,12 +3,16 @@
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import type { PDFDocumentProxy, PDFDocumentLoadingTask, RenderTask } from 'pdfjs-dist'
+import { supabase } from '@/lib/supabase'
 import { libraryGet, libraryErrorText, readPercent, saveProgress, type LibraryBook, type LibraryFile } from '@/lib/library'
 
 // Shows one PDF a page at a time and remembers the page. The file is fetched through a short-lived link from the
 // server; if that link runs out while someone is reading, "Try again" asks for a fresh one.
 const MIN_ZOOM = 0.7
 const MAX_ZOOM = 2.2
+
+// A person's own bookmark or note on a page (migration 079). Private to them.
+type Note = { id: string; page: number; kind: 'bookmark' | 'note'; body: string | null }
 
 export default function PdfReader({ book, file, startPage }: { book: LibraryBook; file: LibraryFile; startPage: number }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -24,6 +28,12 @@ export default function PdfReader({ book, file, startPage }: { book: LibraryBook
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading')
   const [error, setError] = useState('')
   const [reloadKey, setReloadKey] = useState(0)
+  const [notesOn, setNotesOn] = useState(false)
+  const [notes, setNotes] = useState<Note[]>([])
+  const [userId, setUserId] = useState('')
+  const [panelOpen, setPanelOpen] = useState(false)
+  const [draft, setDraft] = useState('')
+  const [notesError, setNotesError] = useState('')
 
   // Load the document.
   useEffect(() => {
@@ -55,6 +65,55 @@ export default function PdfReader({ book, file, startPage }: { book: LibraryBook
   }, [file.id, reloadKey])
 
   useEffect(() => () => { taskRef.current?.destroy(); taskRef.current = null; docRef.current = null }, [])
+
+  // Bookmarks and notes for this file. If migration 079 is not applied the buttons simply do not appear.
+  useEffect(() => {
+    let cancelled = false
+    async function loadNotes() {
+      const { data: { user } } = await supabase.auth.getUser()
+      const { data, error: e } = await supabase.from('library_notes').select('id, page, kind, body, file_id').eq('book_id', book.id).order('page')
+      if (cancelled) return
+      if (e) { setNotesOn(false); return }
+      setUserId(user?.id ?? '')
+      setNotes(((data || []) as Array<Note & { file_id: string | null }>).filter((n) => !n.file_id || n.file_id === file.id))
+      setNotesOn(true)
+    }
+    loadNotes()
+    return () => { cancelled = true }
+  }, [book.id, file.id])
+
+  const bookmark = notes.find((n) => n.kind === 'bookmark' && n.page === page)
+  const notesError2 = (e: { code?: string; message?: string }) => (e.code === 'P0001' && e.message ? e.message : 'Could not save that. Please try again.')
+
+  async function toggleBookmark() {
+    setNotesError('')
+    if (bookmark) {
+      const { error: e } = await supabase.from('library_notes').delete().eq('id', bookmark.id)
+      if (e) { setNotesError(notesError2(e)); return }
+      setNotes((all) => all.filter((n) => n.id !== bookmark.id))
+      return
+    }
+    const { data, error: e } = await supabase.from('library_notes').insert({ user_id: userId, book_id: book.id, file_id: file.id, page, kind: 'bookmark' }).select('id, page, kind, body').single()
+    if (e || !data) { setNotesError(notesError2(e ?? {})); return }
+    setNotes((all) => [...all, data as Note].sort((a, b) => a.page - b.page))
+  }
+
+  async function addNote() {
+    const body = draft.trim()
+    if (!body) return
+    setNotesError('')
+    const { data, error: e } = await supabase.from('library_notes').insert({ user_id: userId, book_id: book.id, file_id: file.id, page, kind: 'note', body }).select('id, page, kind, body').single()
+    if (e || !data) { setNotesError(notesError2(e ?? {})); return }
+    setNotes((all) => [...all, data as Note].sort((a, b) => a.page - b.page))
+    setDraft('')
+  }
+
+  async function removeNote(id: string) {
+    setNotesError('')
+    const { error: e } = await supabase.from('library_notes').delete().eq('id', id)
+    if (e) { setNotesError(notesError2(e)); return }
+    setNotes((all) => all.filter((n) => n.id !== id))
+  }
 
   // Keep the page as wide as its space.
   useEffect(() => {
@@ -130,10 +189,41 @@ export default function PdfReader({ book, file, startPage }: { book: LibraryBook
           <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{file.label ? `${file.label} · ` : ''}{pages > 0 ? `page ${page} of ${pages}` : 'Loading'}</div>
         </div>
         <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+          {notesOn && status === 'ready' && (
+            <>
+              <button className={bookmark ? 'btn btn-primary' : 'btn btn-secondary'} onClick={toggleBookmark} aria-pressed={!!bookmark} aria-label={bookmark ? 'Remove the bookmark from this page' : 'Bookmark this page'}>
+                <i className="ti ti-bookmark" aria-hidden="true" /> {bookmark ? 'Bookmarked' : 'Bookmark'}
+              </button>
+              <button className="btn btn-secondary" onClick={() => setPanelOpen((v) => !v)} aria-expanded={panelOpen}>
+                <i className="ti ti-note" aria-hidden="true" /> Notes{notes.length > 0 ? ` (${notes.length})` : ''}
+              </button>
+            </>
+          )}
           <button className="btn btn-secondary" onClick={() => setZoom((z) => Math.max(MIN_ZOOM, +(z - 0.15).toFixed(2)))} disabled={zoom <= MIN_ZOOM} aria-label="Make the text smaller">A-</button>
           <button className="btn btn-secondary" onClick={() => setZoom((z) => Math.min(MAX_ZOOM, +(z + 0.15).toFixed(2)))} disabled={zoom >= MAX_ZOOM} aria-label="Make the text bigger">A+</button>
         </div>
       </div>
+
+      {panelOpen && notesOn && (
+        <div className="card" style={{ marginTop: 14, padding: 16 }}>
+          <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 8 }}>Your notes on this book</div>
+          <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 10 }}>Only you can see these.</div>
+          {notesError && <div className="banner banner-danger" style={{ marginBottom: 10 }} role="alert">{notesError}</div>}
+          <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
+            <textarea value={draft} onChange={(e) => setDraft(e.target.value)} maxLength={1000} placeholder={`A note for page ${page}`} aria-label={`A note for page ${page}`} style={{ flex: 1, minWidth: 220, minHeight: 56 }} />
+            <button className="btn btn-primary" onClick={addNote} disabled={!draft.trim()} style={{ alignSelf: 'flex-end' }}>Save note</button>
+          </div>
+          {notes.length === 0 && <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: 0 }}>No bookmarks or notes yet.</p>}
+          {notes.map((n) => (
+            <div key={n.id} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', padding: '8px 0', borderTop: '1px solid var(--border)' }}>
+              <i className={`ti ${n.kind === 'bookmark' ? 'ti-bookmark' : 'ti-note'}`} aria-hidden="true" style={{ color: 'var(--accent)', marginTop: 2 }} />
+              <button onClick={() => go(n.page)} style={{ background: 'none', border: 0, padding: 0, cursor: 'pointer', color: 'var(--accent-dark)', fontWeight: 700, fontSize: 13, fontFamily: 'inherit' }}>Page {n.page}</button>
+              <div style={{ flex: 1, fontSize: 13, color: 'var(--text-primary)', overflowWrap: 'anywhere' }}>{n.kind === 'bookmark' ? 'Bookmark' : n.body}</div>
+              <button className="btn btn-ghost" style={{ fontSize: 11 }} onClick={() => removeNote(n.id)} aria-label={`Delete the ${n.kind} on page ${n.page}`}><i className="ti ti-trash" aria-hidden="true" /></button>
+            </div>
+          ))}
+        </div>
+      )}
 
       {status === 'error' && (
         <div className="banner banner-danger" style={{ marginTop: 16, display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>

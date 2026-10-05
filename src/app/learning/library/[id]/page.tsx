@@ -7,7 +7,7 @@ import BookCover from '@/components/library/BookCover'
 import AudioPlayer from '@/components/library/AudioPlayer'
 import { dueLabel, getMyRole, isAssignmentsAvailable, loadMyAssignments, type MyAssignment } from '@/lib/libraryAssignments'
 import {
-  libraryGet, libraryErrorText, loadBookProgress, formatDuration, LEVEL_LABEL, LICENCE_LABEL, SHELF_LABEL,
+  libraryGet, libraryErrorText, loadBookProgress, loadLibrarySettings, formatDuration, LEVEL_LABEL, LICENCE_LABEL, SHELF_LABEL,
   type LibraryBook, type LibraryFile, type LibraryProgress,
 } from '@/lib/library'
 
@@ -26,11 +26,11 @@ export default function BookPage() {
     let cancelled = false
     async function load() {
       try {
-        const [detail, mine, role, on] = await Promise.all([libraryGet<{ book: LibraryBook; files: LibraryFile[] }>(`/api/library/books/${id}`), loadBookProgress(id).catch(() => null), getMyRole(), isAssignmentsAvailable()])
+        const [detail, mine, role, on, controls] = await Promise.all([libraryGet<{ book: LibraryBook; files: LibraryFile[] }>(`/api/library/books/${id}`), loadBookProgress(id).catch(() => null), getMyRole(), isAssignmentsAvailable(), loadLibrarySettings()])
         const mineGiven = on && role?.role === 'student' ? (await loadMyAssignments().catch(() => [] as MyAssignment[])).filter((a) => a.book_id === id) : []
         if (cancelled) return
         setGiven(mineGiven)
-        setCanAssign(on && !!role && ['teacher', 'supervisor'].includes(role.role))
+        setCanAssign(on && controls.settings.teachers_assign && !!role && ['teacher', 'supervisor'].includes(role.role))
         setBook(detail.book)
         setFiles(detail.files)
         setProgress(mine)

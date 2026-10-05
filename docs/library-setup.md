@@ -25,7 +25,8 @@ Then redeploy both. Adding the first two to Manchester also connects the existin
 
 1. Run `scripts/migrations/077_library_progress.sql` in the school's SQL editor (`pbcopy < scripts/migrations/077_library_progress.sql`). You should see **Migration 077 applied**.
 2. To let teachers assign reading, also run `scripts/migrations/078_library_assignments.sql` (run it after 077): `pbcopy < scripts/migrations/078_library_assignments.sql`. You should see **Migration 078 applied**. Until it is applied, the Assign buttons and the Reading assignments page stay hidden and everything else works as before.
-3. In the **Owner console, Configure school tools**, load that school's current settings, tick **Library in Smart Learning**, and save. Smart Learning must be on too.
+3. For the school admin's **Library settings** (shelves, audio, age bands, hide a title, and whether teachers may assign) and for students' private **bookmarks and notes**, run `scripts/migrations/079_library_school_controls_and_notes.sql` (after 078): `pbcopy < scripts/migrations/079_library_school_controls_and_notes.sql`. You should see **Migration 079 applied**. Until it is applied everything is simply on, the settings page says they are not installed, and the reader shows no bookmark or note buttons.
+4. In the **Owner console, Configure school tools**, load that school's current settings, tick **Library in Smart Learning**, and save. Smart Learning must be on too.
 
 ## 4. Add books
 
@@ -33,4 +34,4 @@ Owner console, **Library catalog**: add a book, tick the rights confirmation onl
 
 ## Undoing it
 
-`scripts/migrations/rollback/078_library_assignments_rollback.sql` removes reading assignments (progress is kept). `scripts/migrations/rollback/077_library_progress_rollback.sql` removes the progress table. `scripts/migrations/rollback/central_001_library_catalog_rollback.sql` removes the catalog tables (files in storage are not deleted). Untick the Library switch to hide it without losing anything.
+`scripts/migrations/rollback/079_library_school_controls_and_notes_rollback.sql` removes the settings, hidden titles and everyone's notes (everything goes back to on). `scripts/migrations/rollback/078_library_assignments_rollback.sql` removes reading assignments (progress is kept). `scripts/migrations/rollback/077_library_progress_rollback.sql` removes the progress table. `scripts/migrations/rollback/central_001_library_catalog_rollback.sql` removes the catalog tables (files in storage are not deleted). Untick the Library switch to hide it without losing anything.

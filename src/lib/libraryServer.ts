@@ -31,10 +31,11 @@ export function bearerToken(req: Request): string | null {
   return match ? match[1] : null
 }
 
-export { formatsOf, cleanSearch } from '@/lib/libraryPure'
+import { normaliseSettings, type LibrarySettings } from '@/lib/libraryPure'
+export { formatsOf, cleanSearch, bookVisible, filesAllowed } from '@/lib/libraryPure'
 
 export type LibraryAccess =
-  | { ok: true; userId: string; role: string; library: SupabaseClient }
+  | { ok: true; userId: string; role: string; library: SupabaseClient; settings: LibrarySettings; hidden: Set<string> }
   | { ok: false; response: NextResponse }
 
 const fail = (status: number, error: string, extra: Record<string, unknown> = {}) => ({ ok: false as const, response: NextResponse.json({ error, ...extra }, { status }) })
@@ -63,5 +64,18 @@ export async function authorizeLibraryUser(req: NextRequest): Promise<LibraryAcc
   const library = getLibraryAdmin()
   if (!library) return fail(503, 'The Library is not connected for this school yet.', { notConfigured: true })
 
-  return { ok: true, userId: userData.user.id, role: profile.role, library }
+  const { settings: schoolSettings, hidden } = await loadSchoolLibraryControls()
+  return { ok: true, userId: userData.user.id, role: profile.role, library, settings: schoolSettings, hidden }
+}
+
+// This school's Library controls (migration 079): which shelves, levels and audio are on, and which titles are hidden.
+// Before 079 is applied the tables do not exist and everything counts as on, so nothing changes until a school opts in.
+export async function loadSchoolLibraryControls(): Promise<{ settings: LibrarySettings; hidden: Set<string> }> {
+  const admin = schoolAdmin()
+  const [settingsRes, hiddenRes] = await Promise.all([
+    admin.from('library_settings').select('curriculum_shelf, fun_shelf, audio, teachers_assign, levels').limit(1).maybeSingle(),
+    admin.from('library_hidden_books').select('book_id'),
+  ])
+  const hidden = new Set<string>(hiddenRes.error ? [] : ((hiddenRes.data || []) as Array<{ book_id: string }>).map((r) => r.book_id))
+  return { settings: normaliseSettings(settingsRes.error ? null : (settingsRes.data as Partial<LibrarySettings> | null)), hidden }
 }

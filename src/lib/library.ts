@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase'
 import { getSchoolFeatures } from '@/lib/schoolFeatures'
+import { normaliseSettings, type LibrarySettings } from '@/lib/libraryPure'
 
 // Client side of the Smart Learning Library: the shapes the server returns, labels for licences, a check for
 // whether the Library is available to this person, and thin wrappers for the server routes and progress saving.
@@ -84,6 +85,13 @@ export function isLibraryAvailable(): Promise<boolean> {
   return availability
 }
 
+// This school's Library controls (migration 079). Anyone signed in can read them; before 079 is applied they all count as on.
+export async function loadLibrarySettings(): Promise<{ settings: LibrarySettings; installed: boolean }> {
+  const { data, error } = await supabase.from('library_settings').select('curriculum_shelf, fun_shelf, audio, teachers_assign, levels').limit(1).maybeSingle()
+  if (error) return { settings: normaliseSettings(null), installed: false }
+  return { settings: normaliseSettings(data as Partial<LibrarySettings> | null), installed: true }
+}
+
 export class LibraryError extends Error {
   status: number
   switchedOff: boolean
@@ -163,4 +171,5 @@ export async function saveProgress(a: SaveArgs): Promise<void> {
   }
 }
 
-export { readPercent, listenPercent, formatDuration } from '@/lib/libraryPure'
+export { readPercent, listenPercent, formatDuration, bookVisible, normaliseSettings, ALL_LEVELS } from '@/lib/libraryPure'
+export type { LibrarySettings } from '@/lib/libraryPure'

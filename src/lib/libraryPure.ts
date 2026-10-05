@@ -45,3 +45,36 @@ export function formatDuration(totalSeconds: number | null | undefined): string 
   const sec = s % 60
   return h > 0 ? `${h}:${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}` : `${m}:${String(sec).padStart(2, '0')}`
 }
+
+// ---- school controls (migration 079) ----------------------------------------------------------------------------
+
+export type LibrarySettings = { curriculum_shelf: boolean; fun_shelf: boolean; audio: boolean; teachers_assign: boolean; levels: string[] }
+
+export const ALL_LEVELS = ['forms_1_3', 'forms_4_5', 'sixth_form']
+export const DEFAULT_SETTINGS: LibrarySettings = { curriculum_shelf: true, fun_shelf: true, audio: true, teachers_assign: true, levels: [...ALL_LEVELS] }
+
+// A settings row from the database, with anything missing (or the whole row, before 079 is applied) filled in as "on".
+export function normaliseSettings(row: Partial<LibrarySettings> | null | undefined): LibrarySettings {
+  if (!row) return { ...DEFAULT_SETTINGS, levels: [...ALL_LEVELS] }
+  const levels = Array.isArray(row.levels) ? row.levels.filter((l) => ALL_LEVELS.includes(l)) : []
+  return {
+    curriculum_shelf: row.curriculum_shelf !== false,
+    fun_shelf: row.fun_shelf !== false,
+    audio: row.audio !== false,
+    teachers_assign: row.teachers_assign !== false,
+    levels: levels.length > 0 ? levels : [...ALL_LEVELS],
+  }
+}
+
+// May this school's students see this book? Its shelf must be on, at least one of its levels shown, and the title not hidden.
+export function bookVisible(book: { id: string; shelf: string; levels: string[] }, settings: LibrarySettings, hidden: ReadonlySet<string>): boolean {
+  if (hidden.has(book.id)) return false
+  if (book.shelf === 'curriculum' && !settings.curriculum_shelf) return false
+  if (book.shelf === 'fun' && !settings.fun_shelf) return false
+  return (book.levels || []).some((l) => settings.levels.includes(l))
+}
+
+// The files a school lets people use: audio drops out when the school has switched audio off.
+export function filesAllowed<T extends { kind: string }>(files: T[], settings: LibrarySettings): T[] {
+  return settings.audio ? files : files.filter((f) => f.kind !== 'audio')
+}
