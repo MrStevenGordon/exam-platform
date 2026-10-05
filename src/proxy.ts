@@ -19,7 +19,8 @@ const PITCH_HOST = 'pitch.smartassessja.com'
 // this host other than the owner console itself, its login, or its own API calls is sent to
 // that login instead, so the domain never quietly serves a school's pages.
 const ADMIN_HOST = 'admin.smartassessja.com'
-const ADMIN_ALLOWED_PREFIXES = ['/admin-login', '/owner', '/change-password', '/mfa/', '/forgot-password', '/api/', '/_next/']
+// '/pdf.worker.min.mjs' is the PDF reader's worker file; the owner's Library catalog reads page counts with it.
+const ADMIN_ALLOWED_PREFIXES = ['/admin-login', '/owner', '/change-password', '/mfa/', '/forgot-password', '/api/', '/_next/', '/pdf.worker.min.mjs']
 
 // This exact codebase is deployed once per school (a separate Vercel project each, per
 // scripts/provision-school-db.mjs) as well as on the platform's own site — so without this,

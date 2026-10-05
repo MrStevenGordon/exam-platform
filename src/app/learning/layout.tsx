@@ -13,6 +13,7 @@ import { getEnabledProducts, productHref } from '@/lib/products'
 import { isCoverageAvailable } from '@/lib/coverage'
 import { isSubstitutionAvailable, isSubstitutionToolsAvailable, isCoverAvailable, useSubstitutionUnfilledCount, useCoverCount } from '@/lib/substitution'
 import { FLAGS_CHANGED_EVENT, loadFlagCounts } from '@/lib/tutorFlags'
+import { isLibraryAvailable } from '@/lib/library'
 
 type Role = 'student' | 'teacher' | 'supervisor' | 'admin' | 'principal'
 const ROLES: Role[] = ['student', 'teacher', 'supervisor', 'admin', 'principal']
@@ -28,6 +29,7 @@ const COVERAGE_ITEM = { label: 'Coverage', icon: 'ti-chart-grid-dots', href: '/l
 const FLAGS_ITEM = { label: 'Tutor flags', icon: 'ti-shield-check', href: '/learning/flags' }
 const REPORT_ABSENCE_ITEM = { label: 'Report Absence', icon: 'ti-user-off', href: '/teacher/report-absence' }
 const MY_COVER_ITEM = { label: 'My Cover', icon: 'ti-calendar-event', href: '/teacher/cover' }
+const LIBRARY_ITEM = { label: 'Library', icon: 'ti-books', href: '/learning/library' }
 
 // Smart Learning's own shell. Everyone signed in can enter (the lessons themselves are
 // protected by the database), but only when the school has switched Smart Learning on.
@@ -50,6 +52,8 @@ export default function LearningLayout({ children }: { children: React.ReactNode
   // Teachers and HODs can see the classes they have been asked to cover once migration 075 is applied.
   const [coverOn, setCoverOn] = useState(false)
   const coverCount = useCoverCount(coverOn)
+  // Everyone can browse the Library once the school has switched it on and migration 077 is applied.
+  const [libraryOn, setLibraryOn] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -75,6 +79,7 @@ export default function LearningLayout({ children }: { children: React.ReactNode
       const substitution = r === 'teacher' || r === 'supervisor' ? await isSubstitutionAvailable() : false
       const tools = r === 'supervisor' || r === 'admin' ? await isSubstitutionToolsAvailable() : false
       const cover = r === 'teacher' || r === 'supervisor' ? await isCoverAvailable() : false
+      const library = await isLibraryAvailable()
       if (cancelled) return
       setCoverageOn(coverage)
       setFlagsOn(!!flags)
@@ -82,6 +87,7 @@ export default function LearningLayout({ children }: { children: React.ReactNode
       setSubstitutionOn(substitution)
       setCoverOn(cover)
       setToolsOn(tools)
+      setLibraryOn(library)
       setRole(r)
       setState(products.includes('learning') ? 'ready' : 'off')
     }
@@ -122,14 +128,15 @@ export default function LearningLayout({ children }: { children: React.ReactNode
   const withSubstitution = (role === 'teacher' || role === 'supervisor') && substitutionOn ? [...base, REPORT_ABSENCE_ITEM, ...(coverOn ? [MY_COVER_ITEM] : [])] : base
   const manageItem = { label: 'Substitution', icon: 'ti-replace', href: role === 'supervisor' ? '/supervisor/substitution' : '/school-admin/substitution' }
   const withTools = toolsOn && (role === 'supervisor' || role === 'admin') ? [...withSubstitution, manageItem] : withSubstitution
-  const nav = flagsOn && (role === 'admin' || role === 'principal') ? [...withTools, FLAGS_ITEM] : withTools
+  const withFlags = flagsOn && (role === 'admin' || role === 'principal') ? [...withTools, FLAGS_ITEM] : withTools
+  const nav = libraryOn ? [...withFlags, LIBRARY_ITEM] : withFlags
   const badges = { ...(flagsOn ? { [FLAGS_ITEM.href]: flagCount } : {}), ...(toolsOn ? { [manageItem.href]: unfilled } : {}), ...(coverOn ? { [MY_COVER_ITEM.href]: coverCount } : {}) }
   return (
     <div className="portal-layout" style={{ minHeight: '100vh' }}>
       <InactivityLogout />
       <PresenceHeartbeat />
       <main className="portal-content"><PageTransition>{children}</PageTransition></main>
-      <Sidebar navItems={nav} badges={badges} portalLabel="Smart Learning" resolveActivePathname={(p) => (p.startsWith('/learning/lesson/') || p.startsWith('/learning/lessons/') && p !== '/learning/lessons/new' ? '/learning' : p)} />
+      <Sidebar navItems={nav} badges={badges} portalLabel="Smart Learning" resolveActivePathname={(p) => (p.startsWith('/learning/library') ? '/learning/library' : p.startsWith('/learning/lesson/') || p.startsWith('/learning/lessons/') && p !== '/learning/lessons/new' ? '/learning' : p)} />
     </div>
   )
 }

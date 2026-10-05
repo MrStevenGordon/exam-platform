@@ -70,6 +70,7 @@ export default function SchoolFeaturesPage() {
   const [smartLearningEnabled, setSmartLearningEnabled] = useState(false)
   const [smartPlayEnabled, setSmartPlayEnabled] = useState(false)
   const [aiTutorEnabled, setAiTutorEnabled] = useState(false)
+  const [libraryEnabled, setLibraryEnabled] = useState(false)
 
   const selectedRequest = requests.find((r) => r.id === selectedRequestId)
 
@@ -140,6 +141,7 @@ export default function SchoolFeaturesPage() {
     setSmartLearningEnabled(data.smartLearningEnabled)
     setSmartPlayEnabled(data.smartPlayEnabled)
     setAiTutorEnabled(data.aiTutorEnabled)
+    setLibraryEnabled(data.libraryEnabled === true)
     setLoadedForUrl(targetDatabaseUrl.trim())
     setLoadedSummary(data.configured
       ? 'Loaded that school\'s current settings below — they matched what is actually live just now.'
@@ -176,6 +178,7 @@ export default function SchoolFeaturesPage() {
           smartLearningEnabled,
           smartPlayEnabled,
           aiTutorEnabled,
+          libraryEnabled,
         },
         accessToken: session?.access_token,
       }),
@@ -280,6 +283,10 @@ export default function SchoolFeaturesPage() {
           <label style={{ fontSize: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
             <input type="checkbox" checked={smartPlayEnabled} onChange={(e) => setSmartPlayEnabled(e.target.checked)} />
             Smart Play (only once Play is live for this school)
+          </label>
+          <label style={{ fontSize: 14, display: 'flex', alignItems: 'flex-start', gap: 8, marginTop: 6 }}>
+            <input type="checkbox" style={{ marginTop: 3 }} checked={libraryEnabled} onChange={(e) => setLibraryEnabled(e.target.checked)} />
+            <span>Library in Smart Learning (needs Smart Learning on). Students read and listen to books; teachers can assign reading. Needs the Library settings and migration 077 applied for the school first.</span>
           </label>
           <label style={{ fontSize: 14, display: 'flex', alignItems: 'flex-start', gap: 8, marginTop: 6 }}>
             <input type="checkbox" style={{ marginTop: 3 }} checked={aiTutorEnabled} onChange={(e) => setAiTutorEnabled(e.target.checked)} />

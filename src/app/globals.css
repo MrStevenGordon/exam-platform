@@ -736,3 +736,23 @@ body.exam-fullscreen .portal-content {
 .presence-away { background: #D9A441; }
 .presence-offline { background: transparent; border: 2px solid var(--text-muted); }
 .presence-label { font-size: 11px; color: var(--text-secondary); }
+
+/* ===== Smart Learning Library ===== */
+.lib-cover { border-radius: 4px; display: flex; flex-direction: column; justify-content: space-between; padding: 10px; box-sizing: border-box; box-shadow: 0 2px 6px rgba(80, 40, 10, 0.25); overflow: hidden; }
+.lib-cover-a { font-size: 9px; letter-spacing: 1px; text-transform: uppercase; opacity: 0.85; font-weight: 600; }
+.lib-cover-t { font-family: 'Fraunces', serif; font-weight: 600; line-height: 1.1; overflow-wrap: anywhere; }
+.lib-shelf { display: flex; gap: 18px; overflow-x: auto; padding-bottom: 8px; }
+.lib-card { width: 150px; flex-shrink: 0; text-decoration: none; color: inherit; display: block; }
+.lib-card:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; border-radius: 6px; }
+.lib-card-title { font-size: 13px; font-weight: 600; line-height: 1.25; color: var(--text-primary); margin-top: 8px; }
+.lib-card-author { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+.lib-fmt { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; color: var(--text-secondary); background: #fff; border: 1px solid var(--border); border-radius: 100px; padding: 2px 8px; margin: 6px 4px 0 0; }
+.lib-prog { height: 5px; border-radius: 3px; background: var(--border); overflow: hidden; margin-top: 8px; }
+.lib-prog > span { display: block; height: 100%; background: var(--accent); }
+.lib-shelf-head { display: flex; align-items: baseline; justify-content: space-between; margin: 26px 0 12px; }
+.lib-shelf-head h2 { margin: 0; font-size: 17px; font-weight: 700; }
+.lib-tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--border); margin: 18px 0 4px; flex-wrap: wrap; }
+.lib-tab { padding: 9px 14px; font-size: 13px; font-weight: 600; color: var(--text-muted); border: 0; background: none; border-bottom: 2px solid transparent; margin-bottom: -1px; cursor: pointer; font-family: inherit; }
+.lib-tab[aria-selected="true"] { color: var(--accent-dark); border-bottom-color: var(--accent); }
+.lib-chip { font-size: 12px; font-weight: 600; padding: 6px 12px; border-radius: 100px; border: 1px solid var(--border-strong); background: #fff; color: var(--text-secondary); cursor: pointer; font-family: inherit; }
+.lib-chip[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }

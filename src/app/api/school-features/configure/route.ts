@@ -14,6 +14,7 @@ const schema = z.object({
     smartLearningEnabled: z.boolean().optional(),
     smartPlayEnabled: z.boolean().optional(),
     aiTutorEnabled: z.boolean().optional(),
+    libraryEnabled: z.boolean().optional(),
   }).strict().optional(),
   accessToken: z.string().min(1).max(4000),
 }).strict()
@@ -43,6 +44,7 @@ export async function POST(req: NextRequest) {
       smart_learning_enabled: !!features?.smartLearningEnabled,
       smart_play_enabled: !!features?.smartPlayEnabled,
       ai_tutor_enabled: !!features?.aiTutorEnabled,
+      library_enabled: !!features?.libraryEnabled,
     }
 
     const client = new Client({ connectionString: targetDatabaseUrl.trim(), ssl: { rejectUnauthorized: false } })

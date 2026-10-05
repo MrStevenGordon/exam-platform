@@ -13,6 +13,7 @@ const OWNER_NAV = [
   { label: 'School requests', icon: 'ti-building-community', href: '/owner/school-requests' },
   { label: 'Org requests', icon: 'ti-briefcase', href: '/owner/org-requests' },
   { label: 'Configure school tools', icon: 'ti-adjustments', href: '/owner/school-features' },
+  { label: 'Library catalog', icon: 'ti-books', href: '/owner/library' },
   { label: 'School subscriptions', icon: 'ti-id-badge-2', href: '/owner/school-subscriptions' },
   { label: 'Org subscriptions & payments', icon: 'ti-receipt', href: '/owner/organization-payments' },
 ]

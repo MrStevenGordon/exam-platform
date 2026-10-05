@@ -12,6 +12,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Vendored build output and the standalone marketing scripts are not part of the app.
+    "public/pdf.worker.min.mjs",
+    "marketing/**",
   ]),
 ]);
 

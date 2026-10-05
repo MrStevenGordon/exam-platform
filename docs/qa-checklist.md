@@ -199,6 +199,28 @@ Sign in as a student and as a teacher who has classes. Smart Play should need no
 
 ---
 
+## 7g. Library in Smart Learning (needs migration 077, the central catalog, and the school's Library switch)
+
+Setup first: `docs/library-setup.md`. Use only titles you are allowed to share (public domain or openly licensed).
+
+- [ ] **Owner console, Library catalog:** add a book as a draft. Publish is greyed out until the rights box is ticked **and** a file is added
+- [ ] Upload a **PDF**: it appears with its page count. Upload two **audio** files: they appear as chapters in file-name order with their lengths
+- [ ] A file that is not a PDF (or not MP3, M4A, OGG, WAV) is refused with a clear message
+- [ ] **Publish**: the book appears for a student. **Withdraw**: it disappears again
+- [ ] Deleting a book's last file takes a published book back to draft
+- [ ] **School features:** the new Library box is off by default; with it off (or Smart Learning off) there is no Library menu item and the Library pages say it is not switched on
+- [ ] **Student:** Library appears under Smart Learning. Home shows Continue, Curriculum (with subject chips) and Read for fun. Search narrows the list
+- [ ] Open a book: cover, subject, licence line, credit and source link are right. **Read** opens the PDF at page 1
+- [ ] In the reader: Next, Previous, arrow keys, **Go to page**, A- / A+. Close it and reopen: **Continue reading** returns to the same page; the Library home shows the book under Continue with a percentage
+- [ ] Reach the last page: the book shows **Finished**
+- [ ] **Listen:** the player plays; pausing and reopening resumes at the same second; the next chapter starts when one ends; speed and sleep timer work
+- [ ] Leave the page open for over an hour, then press Next or Play: a clear message and **Try again** gets a fresh link
+- [ ] A student **cannot** read another student's progress (try it in the browser's network tab)
+- [ ] A **draft** book's file link cannot be opened by a student
+- [ ] Phone width: covers do not overlap, the player and reader fit the screen
+
+---
+
 ## 8. Owner console (you)
 
 - [ ] **School requests** and **Org requests**: approve and provision
