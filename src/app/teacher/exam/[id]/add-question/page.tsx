@@ -3,6 +3,7 @@
 import QuestionTopicField from '@/components/QuestionTopicField'
 import type { TopicChoice } from '@/lib/topics'
 import { useEffect, useState } from 'react'
+import { keywordsFor } from '@/lib/markingKeywords'
 import { useRouter, useParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import MathToolbar from '@/components/MathToolbar'
@@ -237,11 +238,7 @@ export default function AddQuestionPage() {
       show_working: questionType === 'short_answer' && showWorking,
       marking_points: (questionType === 'short_answer' || questionType === 'fill_blank') && markingPoints.some(p => p.text)
         ? markingPoints.map(p => {
-            const stopWords = new Set(['a','an','the','is','are','was','were','be','been','being','have','has','had','do','does','did','will','would','could','should','may','might','shall','can','need','dare','ought','used','to','of','in','for','on','with','at','by','from','up','about','into','through','during','before','after','above','below','between','each','both','few','more','most','other','some','such','no','nor','not','only','same','so','than','too','very','just','because','as','until','while','although','and','but','or','nor','so','yet','if','when','where','why','how','all','any','both','each','every','either','neither','one','two','three','four','five','six','seven','eight','nine','ten','that','this','these','those','it','its','their','they','them','he','she','his','her','we','our','you','your','i','my','me','us','who','which','what','meaning','making','requires','require','cannot','can','also','must','want','other','offer'])
-            const keywords = p.text.toLowerCase()
-              .replace(/[^a-z0-9\s]/g, ' ')
-              .split(/\s+/)
-              .filter((w: string) => w.length > 2 && !stopWords.has(w))
+            const keywords = keywordsFor(p.text)
             return { text: p.text, keywords, marks: Number(p.marks) }
           })
         : null,

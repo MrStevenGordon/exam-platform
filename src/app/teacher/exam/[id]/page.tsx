@@ -617,6 +617,9 @@ export default function ExamEditorPage() {
           <Link href={`/teacher/exam/${examId}/add-question`}>
             <button className="btn btn-secondary">+ Add question</button>
           </Link>
+          <Link href={`/teacher/exam/${examId}/draft-questions`}>
+            <button className="btn btn-secondary">✨ Draft questions with AI</button>
+          </Link>
           {!isFinalExamSubmission && (
             <Link href={`/teacher/exam/${examId}/add-from-bank`}>
               <button className="btn btn-secondary">+ Add from question bank</button>
