@@ -9,10 +9,12 @@
 import { chromium } from 'playwright-core'
 import { mkdirSync, writeFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
-import { LANDING, PORTALS, isNoise, pathToVisit, renderReport } from './lib/analyze.mjs'
+import { LANDING, PORTALS, badBaseUrl, cleanError, isNoise, pathToVisit, renderReport } from './lib/analyze.mjs'
 
-const BASE = (process.env.BASE_URL || '').replace(/\/+$/, '')
+const BASE = (process.env.BASE_URL || '').trim().replace(/\/+$/, '')
 if (!BASE) { console.error('Set BASE_URL in e2e/.env.e2e (the address of the site to check). See e2e/README.md.'); process.exit(1) }
+const badUrl = badBaseUrl(BASE)
+if (badUrl) { console.error(`BASE_URL is not right: ${badUrl}.\nOpen e2e/.env.e2e, put the real address of the Manchester site on the BASE_URL line (no slash at the end), save, and run again.`); process.exit(1) }
 const MAX_PAGES = Number(process.env.MAX_PAGES_PER_PERSON || 40)
 const HEADED = process.env.HEADED === '1'
 const ONLY = (process.env.ONLY || '').split(',').map((s) => s.trim()).filter(Boolean)
@@ -70,7 +72,7 @@ async function openPage(page, role, path, viewport, { weigh }) {
     await page.screenshot({ path: join(OUT, rec.screenshot), type: 'jpeg', quality: 55, fullPage: true }).catch(() => { rec.screenshot = null })
   } catch (e) {
     rec.status = rec.status || 0
-    rec.pageErrors.push(`Could not open the page: ${String(e.message || e).slice(0, 200)}`)
+    rec.navError = cleanError(e)
   } finally {
     await page.waitForTimeout(50)
     page.off('console', onConsole); page.off('pageerror', onPageError); page.off('requestfailed', onFailed); page.off('response', onResponse); page.off('requestfinished', onFinished)
@@ -110,6 +112,9 @@ async function signOut(page, person) {
 async function main() {
   const startedAt = new Date().toISOString()
   mkdirSync(OUT, { recursive: true })
+  // Is the site reachable at all? Stop early with a plain message instead of a report full of the same failure.
+  try { const r = await fetch(BASE + '/login', { signal: AbortSignal.timeout(20000), redirect: 'follow' }); if (r.status >= 500) throw new Error(`the site answered ${r.status}`) }
+  catch (e) { console.error(`Could not reach ${BASE}/login (${cleanError(e.cause ?? e)}).\nCheck BASE_URL in e2e/.env.e2e, and that you are online.`); process.exit(1) }
   let browser
   try { browser = await chromium.launch({ channel: 'chrome', headless: !HEADED }) }
   catch (e) { console.error('Could not start Google Chrome. Install Chrome, or see e2e/README.md. Details:', e.message); process.exit(1) }
@@ -128,7 +133,7 @@ async function main() {
     console.log(`\nSigning in as ${person.label}...`)
     const ctx = await browser.newContext({ viewport: VIEWPORTS.desktop })
     const page = await ctx.newPage()
-    const result = await signIn(page, person).catch((e) => ({ ok: false, why: `Sign-in could not be completed: ${String(e.message).slice(0, 150)}` }))
+    const result = await signIn(page, person).catch((e) => ({ ok: false, why: `Sign-in could not be completed: ${cleanError(e)}` }))
     if (!result.ok) { notes.push(`${person.label}: ${result.why}`); console.log(`  skipped: ${result.why}`); await ctx.close(); continue }
     if (result.path.startsWith('/change-password')) notes.push(`${person.label}: this account is still on its starting password, so the site asked for a new one. The checker did not change it and carried on from the home page. Some pages may behave differently once the password is changed.`)
     // Crawl: the home page, then every menu link, then a few links from each of those pages.

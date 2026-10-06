@@ -44,6 +44,7 @@ export function findingsForPage(p) {
   const add = (severity, kind, detail) => out.push({ severity, kind, detail })
   if (p.status >= 500) add('high', 'Server error', `The page itself answered ${p.status}.`)
   else if (p.status >= 400) add('high', 'Page not found or refused', `The page answered ${p.status}.`)
+  if (p.navError) add('high', 'Page could not be opened', p.navError)
   if (p.sentToLogin) add('high', 'Sent back to the sign-in page', 'The person was signed in but this page sent them to sign in again.')
   for (const e of p.pageErrors) add('high', 'Page crashed (script error)', e)
   if (p.blank) add('high', 'Page looks empty', 'Almost no text appeared on the page.')
@@ -52,7 +53,7 @@ export function findingsForPage(p) {
     const sev = r.status >= 500 ? 'high' : /\/rest\/v1\/|\/auth\/v1\/|\/api\//.test(r.url) ? 'medium' : 'low'
     add(sev, `Request failed (${r.status})`, shorten(r.url))
   }
-  for (const f of p.failedRequests) add('medium', 'Request could not be made', `${shorten(f.url)} (${f.reason})`)
+  for (const f of p.navError ? [] : p.failedRequests) add('medium', 'Request could not be made', `${shorten(f.url)} (${f.reason})`)
   for (const c of p.consoleErrors) add('medium', 'Error in the browser console', c)
   if (p.overflowX) add('medium', 'Page is wider than the screen', 'Scrolls sideways on this screen size.')
   for (const i of p.brokenImages) add('medium', 'Picture did not load', shorten(i))
@@ -62,6 +63,21 @@ export function findingsForPage(p) {
   if (p.loadMs > 6000) add('low', 'Slow to load', `${(p.loadMs / 1000).toFixed(1)} seconds.`)
   if (p.kb > 1500) add('low', 'Heavy page', `${Math.round(p.kb)} KB downloaded.`)
   return out
+}
+
+// A readable one-line version of an error from the browser tool (no colour codes, no call log).
+export function cleanError(e) {
+  const text = String(e?.message ?? e ?? '')
+  return text.replace(/\u001b\[[0-9;]*m/g, '').replace(/\[\d+m/g, '').split('\n')[0].trim().slice(0, 200)
+}
+
+// The address in the settings file is still the placeholder from the example file, or is not a web address at all.
+export function badBaseUrl(raw) {
+  let u
+  try { u = new URL(raw) } catch { return 'it is not a web address (it should start with https://)' }
+  if (!/^https?:$/.test(u.protocol)) return 'it should start with https://'
+  if (/(^|\.)example\.(com|org|net)$/i.test(u.hostname) || /your-/i.test(u.hostname)) return 'it is still the placeholder from the example file'
+  return null
 }
 
 export const shorten = (s, n = 140) => (s.length > n ? s.slice(0, n - 1) + '…' : s)

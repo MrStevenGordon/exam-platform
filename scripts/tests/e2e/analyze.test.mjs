@@ -1,7 +1,7 @@
 // Run: node --test scripts/tests/e2e/analyze.test.mjs
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { isExcluded, pathToVisit, isNoise, findingsForPage, groupFindings, renderReport, PORTALS } from '../../../e2e/lib/analyze.mjs'
+import { isExcluded, pathToVisit, isNoise, findingsForPage, groupFindings, renderReport, cleanError, badBaseUrl, PORTALS } from '../../../e2e/lib/analyze.mjs'
 
 const BASE = 'https://school.example.com'
 const clean = (o = {}) => ({ role: 'student', path: '/student', viewport: 'desktop', status: 200, loadMs: 800, kb: 400, consoleErrors: [], pageErrors: [], failedRequests: [], badResponses: [], banners: [], brokenImages: [], overflowX: false, blank: false, sentToLogin: false, imgNoAlt: 0, buttonNoName: 0, inputNoLabel: 0, screenshot: 'student/student-desktop.jpg', ...o })
@@ -80,4 +80,25 @@ test('the report says what was opened, lists the problems and the heaviest pages
 test('the report never contains anything typed into the sign-in form', () => {
   const md = renderReport({ baseUrl: BASE, startedAt: 'x', roles: [], publicPages: false, pages: [clean()], notes: [] })
   assert.doesNotMatch(md, /password/i)
+})
+
+test('a page that could not be opened is one clear finding, not a crash plus a pile of failed requests', () => {
+  const f = findingsForPage(clean({ status: 0, navError: 'page.goto: net::ERR_NAME_NOT_RESOLVED at https://x.test/', failedRequests: [{ url: 'https://x.test/', reason: 'net::ERR_NAME_NOT_RESOLVED' }] }))
+  assert.deepEqual(f.map((x) => x.kind), ['Page could not be opened'])
+})
+
+test('browser tool errors are cut down to one readable line', () => {
+  const raw = new Error('page.goto: net::ERR_NAME_NOT_RESOLVED at https://x.test/login\nCall log:\n\u001b[2m  - navigating to "https://x.test/login"\u001b[22m')
+  assert.equal(cleanError(raw), 'page.goto: net::ERR_NAME_NOT_RESOLVED at https://x.test/login')
+  assert.equal(cleanError('plain'), 'plain'); assert.equal(cleanError(null), '')
+  assert.ok(cleanError('x'.repeat(500)).length <= 200)
+})
+
+test('the placeholder or a malformed site address is refused before anything runs', () => {
+  assert.match(badBaseUrl('https://your-manchester-site.example.com'), /placeholder/)
+  assert.match(badBaseUrl('https://example.com'), /placeholder/)
+  assert.match(badBaseUrl('manchester.smartassessja.com'), /web address/)
+  assert.match(badBaseUrl('ftp://x.test'), /https/)
+  assert.equal(badBaseUrl('https://exam-platform-chi.vercel.app'), null)
+  assert.equal(badBaseUrl('http://localhost:3100'), null)
 })
