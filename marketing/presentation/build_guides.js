@@ -139,7 +139,7 @@ function questionsPage(p) {
   return [
     eyebrow('SMART ASSESS JA   |   SESSION GUIDE'),
     para([run('Your questions', { size: 56, bold: true, color: TEAL })], { spacing: { after: 100 } }),
-    para([run('Write a question the moment you think of it. We will come back to every one.', { size: 24, color: BROWN })], { spacing: { after: 280 } }),
+    para([run('Write a question the moment you think of it.', { size: 24, color: BROWN })], { spacing: { after: 280 } }),
     para([run('Ask as we go', { size: 26, bold: true })], { spacing: { after: 60 } }),
     para([run('During the video and the presentation', { size: 20, color: BROWN })], { spacing: { after: 100 } }),
     writingBox(9, 600, TEAL),
