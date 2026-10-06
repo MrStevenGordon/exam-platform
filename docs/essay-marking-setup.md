@@ -1,6 +1,6 @@
 # AI-suggested essay marking (Smart Assess): what to switch on, in order
 
-This is being built in stages. **Stage A (marking points for essays) is live. Stages B and C (the AI engine behind the scenes) are built and tested but have no button yet.** Stage D adds the Suggest marks button teachers will see, and stage E is the accuracy trial with Manchester teachers. This guide grows as they land.
+This is built in stages. **Stage A (marking points for essays) is live. Stages B and C (the AI engine) and stage D (the Suggest marks button and panel teachers see) are built and tested.** Stage E is the accuracy trial with Manchester teachers. Nothing teacher-facing appears until a school's switch is on, so applying the migrations is safe.
 
 ## Stage A: marking points for essay questions
 
@@ -48,6 +48,23 @@ The server needs `ANTHROPIC_API_KEY` set in the school's Vercel project, with cr
 ### What the server checks on every AI reply
 
 Marks are clamped to each point's maximum and rounded to half marks; a quote that is not actually in the essay is dropped and its point flagged; a reply that does not cover every marking point is refused rather than guessed at; an essay that tries to instruct the marker is flagged and every point is marked for the teacher to check. The AI never writes a mark.
+
+## Stage D: what teachers see (only when the school's switch is on)
+
+- **Grade essay responses:** an essay that has marking points gets a **Suggest marks** button and, once asked, a panel: each marking point with the AI's mark, a quote from the essay, and Clear or Check. Points to check come first. **Use these marks** copies them into the teacher's own boxes; nothing is saved until the teacher saves. **Suggest again** asks for a fresh one (uses another allowance).
+- **Suggest marks for all (N):** asks for every waiting essay that has marking points, three at a time, with progress. It stops by itself and says why if the allowance, the AI service or the school switch runs out.
+- **Review page for one student:** the same panel; **Use this total** fills the score box.
+- **Final marks are kept beside the suggestion** when the teacher saves, so we can measure how often teachers change a suggestion (stage E uses this).
+- An essay without marking points shows a hint to add them; there is no button.
+- **Privacy page** now lists essay mark suggestions and the AI tutor and says a teacher decides every mark. Please read the wording before it goes live: it is public.
+
+### To switch it on for a school
+
+1. Migrations 081 and 082 applied on the school.
+2. `ANTHROPIC_API_KEY` set on the school's Vercel project with credit on the account.
+3. Tell the school's principal exactly what is sent (the question, the marking points and the essay text, with no name, number or class) and get their agreement.
+4. Owner console, Configure school tools: **load the school's current settings**, tick *AI-suggested essay marking*, save.
+5. Walk through QA checklist 7j with invented essays.
 
 ## Undoing it
 

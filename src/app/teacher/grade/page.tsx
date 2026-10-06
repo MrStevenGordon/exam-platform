@@ -7,10 +7,15 @@ import { INTEGRITY_FLAG_LABELS } from '@/hooks/useIntegrityCapture'
 import { mergeIntegrityFlags, AiReview } from '@/lib/essayIntegrity'
 import AiOpinionButton from '@/components/AiOpinionButton'
 import { isEssayRubricAvailable } from '@/lib/essayRubric'
+import AiSuggestionPanel from '@/components/AiSuggestionPanel'
+import { fetchUsage, isEssayAiMarkingAvailable, loadSuggestions, recordFinalMarks, requestSuggestion, type Usage } from '@/lib/essayMarking'
+import { runPool, type MarkingPoint, type Suggestion } from '@/lib/essayMarkingPure'
 import { parseStoredRubric } from '@/lib/essayRubricPure'
 
 type UngradedResponse = {
   overrideScore?: number
+  // the per-point marks the teacher saved, so they can be compared with the AI's suggestion
+  finalMarks?: number[]
   response_id: string
   session_id: string
   answer: string
@@ -35,9 +40,23 @@ export default function GradeEssaysPage() {
   const [errorMsg, setErrorMsg] = useState('')
   const [savingId, setSavingId] = useState('')
 
+  // AI-suggested marks (only when the school has switched them on and migration 082 is installed)
+  const [aiOn, setAiOn] = useState(false)
+  const [suggestions, setSuggestions] = useState<Record<string, Suggestion>>({})
+  const [aiBusy, setAiBusy] = useState<Record<string, boolean>>({})
+  const [aiError, setAiError] = useState<Record<string, string>>({})
+  const [usage, setUsage] = useState<Usage | null>(null)
+  const [batch, setBatch] = useState<{ done: number; total: number; running: boolean; stopped?: string; failed: number } | null>(null)
+
   useEffect(() => {
     loadData()
   }, [])
+  useEffect(() => { isEssayAiMarkingAvailable().then(setAiOn) }, [])
+  useEffect(() => { if (aiOn) fetchUsage().then(setUsage) }, [aiOn])
+  useEffect(() => {
+    if (!aiOn || items.length === 0) return
+    loadSuggestions(items.map((i) => i.response_id)).then((found) => setSuggestions((prev) => ({ ...found, ...prev })))
+  }, [aiOn, items])
 
   async function loadData() {
     try {
@@ -99,6 +118,45 @@ export default function GradeEssaysPage() {
     setScores({ ...scores, [responseId]: value })
   }
 
+  // Asks the AI for one essay. Returns whether it worked so "Suggest marks for all" can stop when the allowance or the service runs out.
+  async function suggest(item: UngradedResponse, regenerate = false) {
+    const id = item.response_id
+    setAiBusy((b) => ({ ...b, [id]: true }))
+    setAiError((e) => { const { [id]: _removed, ...rest } = e; void _removed; return rest })
+    const r = await requestSuggestion(id, regenerate)
+    if (r.ok) {
+      setSuggestions((prev) => ({ ...prev, [id]: r.suggestion }))
+      setUsage(r.usage)
+    } else {
+      setAiError((e) => ({ ...e, [id]: r.error }))
+      if (r.usage) setUsage(r.usage)
+    }
+    setAiBusy((b) => ({ ...b, [id]: false }))
+    return r
+  }
+
+  // Copies the suggestion into the teacher's own mark boxes. Nothing is saved until they press Save.
+  function applySuggestion(item: UngradedResponse, marks: number[]) {
+    setScores((prev) => {
+      const next = { ...prev }
+      marks.forEach((m, pi) => { next[`${item.response_id}_${pi}`] = String(m) })
+      return next
+    })
+  }
+
+  async function suggestForAll() {
+    const todo = items.filter((i) => i.essayPoints && !suggestions[i.response_id])
+    if (todo.length === 0) return
+    setBatch({ done: 0, total: todo.length, running: true, failed: 0 })
+    let stopMessage: string | undefined
+    const result = await runPool(todo, 3, async (it) => {
+      const r = await suggest(it)
+      if (!r.ok && (r.limitReached || r.creditProblem || r.switchedOff)) stopMessage = r.error
+      setBatch((b) => (b ? { ...b, done: b.done + 1, failed: b.failed + (r.ok ? 0 : 1) } : b))
+    }, () => stopMessage !== undefined)
+    setBatch((b) => (b ? { ...b, running: false, stopped: stopMessage, failed: Math.max(b.failed, result.failed) } : b))
+  }
+
   async function handleSaveGrade(item: UngradedResponse) {
     // "Save all points" passes the total it has just added up; setScores has not applied yet, so reading scores[] here would be stale.
     const value = item.overrideScore !== undefined ? item.overrideScore : parseFloat(scores[item.response_id])
@@ -125,6 +183,9 @@ export default function GradeEssaysPage() {
       return
     }
 
+    // If the AI had suggested marks for this essay, keep the teacher's final marks beside the suggestion (best effort, never affects the marks).
+    if (item.finalMarks && suggestions[item.response_id]) await recordFinalMarks(item.response_id, item.finalMarks, value)
+
     // Check if all responses for this session are now graded; if so, recompute total and mark fully_graded
     const { data: allResponses } = await supabase
       .from('responses')
@@ -150,6 +211,27 @@ export default function GradeEssaysPage() {
   return (
     <div className="page-container">
       <h1 className="portal-page-title">Grade essay responses</h1>
+
+      {aiOn && items.some((i) => i.essayPoints) && (
+        <div className="card" style={{ marginTop: 16, display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+          <div style={{ flex: 1, minWidth: 220 }}>
+            <div style={{ fontSize: 14, fontWeight: 700 }}>AI can suggest marks for your essays</div>
+            <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
+              It marks against your marking points and shows its reasons. You decide every mark.
+              {usage ? ` ${usage.remaining} of ${usage.limit} suggestions left this month.` : ''}
+            </div>
+          </div>
+          <button type="button" className="btn btn-secondary" disabled={batch?.running || items.filter((i) => i.essayPoints && !suggestions[i.response_id]).length === 0} onClick={suggestForAll}>
+            Suggest marks for all ({items.filter((i) => i.essayPoints && !suggestions[i.response_id]).length})
+          </button>
+          {batch && (
+            <div role="status" aria-live="polite" style={{ flexBasis: '100%', fontSize: 13, color: 'var(--text-secondary)' }}>
+              {batch.running ? `Suggesting marks: ${batch.done} of ${batch.total} done…` : `Done: ${batch.done - batch.failed} suggested${batch.failed ? `, ${batch.failed} could not be suggested (see each essay)` : ''}.`}
+              {batch.stopped && <span style={{ color: 'var(--warning)' }}> Stopped: {batch.stopped}</span>}
+            </div>
+          )}
+        </div>
+      )}
 
       {errorMsg && <p className="banner banner-danger" style={{ marginTop: 16 }}>{errorMsg}</p>}
       {items.length === 0 && !errorMsg && (
@@ -198,6 +280,22 @@ export default function GradeEssaysPage() {
                   {item.working}
                 </div>
               </div>
+            )}
+
+            {aiOn && item.essayPoints && (
+              <AiSuggestionPanel
+                points={(item.marking_points || []) as MarkingPoint[]}
+                suggestion={suggestions[item.response_id] ?? null}
+                busy={!!aiBusy[item.response_id]}
+                error={aiError[item.response_id] ?? null}
+                onSuggest={() => suggest(item)}
+                onRegenerate={() => suggest(item, true)}
+                onUse={(marks) => applySuggestion(item, marks)}
+                usage={usage}
+              />
+            )}
+            {aiOn && !item.essayPoints && !item.marking_points && (
+              <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '0 0 12px' }}>Add marking points to this question to get AI suggested marks.</p>
             )}
 
             {item.marking_points && item.marking_points.length > 0 ? (
@@ -252,7 +350,7 @@ export default function GradeEssaysPage() {
                         return sum + Number(scores[pointKey] ?? 0)
                       }, 0)
                       updateScore(item.response_id, String(total))
-                      handleSaveGrade({ ...item, overrideScore: total })
+                      handleSaveGrade({ ...item, overrideScore: total, finalMarks: (item.marking_points || []).map((_: unknown, pi: number) => Number(scores[`${item.response_id}_${pi}`] ?? 0)) })
                     }}
                     disabled={savingId === item.response_id}
                     className="btn btn-primary"

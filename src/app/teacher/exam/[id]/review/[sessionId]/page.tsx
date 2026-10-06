@@ -8,6 +8,9 @@ import { IntegritySignals, INTEGRITY_FLAG_LABELS } from '@/hooks/useIntegrityCap
 import { mergeIntegrityFlags, AiReview } from '@/lib/essayIntegrity'
 import AiOpinionButton from '@/components/AiOpinionButton'
 import { isEssayRubricAvailable } from '@/lib/essayRubric'
+import AiSuggestionPanel from '@/components/AiSuggestionPanel'
+import { fetchUsage, isEssayAiMarkingAvailable, loadSuggestions, recordFinalMarks, requestSuggestion, type Usage } from '@/lib/essayMarking'
+import type { Suggestion } from '@/lib/essayMarkingPure'
 import { parseStoredRubric } from '@/lib/essayRubricPure'
 
 type Response = {
@@ -40,6 +43,24 @@ export default function TeacherReviewSessionPage() {
   const [studentIdNum, setStudentIdNum] = useState('')
   const [responses, setResponses] = useState<Response[]>([])
   const [overrides, setOverrides] = useState<Record<string, string>>({})
+
+  // AI-suggested marks (only when the school has switched them on and migration 082 is installed)
+  const [aiOn, setAiOn] = useState(false)
+  const [suggestions, setSuggestions] = useState<Record<string, Suggestion>>({})
+  const [aiBusy, setAiBusy] = useState<Record<string, boolean>>({})
+  const [aiError, setAiError] = useState<Record<string, string>>({})
+  const [usage, setUsage] = useState<Usage | null>(null)
+  useEffect(() => { isEssayAiMarkingAvailable().then(setAiOn) }, [])
+  useEffect(() => { if (aiOn) fetchUsage().then(setUsage) }, [aiOn])
+
+  async function suggest(responseId: string, regenerate = false) {
+    setAiBusy((b) => ({ ...b, [responseId]: true }))
+    setAiError((e) => { const { [responseId]: _removed, ...rest } = e; void _removed; return rest })
+    const r = await requestSuggestion(responseId, regenerate)
+    if (r.ok) { setSuggestions((prev) => ({ ...prev, [responseId]: r.suggestion })); setUsage(r.usage) }
+    else { setAiError((e) => ({ ...e, [responseId]: r.error })); if (r.usage) setUsage(r.usage) }
+    setAiBusy((b) => ({ ...b, [responseId]: false }))
+  }
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
@@ -86,6 +107,11 @@ export default function TeacherReviewSessionPage() {
     }
   }
 
+  useEffect(() => {
+    if (!aiOn || responses.length === 0) return
+    loadSuggestions(responses.filter((r) => r.questions?.question_type === 'essay').map((r) => r.id)).then((found) => setSuggestions((prev) => ({ ...found, ...prev })))
+  }, [aiOn, responses])
+
   async function handleSaveOverrides() {
     setErrorMsg('')
 
@@ -117,6 +143,8 @@ export default function TeacherReviewSessionPage() {
         setSaving(false)
         return
       }
+      // Keep the teacher's final mark beside the AI's suggestion, if there was one (best effort, never affects the marks).
+      if (suggestions[responseId]) await recordFinalMarks(responseId, null, parseFloat(pts))
     }
 
     // Recalculate total score
@@ -221,6 +249,23 @@ export default function TeacherReviewSessionPage() {
                     {parseStoredRubric(q.essay_rubric).map((pt, pi) => <li key={pi}>{pt.text} <span style={{ color: 'var(--text-secondary)' }}>({pt.marks} mark{pt.marks === 1 ? '' : 's'})</span></li>)}
                   </ol>
                 </div>
+              )}
+
+              {aiOn && q.question_type === 'essay' && parseStoredRubric(q.essay_rubric).length > 0 && (
+                <AiSuggestionPanel
+                  points={parseStoredRubric(q.essay_rubric)}
+                  suggestion={suggestions[r.id] ?? null}
+                  busy={!!aiBusy[r.id]}
+                  error={aiError[r.id] ?? null}
+                  onSuggest={() => suggest(r.id)}
+                  onRegenerate={() => suggest(r.id, true)}
+                  onUse={(marks) => setOverrides((prev) => ({ ...prev, [r.id]: String(marks.reduce((a, b) => a + b, 0)) }))}
+                  usage={usage}
+                  useLabel="Use this total"
+                />
+              )}
+              {aiOn && q.question_type === 'essay' && parseStoredRubric(q.essay_rubric).length === 0 && (
+                <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '0 0 10px' }}>Add marking points to this question to get AI suggested marks.</p>
               )}
 
               {/* Correct answer for MCQ/TF */}

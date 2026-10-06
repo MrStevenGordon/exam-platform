@@ -104,10 +104,18 @@ export default function PrivacyPolicyPage() {
         </Section>
 
         <Section title="Our use of AI">
-          <p style={{ marginBottom: 12 }}>Two optional features use a third-party AI service (Anthropic): polishing the wording of a question a
-          teacher is writing, and extracting questions from a PDF a teacher uploads. Both are opt-in, both only
-          process content a staff member explicitly submits in that moment, and both produce suggestions only.
+          <p style={{ marginBottom: 12 }}>Several optional features use a third-party AI service (Anthropic): polishing the wording of a question a
+          teacher is writing, extracting questions from a PDF a teacher uploads, giving a teacher a second opinion on whether
+          an essay may have been written with AI assistance, and, for schools that have switched it on, suggesting marks for an essay.
+          Each only processes content a staff member explicitly submits in that moment, and each produces suggestions only.
           A human teacher always reviews and decides whether to use the output.</p>
+          <p style={{ marginBottom: 12 }}>Essay mark suggestions are off unless a school has agreed to them. When a teacher asks for one, the question,
+          the marking points and the student&apos;s essay text are sent to Anthropic. The student&apos;s name, student number, class and
+          school are not sent. The suggestion is stored apart from the student&apos;s marks and can be seen only by the staff who can mark that
+          essay, never by students. A teacher reviews it and decides every mark; nothing becomes a mark unless the teacher saves it.</p>
+          <p style={{ marginBottom: 12 }}>Where a school has switched on Smart Learning&apos;s AI tutor and its principal has accepted its terms, a student can ask
+          the tutor questions about a lesson. Conversations are saved, students are told their teacher can read them, and they can be read by
+          the lesson&apos;s teacher, school admins and the principal. Conversations that raise a wellbeing or safety concern are flagged for an adult.</p>
           <p style={{ marginBottom: 12 }}>The chat assistant (the &quot;?&quot; icon) also uses Anthropic to generate its replies. It only answers
           general questions about how the platform works, using information we&apos;ve given it. It has no access
           to your account, your data, or anyone else&apos;s, and is instructed to say so and point you to a real
@@ -115,8 +123,9 @@ export default function PrivacyPolicyPage() {
           <p>When a school or organization submits a sign-up request, we also use Anthropic to draft a short
           internal summary of that request for our own staff to review. It&apos;s never shown to the requester,
           never changes what you submitted, and never approves or rejects anything on its own; a person always
-          makes that decision. We do not use AI to grade students, make integrity determinations, or make any
-          decision about a student without a human reviewing it first.</p>
+          makes that decision. We do not use AI to decide a student&apos;s mark or to make integrity determinations. An AI may suggest marks or give a
+          second opinion when a teacher asks, and a human always reviews it and decides. We do not make any decision about a student without a
+          human reviewing it first.</p>
         </Section>
 
         <Section title="Who we share it with">
@@ -127,7 +136,8 @@ export default function PrivacyPolicyPage() {
           they need to do their specific job: Supabase (database, authentication, and file storage), Vercel
           (hosting), Resend (sending transactional email like password resets and notifications), Anthropic
           (processing exam questions you explicitly submit for AI-assisted polishing or PDF import,
-          generating chat assistant replies, and drafting an internal summary of a new school/organization
+          essay text a teacher asks it to review for mark suggestions or an integrity second opinion, student
+          questions to the AI tutor where a school has switched it on, generating chat assistant replies, and drafting an internal summary of a new school/organization
           sign-up request for our staff), Sentry (error monitoring and the session replay described above),
           and Cloudflare Turnstile (verifying that submissions to public forms, like contact and signup
           requests, aren&apos;t automated bots). None of these providers can use your data for their own

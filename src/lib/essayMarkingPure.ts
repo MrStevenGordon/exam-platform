@@ -206,3 +206,22 @@ export const PROBLEM_MESSAGES: Record<InputProblem | ParseFailure, string> = {
   wrong_shape: 'The AI did not give a usable reply. Please try again, or mark by hand.',
   incomplete: 'The AI did not cover every marking point. Please try again, or mark by hand.',
 }
+
+// ---------- running many at once ----------
+// Runs the worker over every item, at most `limit` at a time, starting them in order. If shouldStop() turns true, nothing new is
+// started (the ones already running finish). Used for "Suggest marks for all". Never throws: a worker that throws is counted as failed.
+export async function runPool<T>(items: T[], limit: number, worker: (item: T, index: number) => Promise<void>, shouldStop: () => boolean = () => false): Promise<{ started: number; failed: number }> {
+  let next = 0
+  let started = 0
+  let failed = 0
+  const lane = async () => {
+    while (!shouldStop()) {
+      const i = next++
+      if (i >= items.length) return
+      started++
+      try { await worker(items[i], i) } catch { failed++ }
+    }
+  }
+  await Promise.all(Array.from({ length: Math.max(1, Math.min(limit, items.length)) }, lane))
+  return { started, failed }
+}

@@ -2,7 +2,7 @@
 // Run:  node --experimental-strip-types --no-warnings --test scripts/tests/essay-marking/essayMarkingPure.test.mjs
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { buildPrompt, parseReply, checkInput, blankSuggestion, defuse, checkFirst, compare, summariseAgreement, extractJson, LIMITS } from '../../../src/lib/essayMarkingPure.ts'
+import { buildPrompt, parseReply, checkInput, blankSuggestion, defuse, checkFirst, compare, summariseAgreement, extractJson, runPool, LIMITS } from '../../../src/lib/essayMarkingPure.ts'
 import { callClaude } from '../../../src/lib/ai.ts'
 
 const points = [{ text: 'Simple interest is on the original amount only', marks: 2 }, { text: 'Compound interest includes earlier interest', marks: 2 }, { text: 'Gives a worked example with figures', marks: 2 }]
@@ -159,4 +159,28 @@ test('end to end through callClaude with a fake network: good reply and refusal 
   assert.deepEqual([down.ok, down.status], [false, 529])
   const broke = await callClaude(user, { maxTokens: 100, apiKey: 'k', fetchImpl: async () => { throw new Error('network down') } })
   assert.equal(broke.ok, false)
+})
+
+test('runPool: runs everything, never more than the limit at once, in order of starting', async () => {
+  let running = 0, peak = 0
+  const done = []
+  const r = await runPool([1, 2, 3, 4, 5, 6, 7], 3, async (n) => { running++; peak = Math.max(peak, running); await new Promise((res) => setTimeout(res, 5)); done.push(n); running-- })
+  assert.deepEqual(r, { started: 7, failed: 0 }); assert.equal(done.length, 7); assert.ok(peak <= 3 && peak >= 2, 'peak ' + peak)
+})
+
+test('runPool: a worker that throws is counted and the rest carry on', async () => {
+  const seen = []
+  const r = await runPool([1, 2, 3, 4], 2, async (n) => { if (n === 2) throw new Error('x'); seen.push(n) })
+  assert.deepEqual(r, { started: 4, failed: 1 }); assert.deepEqual(seen.sort(), [1, 3, 4])
+})
+
+test('runPool: stopping starts nothing new', async () => {
+  let stop = false; const seen = []
+  const r = await runPool([1, 2, 3, 4, 5], 1, async (n) => { seen.push(n); if (n === 2) stop = true }, () => stop)
+  assert.deepEqual(seen, [1, 2]); assert.equal(r.started, 2)
+})
+
+test('runPool: empty list and a silly limit are fine', async () => {
+  assert.deepEqual(await runPool([], 3, async () => {}), { started: 0, failed: 0 })
+  assert.deepEqual(await runPool([1, 2], 0, async () => {}), { started: 2, failed: 0 })
 })
