@@ -141,6 +141,13 @@ export function renderReport({ baseUrl, startedAt, roles, publicPages, pages, no
     L.push('## Heaviest pages (data used on a first visit)', '', '| Page | Person | KB | Seconds |', '|---|---|---|---|')
     for (const p of heavy) L.push(`| ${p.path} | ${p.role} | ${Math.round(p.kb)} | ${(p.loadMs / 1000).toFixed(1)} |`)
     L.push('')
+    L.push('### What made the heaviest pages heavy', '')
+    for (const p of heavy.slice(0, 3)) {
+      if (!p.top?.length) continue
+      L.push(`- **${p.path}** (${p.role}):`)
+      for (const t of p.top) L.push(`  - ${t.path}: ${t.kb} KB${t.ms ? `, finished at ${(t.ms / 1000).toFixed(1)} s` : ''}`)
+    }
+    L.push('')
   }
   L.push('## Every page opened', '', '| Person | Page | Screen | Status | Problems | Screenshot |', '|---|---|---|---|---|---|')
   for (const p of pages) {

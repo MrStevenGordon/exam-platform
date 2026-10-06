@@ -110,3 +110,10 @@ test('a stuck sign-in is described from what the page and network did, and nothi
   assert.doesNotMatch(text, /\?/)
   assert.match(summarizeSignInTrace({ url: '', requests: [] }), /no data requests were made/)
 })
+
+test('the report says which files made the heaviest pages heavy', () => {
+  const pages = [clean({ path: '/student', kb: 900, top: [{ path: '/_next/image', kb: 400, ms: 3000 }, { path: '/_next/static/chunks/a.js', kb: 150, ms: 800 }] }), clean({ path: '/student/exams', kb: 100, top: [{ path: '/x', kb: 50, ms: 0 }] })]
+  const md = renderReport({ baseUrl: BASE, startedAt: 'x', roles: [], publicPages: false, pages, notes: [] })
+  assert.match(md, /What made the heaviest pages heavy/); assert.match(md, /\*\*\/student\*\* \(student\):/)
+  assert.match(md, /- \/_next\/image: 400 KB, finished at 3\.0 s/); assert.match(md, /- \/x: 50 KB/)
+})

@@ -29,6 +29,9 @@ const PEOPLE = [
   { role: 'school_admin', label: 'School admin', login: process.env.ADMIN_LOGIN, password: process.env.ADMIN_PASSWORD },
 ].filter((p) => p.login && p.password && (ONLY.length === 0 || ONLY.includes(p.role) || ONLY.includes(p.label.toLowerCase())))
 
+// Smart Learning is reached through the product switcher rather than the menu, so it is added as a starting point.
+const START_EXTRA = { student: ['/learning'], teacher: ['/learning', '/learning/lesson-plans'], supervisor: ['/learning'], principal: ['/learning'], school_admin: ['/learning'] }
+
 const PUBLIC_PAGES = ['/', '/login', '/how-it-works', '/products', '/contact', '/privacy', '/terms', '/find-my-school', '/forgot-password', '/demo-exam']
 
 const pages = []
@@ -38,11 +41,12 @@ const slug = (p) => (p === '/' ? 'home' : p.replace(/^\//, '').replace(/[^a-z0-9
 async function openPage(page, role, path, viewport, { weigh }) {
   const rec = { role, path, viewport, status: 0, loadMs: 0, kb: 0, consoleErrors: [], pageErrors: [], failedRequests: [], badResponses: [], banners: [], brokenImages: [], overflowX: false, blank: false, sentToLogin: false, imgNoAlt: 0, buttonNoName: 0, inputNoLabel: 0, screenshot: null }
   let bytes = 0
+  const sized = []
   const onConsole = (m) => { if (m.type() === 'error' && !isNoise(m.text())) rec.consoleErrors.push(m.text().slice(0, 300)) }
   const onPageError = (e) => rec.pageErrors.push(String(e.message || e).slice(0, 300))
   const onFailed = (r) => { const reason = r.failure()?.errorText || 'failed'; if (!isNoise(r.url()) && !isNoise(reason)) rec.failedRequests.push({ url: r.url(), reason }) }
   const onResponse = (r) => { if (r.status() >= 400 && !isNoise(r.url())) rec.badResponses.push({ url: r.url(), status: r.status() }) }
-  const onFinished = async (r) => { try { const s = await r.sizes(); bytes += (s.responseBodySize || 0) + (s.responseHeadersSize || 0) } catch { /* ignore */ } }
+  const onFinished = async (r) => { try { const s = await r.sizes(); const b = (s.responseBodySize || 0) + (s.responseHeadersSize || 0); bytes += b; const t = r.timing(); const u = new URL(r.url()); sized.push({ path: u.origin === new URL(BASE).origin ? u.pathname : `${u.host}${u.pathname}`, kb: b / 1024, ms: t && t.responseEnd > 0 ? Math.round(t.responseEnd) : 0 }) } catch { /* ignore */ } }
   page.on('console', onConsole); page.on('pageerror', onPageError); page.on('requestfailed', onFailed); page.on('response', onResponse); page.on('requestfinished', onFinished)
   const t0 = Date.now()
   try {
@@ -78,6 +82,7 @@ async function openPage(page, role, path, viewport, { weigh }) {
     page.off('console', onConsole); page.off('pageerror', onPageError); page.off('requestfailed', onFailed); page.off('response', onResponse); page.off('requestfinished', onFinished)
   }
   rec.kb = weigh ? bytes / 1024 : 0
+  rec.top = weigh ? sized.sort((a, b) => b.kb - a.kb).slice(0, 5).map((x) => ({ path: x.path.slice(0, 90), kb: Math.round(x.kb * 10) / 10, ms: x.ms })) : []
   const { navLinks, mainLinks, ...clean } = rec
   pages.push(clean)
   return { navLinks: navLinks || [], mainLinks: mainLinks || [], sentToLogin: rec.sentToLogin }
@@ -157,7 +162,7 @@ async function main() {
     if (!result.ok) { notes.push(`${person.label}: ${result.why}`); console.log(`  skipped: ${result.why}`); await ctx.close(); continue }
     if (result.path.startsWith('/change-password')) notes.push(`${person.label}: this account is still on its starting password, so the site asked for a new one. The checker did not change it and carried on from the home page. Some pages may behave differently once the password is changed.`)
     // Crawl: the home page, then every menu link, then a few links from each of those pages.
-    const queue = [LANDING[person.role]]
+    const queue = [LANDING[person.role], ...(START_EXTRA[person.role] ?? [])]
     const seen = new Set()
     const order = []
     let ended = false

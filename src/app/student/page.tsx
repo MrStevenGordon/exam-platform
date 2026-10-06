@@ -76,7 +76,7 @@ export default function StudentHome() {
 
     const { data: directSessions } = await supabase
       .from('exam_sessions')
-      .select('total_score, max_possible_score, completed_at, results_released, draft_exam_id')
+      .select('total_score, max_possible_score, completed_at, results_released, draft_exam_id, draft_exams(title, exam_kind)')
       .eq('student_id', user.id)
       .eq('status', 'completed')
       .eq('results_released', true)
@@ -102,9 +102,9 @@ export default function StudentHome() {
         examType: 'final',
       })),
       ...((directSessions as any) || []).filter((s: any) => s.max_possible_score > 0).map((s: any) => ({
-        title: 'Exam',
+        title: s.draft_exams?.title || 'Exam',
         pct: Math.round((s.total_score / s.max_possible_score) * 100),
-        kind: 'Exam',
+        kind: kindLabels[s.draft_exams?.exam_kind] || 'Exam',
         date: s.completed_at,
         examId: s.draft_exam_id,
         examType: 'direct',
