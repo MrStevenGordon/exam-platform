@@ -6,6 +6,8 @@ import { supabase } from '@/lib/supabase'
 import { INTEGRITY_FLAG_LABELS } from '@/hooks/useIntegrityCapture'
 import { mergeIntegrityFlags, AiReview } from '@/lib/essayIntegrity'
 import AiOpinionButton from '@/components/AiOpinionButton'
+import { isEssayRubricAvailable } from '@/lib/essayRubric'
+import { parseStoredRubric } from '@/lib/essayRubricPure'
 
 type UngradedResponse = {
   overrideScore?: number
@@ -18,6 +20,8 @@ type UngradedResponse = {
   student_name: string
   exam_title: string
   marking_points?: any[] | null
+  // true when the points are an essay's own marking points: no keywords, and every point is marked by the teacher
+  essayPoints?: boolean
   total_marks?: number | null
   integrityFlags: string[]
   aiReview: AiReview | null
@@ -52,13 +56,16 @@ export default function GradeEssaysPage() {
       return
     }
 
+    // An essay's marking points need migration 081; ask for the column only once it exists.
+    const rubricOn = await isEssayRubricAvailable()
+    const columns: string = `
+        id, answer, working, session_id, points_awarded, integrity_signals, ai_review,
+        questions(question_text, points, question_type, marking_points${rubricOn ? ', essay_rubric' : ''}),
+        exam_sessions(profiles!exam_sessions_student_id_fkey(full_name), final_exams(title), draft_exams(title))
+      `
     const { data, error } = await supabase
       .from('responses')
-      .select(`
-        id, answer, working, session_id, points_awarded, integrity_signals, ai_review,
-        questions(question_text, points, question_type, marking_points),
-        exam_sessions(profiles!exam_sessions_student_id_fkey(full_name), final_exams(title), draft_exams(title))
-      `)
+      .select(columns)
       .is('points_awarded', null)
 
     if (error) {
@@ -67,12 +74,13 @@ export default function GradeEssaysPage() {
       return
     }
 
-    const essayOnly = (data || [])
+    const essayOnly = ((data || []) as any[])
       .filter((r: any) => r.questions?.question_type === 'essay')
       .map((r: any) => ({
         response_id: r.id,
         session_id: r.session_id,
-        marking_points: r.questions?.marking_points || null,
+        marking_points: r.questions?.marking_points || (parseStoredRubric(r.questions?.essay_rubric).length > 0 ? parseStoredRubric(r.questions?.essay_rubric) : null),
+        essayPoints: !r.questions?.marking_points && parseStoredRubric(r.questions?.essay_rubric).length > 0,
         answer: r.answer,
         working: r.working,
         question_text: r.questions.question_text,
@@ -92,7 +100,8 @@ export default function GradeEssaysPage() {
   }
 
   async function handleSaveGrade(item: UngradedResponse) {
-    const value = parseFloat(scores[item.response_id])
+    // "Save all points" passes the total it has just added up; setScores has not applied yet, so reading scores[] here would be stale.
+    const value = item.overrideScore !== undefined ? item.overrideScore : parseFloat(scores[item.response_id])
     if (isNaN(value) || value < 0 || value > item.points) {
       alert(`Enter a valid score between 0 and ${item.points}.`)
       return
@@ -196,15 +205,18 @@ export default function GradeEssaysPage() {
                 <div className="section-label" style={{ marginBottom: 8 }}>Marking points: award marks per point</div>
                 {item.marking_points.map((point: any, pi: number) => {
                   const answerLower = (item.answer || '').toLowerCase()
-                  const autoMatched = point.keywords?.some((kw: string) => answerLower.includes(kw.toLowerCase()))
+                  // Keyword matching only applies to points that have keywords. An essay's own marking points have none, so the teacher marks each one.
+                  const autoMatched = item.essayPoints ? false : point.keywords?.some((kw: string) => answerLower.includes(kw.toLowerCase()))
                   const pointKey = `${item.response_id}_${pi}`
                   return (
                     <div key={pi} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8, padding: '8px 12px', background: autoMatched ? 'var(--success-bg)' : 'var(--card-bg)', borderRadius: 8, border: `1px solid ${autoMatched ? 'var(--success)' : 'var(--border)'}` }}>
                       <div style={{ flex: 1 }}>
                         <div style={{ fontSize: 13, fontWeight: 600 }}>Point {pi + 1}: {point.text}</div>
-                        <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 2 }}>
-                          Matched on: {point.keywords?.slice(0, 6).join(', ')}{point.keywords?.length > 6 ? '…' : ''} · {autoMatched ? '✓ Auto-matched' : '✗ Not matched'}
-                        </div>
+                        {!item.essayPoints && (
+                          <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 2 }}>
+                            Matched on: {point.keywords?.slice(0, 6).join(', ')}{point.keywords?.length > 6 ? '…' : ''} · {autoMatched ? '✓ Auto-matched' : '✗ Not matched'}
+                          </div>
+                        )}
                       </div>
                       <input
                         type="number"
@@ -212,7 +224,7 @@ export default function GradeEssaysPage() {
                         max={point.marks}
                         step={0.5}
                         placeholder={`0-${point.marks}`}
-                        value={scores[pointKey] ?? (autoMatched ? point.marks : 0)}
+                        value={scores[pointKey] ?? (item.essayPoints ? '' : autoMatched ? point.marks : 0)}
                         onChange={(e) => updateScore(pointKey, e.target.value)}
                         style={{ width: 70 }}
                       />
@@ -223,6 +235,18 @@ export default function GradeEssaysPage() {
                 <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 8 }}>
                   <button
                     onClick={() => {
+                      if (item.essayPoints) {
+                        // Every point needs a mark, 0 if the answer earns none, so a box left empty is never saved as a zero by accident.
+                        const bad = (item.marking_points || []).findIndex((p: { marks: number }, pi: number) => {
+                          const raw = scores[`${item.response_id}_${pi}`]
+                          const n = Number(raw)
+                          return raw === undefined || raw === '' || isNaN(n) || n < 0 || n > p.marks
+                        })
+                        if (bad !== -1) {
+                          alert(`Enter a mark for point ${bad + 1}, between 0 and ${(item.marking_points || [])[bad].marks}. Use 0 if the answer earns nothing for it.`)
+                          return
+                        }
+                      }
                       const total = (item.marking_points || []).reduce((sum: number, _: any, pi: number) => {
                         const pointKey = `${item.response_id}_${pi}`
                         return sum + Number(scores[pointKey] ?? 0)

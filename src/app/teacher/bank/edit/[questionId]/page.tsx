@@ -4,6 +4,9 @@ import { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
+import EssayRubricEditor from '@/components/EssayRubricEditor'
+import { isEssayRubricAvailable } from '@/lib/essayRubric'
+import { checkRubric, cleanRubric, parseStoredRubric, rubricTotal, writtenPoints, type EssayPointDraft } from '@/lib/essayRubricPure'
 import MathToolbar from '@/components/MathToolbar'
 import MathSymbolPicker from '@/components/MathSymbolPicker'
 
@@ -18,6 +21,10 @@ export default function EditBankQuestionPage() {
   const [options, setOptions] = useState(['', '', '', ''])
   const [correctAnswer, setCorrectAnswer] = useState('')
   const [markingPoints, setMarkingPoints] = useState<{ text: string; marks: number }[]>([])
+  const [essayRows, setEssayRows] = useState<EssayPointDraft[]>([{ text: '', marks: 1 }])
+  const [rubricOn, setRubricOn] = useState(false)
+  useEffect(() => { isEssayRubricAvailable().then(setRubricOn) }, [])
+  const essayTotal = rubricTotal(writtenPoints(essayRows).map((r) => ({ marks: Number(r.marks) || 0 })))
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [errorMsg, setErrorMsg] = useState('')
@@ -38,6 +45,8 @@ export default function EditBankQuestionPage() {
       setOptions(q.options || ['', '', '', ''])
       setCorrectAnswer(q.correct_answer || '')
       setMarkingPoints(q.marking_points || [])
+      const stored = parseStoredRubric(q.essay_rubric)
+      setEssayRows(stored.length > 0 ? stored : [{ text: '', marks: 1 }])
       setLoading(false)
     }
     load()
@@ -51,14 +60,23 @@ export default function EditBankQuestionPage() {
       ...mp,
       keywords: mp.text.toLowerCase().replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).filter((w: string) => w.length > 2 && !stopWords.has(w))
     }))
+    // An essay never carries keyword marking points (exam scoring would mark them by keyword); its marking points are kept apart.
+    const isEssay = questionType === 'essay'
+    let essayRubric: ReturnType<typeof cleanRubric> = null
+    if (isEssay && rubricOn) {
+      const problem = checkRubric(essayRows)
+      if (problem) { setErrorMsg(problem); setSaving(false); return }
+      essayRubric = cleanRubric(essayRows)
+    }
     const { data, error } = await supabase.from('questions').update({
       question_type: questionType,
       question_text: questionText.trim(),
-      points,
+      points: essayRubric ? rubricTotal(essayRubric) : points,
       options: ['multiple_choice', 'true_false'].includes(questionType) ? options.filter(Boolean) : null,
       correct_answer: correctAnswer.trim() || null,
-      marking_points: updatedMarkingPoints.length > 0 ? updatedMarkingPoints : null,
-      total_marks: updatedMarkingPoints.length > 0 ? updatedMarkingPoints.reduce((s, mp) => s + mp.marks, 0) : null,
+      marking_points: !isEssay && updatedMarkingPoints.length > 0 ? updatedMarkingPoints : null,
+      total_marks: !isEssay && updatedMarkingPoints.length > 0 ? updatedMarkingPoints.reduce((s, mp) => s + mp.marks, 0) : null,
+      ...(rubricOn ? { essay_rubric: isEssay ? essayRubric : null } : {}),
     }).eq('id', questionId).select()
     if (error) { setErrorMsg(error.message); setSaving(false); return }
     if (!data || data.length === 0) { setErrorMsg('Could not save — this question may have been removed.'); setSaving(false); return }
@@ -91,7 +109,8 @@ export default function EditBankQuestionPage() {
         </div>
         <div style={{ marginBottom: 14 }}>
           <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Points</label>
-          <input type="number" value={points} onChange={(e) => setPoints(parseInt(e.target.value))} min={1} style={{ width: 80, marginTop: 4 }} />
+          <input type="number" value={questionType === 'essay' && rubricOn && essayTotal > 0 ? essayTotal : points} disabled={questionType === 'essay' && rubricOn && essayTotal > 0} onChange={(e) => setPoints(parseInt(e.target.value))} min={1} style={{ width: 80, marginTop: 4 }} />
+          {questionType === 'essay' && rubricOn && essayTotal > 0 && <span style={{ fontSize: 12, color: 'var(--text-secondary)', marginLeft: 10 }}>Set by the marking points below</span>}
         </div>
         {questionType === 'multiple_choice' && (
           <div style={{ marginBottom: 14 }}>
@@ -122,6 +141,8 @@ export default function EditBankQuestionPage() {
             </select>
           </div>
         )}
+        {questionType === 'essay' && rubricOn && <EssayRubricEditor rows={essayRows} onChange={setEssayRows} idPrefix="edit-essay-point" />}
+
         {(questionType === 'short_answer' || questionType === 'fill_blank') && (
           <div style={{ marginBottom: 14 }}>
             <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Marking points</label>

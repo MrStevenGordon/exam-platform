@@ -7,6 +7,8 @@ import { supabase } from '@/lib/supabase'
 import { IntegritySignals, INTEGRITY_FLAG_LABELS } from '@/hooks/useIntegrityCapture'
 import { mergeIntegrityFlags, AiReview } from '@/lib/essayIntegrity'
 import AiOpinionButton from '@/components/AiOpinionButton'
+import { isEssayRubricAvailable } from '@/lib/essayRubric'
+import { parseStoredRubric } from '@/lib/essayRubricPure'
 
 type Response = {
   id: string
@@ -23,6 +25,7 @@ type Response = {
     points: number
     options: string[] | null
     marking_points: any[] | null
+    essay_rubric?: unknown
     show_working: boolean | null
   }
 }
@@ -65,13 +68,16 @@ export default function TeacherReviewSessionPage() {
         setFileName((session as any).file_submission_name || null)
       }
 
+      // An essay's marking points need migration 081; ask for the column only once it exists.
+      const rubricOn = await isEssayRubricAvailable()
+      const columns: string = `id, question_id, answer, working, points_awarded, integrity_signals, ai_review, questions(question_text, question_type, correct_answer, points, options, marking_points, show_working${rubricOn ? ', essay_rubric' : ''})`
       const { data: responseData } = await supabase
         .from('responses')
-        .select('id, question_id, answer, working, points_awarded, integrity_signals, ai_review, questions(question_text, question_type, correct_answer, points, options, marking_points, show_working)')
+        .select(columns)
         .eq('session_id', sessionId)
         .order('question_id')
 
-      setResponses((responseData as any) || [])
+      setResponses((responseData as unknown as Response[]) || [])
     } catch (err) {
       console.error('Failed to load session review', err)
       setErrorMsg('Something went wrong loading this session. Please try again.')
@@ -205,6 +211,16 @@ export default function TeacherReviewSessionPage() {
                   </p>
                   <AiOpinionButton responseId={r.id} initialReview={r.ai_review} />
                 </details>
+              )}
+
+              {/* An essay's marking points, for reference while marking */}
+              {q.question_type === 'essay' && parseStoredRubric(q.essay_rubric).length > 0 && (
+                <div style={{ marginBottom: 10, padding: '8px 12px', background: 'var(--card-bg)', border: '1px solid var(--border)', borderRadius: 8 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: 4 }}>Marking points</div>
+                  <ol style={{ margin: 0, paddingLeft: 18, fontSize: 13 }}>
+                    {parseStoredRubric(q.essay_rubric).map((pt, pi) => <li key={pi}>{pt.text} <span style={{ color: 'var(--text-secondary)' }}>({pt.marks} mark{pt.marks === 1 ? '' : 's'})</span></li>)}
+                  </ol>
+                </div>
               )}
 
               {/* Correct answer for MCQ/TF */}

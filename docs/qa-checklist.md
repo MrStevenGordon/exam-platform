@@ -264,6 +264,22 @@ Setup first: `docs/exam-insight-setup.md`. Use a test with at least eight finish
 - [ ] Phone width: no sideways page scroll; tables scroll inside their own box
 - [ ] Tab key moves through the three tabs; left and right arrows switch them; every bar has its number and a word (Strong, Mixed, Weak), not only a colour
 
+## 7i. Marking points for essays (Smart Assess, needs migration 081)
+
+Setup first: `docs/essay-marking-setup.md`.
+
+- [ ] Before 081 is applied: choosing **Essay** shows no marking points box, and grading essays works as before
+- [ ] **Add question**, type Essay: a **Marking points** box appears. Add two points of 2 marks: the **Points** box shows 4 and is locked ("Set by the marking points below")
+- [ ] Save an essay with no marking points at all: it saves, as before
+- [ ] A point with 0 marks, half marks or letters is refused with a message naming the point. More than 12 points is refused
+- [ ] **Edit question** and **Edit bank question** show the saved marking points and keep them when saved. Changing an essay to another type clears them
+- [ ] **Add from question bank:** an essay with marking points keeps them
+- [ ] **A student sits a test containing that essay and submits:** the essay is NOT marked zero. The test shows essays waiting for marking and is not marked complete
+- [ ] **Grade essay responses:** that essay shows a box for each marking point, empty at first, with the maximum beside each. **Save all points** with an empty box is refused. With every box filled it saves the total and the student's score updates
+- [ ] An essay with no marking points still shows the single score box
+- [ ] **Review page** for one student lists the marking points for reference
+- [ ] A student cannot see the marking points while sitting the test, and not in the test's questions after submitting
+
 ## 8. Owner console (you)
 
 - [ ] **School requests** and **Org requests**: approve and provision

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
+import { isEssayRubricAvailable } from '@/lib/essayRubric'
 import EmptyState from '@/components/EmptyState'
 
 type BankQuestion = {
@@ -13,6 +14,7 @@ type BankQuestion = {
   points: number
   options: string[] | null
   correct_answer: string | null
+  essay_rubric?: unknown
 }
 
 export default function AddFromBankPage() {
@@ -36,9 +38,12 @@ export default function AddFromBankPage() {
           return
         }
 
+        // Essays bring their marking points with them once migration 081 is applied.
+        const rubricOn = await isEssayRubricAvailable()
+        const columns: string = rubricOn ? 'id, question_type, question_text, points, options, correct_answer, essay_rubric' : 'id, question_type, question_text, points, options, correct_answer'
         const { data, error } = await supabase
           .from('questions')
-          .select('id, question_type, question_text, points, options, correct_answer')
+          .select(columns)
           .eq('created_by', user.id)
           .eq('is_bank_question', true)
           .neq('draft_exam_id', examId)
@@ -46,7 +51,7 @@ export default function AddFromBankPage() {
         if (error) {
           setErrorMsg(error.message)
         } else {
-          setBankQuestions(data || [])
+          setBankQuestions((data || []) as unknown as BankQuestion[])
         }
       } catch (err) {
         console.error('Failed to load question bank', err)
@@ -111,6 +116,7 @@ export default function AddFromBankPage() {
         correct_answer: q.correct_answer,
         order_index: orderIndex,
         is_bank_question: true,
+        ...(q.essay_rubric ? { essay_rubric: q.essay_rubric } : {}),
       }
     })
 

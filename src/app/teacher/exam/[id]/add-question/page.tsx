@@ -2,12 +2,15 @@
 
 import QuestionTopicField from '@/components/QuestionTopicField'
 import type { TopicChoice } from '@/lib/topics'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import MathToolbar from '@/components/MathToolbar'
 import MathSymbolPicker from '@/components/MathSymbolPicker'
 import MathRenderer from '@/components/MathRenderer'
+import EssayRubricEditor from '@/components/EssayRubricEditor'
+import { isEssayRubricAvailable } from '@/lib/essayRubric'
+import { checkRubric, cleanRubric, rubricTotal, writtenPoints, type EssayPointDraft } from '@/lib/essayRubricPure'
 
 type QuestionType = 'multiple_choice' | 'true_false' | 'short_answer' | 'fill_blank' | 'essay'
 
@@ -46,6 +49,13 @@ export default function AddQuestionPage() {
 
   // Marking points for multi-point short answer
   const [markingPoints, setMarkingPoints] = useState([{ text: '', marks: 1 }])
+
+  // Marking points for an essay (kept apart from the ones above: exam scoring marks anything with marking_points by keyword)
+  const [essayRows, setEssayRows] = useState<EssayPointDraft[]>([{ text: '', marks: 1 }])
+  const [rubricOn, setRubricOn] = useState(false)
+  useEffect(() => { isEssayRubricAvailable().then(setRubricOn) }, [])
+  const essayTotal = rubricTotal(writtenPoints(essayRows).map((r) => ({ marks: Number(r.marks) || 0 })))
+  const essayLocksPoints = questionType === 'essay' && rubricOn && essayTotal > 0
 
   // Save to personal question bank
   const [saveToBank, setSaveToBank] = useState(false)
@@ -264,7 +274,20 @@ export default function AddQuestionPage() {
       if (exactAnswer.trim()) payload.correct_answer = exactAnswer.trim()
     }
 
-    // essay: no correct_answer needed, manually graded later
+    // essay: no correct_answer needed, manually graded later. Marking points are optional.
+    if (questionType === 'essay' && rubricOn) {
+      const problem = checkRubric(essayRows)
+      if (problem) {
+        setErrorMsg(problem)
+        setSaving(false)
+        return
+      }
+      const clean = cleanRubric(essayRows)
+      if (clean) {
+        payload.essay_rubric = clean
+        payload.points = rubricTotal(clean)
+      }
+    }
 
     const { error } = await supabase.from('questions').insert(payload)
 
@@ -398,10 +421,12 @@ export default function AddQuestionPage() {
           <input
             type="number"
             min={1}
-            value={points}
+            value={essayLocksPoints ? essayTotal : points}
+            disabled={essayLocksPoints}
             onChange={(e) => setPoints(parseInt(e.target.value) || 1)}
             style={{ width: 100, marginTop: 6 }}
           />
+          {essayLocksPoints && <span style={{ fontSize: 12, color: 'var(--text-secondary)', marginLeft: 10 }}>Set by the marking points below</span>}
         </div>
 
         <div style={{ marginBottom: 16 }}>
@@ -535,9 +560,11 @@ export default function AddQuestionPage() {
           </div>
         )}
 
+        {questionType === 'essay' && rubricOn && <EssayRubricEditor rows={essayRows} onChange={setEssayRows} idPrefix="add-essay-point" />}
+
         {questionType === 'essay' && (
           <div className="banner" style={{ marginBottom: 16, background: 'var(--border)', color: 'var(--text-secondary)' }}>
-            Essay questions are graded manually by a teacher after the exam. No correct answer needed here.
+            Essay questions are graded by a teacher after the exam. No correct answer needed here.
           </div>
         )}
 
