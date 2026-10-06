@@ -341,6 +341,20 @@ Use a test student who has sat at least one exam with topic-tagged questions who
 - [ ] Turn the AI off (wrong key) and try: a plain "not available" message, and you can still write questions by hand
 - [ ] **A student cannot reach it**: /teacher/exam/... is not open to a student
 
+## 7m. Flashcards (Smart Learning, needs migration 084, students only)
+
+- [ ] Before 084 is applied there is no **Flashcards** link. After it, a student sees **Flashcards** in the Smart Learning menu. A teacher does not, and typing /learning/flashcards as a teacher sends them back to /learning
+- [ ] Create a deck with a name (and optional subject). The deck page opens
+- [ ] Add a card (front and back). Empty front or back is refused with a message
+- [ ] **Add many cards at once**: paste five lines written as `front | back`; add one line with no bar. Five are added and the message says one line was skipped
+- [ ] Edit a card, delete a card, rename the deck
+- [ ] The deck page shows how many cards are due, new, still learning and known well. **Study** shows the right number of cards (at most 20)
+- [ ] Study: the front shows; **Show answer** shows the back; **Got it** and **Not yet** move on. A card marked Not yet appears again later in the round
+- [ ] Finish a round: the summary says how many were known first time. Open the deck: the cards you got right are no longer due, the ones you missed are due again
+- [ ] Close the page half-way through a round and come back: the answers you gave were kept
+- [ ] **Privacy:** log in as a second student and a teacher: neither sees the first student's decks or cards, by the menu or by typing the deck's address
+- [ ] Delete a deck: it and its cards are gone
+
 ## 8. Owner console (you)
 
 - [ ] **School requests** and **Org requests**: approve and provision
