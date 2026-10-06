@@ -408,6 +408,7 @@ export default function StaffPage() {
           <input
             type="file"
             accept=".csv"
+            aria-label="Choose a CSV file of staff to import"
             onChange={handleCsvImport}
             disabled={csvImporting}
             style={{ marginBottom: 12 }}
@@ -449,12 +450,13 @@ export default function StaffPage() {
       <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
         <input
           type="text"
+          aria-label="Search staff"
           placeholder="Search by name or role…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           style={{ flex: 2 }}
         />
-        <select value={filterDept} onChange={(e) => setFilterDept(e.target.value)} style={{ flex: 1 }}>
+        <select aria-label="Filter by department" value={filterDept} onChange={(e) => setFilterDept(e.target.value)} style={{ flex: 1 }}>
           <option value="">All departments</option>
           {departments.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
         </select>

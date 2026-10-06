@@ -620,6 +620,7 @@ export default function StudentsPage() {
       <div style={{ display: 'flex', gap: 10, marginBottom: 16, flexWrap: 'wrap' }}>
         <input
           type="text"
+          aria-label="Search students"
           placeholder="Search by name or student ID…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}

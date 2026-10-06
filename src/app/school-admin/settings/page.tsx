@@ -318,6 +318,7 @@ function RoutingCheckSection() {
           ) : (
             <div style={{ position: 'relative' }}>
               <input
+                aria-label="Search students"
                 value={studentSearch}
                 onChange={(e) => setStudentSearch(e.target.value)}
                 placeholder="Search by name or student ID…"
@@ -342,7 +343,7 @@ function RoutingCheckSection() {
 
         <div>
           <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Subject</label>
-          <select value={selectedSubject} onChange={(e) => { setSelectedSubject(e.target.value); setTrace(null) }} style={{ width: '100%', marginTop: 4 }}>
+          <select aria-label="Subject" value={selectedSubject} onChange={(e) => { setSelectedSubject(e.target.value); setTrace(null) }} style={{ width: '100%', marginTop: 4 }}>
             <option value="">Select subject…</option>
             {subjects.map((s) => <option key={s.subject} value={s.subject}>{s.subject}</option>)}
           </select>

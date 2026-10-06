@@ -133,3 +133,10 @@ test('a settings file that would silently cut a password short is called out, na
   assert.doesNotMatch(out.join(' '), /has#hash|has space|fine#in-quotes/)
   assert.deepEqual(envProblems("STUDENT_PASSWORD='x'\nTEACHER_LOGIN=a@b.c"), [])
 })
+
+test('unlabelled fields and unnamed buttons are named in the report so they can be found', () => {
+  const f = findingsForPage(clean({ inputNoLabel: 2, buttonNoName: 1, examples: { fields: ['input[text] "Search students"', 'select .field'], buttons: ['button[button] .icon-btn'] } }))
+  assert.match(f.find((x) => x.kind === 'Form fields with no label').detail, /For example: input\[text\] "Search students"; select \.field\./)
+  assert.match(f.find((x) => x.kind === 'Buttons with no name').detail, /For example: button\[button\] \.icon-btn\./)
+  assert.doesNotMatch(findingsForPage(clean({ inputNoLabel: 1 }))[0].detail, /For example/)
+})

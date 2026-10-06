@@ -72,12 +72,16 @@ async function openPage(page, role, path, viewport, { weigh }) {
       const banners = [...document.querySelectorAll('.banner-danger, [role="alert"]')].filter(visible).map((e) => e.innerText.trim().slice(0, 200)).filter(Boolean)
       const broken = [...document.images].filter((i) => i.complete && i.naturalWidth === 0 && i.currentSrc).map((i) => i.currentSrc)
       const noAlt = [...document.images].filter((i) => !i.hasAttribute('alt')).length
-      const noName = [...document.querySelectorAll('button, [role="button"]')].filter((b) => visible(b) && !(b.innerText || '').trim() && !b.getAttribute('aria-label') && !b.getAttribute('title') && !b.querySelector('img[alt]')).length
-      const noLabel = [...document.querySelectorAll('input:not([type=hidden]):not([type=submit]):not([type=button]), select, textarea')].filter((i) => visible(i) && !i.getAttribute('aria-label') && !i.getAttribute('aria-labelledby') && !(i.id && document.querySelector(`label[for="${CSS.escape(i.id)}"]`)) && !i.closest('label')).length
-      return { textLen: text.length, banners, broken, noAlt, noName, noLabel, overflow: document.documentElement.scrollWidth > document.documentElement.clientWidth + 1, links: [...document.querySelectorAll('nav a[href], aside a[href]')].map((a) => a.getAttribute('href')), mainLinks: [...document.querySelectorAll('main a[href], [class*="page-container"] a[href]')].map((a) => a.getAttribute('href')) }
+      const describe = (el) => `${el.tagName.toLowerCase()}${el.getAttribute('type') ? `[${el.getAttribute('type')}]` : ''}${el.getAttribute('placeholder') ? ` "${el.getAttribute('placeholder').slice(0, 30)}"` : ''}${el.className && typeof el.className === 'string' && el.className ? ` .${el.className.split(' ')[0]}` : ''}`
+      const named = (el) => el.getAttribute('aria-label') || el.getAttribute('title') || (el.getAttribute('aria-labelledby') && el.getAttribute('aria-labelledby').split(' ').some((id) => (document.getElementById(id)?.textContent || '').trim()))
+      const noNameEls = [...document.querySelectorAll('button, [role="button"]')].filter((b) => visible(b) && !(b.innerText || '').trim() && !named(b) && !b.querySelector('img[alt]'))
+      const noLabelEls = [...document.querySelectorAll('input:not([type=hidden]):not([type=submit]):not([type=button]), select, textarea')].filter((i) => visible(i) && !named(i) && !(i.id && document.querySelector(`label[for="${CSS.escape(i.id)}"]`)) && !i.closest('label'))
+      const noName = noNameEls.length, noLabel = noLabelEls.length
+      const examples = { buttons: noNameEls.slice(0, 3).map(describe), fields: noLabelEls.slice(0, 3).map(describe) }
+      return { textLen: text.length, banners, broken, noAlt, noName, noLabel, examples, overflow: document.documentElement.scrollWidth > document.documentElement.clientWidth + 1, links: [...document.querySelectorAll('nav a[href], aside a[href]')].map((a) => a.getAttribute('href')), mainLinks: [...document.querySelectorAll('main a[href], [class*="page-container"] a[href]')].map((a) => a.getAttribute('href')) }
     })
     rec.blank = facts.textLen < 40
-    rec.banners = facts.banners; rec.brokenImages = facts.broken; rec.imgNoAlt = facts.noAlt; rec.buttonNoName = facts.noName; rec.inputNoLabel = facts.noLabel
+    rec.banners = facts.banners; rec.brokenImages = facts.broken; rec.imgNoAlt = facts.noAlt; rec.buttonNoName = facts.noName; rec.inputNoLabel = facts.noLabel; rec.examples = facts.examples
     rec.overflowX = facts.overflow
     rec.navLinks = facts.links; rec.mainLinks = facts.mainLinks
     mkdirSync(join(OUT, role), { recursive: true })

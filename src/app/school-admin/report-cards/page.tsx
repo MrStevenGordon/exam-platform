@@ -141,11 +141,11 @@ export default function AdminReportCardsPage() {
 
       <div className="section-label" style={{ marginBottom: 8 }}>View a student's report card</div>
       <div style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
-        <select value={selectedStudent} onChange={(e) => setSelectedStudent(e.target.value)} style={{ flex: '1 1 240px' }}>
+        <select aria-label="Student" value={selectedStudent} onChange={(e) => setSelectedStudent(e.target.value)} style={{ flex: '1 1 240px' }}>
           <option value="">Select a student…</option>
           {students.map((s) => <option key={s.id} value={s.id}>{s.full_name}{s.student_id ? ` (${s.student_id})` : ''}</option>)}
         </select>
-        <select value={selectedTerm} onChange={(e) => setSelectedTerm(e.target.value)} style={{ flex: '1 1 200px' }}>
+        <select aria-label="Term" value={selectedTerm} onChange={(e) => setSelectedTerm(e.target.value)} style={{ flex: '1 1 200px' }}>
           <option value="">Select a term…</option>
           {terms.map((t) => <option key={t.id} value={t.id}>{t.name} ({t.academic_year})</option>)}
         </select>

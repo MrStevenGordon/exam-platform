@@ -111,6 +111,7 @@ export default function SupervisorHome() {
 
       <input
         type="text"
+        aria-label="Search exams"
         placeholder="Search by title, subject or teacher…"
         value={search}
         onChange={(e) => setSearch(e.target.value)}

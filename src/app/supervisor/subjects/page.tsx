@@ -90,6 +90,7 @@ export default function DepartmentSubjectsPage() {
         </p>
         <div style={{ display: 'flex', gap: 8 }}>
           <input
+            aria-label="New subject name"
             value={newSubject}
             onChange={(e) => setNewSubject(e.target.value)}
             placeholder="e.g. Additional Mathematics"

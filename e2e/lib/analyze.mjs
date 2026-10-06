@@ -63,8 +63,8 @@ export function findingsForPage(p) {
   if (p.overflowX) add('medium', 'Page is wider than the screen', 'Scrolls sideways on this screen size.')
   for (const i of p.brokenImages) add('medium', 'Picture did not load', shorten(i))
   if (p.imgNoAlt > 0) add('low', 'Pictures with no description', `${p.imgNoAlt} picture(s) have no alt text.`)
-  if (p.buttonNoName > 0) add('low', 'Buttons with no name', `${p.buttonNoName} button(s) have no text or label (a screen reader cannot say what they do).`)
-  if (p.inputNoLabel > 0) add('low', 'Form fields with no label', `${p.inputNoLabel} field(s) have no label.`)
+  if (p.buttonNoName > 0) add('low', 'Buttons with no name', `${p.buttonNoName} button(s) have no text or label (a screen reader cannot say what they do).${p.examples?.buttons?.length ? ` For example: ${p.examples.buttons.join('; ')}.` : ''}`)
+  if (p.inputNoLabel > 0) add('low', 'Form fields with no label', `${p.inputNoLabel} field(s) have no label.${p.examples?.fields?.length ? ` For example: ${p.examples.fields.join('; ')}.` : ''}`)
   if (p.loadMs > 6000) add('low', 'Slow to load', `${(p.loadMs / 1000).toFixed(1)} seconds.`)
   if (p.kb > 1500) add('low', 'Heavy page', `${Math.round(p.kb)} KB downloaded.`)
   return out
