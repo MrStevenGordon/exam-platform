@@ -44,3 +44,6 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 scripts/student-credentials.csv
+
+# student ID mapping files written by scripts/reassign-student-ids.mjs (contain names)
+student-id-changes-*.csv

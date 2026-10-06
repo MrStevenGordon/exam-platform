@@ -2,6 +2,13 @@
 
 Tick a box when you have tested it on the live site. Each item points to its section in `docs/qa-checklist.md`. Add new items at the top when something is built. Last updated 2026-10-06.
 
+## Demo data (new)
+- [ ] Run `scripts/demo/00-check-before.sql` on Manchester (read-only) and confirm the four accounts are found
+- [ ] Run `node scripts/reassign-student-ids.mjs --env <manchester env file>` (dry run), check the mapping file, then run it with `--apply --project <ref>`; confirm a changed student can sign in with the new ID
+- [ ] Run the seed (`pbcopy < scripts/demo/manchester-demo-seed.sql`), then sign in as Testing Teacher, Testing HOD, Testing Principal and student 54321 and walk every screen in the demo; note any that is still empty
+- [ ] Upload the timetable sample so the school part (timetable, absence and cover, report cards) can be built
+- [ ] The morning of the demo: run the seed again to reset
+
 ## New presentation deck (v2)
 - [ ] Open `marketing/presentation/Smart-Assess-Ja-Manchester-Presentation-v2.pptx` on the machine you will present from. Fonts: Impact and Arial (installed on most Windows and Mac machines); check the headings look condensed and bold, not plain
 - [ ] Read each slide's speaker notes (timings add up to 30 minutes; slides 11, 15 and 18 are marked optional)

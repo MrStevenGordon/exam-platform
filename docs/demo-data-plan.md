@@ -39,7 +39,16 @@
 
 Each stage is its own SQL file, tested on the sandbox, then you run it. Suggested timing: seed 2 to 3 days before, rehearse the day before, and **re-run the seed the morning of** (or restore) so participants' own changes during the hands-on do not leave the demo messy.
 
-## Decisions needed (see the conversation)
+## Decisions (made 2026-10-06)
+- The demo runs on the four test accounts (Testing Teacher, Testing HOD, Testing Principal, student 54321), each filled with data that lines up (the same class, tests and lessons appear in every portal). The 19 staff accounts are not filled.
+- Student IDs like 1-1-1 are replaced with random 5-digit IDs by `scripts/reassign-student-ids.mjs`, without deleting or re-uploading anyone.
+- The timetable follows the sample the owner is uploading.
+- Library: not decided, left out.
+
+## Status
+Built and tested on a throwaway database: Assess data, Learning data, attendance, student ID script. Waiting for the timetable sample: timetable, today's classes, absence and cover, principal alerts, report cards, integrity page. See `scripts/demo/README.md`.
+
+## Earlier open questions (answered above)
 1. Who drives the live demo, and on which accounts? (the "Testing" demo accounts, or the real staff accounts?)
 2. Should the staff's own 19 accounts see data too, so participants exploring on their own login see something?
 3. Library: load two public-domain Shakespeare titles (Macbeth, A Midsummer Night's Dream, already prepared in `marketing/library-content`) as a demo, or leave the Library empty and show it from the "being stocked" state?
