@@ -29,7 +29,7 @@ Open `e2e/.env.e2e` in a text editor and fill in:
   left open can block the check, and the check can block you for up to 10 minutes if it is interrupted before it signs out).
 - If an account still has its starting password the site asks for a new one at sign-in. The checker does not change passwords: it
   notes this and carries on from the home page.
-- If an account uses two-step sign-in (an authenticator code), the checker cannot enter the code and skips that person (it says so).
+- **Two-step sign-in (an authenticator code):** the checker never stores or guesses codes. Run with `HEADED=1` so Chrome opens as a visible window. When it reaches the code box it makes a beep and waits (up to 3 minutes) while you type the 6 digit code from your authenticator app and press the button; then it carries on by itself. Without `HEADED=1` it skips that person and says why.
 
 ## Run it
 Try one person first:
@@ -38,10 +38,10 @@ Try one person first:
 ONLY=student npm run check
 ```
 
-Then everyone:
+Then everyone. Because the teacher, HOD and principal use two-step sign-in, run it with the visible window and be ready with your phone; it asks for one code per person as it reaches them:
 
 ```bash
-npm run check
+HEADED=1 npm run check
 ```
 
 It takes roughly 5 to 10 minutes. To watch it work in a visible Chrome window, add `HEADED=1` in front, for example `HEADED=1 ONLY=teacher npm run check`.

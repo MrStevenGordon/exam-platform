@@ -103,10 +103,24 @@ async function signIn(page, person) {
     await page.fill('form input:not([type=password]):not([type=hidden])', person.login)
     await page.fill('form input[type=password]', person.password)
     await page.click('form button[type=submit]')
-    const arrived = await page.waitForURL((u) => !u.pathname.startsWith('/login'), { timeout: 25000 }).then(() => true).catch(() => false)
-    if (arrived) return { ok: true, path: new URL(page.url()).pathname }
+    // Either the person is signed in, or the page asks for the code from their authenticator app (two-step sign-in).
+    const codeBox = page.locator('input[placeholder="123456"]')
+    const first = await Promise.race([
+      page.waitForURL((u) => !u.pathname.startsWith('/login'), { timeout: 25000 }).then(() => 'arrived').catch(() => null),
+      codeBox.waitFor({ state: 'visible', timeout: 25000 }).then(() => 'code').catch(() => null),
+    ])
+    if (first === 'arrived') return { ok: true, path: new URL(page.url()).pathname }
+    if (first === 'code') {
+      // The checker never stores or guesses codes. In a visible window the person types the code themselves and the checker waits.
+      if (!HEADED) return { ok: false, why: 'This account uses two-step sign-in and needs a code from an authenticator app. Run again with HEADED=1 (see e2e/README.md) so you can type the code yourself; this person was skipped.' }
+      process.stdout.write('\x07')
+      console.log(`  ${person.label} needs a code: type the 6 digit code from your authenticator app into the Chrome window and press the button. Waiting up to 3 minutes...`)
+      const done = await page.waitForURL((u) => !u.pathname.startsWith('/login'), { timeout: 180000 }).then(() => true).catch(() => false)
+      if (done) return { ok: true, path: new URL(page.url()).pathname }
+      return { ok: false, why: 'No correct code was entered within 3 minutes, so this person was skipped.' }
+    }
     const mfa = await page.locator('input[placeholder="123456"]').count()
-    if (mfa) return { ok: false, why: 'This account needs a code from an authenticator app (two-step sign-in). The checker cannot enter that code, so it was skipped.' }
+    if (mfa) return { ok: false, why: 'This account uses two-step sign-in and needs a code from an authenticator app. Run again with HEADED=1 so you can type the code yourself; this person was skipped.' }
     const msg = (await page.locator('.banner-danger, [role="alert"]').first().innerText().catch(() => '')).trim()
     if (msg) return { ok: false, why: `Sign-in refused: ${msg}` }
     // Stuck with no message: record what is on the screen. The typed login and password are cleared first, so they are not in the screenshot.
