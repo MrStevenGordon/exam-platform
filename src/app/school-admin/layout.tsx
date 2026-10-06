@@ -12,6 +12,7 @@ import { getMfaRedirect } from '@/lib/mfaCheck'
 import { verifyPortalRole } from '@/lib/verifyPortalRole'
 import { isSubstitutionToolsAvailable, useSubstitutionUnfilledCount } from '@/lib/substitution'
 import { isLibraryAvailable } from '@/lib/library'
+import { isExamInsightAvailable } from '@/lib/examInsight'
 
 const SCHOOL_ADMIN_TOUR_STEPS: TourStep[] = [
   { href: '/school-admin', title: 'Your home base', body: "This is where you'll land every time you sign in, with a school-wide overview." },
@@ -66,6 +67,8 @@ export default function SchoolAdminLayout({ children }: { children: React.ReactN
   const unfilled = useSubstitutionUnfilledCount(toolsOn)
   const [libraryOn, setLibraryOn] = useState(false)
   useEffect(() => { isLibraryAvailable().then(setLibraryOn) }, [])
+  const [insightOn, setInsightOn] = useState(false)
+  useEffect(() => { isExamInsightAvailable().then(setInsightOn) }, [])
 
   useEffect(() => {
     async function checkAccess() {
@@ -85,9 +88,13 @@ export default function SchoolAdminLayout({ children }: { children: React.ReactN
     ? SCHOOL_ADMIN_NAV.flatMap((n) => (n.href === '/school-admin/timetable' ? [n, { label: 'Substitution', icon: 'ti-replace', href: '/school-admin/substitution' }] : [n]))
     : SCHOOL_ADMIN_NAV
   // Which Library shelves and titles students see, once the school has the Library switched on.
-  const navItems = libraryOn
+  const withLibrary = libraryOn
     ? withTools.flatMap((n) => (n.href === '/school-admin/messages' ? [{ label: 'Library', icon: 'ti-books', href: '/school-admin/library' }, n] : [n]))
     : withTools
+  // Which questions classes missed and which students may need support, once migration 080 is applied.
+  const navItems = insightOn
+    ? withLibrary.flatMap((n) => (n.href === '/school-admin/analytics' ? [n, { label: 'Exam Insight', icon: 'ti-chart-dots', href: '/school-admin/insight' }] : [n]))
+    : withLibrary
   const tabGroup = TAB_GROUPS.find((g) => g.tabs.some((t) => pathname === t.href || pathname.startsWith(t.href + '/')))
 
   return (

@@ -5,6 +5,7 @@ import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import EmptyState from '@/components/EmptyState'
+import { isExamInsightAvailable } from '@/lib/examInsight'
 
 type Session = {
   id: string
@@ -31,8 +32,10 @@ export default function ExamSessionsPage() {
   const [loading, setLoading] = useState(true)
   const [errorMsg, setErrorMsg] = useState('')
   const [releasing, setReleasing] = useState<string | null>(null)
+  const [insightOn, setInsightOn] = useState(false)
 
   useEffect(() => { loadData() }, [examId])
+  useEffect(() => { isExamInsightAvailable().then(setInsightOn) }, [])
 
   async function loadData() {
     try {
@@ -121,11 +124,16 @@ export default function ExamSessionsPage() {
             {completed.length} submitted · {inProgress.length} in progress · {unreleased.length} results pending release
           </p>
         </div>
-        {unreleased.length > 0 && (
-          <button onClick={handleReleaseAll} disabled={releasing === 'all'} className="btn btn-primary">
-            {releasing === 'all' ? 'Releasing…' : `Release all results (${unreleased.length})`}
-          </button>
-        )}
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          {insightOn && completed.length > 0 && (
+            <Link href={`/teacher/insight/direct/${examId}`} className="btn btn-secondary">Insight</Link>
+          )}
+          {unreleased.length > 0 && (
+            <button onClick={handleReleaseAll} disabled={releasing === 'all'} className="btn btn-primary">
+              {releasing === 'all' ? 'Releasing…' : `Release all results (${unreleased.length})`}
+            </button>
+          )}
+        </div>
       </div>
 
       {errorMsg && <div className="banner banner-danger" style={{ marginBottom: 16 }}>{errorMsg}</div>}

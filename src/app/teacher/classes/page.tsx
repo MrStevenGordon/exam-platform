@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { usePresence } from '@/lib/presence'
 import PresenceDot from '@/components/PresenceDot'
+import { isExamInsightAvailable } from '@/lib/examInsight'
 
 type ClassGroup = {
   id: string
@@ -21,6 +22,8 @@ export default function MyClassesPage() {
   const [loading, setLoading] = useState(true)
   const [expandedClasses, setExpandedClasses] = useState<Set<string>>(new Set())
   const [search, setSearch] = useState('')
+  const [insightOn, setInsightOn] = useState(false)
+  useEffect(() => { isExamInsightAvailable().then(setInsightOn) }, [])
 
   useEffect(() => {
     async function load() {
@@ -100,10 +103,15 @@ export default function MyClassesPage() {
 
   return (
     <div>
-      <h1 className="portal-page-title">My Classes</h1>
-      <p className="portal-page-sub">
-        {classes.length} class{classes.length !== 1 ? 'es' : ''} · {classes.reduce((sum, c) => sum + c.students.length, 0)} students
-      </p>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
+        <div>
+          <h1 className="portal-page-title">My Classes</h1>
+          <p className="portal-page-sub">
+            {classes.length} class{classes.length !== 1 ? 'es' : ''} · {classes.reduce((sum, c) => sum + c.students.length, 0)} students
+          </p>
+        </div>
+        {insightOn && <Link href="/teacher/insight" className="btn btn-secondary">Exam insight</Link>}
+      </div>
 
       {classes.length === 0 && (
         <div className="card" style={{ textAlign: 'center', padding: 32 }}>

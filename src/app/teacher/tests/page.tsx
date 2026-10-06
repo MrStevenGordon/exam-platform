@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import EmptyState from '@/components/EmptyState'
+import { isExamInsightAvailable } from '@/lib/examInsight'
 
 type DraftExam = { id: string; title: string; subject: string; status: string; exam_kind: string; direct_published: boolean; created_at: string }
 
@@ -14,6 +15,8 @@ export default function TeacherTestsPage() {
   const router = useRouter()
   const [tests, setTests] = useState<DraftExam[]>([])
   const [loading, setLoading] = useState(true)
+  const [insightOn, setInsightOn] = useState(false)
+  useEffect(() => { isExamInsightAvailable().then(setInsightOn) }, [])
 
   useEffect(() => {
     async function load() {
@@ -47,7 +50,10 @@ export default function TeacherTestsPage() {
           <h1 className="portal-page-title" style={{ margin: 0 }}>Tests</h1>
           <p className="portal-page-sub" style={{ margin: '4px 0 0' }}>Pop quizzes, class tests, and weekly tests</p>
         </div>
-        <Link href="/teacher/new?kind=test"><button className="btn btn-primary">+ New test</button></Link>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          {insightOn && <Link href="/teacher/insight" className="btn btn-secondary">Exam insight</Link>}
+          <Link href="/teacher/new?kind=test"><button className="btn btn-primary">+ New test</button></Link>
+        </div>
       </div>
       {tests.length === 0 && <EmptyState icon="✏️" title="No tests yet" description="Pop quizzes, class tests, and weekly tests you create will show up here." action={{ label: '+ New test', href: '/teacher/new?kind=test' }} />}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>

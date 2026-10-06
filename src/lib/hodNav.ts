@@ -57,7 +57,7 @@ export function hodNavItems(attendanceOn: boolean, topicsOn = false, learningOn 
 
 // Pages under /teacher that HODs may also open. Everything else under
 // /teacher stays teacher-only.
-export const TEACHER_AREAS_OPEN_TO_HODS = ['/teacher/tasks', '/teacher/tests', '/teacher/exam', '/teacher/new', '/teacher/lesson-plans', '/teacher/bank', '/teacher/grade', '/teacher/attendance', '/teacher/report-absence', '/teacher/cover']
+export const TEACHER_AREAS_OPEN_TO_HODS = ['/teacher/tasks', '/teacher/tests', '/teacher/exam', '/teacher/new', '/teacher/lesson-plans', '/teacher/bank', '/teacher/grade', '/teacher/attendance', '/teacher/report-absence', '/teacher/cover', '/teacher/insight']
 
 export function isOpenToHods(pathname: string): boolean {
   return TEACHER_AREAS_OPEN_TO_HODS.some((p) => pathname === p || pathname.startsWith(p + '/'))
@@ -67,7 +67,7 @@ export function isOpenToHods(pathname: string): boolean {
 // itself a sidebar entry.
 export function resolveHodActivePathname(pathname: string, searchParams: URLSearchParams): string {
   if (pathname === '/teacher/new') return searchParams.get('kind') === 'task' ? '/teacher/tasks' : '/teacher/tests'
-  if (pathname.startsWith('/teacher/exam') || pathname.startsWith('/teacher/grade')) return '/teacher/tests'
+  if (pathname.startsWith('/teacher/exam') || pathname.startsWith('/teacher/grade') || pathname.startsWith('/teacher/insight')) return '/teacher/tests'
   // Detail pages that belong to a merged section light up that section.
   if (pathname.startsWith('/supervisor/exam/')) return '/supervisor/final-exams'
   if (pathname.startsWith('/supervisor/student/')) return '/supervisor/classrooms'

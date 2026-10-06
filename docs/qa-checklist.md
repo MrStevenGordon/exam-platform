@@ -241,6 +241,29 @@ School controls and notes (needs migration 079):
 
 ---
 
+## 7h. Exam insight (Smart Assess, needs migration 080)
+
+Setup first: `docs/exam-insight-setup.md`. Use a test with at least eight finished papers, some multiple choice and one essay, for the full picture.
+
+- [ ] Before 080 is applied: no **Insight** button, **Exam insight** button or **Exam Insight** menu item appears for anyone
+- [ ] **Teacher:** a test's results page has **Insight**; **Tests** and **My Classes** have **Exam insight** listing their tests and the school exams their classes sat
+- [ ] The page shows students who sat (out of those expected), class average, how many are below the pass mark, and the change against the last test
+- [ ] **Questions** are listed hardest first. A multiple-choice question that most students got wrong shows the wrong answer most of them chose and how many
+- [ ] A question under 40% right on a test of eight or more students is marked **Most missed**. On a smaller test nothing is marked
+- [ ] Essays and short answers show **% of marks**, not a right/wrong count. An essay still waiting to be marked says so and is left out of the average
+- [ ] **By topic** appears only where questions have a topic, and says how many questions were left out. With no topics it says so
+- [ ] **Students** lists who may need support with the reasons beside each name. Below the pass mark, 15+ points under their own average (needs two earlier tests), did not sit, weak on a topic. Nobody is labelled "at risk"
+- [ ] A student whose essay is not marked yet is listed under **Waiting for marking**, not under support
+- [ ] **Class over time** shows up to five tests, oldest first, with this test highlighted. It says so when there are not enough earlier tests
+- [ ] With fewer than five students: percentages are replaced by counts and a note says why
+- [ ] **Download CSV** opens in a spreadsheet; a student name beginning with `=` is not run as a formula
+- [ ] **Class teacher** on a school exam: sees only the students they teach, with a note that other classes are not shown
+- [ ] **Head of department:** Analytics has an **Exam Insight** tab listing the department's tests and exams. A test from another department is refused if the address is typed
+- [ ] **School admin and principal:** **Exam Insight** in the sidebar lists everything and opens the same page
+- [ ] **Another teacher** typing the address of a test they did not set: "You do not have access". A student typing it: refused
+- [ ] Phone width: no sideways page scroll; tables scroll inside their own box
+- [ ] Tab key moves through the three tabs; left and right arrows switch them; every bar has its number and a word (Strong, Mixed, Weak), not only a colour
+
 ## 8. Owner console (you)
 
 - [ ] **School requests** and **Org requests**: approve and provision

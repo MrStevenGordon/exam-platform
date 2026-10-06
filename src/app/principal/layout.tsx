@@ -11,6 +11,7 @@ import { verifyPortalRole } from '@/lib/verifyPortalRole'
 import { PRINCIPAL_NAV, PRINCIPAL_TOUR_STEPS } from '@/lib/principalNav'
 import OnboardingTour from '@/components/OnboardingTour'
 import { useAttendanceAlerts } from '@/lib/useAttendanceAlerts'
+import { isExamInsightAvailable } from '@/lib/examInsight'
 
 export default function PrincipalLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
@@ -18,6 +19,8 @@ export default function PrincipalLayout({ children }: { children: React.ReactNod
   const [checked, setChecked] = useState(false)
   const [accessOk, setAccessOk] = useState(false)
   const unreadAlerts = useAttendanceAlerts(accessOk)
+  const [insightOn, setInsightOn] = useState(false)
+  useEffect(() => { isExamInsightAvailable().then(setInsightOn) }, [])
 
   useEffect(() => {
     async function checkAccess() {
@@ -42,7 +45,7 @@ export default function PrincipalLayout({ children }: { children: React.ReactNod
       <InactivityLogout />
       <PresenceHeartbeat />
       <main className="portal-content"><PageTransition>{children}</PageTransition></main>
-      <Sidebar navItems={PRINCIPAL_NAV} portalLabel="Leadership Portal" badges={{ '/principal/alerts': unreadAlerts }} />
+      <Sidebar navItems={insightOn ? PRINCIPAL_NAV.flatMap((n) => (n.href === '/principal/students' ? [n, { label: 'Exam Insight', icon: 'ti-chart-dots', href: '/principal/insight' }] : [n])) : PRINCIPAL_NAV} portalLabel="Leadership Portal" badges={{ '/principal/alerts': unreadAlerts }} />
       <OnboardingTour tourKey="principal" steps={PRINCIPAL_TOUR_STEPS} />
     </div>
   )
