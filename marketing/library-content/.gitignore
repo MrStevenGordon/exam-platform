@@ -1,0 +1,4 @@
+# Downloaded books and audio stay out of git
+*
+!.gitignore
+!README.md

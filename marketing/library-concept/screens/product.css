@@ -1,0 +1,738 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+/* Fraunces — the display serif used for the public site's logo wordmark and marketing headlines
+   (src/components/marketing/Logo.tsx and the redesigned homepage), paired with Inter for
+   everything else. Inter alone stays the portal/app typeface throughout. */
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap');
+/* Tabler Icons — every `ti ti-…` icon across the app (Sidebar, ProductSwitcher, login,
+   Smart Learning) was referencing this class convention with no font ever loaded to back it,
+   so every one of those icons was rendering as nothing. Self-hosted (bundled at build time)
+   rather than a runtime CDN link, same as everything else in this stylesheet is self-authored. */
+@import url('tabler/tabler-icons.min.css');
+
+:root {
+  /* Core palette — warm, deep, Caribbean */
+  --page-bg: #FDF8F3;
+  --card-bg: #FFFFFF;
+
+  /* Accent — deeper, richer orange */
+  --accent: #D4762A;
+  --accent-dark: #A85A18;
+  --accent-light: #FAE8D4;
+  --accent-mid: #E8924A;
+
+  /* Text — genuine brown, not generated-feeling */
+  --text-primary: #1E1208;
+  --text-secondary: #6B4F35;
+  --text-muted: #A08060;
+
+  /* Semantic */
+  --success: #2D7A4F;
+  --success-bg: #E6F4ED;
+  --danger: #B03A28;
+  --danger-bg: #FAE8E5;
+  --warning: #8C6020;
+  --warning-bg: #FEF5E4;
+
+  /* Borders */
+  --border: #EAD9C4;
+  --border-strong: #D4BC9A;
+
+  /* Radius */
+  --radius: 8px;
+  --radius-pill: 100px;
+
+  /* Shadows — warmer, more natural */
+  --shadow-card: 0 1px 2px rgba(80, 40, 10, 0.06), 0 0 0 1px rgba(80, 40, 10, 0.06);
+  --shadow-card-hover: 0 4px 12px rgba(80, 40, 10, 0.10), 0 0 0 1px rgba(80, 40, 10, 0.08);
+
+  /* Sidebar */
+  --sidebar-bg: #1A0E06;
+  --sidebar-width: 200px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  color: var(--text-primary);
+  background: var(--page-bg);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  margin: 0;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Typography — sentence case, human feeling */
+h1, h2, h3 {
+  margin: 0;
+  font-weight: 700;
+  color: var(--text-primary);
+  text-transform: capitalize;
+  letter-spacing: -0.2px;
+  line-height: 1.3;
+}
+
+label {
+  text-transform: capitalize;
+}
+
+h1 { font-size: 22px; }
+h2 { font-size: 16px; }
+h3 { font-size: 14px; }
+
+p {
+  margin: 0;
+  color: var(--text-primary);
+}
+
+a {
+  color: var(--accent-dark);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+input:not([type="checkbox"]):not([type="radio"]), textarea, select {
+  font-family: inherit;
+  font-size: 14px;
+  border: 1.5px solid var(--border-strong);
+  border-radius: var(--radius);
+  padding: 9px 12px;
+  background: white;
+  color: var(--text-primary);
+  transition: border-color 0.15s, box-shadow 0.15s;
+  width: 100%;
+}
+
+input[type="checkbox"], input[type="radio"] {
+  width: auto;
+  flex-shrink: 0;
+}
+
+input:focus, textarea:focus, select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(212, 118, 42, 0.15);
+}
+
+textarea {
+  resize: vertical;
+  min-height: 80px;
+  line-height: 1.6;
+}
+
+select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236B4F35' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 32px;
+}
+
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.1px;
+  text-transform: capitalize;
+  padding: 9px 18px;
+  border-radius: var(--radius);
+  border: none;
+  cursor: pointer;
+  transition: all 0.12s ease;
+  white-space: nowrap;
+  text-decoration: none;
+}
+
+.btn:active {
+  transform: scale(0.97);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: white;
+  box-shadow: 0 1px 3px rgba(168, 90, 24, 0.3);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--accent-dark);
+  box-shadow: 0 2px 6px rgba(168, 90, 24, 0.35);
+}
+
+.btn-secondary {
+  background: white;
+  color: var(--accent-dark);
+  border: 1.5px solid var(--accent);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: var(--accent-light);
+}
+
+.btn-danger {
+  background: var(--danger);
+  color: white;
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: #8C2E1E;
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1.5px solid var(--border-strong);
+}
+
+.btn-ghost:hover:not(:disabled) {
+  background: var(--accent-light);
+  border-color: var(--accent);
+  color: var(--accent-dark);
+}
+
+/* Dark variant — used on light backgrounds where the usual orange primary would sit too close in
+   tone to a nearby accent-colored section (e.g. the homepage's final CTA, set on --accent-light). */
+.btn-dark {
+  background: #1A0E06;
+  color: white;
+}
+
+.btn-dark:hover:not(:disabled) {
+  background: #2A1810;
+}
+
+/* Cards — cleaner, more genuine */
+.card {
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-card);
+  padding: 16px 20px;
+  border: 1px solid var(--border);
+}
+
+.card-clickable {
+  cursor: pointer;
+  transition: box-shadow 0.15s, transform 0.1s;
+}
+
+.card-clickable:hover {
+  box-shadow: var(--shadow-card-hover);
+  transform: translateY(-1px);
+}
+
+/* Badges */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  padding: 3px 10px;
+  border-radius: 6px;
+  text-transform: capitalize;
+}
+
+.badge-default {
+  background: var(--border);
+  color: var(--text-secondary);
+}
+
+.badge-warning {
+  background: var(--warning-bg);
+  color: var(--warning);
+}
+
+.badge-success {
+  background: var(--success-bg);
+  color: var(--success);
+}
+
+.badge-danger {
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+
+/* Homepage nav — small uppercase label used above a hero/section headline, and the
+   hover-opened dropdowns for "Build My School" / "For Organizations" / "About" (desktop only;
+   below 1024px these collapse into the flat mobile menu instead — see the 1024px block below). */
+.eyebrow-tag {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.nav-link {
+  font-size: 14px;
+  font-weight: 500;
+  padding: 10px 14px;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  border-radius: 8px;
+  cursor: default;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.nav-dropdown { position: relative; }
+
+.nav-dropdown-panel {
+  display: none;
+  flex-direction: column;
+  gap: 2px;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 4px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 8px;
+  min-width: 190px;
+  box-shadow: 0 16px 32px -12px rgba(30, 18, 8, 0.18);
+  z-index: 20;
+}
+
+.nav-dropdown:hover .nav-dropdown-panel { display: flex; }
+.nav-dropdown:hover .nav-link { color: var(--text-primary); background: var(--accent-light); }
+
+.nav-dropdown-panel a {
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  text-decoration: none;
+  padding: 10px 12px;
+  border-radius: 7px;
+}
+
+.nav-dropdown-panel a:hover { background: var(--accent-light); color: var(--accent-dark); }
+
+/* The mobile menu panel (.site-nav-links) sets its own inline display:flex so it's ready to open
+   the instant menuOpen flips true, but that means nothing hides it by default above the 1024px
+   breakpoint — without this rule it rendered permanently, stacked on top of the desktop dropdown
+   nav, at every width. The 1024px block below re-shows it (site-nav-links-open) only there. */
+.site-nav-links { display: none !important; }
+
+/* Page container */
+.page-container {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 24px 20px;
+}
+
+/* Section label */
+.section-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  color: var(--text-muted);
+  text-transform: capitalize;
+}
+
+/* Banners */
+.banner {
+  padding: 12px 16px;
+  border-radius: var(--radius);
+  font-size: 14px;
+  line-height: 1.5;
+  border-left: 3px solid;
+}
+
+.banner-warning {
+  background: var(--warning-bg);
+  color: var(--warning);
+  border-left-color: var(--warning);
+}
+
+.banner-success {
+  background: var(--success-bg);
+  color: var(--success);
+  border-left-color: var(--success);
+}
+
+.banner-danger {
+  background: var(--danger-bg);
+  color: var(--danger);
+  border-left-color: var(--danger);
+}
+
+/* Exam content — never uppercase question text */
+.exam-content,
+.exam-content * {
+  text-transform: none !important;
+  letter-spacing: normal !important;
+}
+
+/* Portal layout */
+.portal-layout {
+  display: flex;
+  min-height: 100vh;
+}
+
+.portal-content {
+  flex: 1;
+  min-width: 0;
+  background: var(--page-bg);
+  padding: 28px 32px;
+  overflow-y: auto;
+}
+
+/* Portal typography */
+.portal-page-title {
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  margin: 0 0 4px;
+  color: var(--text-primary);
+  text-transform: capitalize;
+}
+
+.portal-page-sub {
+  display: none;
+}
+
+/* Stat cards */
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 10px;
+  margin-bottom: 24px;
+}
+
+.stat-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+}
+
+.stat-card-value {
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.5px;
+}
+
+.stat-card-label {
+  font-size: 11px;
+  color: var(--text-secondary);
+  text-transform: capitalize;
+  letter-spacing: 0.5px;
+  margin-top: 3px;
+}
+
+/* A stat card that is also a link (for example on the principal overview). */
+a.stat-card { display: block; text-decoration: none; color: inherit; transition: border-color 0.12s, box-shadow 0.12s; }
+a.stat-card:hover { border-color: var(--accent); box-shadow: 0 1px 6px rgba(0, 0, 0, 0.08); }
+a.stat-card:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+a.stat-card .stat-card-hint { font-size: 11px; color: var(--text-muted); margin-top: 6px; }
+a.stat-card:hover .stat-card-hint { color: var(--accent-dark, var(--accent)); }
+
+.stat-card-success .stat-card-value { color: var(--success); }
+.stat-card-danger .stat-card-value { color: var(--danger); }
+.stat-card-accent .stat-card-value { color: var(--accent); }
+
+
+
+/* Hide sidebar during fullscreen exam */
+body.exam-fullscreen .portal-layout > *:first-child {
+  display: none !important;
+}
+body.exam-fullscreen .portal-content {
+  margin-left: 0 !important;
+  padding-left: 24px !important;
+}
+
+
+/* ===== TABLET (769px - 1024px) ===== */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .portal-content {
+    padding: 16px 20px;
+  }
+
+  .page-container {
+    padding: 16px 20px;
+    max-width: 100%;
+  }
+
+  .stat-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+
+  .portal-page-title { font-size: 18px; }
+  h1 { font-size: 19px; }
+  h2 { font-size: 15px; }
+
+  .card { padding: 14px 16px; }
+
+  /* Hero title's range (62px desktop down to 38px on phones, set in the 768px-and-below block)
+     is wide enough to want a middle step here rather than jumping straight to the phone size.
+     Scoped to 769-1024px specifically (not max-width: 1024px) so it doesn't also win, by source
+     order, against the phone-size rule below 768px. */
+  .hero-title { font-size: 50px !important; }
+}
+
+/* ===== MOBILE RESPONSIVE ===== */
+@media (max-width: 768px) {
+  body, html { overflow-x: hidden; }
+
+  .portal-layout {
+    flex-direction: column;
+    padding-top: 56px;
+  }
+
+  .portal-content {
+    padding: 14px !important;
+    min-height: calc(100vh - 56px);
+    width: 100%;
+  }
+
+  .page-container {
+    padding: 14px;
+    max-width: 100%;
+    width: 100%;
+  }
+
+  .portal-page-title { font-size: 17px; }
+  .portal-page-sub { font-size: 12px; margin-bottom: 14px; }
+
+  h1 { font-size: 17px; }
+  h2 { font-size: 14px; }
+  h3 { font-size: 13px; }
+
+  .stat-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+
+  .stat-card { padding: 10px 12px; }
+  .stat-card-value { font-size: 20px; }
+  .stat-card-label { font-size: 10px; }
+
+  .card { padding: 12px 14px; border-radius: 8px; }
+  .card-clickable:hover { transform: none; }
+
+  /* Tables scroll */
+  table {
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    width: 100%;
+  }
+
+  /* Inputs full width — but never checkboxes/radios, which have a fixed
+     native size; forcing width:100% stretches them into an oversized,
+     misshapen control and shoves everything next to them out of place
+     (e.g. the answer-option radio buttons on the add-question page). */
+  input:not([type="checkbox"]):not([type="radio"]), select, textarea { width: 100% !important; }
+  input[type="checkbox"], input[type="radio"] { width: auto !important; flex-shrink: 0; }
+
+  /* Flex rows that have inline gap styles — let them wrap */
+  .flex-wrap-mobile { flex-wrap: wrap !important; }
+
+  /* Button groups wrap on mobile */
+  .btn-group { flex-wrap: wrap; gap: 8px; }
+
+  /* Hide on mobile */
+  .hide-mobile { display: none !important; }
+
+  /* Forms — stack label + input vertically */
+  .form-row { flex-direction: column !important; }
+
+  /* Ensure no horizontal overflow from inline styles */
+  [style*="display: grid"]:not(.calc-grid) { min-width: 0; }
+  [style*="display: flex"]:not(.calc-row) { min-width: 0; }
+
+  /* Header-style rows (page title + button/badge/timer) are set inline
+     across almost every portal page with no wrap and no shrink guard —
+     on narrow screens the two sides collide or push off-screen.
+     Let them wrap onto two lines instead. */
+  [style*="justify-content: space-between"]:not(.calc-row) {
+    flex-wrap: wrap;
+    row-gap: 8px;
+  }
+
+  /* Ad-hoc 2/3-equal-column grids (form fields, filter rows, stat pairs)
+     stay multi-column at any width today, which crushes each column too
+     narrow to read on a phone. Stack them to one column on mobile.
+     (.stat-grid is handled separately above and unaffected — it's a
+     class, not an inline style, so this selector doesn't touch it.) */
+  [style*="grid-template-columns: 1fr 1fr"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Homepage editorial headings were sized with clamp(min, Nvw, max), which smoothly resizes the
+     text as the window is dragged — reported as "the words resize" while resizing the browser.
+     Fixed sizes per breakpoint instead: the same min/max values from the old clamp(), just as a
+     step instead of continuous interpolation. */
+  .hero-title { font-size: 38px !important; }
+  .problem-title { font-size: 28px !important; }
+  .idea-title, .platform-title, .ecosystem-title { font-size: 26px !important; }
+  .cta-title, .overview-title { font-size: 28px !important; }
+  .contact-title { font-size: 24px !important; }
+}
+
+/* Homepage-style top nav — its own breakpoint, deliberately wider than the 768px one above.
+   The full link row (logo, 6 nav items including 3 dropdown triggers, and 2 buttons) needs about
+   1200px to lay out in one line without crowding; 1024px wasn't enough — .nav-link items lacked
+   white-space: nowrap, so mid-width windows (confirmed by resizing through the range) wrapped
+   labels like "Build My School" onto 2-3 lines, and even after adding nowrap, "Request a Demo"
+   still overflowed off the right edge below ~1200px. 1280px gives real clearance above that
+   measured threshold. Below it, the desktop dropdown row (.home-nav-desktop) is replaced entirely
+   by a flat mobile menu panel toggled by a hamburger button (site-nav-links-open added in React
+   state) — hover dropdowns don't have a touch equivalent, so the mobile panel lists every item
+   (including each dropdown's children, as .mobile-nav-group / .mobile-nav-sublink) already
+   expanded, nothing to hover. */
+@media (max-width: 1280px) {
+  .site-nav { padding: 12px 16px !important; position: relative; }
+  .home-nav-desktop { display: none !important; }
+  .site-nav-links {
+    display: none !important;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 2px !important;
+    background: var(--card-bg);
+    border-bottom: 1px solid var(--border);
+    padding: 8px 16px 14px;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.06);
+  }
+  .site-nav-links.site-nav-links-open { display: flex !important; }
+  .site-nav-links a { font-size: 14px !important; padding: 10px 6px !important; }
+  .site-nav-links .btn { width: 100%; justify-content: center; margin-left: 0 !important; margin-top: 6px; }
+  .nav-menu-toggle { display: inline-flex !important; }
+  /* "Request a Demo" already reappears as its own full-width button inside the open mobile
+     panel — keeping it in the persistent top bar too, alongside Find My School AND the hamburger,
+     was three elements fighting for a ~340px-wide row and overflowed the viewport on any real
+     phone. Only Find My School (the single most-needed action) plus the toggle stay pinned. */
+  .nav-demo-btn { display: none !important; }
+  /* Groups (Build My School, For Organizations, About) are real accordions in the mobile panel —
+     the desktop nav reveals children on hover, which has no touch equivalent, so here a tap on
+     the group header toggles its own .mobile-nav-sublinks open/closed instead of listing every
+     child expanded at once. */
+  .mobile-nav-group {
+    width: 100%;
+    background: none;
+    border: none;
+    font-family: inherit;
+    text-align: left;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    padding: 14px 6px 10px;
+    cursor: pointer;
+  }
+  .mobile-nav-group svg { transition: transform 0.2s ease; }
+  .mobile-nav-group[aria-expanded="true"] svg { transform: rotate(180deg); }
+  .mobile-nav-sublinks {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    max-height: 0;
+    transition: max-height 0.25s ease;
+  }
+  .site-nav-links a.mobile-nav-sublink { padding-left: 20px !important; font-size: 13.5px !important; color: var(--text-secondary); }
+}
+
+@media (max-width: 480px) {
+  .portal-content { padding: 10px !important; }
+  .stat-grid { grid-template-columns: 1fr 1fr; gap: 6px; }
+  .stat-card-value { font-size: 18px; }
+  .portal-page-title { font-size: 15px; }
+  .card { padding: 10px 12px; }
+  .btn { font-size: 13px; padding: 9px 14px; }
+  /* The logo (Smart Assess Ja, in Fraunces) is sized in JS from a single `size` prop meant for a
+     roomy nav bar — at real phone widths, next to the hamburger toggle and Find My School, it had
+     nowhere near enough room and wrapped "Ja" onto its own line, then "Assess" onto a third.
+     Shrinking the mark and both wordmark spans here (they can't be reached by the `size` prop
+     itself, which only runs once at render) plus the nowrap already on .logo-wordmark keeps it to
+     one line at any phone width. */
+  .logo-mark { width: 28px !important; height: 26px !important; }
+  .logo-wordmark span { font-size: 15px !important; }
+}
+
+/* Scientific calculator — protect from mobile overrides */
+.scientific-calculator,
+.scientific-calculator * {
+  box-sizing: border-box !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  width: auto !important;
+}
+.scientific-calculator button {
+  width: 100% !important;
+  min-height: 36px !important;
+}
+
+/* ===== Tabbed pages (TabHub) ===== */
+.hub-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid var(--border);
+}
+.hub-tab {
+  margin-bottom: -1px;
+  padding: 10px 14px;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+.hub-tab:hover { color: var(--text-primary); }
+.hub-tab[aria-selected="true"] {
+  color: var(--text-primary);
+  border-bottom-color: var(--accent);
+}
+.hub-tab:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+/* A page shown inside a tab already has its title in the tab bar, and sits
+   inside the portal padding already. */
+.hub-embedded .portal-page-title,
+.hub-embedded h1 { display: none; }
+.hub-embedded .page-container { max-width: none; padding: 0; }
+
+/* ===== Online / away / offline status ===== */
+.presence { display: inline-flex; align-items: center; gap: 6px; vertical-align: middle; }
+.presence-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; display: inline-block; }
+.presence-online { background: var(--success); }
+.presence-away { background: #D9A441; }
+.presence-offline { background: transparent; border: 2px solid var(--text-muted); }
+.presence-label { font-size: 11px; color: var(--text-secondary); }

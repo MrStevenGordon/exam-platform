@@ -1,0 +1,66 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Audio player</title><link rel="stylesheet" href="product.css"><style>
+body{margin:0}
+.concept-tag{position:fixed;bottom:12px;right:14px;z-index:50;background:#1E1208;color:#FAC882;font-size:11px;font-weight:700;letter-spacing:1px;padding:5px 10px;border-radius:100px;text-transform:uppercase}
+.side{width:200px;background:#1A0E06;min-height:100vh;display:flex;flex-direction:column;flex-shrink:0;position:sticky;top:0;height:100vh}
+.side .brand{padding:20px 20px 16px;border-bottom:1px solid rgba(255,255,255,.08)}
+.nav-i{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:6px;font-size:13px;color:rgba(255,255,255,.55);border-left:3px solid transparent;margin:1px 0}
+.nav-i.on{background:rgba(212,118,42,.25);color:#FAC882;font-weight:600;border-left-color:#D4762A}
+.nav-i .ti{font-size:16px}
+.cover{border-radius:4px;display:flex;flex-direction:column;justify-content:space-between;padding:10px;box-sizing:border-box;position:relative;box-shadow:0 2px 6px rgba(80,40,10,.25)}
+.cover .t{font-family:'Fraunces',serif;font-weight:600;line-height:1.1}
+.cover .a{font-size:9px;letter-spacing:1px;text-transform:uppercase;opacity:.85;font-weight:600}
+.bk{width:150px;flex-shrink:0}
+.bk .meta{margin-top:8px}
+.bk .ti1{font-size:13px;font-weight:600;line-height:1.25;color:var(--text-primary)}
+.bk .au{font-size:12px;color:var(--text-secondary);margin-top:2px}
+.fmt{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;color:var(--text-secondary);background:#fff;border:1px solid var(--border);border-radius:100px;padding:2px 8px;margin-right:4px}
+.fmt .ti{font-size:12px}
+.shelf{display:flex;gap:18px;overflow:hidden}
+.shelf-h{display:flex;align-items:baseline;justify-content:space-between;margin:26px 0 12px}
+.shelf-h h2{margin:0;font-size:17px;font-weight:700}
+.shelf-h span{font-size:12px;color:var(--accent-dark);font-weight:600}
+.chipbar{display:flex;gap:8px;flex-wrap:wrap}
+.chip{font-size:12px;font-weight:600;padding:6px 12px;border-radius:100px;border:1px solid var(--border-strong);background:#fff;color:var(--text-secondary)}
+.chip.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.prog{height:5px;border-radius:3px;background:var(--border);overflow:hidden}
+.prog>i{display:block;height:100%;background:var(--accent)}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--border);margin:18px 0 4px}
+.tab{padding:9px 14px;font-size:13px;font-weight:600;color:var(--text-muted);border-bottom:2px solid transparent;margin-bottom:-1px}
+.tab.on{color:var(--accent-dark);border-bottom-color:var(--accent)}
+.lic{font-size:11px;color:var(--text-secondary)}
+.lic b{color:var(--success)}
+table.t{width:100%;border-collapse:collapse;font-size:13px}
+table.t th{text-align:left;font-size:11px;letter-spacing:.5px;text-transform:uppercase;color:var(--text-muted);padding:8px 10px;border-bottom:1px solid var(--border)}
+table.t td{padding:10px;border-bottom:1px solid var(--border);vertical-align:middle}
+.field{display:flex;flex-direction:column;gap:5px;margin-bottom:14px}
+.field label{font-size:11px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.5px}
+.field .in{border:1px solid var(--border-strong);border-radius:8px;padding:9px 12px;font-size:13px;background:#fff;color:var(--text-primary)}
+.tog{width:38px;height:22px;border-radius:100px;background:var(--border-strong);position:relative;flex-shrink:0}
+.tog.on{background:var(--success)}
+.tog::after{content:'';position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#fff}
+.tog.on::after{left:19px}
+body{background:#e9e2d8}</style></head><body><div class="concept-tag">Concept screen</div>
+<div style="width:390px;min-height:844px;background:#FDF8F3;margin:0 auto;display:flex;flex-direction:column;position:relative">
+  <div style="background:#1A0E06;padding:14px 16px;display:flex;justify-content:space-between;align-items:center"><div><div style="font-size:9px;letter-spacing:1.5px;color:rgba(255,255,255,.4);font-weight:700;text-transform:uppercase">Smart Assess Ja</div><div style="font-size:14px;font-weight:700;color:#fff">Library</div></div><i class="ti ti-menu-2" style="color:#fff;font-size:20px"></i></div>
+  <div style="padding:22px 24px 8px;text-align:center">
+    <div style="display:flex;justify-content:center"><div class="cover" style="width:210px;height:290px;background:#1F8A84;color:#fff"><div class="a">R. L. Stevenson</div><div class="t" style="font-size:22px">Treasure Island</div></div></div>
+    <div style="font-size:18px;font-weight:700;margin-top:18px">Treasure Island</div>
+    <div style="font-size:13px;color:var(--text-secondary);margin-top:2px">Chapter 12: What I Heard in the Apple Barrel</div>
+    <div style="margin-top:8px"><span class="badge badge-success"><i class="ti ti-download"></i> Saved for offline</span></div>
+  </div>
+  <div style="padding:6px 28px"><div class="prog" style="height:6px"><i style="width:36%"></i></div><div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-muted);margin-top:6px"><span>12:40</span><span>-21:32</span></div></div>
+  <div style="display:flex;justify-content:center;align-items:center;gap:26px;margin:8px 0 14px">
+    <i class="ti ti-rewind-backward-15" style="font-size:32px;color:var(--text-secondary)"></i>
+    <div style="width:68px;height:68px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center"><i class="ti ti-player-pause" style="font-size:30px;color:#fff"></i></div>
+    <i class="ti ti-rewind-forward-15" style="font-size:32px;color:var(--text-secondary)"></i>
+  </div>
+  <div style="display:flex;justify-content:center;gap:10px;margin-bottom:16px"><span class="chip">1.0x speed</span><span class="chip"><i class="ti ti-moon"></i> Sleep timer</span><span class="chip"><i class="ti ti-book-2"></i> Read along</span></div>
+  <div style="padding:0 20px"><div class="card" style="padding:0">
+    <div style="padding:10px 14px;font-weight:700;font-size:13px;border-bottom:1px solid var(--border)">Chapters</div>
+    <div style="padding:9px 14px;font-size:13px;color:var(--text-muted)"><i class="ti ti-circle-check" style="color:var(--success)"></i>&nbsp; 11. The Captain's Papers</div>
+    <div style="padding:9px 14px;font-size:13px;background:var(--accent-light);font-weight:600"><i class="ti ti-player-play" style="color:var(--accent)"></i>&nbsp; 12. What I Heard in the Apple Barrel</div>
+    <div style="padding:9px 14px;font-size:13px">&nbsp;&nbsp;&nbsp;&nbsp; 13. Council of War</div>
+  </div></div>
+  <div style="font-size:11px;color:var(--text-muted);text-align:center;margin:16px 0 8px">Public-domain text with a volunteer recording</div>
+</div></body></html>
