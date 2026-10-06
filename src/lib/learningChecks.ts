@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase'
+import { isLevel, type CheckLevel } from '@/lib/checkLevelsPure'
 
 export type CheckKind = 'multiple_choice' | 'numeric'
 
@@ -18,6 +19,7 @@ export type CheckQuestion = {
   correct_number: number | null
   tolerance: number
   explanation: string
+  level?: string            // present once migration 086 is applied; a missing level means core
 }
 
 // A question while it is being written: everything is text so half-typed values are fine.
@@ -29,10 +31,11 @@ export type QuestionDraft = {
   correctNumber: string
   tolerance: string
   explanation: string
+  level: CheckLevel
 }
 
-export function emptyDraft(kind: CheckKind = 'multiple_choice'): QuestionDraft {
-  return { kind, prompt: '', options: ['', '', ''], correctIndex: null, correctNumber: '', tolerance: '', explanation: '' }
+export function emptyDraft(kind: CheckKind = 'multiple_choice', level: CheckLevel = 'core'): QuestionDraft {
+  return { kind, prompt: '', options: ['', '', ''], correctIndex: null, correctNumber: '', tolerance: '', explanation: '', level }
 }
 
 export function draftFromQuestion(q: CheckQuestion): QuestionDraft {
@@ -44,6 +47,7 @@ export function draftFromQuestion(q: CheckQuestion): QuestionDraft {
     correctNumber: q.correct_number === null ? '' : String(q.correct_number),
     tolerance: q.tolerance ? String(q.tolerance) : '',
     explanation: q.explanation,
+    level: isLevel(q.level) ? q.level : 'core',
   }
 }
 
@@ -80,8 +84,9 @@ export function validateDraft(d: QuestionDraft): string | null {
 }
 
 // The row to save. Fields that do not apply to the kind are left null, as the database expects.
-export function draftToRow(d: QuestionDraft) {
-  const base = { kind: d.kind, prompt: d.prompt.trim(), explanation: d.explanation.trim() }
+// withLevel is true only once migration 086 is installed, so schools without it save exactly as before.
+export function draftToRow(d: QuestionDraft, withLevel = false) {
+  const base = { kind: d.kind, prompt: d.prompt.trim(), explanation: d.explanation.trim(), ...(withLevel ? { level: d.level } : {}) }
   if (d.kind === 'multiple_choice') {
     return { ...base, options: d.options.map((o) => o.trim()), correct_index: d.correctIndex, correct_number: null, tolerance: 0 }
   }
@@ -96,14 +101,17 @@ export type CheckOverview = {
   first_try_score: number | null
   first_try_max: number | null
   best_score: number | null
+  level?: string          // the level these questions are at (migration 086)
+  levels?: string[]       // the levels the lesson has questions for
 }
 export type CheckFeedback = { question_id: string; correct: boolean; correct_answer: string; explanation: string }
-export type CheckSubmission = { attempt_no: number; first_try: boolean; score: number; max: number; results: CheckFeedback[] }
+export type CheckSubmission = { attempt_no: number; first_try: boolean; score: number; max: number; level?: string; results: CheckFeedback[] }
 
 // Teacher-side result rows.
 export type CheckResultRow = {
   student_id: string; student_name: string; student_code: string | null; class_group_id: string; class_name: string
   attempts: number; first_score: number | null; first_max: number | null; best_score: number | null; last_at: string | null
+  first_level?: string | null; last_level?: string | null    // migration 086
 }
 export type ItemStat = { question_id: string; question_position: number; prompt: string; answered: number; correct: number }
 
@@ -127,4 +135,21 @@ export function isChecksAvailable(): Promise<boolean> {
     })()
   }
   return availability
+}
+
+let levelsAvailability: Promise<boolean> | null = null
+
+// Three levels of practice need migration 086. Until it is applied, no level choice is shown anywhere.
+export function isCheckLevelsAvailable(): Promise<boolean> {
+  if (!levelsAvailability) {
+    levelsAvailability = (async () => {
+      try {
+        const { error } = await supabase.rpc('check_levels_ready')
+        return !error
+      } catch {
+        return false
+      }
+    })()
+  }
+  return levelsAvailability
 }

@@ -4,9 +4,11 @@ import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import EmptyState from '@/components/EmptyState'
 import {
-  MAX_CHECK_QUESTIONS, MAX_OPTIONS, MIN_OPTIONS, draftFromQuestion, draftToRow, emptyDraft, validateDraft,
+  MAX_CHECK_QUESTIONS, MAX_OPTIONS, MIN_OPTIONS, draftFromQuestion, draftToRow, emptyDraft, isCheckLevelsAvailable, validateDraft,
   type CheckKind, type CheckQuestion, type QuestionDraft,
 } from '@/lib/learningChecks'
+import { isLevel, LEVELS, LEVEL_HELP, LEVEL_LABEL, levelCounts, type CheckLevel } from '@/lib/checkLevelsPure'
+import LessonChecksAiDraft from '@/components/learning/LessonChecksAiDraft'
 import type { LessonRow } from '@/lib/learning'
 
 const KIND_LABEL: Record<CheckKind, string> = { multiple_choice: 'Multiple choice', numeric: 'Number' }
@@ -24,18 +26,23 @@ export default function LessonChecksTab({ lesson }: { lesson: LessonRow }) {
   const [editing, setEditing] = useState<{ id: string | null; draft: QuestionDraft } | null>(null)
   const [formError, setFormError] = useState('')
   const [reload, setReload] = useState(0)
+  // Three levels of practice (support, core, stretch) once migration 086 is applied.
+  const [levelsOn, setLevelsOn] = useState(false)
+  const [level, setLevel] = useState<CheckLevel>('core')
+  useEffect(() => { isCheckLevelsAvailable().then(setLevelsOn) }, [])
 
   useEffect(() => {
     let cancelled = false
     async function load() {
+      const available = await isCheckLevelsAvailable()
       const { data, error: e } = await supabase
         .from('learning_check_questions')
-        .select('id, lesson_id, position, kind, prompt, options, correct_index, correct_number, tolerance, explanation')
+        .select(available ? 'id, lesson_id, position, kind, prompt, options, correct_index, correct_number, tolerance, explanation, level' : 'id, lesson_id, position, kind, prompt, options, correct_index, correct_number, tolerance, explanation')
         .eq('lesson_id', lesson.id)
         .order('position').order('created_at')
       if (cancelled) return
       if (e) setError('Could not load the questions. Please try again.')
-      else { setQuestions((data as CheckQuestion[]) || []); setError('') }
+      else { setQuestions((data as unknown as CheckQuestion[]) || []); setError('') }
       setLoading(false)
     }
     load()
@@ -43,10 +50,13 @@ export default function LessonChecksTab({ lesson }: { lesson: LessonRow }) {
   }, [lesson.id, reload])
 
   const refresh = useCallback(() => setReload((n) => n + 1), [])
-  const full = questions.length >= MAX_CHECK_QUESTIONS
+  // With levels, each level holds up to 10 questions and the teacher works on one level at a time.
+  const shown = levelsOn ? questions.filter((q) => (isLevel(q.level) ? q.level : 'core') === level) : questions
+  const counts = levelCounts(questions)
+  const full = shown.length >= MAX_CHECK_QUESTIONS
 
   function startNew(kind: CheckKind) {
-    setEditing({ id: null, draft: emptyDraft(kind) }); setFormError(''); setNotice('')
+    setEditing({ id: null, draft: emptyDraft(kind, level) }); setFormError(''); setNotice('')
   }
 
   function patch(p: Partial<QuestionDraft>) {
@@ -58,7 +68,7 @@ export default function LessonChecksTab({ lesson }: { lesson: LessonRow }) {
     const problem = validateDraft(editing.draft)
     if (problem) { setFormError(problem); return }
     setBusy(true); setFormError('')
-    const row = draftToRow(editing.draft)
+    const row = draftToRow(editing.draft, levelsOn)
     const { error: e } = editing.id
       ? await supabase.from('learning_check_questions').update(row).eq('id', editing.id)
       : await supabase.from('learning_check_questions').insert({ ...row, lesson_id: lesson.id, position: Math.min(50, (questions.reduce((m, q) => Math.max(m, q.position), 0)) + 1) })
@@ -80,8 +90,8 @@ export default function LessonChecksTab({ lesson }: { lesson: LessonRow }) {
   // Swaps a question with its neighbour, then renumbers so positions stay 1, 2, 3...
   async function move(index: number, delta: -1 | 1) {
     const target = index + delta
-    if (target < 0 || target >= questions.length) return
-    const order = [...questions]
+    if (target < 0 || target >= shown.length) return
+    const order = [...shown]
     ;[order[index], order[target]] = [order[target], order[index]]
     setBusy(true); setNotice('')
     let failed = false
@@ -106,17 +116,30 @@ export default function LessonChecksTab({ lesson }: { lesson: LessonRow }) {
       </p>
       {error && <p className="banner banner-danger" role="alert">{error}</p>}
       {notice && <p className="banner banner-success" role="status">{notice}</p>}
+      {levelsOn && (
+        <div style={{ margin: '0 0 12px' }}>
+          <div role="tablist" aria-label="Question level" style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+            {LEVELS.map((l) => (
+              <button key={l} type="button" role="tab" aria-selected={level === l} className={level === l ? 'btn btn-primary' : 'btn btn-ghost'} style={{ fontSize: 13 }} disabled={!!editing}
+                onClick={() => { setLevel(l); setNotice('') }}>{LEVEL_LABEL[l]} ({counts[l]})</button>
+            ))}
+          </div>
+          <p style={{ margin: '8px 0 0', fontSize: 12, color: 'var(--text-secondary)' }}>
+            {LEVEL_HELP[level]} Students are suggested a level from how they did on this topic and can switch. A lesson with only Core questions shows no choice.
+          </p>
+        </div>
+      )}
       {lesson.status === 'published' && questions.length > 0 && (
         <p className="banner banner-warning" style={{ fontSize: 13 }}>
           This lesson is published. Students who have already answered keep their scores, even if you change a question.
         </p>
       )}
 
-      {questions.length === 0 && !editing && (
-        <EmptyState icon="❓" title="No check questions yet" description="Add a few questions to see how well students understood the lesson." />
+      {shown.length === 0 && !editing && (
+        <EmptyState icon="❓" title={levelsOn && questions.length > 0 ? `No ${LEVEL_LABEL[level]} questions yet` : 'No check questions yet'} description={levelsOn ? LEVEL_HELP[level] : 'Add a few questions to see how well students understood the lesson.'} />
       )}
 
-      {questions.map((q, i) => (
+      {shown.map((q, i) => (
         <div key={q.id} className="card" style={{ marginBottom: 8 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'flex-start', flexWrap: 'wrap' }}>
             <div style={{ flex: 1, minWidth: 220 }}>
@@ -143,7 +166,7 @@ export default function LessonChecksTab({ lesson }: { lesson: LessonRow }) {
             </div>
             <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
               <button type="button" className="btn btn-ghost" style={{ fontSize: 12 }} disabled={busy || i === 0} onClick={() => move(i, -1)} aria-label={`Move question ${i + 1} up`}>↑</button>
-              <button type="button" className="btn btn-ghost" style={{ fontSize: 12 }} disabled={busy || i === questions.length - 1} onClick={() => move(i, 1)} aria-label={`Move question ${i + 1} down`}>↓</button>
+              <button type="button" className="btn btn-ghost" style={{ fontSize: 12 }} disabled={busy || i === shown.length - 1} onClick={() => move(i, 1)} aria-label={`Move question ${i + 1} down`}>↓</button>
               <button type="button" className="btn btn-secondary" style={{ fontSize: 12 }} disabled={busy} onClick={() => { setEditing({ id: q.id, draft: draftFromQuestion(q) }); setFormError(''); setNotice('') }}>Edit</button>
               <button type="button" className="btn btn-ghost" style={{ fontSize: 12, color: 'var(--danger)' }} disabled={busy} onClick={() => remove(q)}>Delete</button>
             </div>
@@ -163,6 +186,14 @@ export default function LessonChecksTab({ lesson }: { lesson: LessonRow }) {
             </div>
           )}
 
+          {levelsOn && (
+            <div style={{ marginBottom: 10 }}>
+              <label htmlFor="cq-level" style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)' }}>Level</label>
+              <select id="cq-level" value={d.level} onChange={(e) => patch({ level: e.target.value as CheckLevel })} style={{ display: 'block', marginTop: 4 }}>
+                {LEVELS.map((l) => <option key={l} value={l}>{LEVEL_LABEL[l]}</option>)}
+              </select>
+            </div>
+          )}
           <label htmlFor="cq-prompt" style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)' }}>Question</label>
           <textarea id="cq-prompt" value={d.prompt} onChange={(e) => patch({ prompt: e.target.value })} rows={3} style={{ width: '100%', margin: '4px 0 12px' }} placeholder="e.g. What is 10% of $200?" />
 
@@ -215,7 +246,8 @@ export default function LessonChecksTab({ lesson }: { lesson: LessonRow }) {
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', marginTop: 8 }}>
           <button type="button" className="btn btn-primary" disabled={full || busy} onClick={() => startNew('multiple_choice')}>+ Multiple choice</button>
           <button type="button" className="btn btn-secondary" disabled={full || busy} onClick={() => startNew('numeric')}>+ Number answer</button>
-          <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{questions.length} of {MAX_CHECK_QUESTIONS}{full ? ' (the most a lesson can have)' : ''}</span>
+          <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{shown.length} of {MAX_CHECK_QUESTIONS}{levelsOn ? ` ${LEVEL_LABEL[level]} questions` : ''}{full ? (levelsOn ? ' (the most a level can have)' : ' (the most a lesson can have)') : ''}</span>
+          {levelsOn && <LessonChecksAiDraft lesson={lesson} level={level} room={MAX_CHECK_QUESTIONS - shown.length} nextPosition={questions.reduce((m, q) => Math.max(m, q.position), 0) + 1} onAdded={() => { setNotice('Questions added. Read them and edit any you want to change.'); refresh() }} />}
         </div>
       )}
     </div>

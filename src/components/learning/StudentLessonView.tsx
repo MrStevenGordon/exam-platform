@@ -212,7 +212,7 @@ export default function StudentLessonView({ lessonId }: { lessonId: string }) {
           </div>
         )}
       </div>
-      <StudentLessonCheck lessonId={lessonId} stepsDone={lesson.steps_done.length} stepsTotal={STEP_KEYS.length} />
+      <StudentLessonCheck lessonId={lessonId} stepsDone={lesson.steps_done.length} stepsTotal={STEP_KEYS.length} topic={lesson.topic ?? null} />
       <StudentTutor lessonId={lessonId} />
       <PlayTopicLink topic={lesson.topic ?? null} />
       <style>{`

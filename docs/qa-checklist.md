@@ -356,6 +356,21 @@ Use a test student who has sat at least one exam with topic-tagged questions who
 - [ ] **Privacy:** log in as a second student and a teacher: neither sees the first student's decks or cards, by the menu or by typing the deck's address
 - [ ] Delete a deck: it and its cards are gone
 
+## 7n. Three levels of practice on lesson checks (Smart Learning, needs migration 086)
+
+- [ ] Before 086, a lesson's checks tab looks as before (no level tabs). After 086 it shows **Support (n)**, **Core (n)** and **Stretch (n)**. Existing questions are under Core
+- [ ] Add two Support questions and one Stretch question to a lesson that has Core questions. Each appears only under its own tab, and the counts update
+- [ ] Open a question under Core and change its **Level** to Support: it moves
+- [ ] **Draft Support questions with AI**: ask for 3, read them, untick one, add. They appear under Support and can be edited. (Needs a working Anthropic key)
+- [ ] Publish and assign the lesson. As a student with **no** results on the topic: three level buttons show, **Core (suggested)** is selected and says there is not enough work on the topic yet
+- [ ] As a student whose topic result is under 50%: **Support (suggested)** is selected with the reason "You scored n% on <topic> so far". As a student at 75% or more: **Stretch (suggested)**
+- [ ] Switch level: the questions change and the right answers are not shown. Do the check: it marks only that level's questions and says which level you did
+- [ ] A lesson with only Core questions shows no level buttons at all and works exactly as before
+- [ ] The **Check results** table (teacher) shows a **Level** column once a student did Support or Stretch, and "Core → Support" style when their level changed
+- [ ] The first try is the one on the student's record; a second try at another level is practice
+- [ ] Add 10 questions at one level: the 11th is refused with a clear message, but another level still takes questions
+- [ ] A student not in the class cannot open the check (same as before)
+
 ## 8. Owner console (you)
 
 - [ ] **School requests** and **Org requests**: approve and provision

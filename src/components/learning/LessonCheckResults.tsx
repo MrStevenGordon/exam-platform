@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase'
 import { timeAgo } from '@/lib/presence'
 import { compareClassNames } from '@/lib/classNames'
 import { isChecksAvailable, percent, type CheckResultRow, type ItemStat } from '@/lib/learningChecks'
+import { isLevel, LEVEL_LABEL } from '@/lib/checkLevelsPure'
 
 // How the class did on the check: each student's first try, and which questions were hardest.
 // Renders nothing until check questions exist (and migration 060 is applied).
@@ -34,6 +35,8 @@ export default function LessonCheckResults({ lessonId }: { lessonId: string }) {
   }, [lessonId])
 
   const tried = useMemo(() => rows.filter((r) => r.attempts > 0), [rows])
+  // The Level column appears once migration 086 is applied and at least one student did a level other than core.
+  const showLevels = rows.some((r) => (isLevel(r.first_level) && r.first_level !== 'core') || (isLevel(r.last_level) && r.last_level !== 'core'))
   const average = useMemo(() => {
     const scored = tried.filter((r) => r.first_score !== null && r.first_max)
     if (scored.length === 0) return null
@@ -91,7 +94,7 @@ export default function LessonCheckResults({ lessonId }: { lessonId: string }) {
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
           <thead>
             <tr style={{ textAlign: 'left', color: 'var(--text-secondary)' }}>
-              {['Student', 'Class', 'First try', 'Best', 'Tries', 'Last'].map((h) => <th key={h} style={{ padding: '10px 12px', whiteSpace: 'nowrap' }}>{h}</th>)}
+              {['Student', 'Class', ...(showLevels ? ['Level'] : []), 'First try', 'Best', 'Tries', 'Last'].map((h) => <th key={h} style={{ padding: '10px 12px', whiteSpace: 'nowrap' }}>{h}</th>)}
             </tr>
           </thead>
           <tbody>
@@ -101,6 +104,12 @@ export default function LessonCheckResults({ lessonId }: { lessonId: string }) {
                 <tr key={`${r.class_group_id}-${r.student_id}`} style={{ borderTop: '1px solid var(--border)' }}>
                   <td style={{ padding: '8px 12px', fontWeight: 600 }}>{r.student_name}{r.student_code ? <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}> · {r.student_code}</span> : null}</td>
                   <td style={{ padding: '8px 12px' }}>{r.class_name}</td>
+                  {showLevels && (
+                    <td style={{ padding: '8px 12px', whiteSpace: 'nowrap' }}>
+                      {isLevel(r.first_level) ? LEVEL_LABEL[r.first_level] : '—'}
+                      {isLevel(r.last_level) && r.last_level !== r.first_level ? <span style={{ color: 'var(--text-muted)' }}> → {LEVEL_LABEL[r.last_level]}</span> : null}
+                    </td>
+                  )}
                   <td style={{ padding: '8px 12px' }}>
                     {pct === null ? <span className="badge badge-default">Not tried</span> : <span className={`badge ${pct >= 70 ? 'badge-success' : pct >= 50 ? 'badge-warning' : 'badge-danger'}`}>{r.first_score}/{r.first_max} · {pct}%</span>}
                   </td>

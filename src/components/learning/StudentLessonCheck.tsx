@@ -3,22 +3,28 @@
 import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { parseNumber, percent, type CheckOverview, type CheckSubmission } from '@/lib/learningChecks'
+import { findTopicFor, isLevel, LEVEL_HELP, LEVEL_LABEL, orderLevels, startingLevel, suggestLevel, type CheckLevel, type Suggestion } from '@/lib/checkLevelsPure'
+import { loadMyTopics } from '@/lib/studentTopics'
+import { computeTopics } from '@/lib/studentTopicsPure'
 
 const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F']
 
 // "Check your understanding": a few short questions after the lesson, marked straight away.
 // The right answers arrive only after the student submits. Shows nothing if the lesson has no
 // questions or the feature is not installed, so it can never get in the way of the lesson.
-export default function StudentLessonCheck({ lessonId, stepsDone, stepsTotal }: { lessonId: string; stepsDone: number; stepsTotal: number }) {
+export default function StudentLessonCheck({ lessonId, stepsDone, stepsTotal, topic = null }: { lessonId: string; stepsDone: number; stepsTotal: number; topic?: { name: string; subject: string } | null }) {
   const [overview, setOverview] = useState<CheckOverview | null>(null)
   const [mode, setMode] = useState<'idle' | 'answering' | 'result'>('idle')
   const [answers, setAnswers] = useState<Record<string, string>>({})
   const [result, setResult] = useState<CheckSubmission | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
+  // Only present when the lesson has more than one level of questions (migration 086).
+  const [suggestion, setSuggestion] = useState<Suggestion | null>(null)
 
-  const load = useCallback(async () => {
-    const { data, error: e } = await supabase.rpc('learning_get_check', { p_lesson_id: lessonId })
+  // Loads the questions, for one level when asked. Without migration 086 the level is ignored and nothing changes.
+  const load = useCallback(async (level?: CheckLevel) => {
+    const { data, error: e } = await supabase.rpc('learning_get_check', level ? { p_lesson_id: lessonId, p_level: level } : { p_lesson_id: lessonId })
     // Not installed, closed, or not available: simply show nothing.
     if (e || !data) { setOverview(null); return }
     setOverview(data as CheckOverview)
@@ -26,15 +32,33 @@ export default function StudentLessonCheck({ lessonId, stepsDone, stepsTotal }: 
 
   useEffect(() => {
     let cancelled = false
-    supabase.rpc('learning_get_check', { p_lesson_id: lessonId }).then(({ data, error: e }) => {
+    async function init() {
+      const { data, error: e } = await supabase.rpc('learning_get_check', { p_lesson_id: lessonId })
       if (cancelled) return
-      setOverview(e || !data ? null : (data as CheckOverview))
-    })
+      if (e || !data) { setOverview(null); return }
+      let ov = data as CheckOverview
+      const levels = orderLevels(ov.levels)
+      if (levels.length > 1) {
+        // Suggest a level from how the student has done on this lesson's topic. If their results cannot be read, the suggestion is core.
+        const res = await loadMyTopics()
+        const sug = suggestLevel(res.ok ? findTopicFor(computeTopics(res.rows), topic) : null)
+        const start = startingLevel(levels, sug.level)
+        if (!cancelled) setSuggestion(sug)
+        if (start !== ov.level) {
+          const again = await supabase.rpc('learning_get_check', { p_lesson_id: lessonId, p_level: start })
+          if (!again.error && again.data) ov = again.data as CheckOverview
+        }
+      }
+      if (!cancelled) setOverview(ov)
+    }
+    init()
     return () => { cancelled = true }
-  }, [lessonId])
+  }, [lessonId, topic?.name, topic?.subject]) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!overview || overview.questions.length === 0) return null
   const questions = overview.questions
+  const levels = orderLevels(overview.levels)
+  const level: CheckLevel | null = isLevel(overview.level) ? overview.level : null
   const total = questions.length
   const answered = questions.filter((q) => (answers[q.id] ?? '').trim() !== '').length
   const numbersOk = questions.every((q) => q.kind !== 'numeric' || (answers[q.id] ?? '') === '' || parseNumber(answers[q.id]) !== null)
@@ -48,10 +72,10 @@ export default function StudentLessonCheck({ lessonId, stepsDone, stepsTotal }: 
     setSubmitting(true); setError('')
     const payload: Record<string, number | string> = {}
     for (const q of questions) payload[q.id] = q.kind === 'multiple_choice' ? Number(answers[q.id]) : answers[q.id].trim()
-    const { data, error: e } = await supabase.rpc('learning_submit_check', { p_lesson_id: lessonId, p_answers: payload })
+    const { data, error: e } = await supabase.rpc('learning_submit_check', level && levels.length > 1 ? { p_lesson_id: lessonId, p_answers: payload, p_level: level } : { p_lesson_id: lessonId, p_answers: payload })
     setSubmitting(false)
     if (e) { setError(e.message && !/^(JWT|fetch|Failed)/i.test(e.message) ? e.message : 'Could not submit. Please try again.'); return }
-    setResult(data as CheckSubmission); setMode('result'); load()
+    setResult(data as CheckSubmission); setMode('result'); load(level && levels.length > 1 ? level : undefined)
   }
 
   return (
@@ -60,6 +84,21 @@ export default function StudentLessonCheck({ lessonId, stepsDone, stepsTotal }: 
 
       {mode === 'idle' && (
         <div>
+          {levels.length > 1 && level && (
+            <div style={{ margin: '4px 0 12px' }}>
+              <div role="radiogroup" aria-label="Practice level" style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                {levels.map((l) => (
+                  <button key={l} type="button" role="radio" aria-checked={level === l} className={level === l ? 'btn btn-primary' : 'btn btn-ghost'} style={{ fontSize: 13 }}
+                    onClick={() => { if (l !== level) { setAnswers({}); load(l) } }}>
+                    {LEVEL_LABEL[l]}{suggestion?.level === l ? ' (suggested)' : ''}
+                  </button>
+                ))}
+              </div>
+              <p style={{ margin: '8px 0 0', fontSize: 12, color: 'var(--text-secondary)' }}>
+                {LEVEL_HELP[level]}{suggestion && suggestion.level === level ? ` ${suggestion.reason}` : suggestion ? ` Suggested for you: ${LEVEL_LABEL[suggestion.level]}. ${suggestion.reason}` : ''} You can switch levels any time.
+              </p>
+            </div>
+          )}
           <p style={{ margin: '0 0 10px', fontSize: 13, color: 'var(--text-secondary)' }}>
             {total} short question{total === 1 ? '' : 's'}, marked straight away.
             {stepsDone < stepsTotal ? ' You can try it now, but it works best after you finish the lesson.' : ''}
@@ -77,6 +116,7 @@ export default function StudentLessonCheck({ lessonId, stepsDone, stepsTotal }: 
 
       {mode === 'answering' && (
         <form onSubmit={(e) => { e.preventDefault(); submit() }}>
+          {levels.length > 1 && level && <p style={{ margin: '0 0 8px', fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)' }}>{LEVEL_LABEL[level]} level</p>}
           {overview.attempts > 0 && <p style={{ margin: '0 0 10px', fontSize: 12, color: 'var(--text-secondary)' }}>This is practice. Your first score is the one on your record.</p>}
           {questions.map((q, i) => (
             <fieldset key={q.id} style={{ border: 'none', padding: 0, margin: '0 0 16px' }}>
