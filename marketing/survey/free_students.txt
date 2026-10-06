@@ -1,0 +1,24 @@
+S1  Q6: "My daily improvement" (the word "weekly" is written above "daily", so the student may mean weekly)
+S1  Q7: "Accessibility"
+S2  Q6: "Fun and engaging PowerPoint presentations."
+S2  Q7: "If a topic is difficult to understand I could go on the internet to better understand the information."
+S3  Q6: (blank)
+S3  Q7: (blank)
+S4  Q6: (blank)
+S4  Q7: (blank)
+S5  Q6: "Upcoming assignments"
+S5  Q7: "Better Wifi access"
+S6  Q6: "A platform that goes in depth about the specific topic and shows things/resources you need to improve in the topic, and show studying ideas"
+S6  Q7: "Technology takes it at our own pace, so we don't need to be worrying about anyone or anything else"
+S7  Q6: (blank)
+S7  Q7: (blank)
+S8  Q6: (blank)
+S8  Q7: (blank)
+S9  Q6: "AI tutor"
+S9  Q7: (blank)
+S10 Q6: "Challenges between students online"
+S10 Q7: "Using different study platforms (AI) or games such as games (Kahoot)."
+S11 Q6: "It to be offline as well as online"
+S11 Q7: "Easier wifi connection."
+S12 Q6: "Interactive quiz competitions where you could compete with students Islandwide"
+S12 Q7: "Note taking"

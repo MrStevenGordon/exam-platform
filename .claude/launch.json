@@ -1,0 +1,57 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "exam-platform-dev",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "dev"
+      ],
+      "port": 3000
+    },
+    {
+      "name": "motionforge-dev",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": [
+        "-c",
+        "cd /Users/boxerboychris/motionforge && npm run dev -- -p 3001"
+      ],
+      "port": 3001,
+      "autoPort": false
+    },
+    {
+      "name": "islandlabs-os-dev",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": [
+        "-c",
+        "cd /Users/boxerboychris/islandlabs-os && npm run dev -- -p 3000"
+      ],
+      "port": 3000,
+      "autoPort": false
+    },
+    {
+      "name": "motionforge-worker",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": [
+        "-c",
+        "cd /Users/boxerboychris/motionforge/worker && npm run dev"
+      ],
+      "port": 8787,
+      "autoPort": false
+    },
+    {
+      "name": "exam-platform-prod",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "start",
+        "--",
+        "-p",
+        "3100"
+      ],
+      "port": 3100,
+      "autoPort": false
+    }
+  ]
+}

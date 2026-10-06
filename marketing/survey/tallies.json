@@ -1,0 +1,430 @@
+{
+ "students": {
+  "n": 12,
+  "q": {
+   "q1": [
+    [
+     "Studying/preparing for exams",
+     10
+    ],
+    [
+     "Practice questions",
+     6
+    ],
+    [
+     "Catching up when I miss class",
+     4
+    ],
+    [
+     "Understanding difficult topics",
+     4
+    ],
+    [
+     "Accessing notes/learning materials",
+     3
+    ],
+    [
+     "Seeing grades/progress",
+     3
+    ],
+    [
+     "Tracking tests/deadlines",
+     3
+    ],
+    [
+     "Communicating with teachers",
+     2
+    ],
+    [
+     "Organizing schoolwork",
+     2
+    ]
+   ],
+   "q2": [
+    [
+     "Step-by-step explanations",
+     11
+    ],
+    [
+     "Practice questions",
+     7
+    ],
+    [
+     "Quizzes",
+     6
+    ],
+    [
+     "Games/challenges",
+     4
+    ],
+    [
+     "Study at my own pace",
+     3
+    ],
+    [
+     "Examples",
+     3
+    ],
+    [
+     "Videos",
+     2
+    ],
+    [
+     "Personalized study recommendations",
+     1
+    ],
+    [
+     "Instant feedback when I get something wrong",
+     1
+    ]
+   ],
+   "q3": [
+    [
+     "Lesson/notes",
+     6
+    ],
+    [
+     "Video explanation",
+     5
+    ],
+    [
+     "Everything I need to catch up",
+     3
+    ],
+    [
+     "Practice questions",
+     3
+    ],
+    [
+     "Interactive lesson",
+     3
+    ],
+    [
+     "Quiz",
+     3
+    ],
+    [
+     "Digital/AI tutor",
+     3
+    ]
+   ],
+   "q4": [
+    [
+     "Flashcards",
+     7
+    ],
+    [
+     "Short quizzes",
+     6
+    ],
+    [
+     "Games/competitions",
+     4
+    ],
+    [
+     "Practice based on topics I struggle with",
+     4
+    ],
+    [
+     "Timed practice exams",
+     4
+    ],
+    [
+     "Adaptive/harder questions",
+     3
+    ],
+    [
+     "Immediate explanations when I get an answer wrong",
+     3
+    ],
+    [
+     "Traditional practice questions",
+     2
+    ],
+    [
+     "Challenges against classmates",
+     1
+    ]
+   ],
+   "q5": [
+    [
+     "Topics I need to improve",
+     9
+    ],
+    [
+     "Grades",
+     7
+    ],
+    [
+     "Compare with my previous performance",
+     6
+    ],
+    [
+     "Strongest subjects/topics",
+     5
+    ],
+    [
+     "Progress toward goals",
+     5
+    ],
+    [
+     "Study recommendations",
+     3
+    ],
+    [
+     "Upcoming assessments",
+     2
+    ],
+    [
+     "Completed assignments",
+     2
+    ],
+    [
+     "Attendance",
+     1
+    ]
+   ]
+  }
+ },
+ "teachers": {
+  "n": 10,
+  "q": {
+   "q1": [
+    [
+     "Organizing teaching materials",
+     7
+    ],
+    [
+     "Creating exams/tests",
+     7
+    ],
+    [
+     "Creating lesson plans",
+     6
+    ],
+    [
+     "Marking student work",
+     5
+    ],
+    [
+     "Identifying students who need help",
+     5
+    ],
+    [
+     "Tracking student performance",
+     5
+    ],
+    [
+     "Managing attendance",
+     5
+    ],
+    [
+     "Generating reports",
+     4
+    ],
+    [
+     "Communicating with students",
+     4
+    ],
+    [
+     "Tracking curriculum/topic coverage",
+     3
+    ],
+    [
+     "Managing classes",
+     2
+    ],
+    [
+     "Creating assignments",
+     2
+    ]
+   ],
+   "q2": [
+    [
+     "Marking",
+     8
+    ],
+    [
+     "Creating questions",
+     6
+    ],
+    [
+     "Analyzing performance",
+     5
+    ],
+    [
+     "Calculating results",
+     4
+    ],
+    [
+     "Recording grades",
+     3
+    ],
+    [
+     "Identifying learning gaps",
+     2
+    ],
+    [
+     "Formatting exams",
+     2
+    ],
+    [
+     "Preparing reports",
+     1
+    ]
+   ],
+   "q3": [
+    [
+     "Students who are struggling",
+     8
+    ],
+    [
+     "Students needing support",
+     7
+    ],
+    [
+     "Common mistakes",
+     7
+    ],
+    [
+     "Students who are improving",
+     6
+    ],
+    [
+     "Class performance compared with previous assessments",
+     6
+    ],
+    [
+     "Individual performance",
+     4
+    ],
+    [
+     "Performance by topic",
+     4
+    ],
+    [
+     "Overall performance",
+     3
+    ],
+    [
+     "Attendance",
+     3
+    ],
+    [
+     "Curriculum/topic coverage",
+     2
+    ]
+   ],
+   "q4": [
+    [
+     "Automatically identify what the student missed",
+     9
+    ],
+    [
+     "Show the student's progress after catching up",
+     9
+    ],
+    [
+     "Provide lesson notes/materials",
+     8
+    ],
+    [
+     "Give a catch-up quiz",
+     5
+    ],
+    [
+     "Provide practice activities",
+     5
+    ],
+    [
+     "Provide missed lessons",
+     5
+    ],
+    [
+     "Recommend what the student should do next",
+     3
+    ]
+   ],
+   "q5": [
+    [
+     "Different activities for different ability levels",
+     9
+    ],
+    [
+     "Activities and examples for lessons",
+     8
+    ],
+    [
+     "AI-assisted lesson planning",
+     8
+    ],
+    [
+     "Curriculum-aligned lesson resources",
+     7
+    ],
+    [
+     "Share/reuse resources with other teachers",
+     5
+    ],
+    [
+     "Lesson-plan templates",
+     4
+    ],
+    [
+     "Track what has already been taught",
+     4
+    ],
+    [
+     "Easy access to previous lessons/resources",
+     3
+    ]
+   ],
+   "q6": [
+    [
+     "Question creation",
+     8
+    ],
+    [
+     "Grade calculation",
+     8
+    ],
+    [
+     "Performance analysis",
+     7
+    ],
+    [
+     "Teacher marking",
+     6
+    ],
+    [
+     "Exam formatting",
+     5
+    ],
+    [
+     "Automatic marking",
+     5
+    ],
+    [
+     "Identifying learning gaps",
+     4
+    ],
+    [
+     "Result release",
+     4
+    ],
+    [
+     "Printing/exporting",
+     1
+    ],
+    [
+     "Reports",
+     1
+    ],
+    [
+     "Online delivery",
+     1
+    ]
+   ]
+  }
+ }
+}

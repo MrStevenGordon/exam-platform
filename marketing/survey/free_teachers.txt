@@ -1,0 +1,20 @@
+T1  Q7: "A simple, reliable platform that works well on both phones and computers, even with limited internet access. For example it should keep lesson plans, attendance, assignments and grades in one place, reduce repetitive paperwork and allow easy printing and exporting."
+T1  Q8: "A learning gap tracker that analyses assessment results, identify areas where students need support and suggests suitable activities for reteaching and practice."
+T2  Q7: "App format that is available offline, does not require much space or data, can be useful for collaboration among teachers."
+T2  Q8: "Smaller class sizes"
+T3  Q7: "If it were a one stop to upload all important document."
+T3  Q8: "Something that shows how lesson plans can be improved to be more beneficial for students."
+T4  Q7: (blank)
+T4  Q8: (blank)
+T5  Q7: "Tracking lessons and creating follow up to correct content."
+T5  Q8: "Creating lesson plans and evaluating based on the needs."
+T6  Q7: "A system that truly supports teaching and learning, that allows teachers to focus on the teaching and learning process."
+T6  Q8: "AI Marking."
+T7  Q7: (blank)
+T7  Q8: (blank)
+T8  Q7: "If it provides help with a little of everything"
+T8  Q8: "Tool to assist with administrative tasks"
+T9  Q7: "Learning resources and activities at different levels: Beginners, intermediate etc."
+T9  Q8: (blank)
+T10 Q7: "One that's easily accessible and user friendly."
+T10 Q8: "Better access to technological resources."
