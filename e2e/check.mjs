@@ -9,7 +9,7 @@
 import { chromium } from 'playwright-core'
 import { mkdirSync, writeFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
-import { LANDING, PORTALS, badBaseUrl, cleanError, isNoise, pathToVisit, renderReport } from './lib/analyze.mjs'
+import { LANDING, PORTALS, badBaseUrl, cleanError, isNoise, pathToVisit, renderReport, summarizeSignInTrace } from './lib/analyze.mjs'
 
 const BASE = (process.env.BASE_URL || '').trim().replace(/\/+$/, '')
 if (!BASE) { console.error('Set BASE_URL in e2e/.env.e2e (the address of the site to check). See e2e/README.md.'); process.exit(1) }
@@ -84,18 +84,38 @@ async function openPage(page, role, path, viewport, { weigh }) {
 }
 
 async function signIn(page, person) {
-  await page.goto(BASE + '/login', { waitUntil: 'domcontentloaded', timeout: 30000 })
-  await page.waitForSelector('select', { timeout: 15000 })
-  await page.selectOption('select', person.role)
-  await page.fill('form input:not([type=password]):not([type=hidden])', person.login)
-  await page.fill('form input[type=password]', person.password)
-  await page.click('form button[type=submit]')
-  const arrived = await page.waitForURL((u) => !u.pathname.startsWith('/login'), { timeout: 25000 }).then(() => true).catch(() => false)
-  if (arrived) return { ok: true, path: new URL(page.url()).pathname }
-  const mfa = await page.locator('input[placeholder="123456"]').count()
-  if (mfa) return { ok: false, why: 'This account needs a code from an authenticator app (two-step sign-in). The checker cannot enter that code, so it was skipped.' }
-  const msg = (await page.locator('.banner-danger, [role="alert"]').first().innerText().catch(() => '')).trim()
-  return { ok: false, why: msg ? `Sign-in refused: ${msg}` : 'Sign-in did not finish (no error shown).' }
+  // While signing in, note what the page and the network did (paths and statuses only, never anything typed or any token), so a
+  // sign-in that gets stuck can be understood from the report.
+  const trace = { url: '', buttonText: '', pageText: '', requests: [], consoleErrors: [], pageErrors: [] }
+  const onResponse = (r) => { try { const u = new URL(r.url()); if (/\/(auth|rest|rpc)\/v1\//.test(u.pathname) || u.pathname.startsWith('/api/')) trace.requests.push({ method: r.request().method(), path: u.pathname, status: r.status() }) } catch { /* ignore */ } }
+  const onConsole = (m) => { if (m.type() === 'error' && !isNoise(m.text())) trace.consoleErrors.push(m.text().slice(0, 160)) }
+  const onPageError = (e) => trace.pageErrors.push(String(e.message || e).slice(0, 160))
+  page.on('response', onResponse); page.on('console', onConsole); page.on('pageerror', onPageError)
+  try {
+    await page.goto(BASE + '/login', { waitUntil: 'domcontentloaded', timeout: 30000 })
+    await page.waitForSelector('select', { timeout: 15000 })
+    await page.selectOption('select', person.role)
+    await page.fill('form input:not([type=password]):not([type=hidden])', person.login)
+    await page.fill('form input[type=password]', person.password)
+    await page.click('form button[type=submit]')
+    const arrived = await page.waitForURL((u) => !u.pathname.startsWith('/login'), { timeout: 25000 }).then(() => true).catch(() => false)
+    if (arrived) return { ok: true, path: new URL(page.url()).pathname }
+    const mfa = await page.locator('input[placeholder="123456"]').count()
+    if (mfa) return { ok: false, why: 'This account needs a code from an authenticator app (two-step sign-in). The checker cannot enter that code, so it was skipped.' }
+    const msg = (await page.locator('.banner-danger, [role="alert"]').first().innerText().catch(() => '')).trim()
+    if (msg) return { ok: false, why: `Sign-in refused: ${msg}` }
+    // Stuck with no message: record what is on the screen. The typed login and password are cleared first, so they are not in the screenshot.
+    trace.url = new URL(page.url()).origin + new URL(page.url()).pathname
+    trace.buttonText = (await page.locator('form button[type=submit]').first().innerText().catch(() => '')).trim().slice(0, 60)
+    trace.pageText = ((await page.locator('body').innerText().catch(() => '')) || '').replace(/\s+/g, ' ').trim().slice(0, 240)
+    await page.fill('form input:not([type=password]):not([type=hidden])', '').catch(() => {})
+    await page.fill('form input[type=password]', '').catch(() => {})
+    mkdirSync(join(OUT, person.role), { recursive: true })
+    await page.screenshot({ path: join(OUT, person.role, 'signin-stuck.jpg'), type: 'jpeg', quality: 55, fullPage: true }).catch(() => {})
+    return { ok: false, why: `Sign-in did not finish and no error was shown (waited 25 seconds). ${summarizeSignInTrace(trace)}. Screenshot: ${person.role}/signin-stuck.jpg` }
+  } finally {
+    page.off('response', onResponse); page.off('console', onConsole); page.off('pageerror', onPageError)
+  }
 }
 
 // Signing out matters most for students: a student can be signed in on one device at a time, so leaving the session open would lock

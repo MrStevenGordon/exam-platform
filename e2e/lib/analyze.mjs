@@ -80,6 +80,21 @@ export function badBaseUrl(raw) {
   return null
 }
 
+// A short plain description of what happened while signing in, so a stuck sign-in can be understood from the report alone.
+// trace = { url, buttonText, pageText, requests: [{ method, path, status }], consoleErrors: [], pageErrors: [] }
+// Only address paths (never query strings, which can hold tokens) and statuses are kept. Nothing typed into the form is included.
+export function summarizeSignInTrace(t) {
+  const parts = []
+  parts.push(`ended on ${t.url || 'an unknown address'}`)
+  if (t.buttonText) parts.push(`the button said "${t.buttonText}"`)
+  if (t.pageText) parts.push(`the page said "${t.pageText}"`)
+  const reqs = (t.requests || []).slice(0, 12).map((r) => `${r.method} ${r.path} -> ${r.status}`)
+  parts.push(reqs.length ? `requests: ${reqs.join('; ')}` : 'no data requests were made')
+  if ((t.consoleErrors || []).length) parts.push(`browser console errors: ${t.consoleErrors.slice(0, 3).join(' | ')}`)
+  if ((t.pageErrors || []).length) parts.push(`script errors: ${t.pageErrors.slice(0, 3).join(' | ')}`)
+  return parts.join('. ')
+}
+
 export const shorten = (s, n = 140) => (s.length > n ? s.slice(0, n - 1) + '…' : s)
 
 const ORDER = { high: 0, medium: 1, low: 2 }

@@ -1,7 +1,7 @@
 // Run: node --test scripts/tests/e2e/analyze.test.mjs
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { isExcluded, pathToVisit, isNoise, findingsForPage, groupFindings, renderReport, cleanError, badBaseUrl, PORTALS } from '../../../e2e/lib/analyze.mjs'
+import { isExcluded, pathToVisit, isNoise, findingsForPage, groupFindings, renderReport, cleanError, badBaseUrl, summarizeSignInTrace, PORTALS } from '../../../e2e/lib/analyze.mjs'
 
 const BASE = 'https://school.example.com'
 const clean = (o = {}) => ({ role: 'student', path: '/student', viewport: 'desktop', status: 200, loadMs: 800, kb: 400, consoleErrors: [], pageErrors: [], failedRequests: [], badResponses: [], banners: [], brokenImages: [], overflowX: false, blank: false, sentToLogin: false, imgNoAlt: 0, buttonNoName: 0, inputNoLabel: 0, screenshot: 'student/student-desktop.jpg', ...o })
@@ -101,4 +101,12 @@ test('the placeholder or a malformed site address is refused before anything run
   assert.match(badBaseUrl('ftp://x.test'), /https/)
   assert.equal(badBaseUrl('https://exam-platform-chi.vercel.app'), null)
   assert.equal(badBaseUrl('http://localhost:3100'), null)
+})
+
+test('a stuck sign-in is described from what the page and network did, and nothing typed is included', () => {
+  const text = summarizeSignInTrace({ url: 'https://s.example/login', buttonText: 'Signing in...', pageText: 'Welcome Back Sign in to your portal', requests: [{ method: 'POST', path: '/auth/v1/token', status: 200 }, { method: 'GET', path: '/rest/v1/profiles', status: 500 }], consoleErrors: ['boom'], pageErrors: [] })
+  assert.match(text, /ended on https:\/\/s\.example\/login/); assert.match(text, /button said "Signing in\.\.\."/)
+  assert.match(text, /POST \/auth\/v1\/token -> 200; GET \/rest\/v1\/profiles -> 500/); assert.match(text, /browser console errors: boom/)
+  assert.doesNotMatch(text, /\?/)
+  assert.match(summarizeSignInTrace({ url: '', requests: [] }), /no data requests were made/)
 })
