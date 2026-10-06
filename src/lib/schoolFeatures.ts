@@ -16,6 +16,8 @@ export type SchoolFeatures = {
   aiTutorEnabled: boolean
   // The Library inside Smart Learning (needs Smart Learning too). Off unless switched on.
   libraryEnabled: boolean
+  // Teachers can ask the AI to suggest marks for an essay (Smart Assess). Student writing is sent to the AI service, so off unless a school has agreed.
+  aiMarkingEnabled: boolean
 }
 
 // The full set every school effectively had before this config existed —
@@ -32,6 +34,7 @@ const DEFAULT_FEATURES: SchoolFeatures = {
   smartPlayEnabled: false,
   aiTutorEnabled: false,
   libraryEnabled: false,
+  aiMarkingEnabled: false,
 }
 
 export async function getSchoolFeatures(): Promise<SchoolFeatures> {
@@ -45,6 +48,7 @@ export async function getSchoolFeatures(): Promise<SchoolFeatures> {
     smart_play_enabled: boolean
     ai_tutor_enabled: boolean
     library_enabled: boolean
+    ai_marking_enabled: boolean
   }> | null
 
   if (!raw) return DEFAULT_FEATURES
@@ -58,5 +62,6 @@ export async function getSchoolFeatures(): Promise<SchoolFeatures> {
     smartPlayEnabled: raw.smart_play_enabled ?? false,
     aiTutorEnabled: raw.ai_tutor_enabled ?? false,
     libraryEnabled: raw.library_enabled ?? false,
+    aiMarkingEnabled: raw.ai_marking_enabled ?? false,
   }
 }

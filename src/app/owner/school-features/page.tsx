@@ -71,6 +71,7 @@ export default function SchoolFeaturesPage() {
   const [smartPlayEnabled, setSmartPlayEnabled] = useState(false)
   const [aiTutorEnabled, setAiTutorEnabled] = useState(false)
   const [libraryEnabled, setLibraryEnabled] = useState(false)
+  const [aiMarkingEnabled, setAiMarkingEnabled] = useState(false)
 
   const selectedRequest = requests.find((r) => r.id === selectedRequestId)
 
@@ -142,6 +143,7 @@ export default function SchoolFeaturesPage() {
     setSmartPlayEnabled(data.smartPlayEnabled)
     setAiTutorEnabled(data.aiTutorEnabled)
     setLibraryEnabled(data.libraryEnabled === true)
+    setAiMarkingEnabled(data.aiMarkingEnabled === true)
     setLoadedForUrl(targetDatabaseUrl.trim())
     setLoadedSummary(data.configured
       ? 'Loaded that school\'s current settings below — they matched what is actually live just now.'
@@ -179,6 +181,7 @@ export default function SchoolFeaturesPage() {
           smartPlayEnabled,
           aiTutorEnabled,
           libraryEnabled,
+          aiMarkingEnabled,
         },
         accessToken: session?.access_token,
       }),
@@ -291,6 +294,10 @@ export default function SchoolFeaturesPage() {
           <label style={{ fontSize: 14, display: 'flex', alignItems: 'flex-start', gap: 8, marginTop: 6 }}>
             <input type="checkbox" style={{ marginTop: 3 }} checked={aiTutorEnabled} onChange={(e) => setAiTutorEnabled(e.target.checked)} />
             <span>AI tutor in Smart Learning (needs Smart Learning on). Students ask an AI about a lesson. Conversations are saved and can be read by the lesson&rsquo;s teacher, school admins and the principal. This makes it <em>available</em> to the school &mdash; the principal or vice principal still has to accept its terms on their own AI Tutor page before any student can actually use it.</span>
+          </label>
+          <label style={{ fontSize: 14, display: 'flex', alignItems: 'flex-start', gap: 8, marginTop: 6 }}>
+            <input type="checkbox" style={{ marginTop: 3 }} checked={aiMarkingEnabled} onChange={(e) => setAiMarkingEnabled(e.target.checked)} />
+            <span>AI-suggested essay marking in Smart Assess. Teachers can ask the AI to suggest marks for an essay, and always decide the marks themselves. The question, the marking points and the student&rsquo;s essay text (no name, number or class) are sent to Anthropic&rsquo;s AI service. Switch on only for a school that has agreed. Needs migration 082 applied for the school first.</span>
           </label>
         </div>
 

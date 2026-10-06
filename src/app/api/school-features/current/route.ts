@@ -43,6 +43,7 @@ export async function POST(req: NextRequest) {
         smart_play_enabled: boolean
         ai_tutor_enabled: boolean
         library_enabled: boolean
+        ai_marking_enabled: boolean
       }>
 
       // The same defaults getSchoolFeatures() uses client-side, so "nothing saved yet" reads the same way here
@@ -58,6 +59,7 @@ export async function POST(req: NextRequest) {
         smartPlayEnabled: raw.smart_play_enabled ?? false,
         aiTutorEnabled: raw.ai_tutor_enabled ?? false,
         libraryEnabled: raw.library_enabled ?? false,
+        aiMarkingEnabled: raw.ai_marking_enabled ?? false,
         configured: rows[0].enabled_features != null,
       })
     } finally {
