@@ -31,6 +31,11 @@ Open `e2e/.env.e2e` in a text editor and fill in:
   notes this and carries on from the home page.
 - **Two-step sign-in (an authenticator code):** the checker never stores or guesses codes. Run with `HEADED=1` so Chrome opens as a visible window. When it reaches the code box it makes a beep and waits (up to 3 minutes) while you type the 6 digit code from your authenticator app and press the button; then it carries on by itself. Without `HEADED=1` it skips that person and says why.
 
+## Tips for the settings file
+- If a password has any odd character (a `#`, a space, `$`, a quote), put the whole value in single quotes: `ADMIN_PASSWORD='my#pass word'`. In this kind of file an unquoted `#` starts a comment, so the password is silently cut off there and the site says "Invalid email or password". The checker warns about this in the report's notes.
+- Each person needs both lines filled in (for the HOD: `HOD_LOGIN` and `HOD_PASSWORD`). If either is empty that person is skipped, and the report's notes say so.
+- When a sign-in is refused, the report says which person type the checker chose and how many characters it typed for the login and password (never the text itself), so you can spot a missing character.
+
 ## Run it
 Try one person first:
 

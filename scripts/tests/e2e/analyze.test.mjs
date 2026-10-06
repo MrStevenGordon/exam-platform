@@ -1,7 +1,7 @@
 // Run: node --test scripts/tests/e2e/analyze.test.mjs
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { isExcluded, pathToVisit, isNoise, findingsForPage, groupFindings, renderReport, cleanError, badBaseUrl, summarizeSignInTrace, isExpectedProbe, PORTALS } from '../../../e2e/lib/analyze.mjs'
+import { isExcluded, pathToVisit, isNoise, findingsForPage, groupFindings, renderReport, cleanError, badBaseUrl, summarizeSignInTrace, isExpectedProbe, envProblems, PORTALS } from '../../../e2e/lib/analyze.mjs'
 
 const BASE = 'https://school.example.com'
 const clean = (o = {}) => ({ role: 'student', path: '/student', viewport: 'desktop', status: 200, loadMs: 800, kb: 400, consoleErrors: [], pageErrors: [], failedRequests: [], badResponses: [], banners: [], brokenImages: [], overflowX: false, blank: false, sentToLogin: false, imgNoAlt: 0, buttonNoName: 0, inputNoLabel: 0, screenshot: 'student/student-desktop.jpg', ...o })
@@ -123,4 +123,13 @@ test('the app\'s deliberate "is this feature installed?" request is not reported
   assert.equal(isExpectedProbe('https://x.supabase.co/rest/v1/rpc/cancel_teacher_absence', 400), true)
   assert.equal(isExpectedProbe('https://x.supabase.co/rest/v1/rpc/cancel_teacher_absence', 500), false)
   assert.equal(isExpectedProbe('https://x.supabase.co/rest/v1/rpc/something_else', 400), false)
+})
+
+test('a settings file that would silently cut a password short is called out, naming the setting but never the value', () => {
+  const file = ['# comment', 'BASE_URL=https://x.test/path#frag', 'STUDENT_LOGIN=12345@mhs.smartassess', "STUDENT_PASSWORD='fine#in-quotes'", 'ADMIN_PASSWORD=has#hash', 'HOD_PASSWORD=has space', 'TEACHER_PASSWORD="ok"', "PRINCIPAL_PASSWORD='bad\"", ''].join('\n')
+  const out = envProblems(file)
+  assert.equal(out.length, 3)
+  assert.match(out[0], /^ADMIN_PASSWORD contains a #/); assert.match(out[1], /^HOD_PASSWORD contains a space/); assert.match(out[2], /^PRINCIPAL_PASSWORD has mismatched quotes/)
+  assert.doesNotMatch(out.join(' '), /has#hash|has space|fine#in-quotes/)
+  assert.deepEqual(envProblems("STUDENT_PASSWORD='x'\nTEACHER_LOGIN=a@b.c"), [])
 })

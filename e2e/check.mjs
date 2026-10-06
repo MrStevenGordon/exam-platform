@@ -9,7 +9,8 @@
 import { chromium } from 'playwright-core'
 import { mkdirSync, writeFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
-import { LANDING, PORTALS, badBaseUrl, cleanError, isExpectedProbe, isNoise, pathToVisit, renderReport, summarizeSignInTrace } from './lib/analyze.mjs'
+import { LANDING, PORTALS, badBaseUrl, cleanError, envProblems, isExpectedProbe, isNoise, pathToVisit, renderReport, summarizeSignInTrace } from './lib/analyze.mjs'
+import { existsSync, readFileSync } from 'node:fs'
 
 const BASE = (process.env.BASE_URL || '').trim().replace(/\/+$/, '')
 if (!BASE) { console.error('Set BASE_URL in e2e/.env.e2e (the address of the site to check). See e2e/README.md.'); process.exit(1) }
@@ -21,21 +22,27 @@ const ONLY = (process.env.ONLY || '').split(',').map((s) => s.trim()).filter(Boo
 const OUT = resolve(import.meta.dirname, 'report')
 const VIEWPORTS = { desktop: { width: 1280, height: 800 }, mobile: { width: 390, height: 844 } }
 
-const PEOPLE = [
-  { role: 'student', label: 'Student', login: process.env.STUDENT_LOGIN, password: process.env.STUDENT_PASSWORD },
-  { role: 'teacher', label: 'Teacher', login: process.env.TEACHER_LOGIN, password: process.env.TEACHER_PASSWORD },
-  { role: 'supervisor', label: 'HOD', login: process.env.HOD_LOGIN, password: process.env.HOD_PASSWORD },
-  { role: 'principal', label: 'Principal', login: process.env.PRINCIPAL_LOGIN, password: process.env.PRINCIPAL_PASSWORD },
-  { role: 'school_admin', label: 'School admin', login: process.env.ADMIN_LOGIN, password: process.env.ADMIN_PASSWORD },
-].filter((p) => p.login && p.password && (ONLY.length === 0 || ONLY.includes(p.role) || ONLY.includes(p.label.toLowerCase())))
+const EVERYONE = [
+  { role: 'student', label: 'Student', prefix: 'STUDENT', login: process.env.STUDENT_LOGIN, password: process.env.STUDENT_PASSWORD },
+  { role: 'teacher', label: 'Teacher', prefix: 'TEACHER', login: process.env.TEACHER_LOGIN, password: process.env.TEACHER_PASSWORD },
+  { role: 'supervisor', label: 'HOD', prefix: 'HOD', login: process.env.HOD_LOGIN, password: process.env.HOD_PASSWORD },
+  { role: 'principal', label: 'Principal', prefix: 'PRINCIPAL', login: process.env.PRINCIPAL_LOGIN, password: process.env.PRINCIPAL_PASSWORD },
+  { role: 'school_admin', label: 'School admin', prefix: 'ADMIN', login: process.env.ADMIN_LOGIN, password: process.env.ADMIN_PASSWORD },
+]
+const names = (p) => [p.role, p.label.toLowerCase(), p.label.toLowerCase().replace(/\s+/g, '_'), p.prefix.toLowerCase()]
+const WANTED = EVERYONE.filter((p) => ONLY.length === 0 || ONLY.some((o) => names(p).includes(o.toLowerCase())))
+const PEOPLE = WANTED.filter((p) => p.login && p.password)
 
-// Smart Learning is reached through the product switcher rather than the menu, so it is added as a starting point.
 const START_EXTRA = { student: ['/learning'], teacher: ['/learning', '/learning/lesson-plans'], supervisor: ['/learning'], principal: ['/learning'], school_admin: ['/learning'] }
 
 const PUBLIC_PAGES = ['/', '/login', '/how-it-works', '/products', '/contact', '/privacy', '/terms', '/find-my-school', '/forgot-password', '/demo-exam']
 
 const pages = []
 const notes = []
+// Say so plainly when someone is skipped because their login is missing, or the settings file has a trap in it.
+for (const p of WANTED) if (!(p.login && p.password)) notes.push(`${p.label}: skipped because ${p.prefix}_LOGIN or ${p.prefix}_PASSWORD is empty or missing in e2e/.env.e2e.`)
+const ENV_FILE = resolve(import.meta.dirname, '.env.e2e')
+if (existsSync(ENV_FILE)) for (const m of envProblems(readFileSync(ENV_FILE, 'utf8'))) notes.push(`Settings file: ${m}`)
 const slug = (p) => (p === '/' ? 'home' : p.replace(/^\//, '').replace(/[^a-z0-9]+/gi, '-').slice(0, 60))
 
 async function openPage(page, role, path, viewport, { weigh }) {
@@ -133,7 +140,9 @@ async function signIn(page, person) {
       page.locator('.banner-danger').first().waitFor({ state: 'visible', timeout: 25000 }).then(() => 'refused').catch(never),
       new Promise((resolve) => setTimeout(() => resolve(null), 25500)),
     ])
-    if (first === 'refused') { const m = (await page.locator('.banner-danger').first().innerText().catch(() => '')).trim(); if (m) return { ok: false, why: `Sign-in refused: ${m}` } }
+    // What was typed is described, never shown: lengths only, so a login or password cut short or padded can be spotted.
+    const typed = `role chosen: ${person.role}; login ${person.login.length} characters${person.login !== person.login.trim() ? ' (with a space at an end)' : ''}${person.login.includes('@') ? ', has an @' : ', no @'}; password ${person.password.length} characters`
+    if (first === 'refused') { const m = (await page.locator('.banner-danger').first().innerText().catch(() => '')).trim(); if (m) return { ok: false, why: `Sign-in refused: ${m} (${typed})` } }
     if (first === 'arrived') return { ok: true, path: new URL(page.url()).pathname }
     if (first === 'code') {
       // The checker never stores or guesses codes. In a visible window the person types the code themselves and the checker waits.
@@ -147,7 +156,7 @@ async function signIn(page, person) {
     const mfa = await page.locator('input[placeholder="123456"]').count()
     if (mfa) return { ok: false, why: 'This account uses two-step sign-in and needs a code from an authenticator app. Run again with HEADED=1 so you can type the code yourself; this person was skipped.' }
     const msg = (await page.locator('.banner-danger, [role="alert"]').first().innerText().catch(() => '')).trim()
-    if (msg) return { ok: false, why: `Sign-in refused: ${msg}` }
+    if (msg) return { ok: false, why: `Sign-in refused: ${msg} (${typed})` }
     // Stuck with no message: record what is on the screen. The typed login and password are cleared first, so they are not in the screenshot.
     trace.url = new URL(page.url()).origin + new URL(page.url()).pathname
     trace.buttonText = (await page.locator('form button[type=submit]').first().innerText().catch(() => '')).trim().slice(0, 60)

@@ -103,6 +103,24 @@ export function summarizeSignInTrace(t) {
   return parts.join('. ')
 }
 
+// Problems in the settings file that make a login or password come out wrong without any error. Only variable NAMES are reported,
+// never values. In this file format an unquoted # starts a comment, so a password containing # is silently cut off there.
+export function envProblems(text) {
+  const out = []
+  for (const raw of String(text).split(/\r?\n/)) {
+    const line = raw.trim()
+    if (!line || line.startsWith('#')) continue
+    const m = /^([A-Z0-9_]+)\s*=\s*(.*)$/.exec(line)
+    if (!m || !/(LOGIN|PASSWORD)$/.test(m[1])) continue
+    const v = m[2]
+    const quoted = /^(['"]).*\1$/.test(v)
+    if (!quoted && v.includes('#')) out.push(`${m[1]} contains a # that is not inside quotes, so everything from the # onward is dropped. Put the value in single quotes, for example ${m[1]}='your-value'.`)
+    if (!quoted && /\s/.test(v)) out.push(`${m[1]} contains a space that is not inside quotes. Put the value in single quotes.`)
+    if (/^['"]/.test(v) && !quoted) out.push(`${m[1]} has mismatched quotes.`)
+  }
+  return out
+}
+
 export const shorten = (s, n = 140) => (s.length > n ? s.slice(0, n - 1) + '…' : s)
 
 const ORDER = { high: 0, medium: 1, low: 2 }
