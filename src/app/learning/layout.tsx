@@ -15,6 +15,7 @@ import { isSubstitutionAvailable, isSubstitutionToolsAvailable, isCoverAvailable
 import { FLAGS_CHANGED_EVENT, loadFlagCounts } from '@/lib/tutorFlags'
 import { isLibraryAvailable } from '@/lib/library'
 import { isFlashcardsAvailable } from '@/lib/flashcards'
+import { isResourcesAvailable } from '@/lib/departmentResources'
 
 type Role = 'student' | 'teacher' | 'supervisor' | 'admin' | 'principal'
 const ROLES: Role[] = ['student', 'teacher', 'supervisor', 'admin', 'principal']
@@ -32,6 +33,7 @@ const REPORT_ABSENCE_ITEM = { label: 'Report Absence', icon: 'ti-user-off', href
 const MY_COVER_ITEM = { label: 'My Cover', icon: 'ti-calendar-event', href: '/teacher/cover' }
 const LIBRARY_ITEM = { label: 'Library', icon: 'ti-books', href: '/learning/library' }
 const FLASHCARDS_ITEM = { label: 'Flashcards', icon: 'ti-cards', href: '/learning/flashcards' }
+const RESOURCES_ITEM = { label: 'Resources', icon: 'ti-file-text', href: '/learning/resources' }
 const WEEK_ITEM = { label: 'My week', icon: 'ti-calendar-event', href: '/learning/week' }
 const TEACHER_WEEK_ITEM = { label: 'This week', icon: 'ti-calendar-event', href: '/learning/week' }
 
@@ -60,6 +62,8 @@ export default function LearningLayout({ children }: { children: React.ReactNode
   const [libraryOn, setLibraryOn] = useState(false)
   // Students get Flashcards once migration 084 is applied.
   const [flashcardsOn, setFlashcardsOn] = useState(false)
+  // Teachers, heads of department and the school admin get Resources once migration 087 is applied.
+  const [resourcesOn, setResourcesOn] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -87,6 +91,7 @@ export default function LearningLayout({ children }: { children: React.ReactNode
       const cover = r === 'teacher' || r === 'supervisor' ? await isCoverAvailable() : false
       const library = await isLibraryAvailable()
       const flashcards = r === 'student' ? await isFlashcardsAvailable() : false
+      const resources = r === 'teacher' || r === 'supervisor' || r === 'admin' ? await isResourcesAvailable() : false
       if (cancelled) return
       setCoverageOn(coverage)
       setFlagsOn(!!flags)
@@ -96,6 +101,7 @@ export default function LearningLayout({ children }: { children: React.ReactNode
       setToolsOn(tools)
       setLibraryOn(library)
       setFlashcardsOn(flashcards)
+      setResourcesOn(resources)
       setRole(r)
       setState(products.includes('learning') ? 'ready' : 'off')
     }
@@ -138,7 +144,8 @@ export default function LearningLayout({ children }: { children: React.ReactNode
   const withTools = toolsOn && (role === 'supervisor' || role === 'admin') ? [...withSubstitution, manageItem] : withSubstitution
   const withFlags = flagsOn && (role === 'admin' || role === 'principal') ? [...withTools, FLAGS_ITEM] : withTools
   const withWeek = role === 'student' ? [...withFlags, WEEK_ITEM] : role === 'teacher' || role === 'supervisor' ? [...withFlags, TEACHER_WEEK_ITEM] : withFlags
-  const withFlashcards = flashcardsOn && role === 'student' ? [...withWeek, FLASHCARDS_ITEM] : withWeek
+  const withResources = resourcesOn ? [...withWeek, RESOURCES_ITEM] : withWeek
+  const withFlashcards = flashcardsOn && role === 'student' ? [...withResources, FLASHCARDS_ITEM] : withResources
   const nav = libraryOn ? [...withFlashcards, LIBRARY_ITEM] : withFlashcards
   const badges = { ...(flagsOn ? { [FLAGS_ITEM.href]: flagCount } : {}), ...(toolsOn ? { [manageItem.href]: unfilled } : {}), ...(coverOn ? { [MY_COVER_ITEM.href]: coverCount } : {}) }
   return (
@@ -146,7 +153,7 @@ export default function LearningLayout({ children }: { children: React.ReactNode
       <InactivityLogout />
       <PresenceHeartbeat />
       <main className="portal-content"><PageTransition>{children}</PageTransition></main>
-      <Sidebar navItems={nav} badges={badges} portalLabel="Smart Learning" resolveActivePathname={(p) => (p.startsWith('/learning/library') ? '/learning/library' : p.startsWith('/learning/flashcards') ? '/learning/flashcards' : p === '/learning/week' ? '/learning/week' : p.startsWith('/learning/lesson/') || p.startsWith('/learning/lessons/') && p !== '/learning/lessons/new' ? '/learning' : p)} />
+      <Sidebar navItems={nav} badges={badges} portalLabel="Smart Learning" resolveActivePathname={(p) => (p.startsWith('/learning/library') ? '/learning/library' : p.startsWith('/learning/flashcards') ? '/learning/flashcards' : p === '/learning/week' ? '/learning/week' : p.startsWith('/learning/resources') ? '/learning/resources' : p.startsWith('/learning/lesson/') || p.startsWith('/learning/lessons/') && p !== '/learning/lessons/new' ? '/learning' : p)} />
     </div>
   )
 }

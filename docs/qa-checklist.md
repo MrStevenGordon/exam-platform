@@ -387,6 +387,23 @@ Use a test student who has sat at least one exam with topic-tagged questions who
 - [ ] A teacher with no class sees a plain message, not an error
 - [ ] Both pages work on a phone
 
+## 7p. Teacher resource space (Smart Learning, needs migration 087; students must NOT see it)
+
+- [ ] Before 087 there is no **Resources** link. After it, teachers, HODs and the school admin see **Resources** in the Smart Learning menu. A student does not, and typing /learning/resources as a student sends them back to Smart Learning
+- [ ] As a teacher: **Share a resource** with a web link. It appears at once for you and for a colleague in the same department
+- [ ] A link that does not start with https:// (or has a space) is refused with a clear message
+- [ ] Share a **file** (try a PDF and a Word file). It appears with its name and size. **Open file** opens it. A file over 20 MB, an .exe and a video are refused
+- [ ] Tag with subject and grade; once both are chosen the **Topic** picker appears. The tags show as badges; the filters (subject, grade, type) and the search find it
+- [ ] **Edit** your own item (title, description, link, tags) and save. You cannot edit a colleague's item (no Edit button)
+- [ ] As the **head of department**: **Pin to the top** on a colleague's item. It moves to the top with "Pinned by the head". **Unpin** works. The head cannot edit a colleague's title
+- [ ] As an ordinary teacher: no Pin button anywhere, not even on your own item
+- [ ] **Remove** your own item (a file is deleted with it). The head can remove anyone's in their department
+- [ ] A teacher in a **different department** cannot see this department's items (and does not get its files by guessing an address)
+- [ ] A teacher who belongs to two departments (own department plus a subject they teach) can switch between them
+- [ ] The **school admin** can see and remove items but has no Share button
+- [ ] The page works on a phone, and the list is clear with 20+ items
+- [ ] In Supabase, Storage shows a **private** bucket called department-resources, and a file cannot be opened without signing in
+
 ## 8. Owner console (you)
 
 - [ ] **School requests** and **Org requests**: approve and provision
