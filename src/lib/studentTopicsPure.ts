@@ -21,6 +21,7 @@ export type Trend = 'improving' | 'slipping' | 'steady' | null
 
 export type TopicResult = {
   key: string
+  topicId: string | null       // the school's topic id, when the questions were tagged from the topic list (not free text)
   subject: string
   name: string
   pct: number                  // whole percent of the marks available on this topic
@@ -114,7 +115,7 @@ export function computeTopics(rows: TopicRow[]): TopicResult[] {
     const level = levelFor(pct, questions)
     const ids = [...new Set(g.rows.filter((r) => r.questionType !== 'essay').map((r) => r.questionId))].sort()
     out.push({
-      key: gk, subject: g.subject, name: g.name, pct, earned: Math.round(earned * 100) / 100, available, questions,
+      key: gk, topicId: g.rows.find((r) => r.topicId)?.topicId ?? null, subject: g.subject, name: g.name, pct, earned: Math.round(earned * 100) / 100, available, questions,
       exams: new Set(g.rows.map((r) => r.examId)).size, level, trend: level === 'too_few' ? null : trendFor(g.rows),
       lastAt: g.rows.reduce((m, r) => (r.completedAt > m ? r.completedAt : m), ''), practiceQuestionIds: ids,
     })
@@ -138,3 +139,28 @@ export const LEVEL_LABEL: Record<TopicLevel, string> = {
 export const TREND_LABEL: Record<Exclude<Trend, null>, string> = {
   improving: 'Improving', slipping: 'Slipping', steady: 'Steady',
 }
+
+// ---------- lessons for a topic (the catch-up link) ----------
+export type TopicLesson = { id: string; title: string; subject: string; topicId: string; done: boolean }
+
+// Reads the compact lessons from my_topic_lessons(); anything malformed is dropped.
+export function parseLessons(payload: unknown): TopicLesson[] {
+  if (!Array.isArray(payload)) return []
+  const out: TopicLesson[] = []
+  for (const l of payload) {
+    const o = l as Record<string, unknown> | null
+    if (!o || typeof o.id !== 'string' || typeof o.title !== 'string' || typeof o.topic_id !== 'string') continue
+    out.push({ id: o.id, title: o.title, subject: typeof o.subject === 'string' ? o.subject : '', topicId: o.topic_id, done: o.done === true })
+  }
+  return out
+}
+
+// Lessons the student can open that were written for this topic. Only topics picked from the school's list can match; a topic that
+// was typed in as free text has no lessons to link. Unfinished lessons first.
+export function lessonsForTopic(topic: Pick<TopicResult, 'topicId'>, lessons: TopicLesson[], max = 3): TopicLesson[] {
+  if (!topic.topicId) return []
+  return lessons.filter((l) => l.topicId === topic.topicId).sort((a, b) => Number(a.done) - Number(b.done) || a.title.localeCompare(b.title)).slice(0, max)
+}
+
+// Topics that get lesson links: the ones that are not yet strong.
+export const wantsLessons = (t: Pick<TopicResult, 'level'>): boolean => t.level === 'weak' || t.level === 'getting_there'

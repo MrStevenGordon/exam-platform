@@ -1,7 +1,7 @@
 // Run: node --import ./scripts/tests/essay-marking/resolve-ts.mjs --experimental-strip-types --no-warnings --test scripts/tests/student-topics/studentTopicsPure.test.mjs
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { computeTopics, parseRows, levelFor, topicKey, pickPractice, subjectsOf, RULES } from '../../../src/lib/studentTopicsPure.ts'
+import { computeTopics, parseRows, levelFor, topicKey, pickPractice, subjectsOf, parseLessons, lessonsForTopic, wantsLessons, RULES } from '../../../src/lib/studentTopicsPure.ts'
 
 // helper: one row in the database's compact shape
 const row = (o) => [o.subject ?? 'Maths', o.topicId ?? null, o.topicName ?? null, o.topicText ?? null, o.awarded, o.points ?? 2, o.at ?? '2026-09-01T10:00:00Z', o.exam ?? 'e1', o.q, o.type ?? 'multiple_choice']
@@ -93,4 +93,31 @@ test('pickPractice takes at most the limit, without repeats, from what it is giv
 test('subjects are listed once, in order', () => {
   const t = computeTopics(parsed([...[1, 2, 3].map((i) => ({ topicId: 'a', topicName: 'A', subject: 'Maths', awarded: 1, q: 'm' + i })), ...[1, 2, 3].map((i) => ({ topicId: 'b', topicName: 'B', subject: 'English', awarded: 1, q: 'e' + i }))]))
   assert.deepEqual(subjectsOf(t), ['English', 'Maths'])
+})
+
+test('a topic remembers its id when it came from the school list, and has none when typed as free text', () => {
+  const t = computeTopics(parsed([
+    ...[1, 2, 3].map((i) => ({ topicId: 'abc', topicName: 'Fractions', awarded: 1, q: 'a' + i })),
+    ...[1, 2, 3].map((i) => ({ topicText: 'Percentages', awarded: 1, q: 'b' + i })),
+  ]))
+  assert.equal(t.find((x) => x.name === 'Fractions').topicId, 'abc'); assert.equal(t.find((x) => x.name === 'Percentages').topicId, null)
+})
+
+test('lessons are read safely from the database and matched to a topic by id only', () => {
+  const lessons = parseLessons([
+    { id: 'l1', title: 'B lesson', subject: 'Maths', topic_id: 't1', done: false }, { id: 'l2', title: 'A lesson', subject: 'Maths', topic_id: 't1', done: false },
+    { id: 'l3', title: 'Done lesson', subject: 'Maths', topic_id: 't1', done: true }, { id: 'l4', title: 'Other', subject: 'Maths', topic_id: 't2', done: false },
+    { id: 'bad', title: 5, topic_id: 't1' }, null, 'junk', { id: 'x', title: 'no topic' },
+  ])
+  assert.equal(lessons.length, 4)
+  assert.deepEqual(lessonsForTopic({ topicId: 't1' }, lessons).map((l) => l.id), ['l2', 'l1', 'l3'])   // unfinished first, then by title
+  assert.deepEqual(lessonsForTopic({ topicId: 't1' }, lessons, 2).map((l) => l.id), ['l2', 'l1'])
+  assert.deepEqual(lessonsForTopic({ topicId: null }, lessons), [])
+  assert.deepEqual(lessonsForTopic({ topicId: 'nope' }, lessons), [])
+  assert.deepEqual(parseLessons(null), []); assert.deepEqual(parseLessons({}), [])
+})
+
+test('only topics that are not yet strong get lesson links', () => {
+  assert.equal(wantsLessons({ level: 'weak' }), true); assert.equal(wantsLessons({ level: 'getting_there' }), true)
+  assert.equal(wantsLessons({ level: 'strong' }), false); assert.equal(wantsLessons({ level: 'too_few' }), false)
 })

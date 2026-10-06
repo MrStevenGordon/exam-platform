@@ -321,6 +321,7 @@ Use a test student who has sat at least one exam with topic-tagged questions who
 - [ ] **Practise this topic** opens a practice mock with questions on that topic only, none of them essays
 - [ ] The page never shows question wording or correct answers, and a student only ever sees their own results (log in as a second student and compare)
 - [ ] A teacher or principal opening /student/topics is sent away (they are not students)
+- [ ] **Lessons link (needs 085):** tag a published lesson with a topic from the list, give it to the student's class; on a topic that is Needs work or Getting there the student sees it under "Lessons on this topic" and it opens. A draft lesson, a lesson given to another class, a lesson past its due date, and a lesson with no topic do not appear. A finished lesson shows "finished"
 
 ## 7l. AI question drafting (Smart Assess, needs a working Anthropic key; essay drafts need migration 081)
 

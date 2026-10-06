@@ -4,8 +4,8 @@ import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
-import { createPracticeMock, loadMyTopics } from '@/lib/studentTopics'
-import { computeTopics, LEVEL_LABEL, pickPractice, subjectsOf, TREND_LABEL, type TopicLevel, type TopicResult } from '@/lib/studentTopicsPure'
+import { createPracticeMock, loadMyTopics, loadTopicLessons } from '@/lib/studentTopics'
+import { computeTopics, LEVEL_LABEL, lessonsForTopic, pickPractice, subjectsOf, TREND_LABEL, wantsLessons, type TopicLesson, type TopicLevel, type TopicResult } from '@/lib/studentTopicsPure'
 import EmptyState from '@/components/EmptyState'
 
 // A student's own results by topic, from released and marked questions only. It shows what to work on first and offers a
@@ -22,6 +22,7 @@ export default function MyTopicsPage() {
   const router = useRouter()
   const [topics, setTopics] = useState<TopicResult[]>([])
   const [untagged, setUntagged] = useState(0)
+  const [lessons, setLessons] = useState<TopicLesson[]>([])
   const [loading, setLoading] = useState(true)
   const [errorMsg, setErrorMsg] = useState('')
   const [subject, setSubject] = useState('all')
@@ -37,6 +38,7 @@ export default function MyTopicsPage() {
       } else {
         setTopics(computeTopics(res.rows))
         setUntagged(res.untagged)
+        setLessons(await loadTopicLessons())
       }
       setLoading(false)
     }
@@ -83,6 +85,16 @@ export default function MyTopicsPage() {
               <div style={{ width: `${t.pct}%`, height: '100%', background: tone.bar }} />
             </div>
             <strong style={{ fontSize: 14, minWidth: 40, textAlign: 'right' }}>{t.pct}%</strong>
+          </div>
+        )}
+        {wantsLessons(t) && lessonsForTopic(t, lessons).length > 0 && (
+          <div style={{ marginTop: 12 }}>
+            <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)' }}>Lessons on this topic</div>
+            <ul style={{ margin: '4px 0 0', paddingLeft: 18 }}>
+              {lessonsForTopic(t, lessons).map((l) => (
+                <li key={l.id} style={{ fontSize: 14 }}><Link href={`/learning/lesson/${l.id}`}>{l.title}</Link>{l.done ? <span style={{ color: 'var(--success)', fontSize: 12 }}> · finished</span> : null}</li>
+              ))}
+            </ul>
           </div>
         )}
         {t.practiceQuestionIds.length > 0 && t.level !== 'too_few' && (

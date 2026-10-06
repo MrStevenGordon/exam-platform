@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase'
-import { parseRows, type TopicRow } from '@/lib/studentTopicsPure'
+import { parseLessons, parseRows, type TopicLesson, type TopicRow } from '@/lib/studentTopicsPure'
+import { getEnabledProducts } from '@/lib/products'
 
 // Loads the signed-in student's results by topic. The database decides what comes back (migration 083): only their own
 // released, marked questions. Nothing here widens access.
@@ -55,4 +56,18 @@ export async function createPracticeMock(userId: string, subject: string, questi
   const { error: linkError } = await supabase.from('self_mock_questions').insert(rows)
   if (linkError) return { ok: false, message: 'Could not start the practice mock. Some of these questions are not available for practice.' }
   return { ok: true, id: mock.id as string }
+}
+
+// Smart Learning lessons the student can open that are tagged with a topic (migration 085), so a topic that needs work can link to
+// them. Quietly returns nothing when the school has no Smart Learning or 085 is not installed: the topics page works without it.
+export async function loadTopicLessons(): Promise<TopicLesson[]> {
+  try {
+    const products = await getEnabledProducts()
+    if (!products.includes('learning')) return []
+    const { data, error } = await supabase.rpc('my_topic_lessons')
+    if (error) return []
+    return parseLessons(data)
+  } catch {
+    return []
+  }
 }

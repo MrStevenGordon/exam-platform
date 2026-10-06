@@ -12,6 +12,8 @@ node --import ./scripts/tests/essay-marking/resolve-ts.mjs --experimental-strip-
 P -d topics -v ON_ERROR_STOP=1 -f scripts/tests/student-topics/seed.sql
 P -d topics -v ON_ERROR_STOP=1 -f scripts/migrations/083_student_topics.sql     # after the seed
 P -d topics -f scripts/tests/student-topics/tests.sql                            # every line PASS, last table failed = 0
+P -d topics -v ON_ERROR_STOP=1 -f scripts/migrations/085_topic_lessons.sql
+P -d topics -f scripts/tests/student-topics/lessons-tests.sql                    # the lesson links: failed = 0 (re-run seed.sql first; it replaces the people)
 ```
 
 The seed is two students with hand-worked marks (Fractions 7 of 10 = 70%), a merged-away topic, a free-text topic, an untagged question, an unmarked essay, a session whose results are not released and an unfinished retake. To prove the tests can fail, delete the `results_released = true` or `points_awarded is not null` lines in a copy of the migration and rerun: five checks fail.
