@@ -1,8 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-/* Fraunces — the display serif used for the public site's logo wordmark and marketing headlines
-   (src/components/marketing/Logo.tsx and the redesigned homepage), paired with Inter for
-   everything else. Inter alone stays the portal/app typeface throughout. */
-@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap');
 /* Tabler Icons — every `ti ti-…` icon across the app (Sidebar, ProductSwitcher, login,
    Smart Learning) was referencing this class convention with no font ever loaded to back it,
    so every one of those icons was rendering as nothing. Self-hosted (bundled at build time)
@@ -10,6 +5,29 @@
    Cut down to the icons actually used (13 KB instead of 500 KB). After adding a new icon run `npm run icons:build`;
    the build refuses to run if an icon in use is missing from it. See docs/data-audit-2026-10.md. */
 @import './tabler-icons-subset.css';
+
+/* Fonts, served from this site (src/app/fonts) instead of from Google. Loading them from Google meant two extra connections and a
+   chain of requests (our styles, then Google's styles, then the font files), slow on a weak connection and broken if Google is
+   slow or blocked. Both are variable fonts under the SIL Open Font License (see src/app/fonts/README.md). Only the Latin letters
+   are included; a rare character outside them (for example some African or Vietnamese letters) shows in the device's own font.
+   Inter is the typeface for the whole app. Fraunces is the display serif for the public site's logo wordmark and marketing
+   headlines (src/components/marketing/Logo.tsx and the homepage). */
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url('./fonts/inter-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Fraunces';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url('./fonts/fraunces-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
 
 :root {
   /* Core palette — warm, deep, Caribbean */

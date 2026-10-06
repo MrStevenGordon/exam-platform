@@ -31,7 +31,7 @@ Repeat visits are much cheaper: the icon font, fonts and unchanged scripts are k
 | 4 | Question images are uploaded exactly as the teacher's phone took them (typically 2 to 8 MB), and every student downloads the full file. Shrink them when they are uploaded. | 90% or more on any exam with pictures | small |
 | 5 | The logo file was 411 pixels wide but is shown at 36 pixels at most. (Next already shrank it on the way out, to 24 KB, so the first estimate of 72 KB was too high.) | 17 KB per first visit | tiny |
 | 6 | Fonts come from Google through two chained requests to a third party. Serve them from our own site instead. | same bytes, faster and still works if Google is slow or blocked | small |
-| 7 | The error-recording tool (Sentry) includes its session replay code in the page every user downloads, although replay only matters after an error. Load it only when needed. | estimated 40 to 80 KB (to be confirmed by trying it) | medium |
+| 7 | The error-recording tool (Sentry) includes its session replay code in the page every user downloads. **Measured: only about 20 KB**, so not worth changing (see status). | about 20 KB | not recommended |
 
 Doing 1 to 5 would bring the login page from about 874 KB to roughly 300 KB, and student home from about 1.4 MB (first visit, with fonts) to about 500 KB.
 
@@ -51,4 +51,7 @@ Built and checked in the production build:
 - **Fix 4, pictures:** question pictures and the school logo are shrunk before upload (a test photo went from 376 KB to 26 KB). Pictures uploaded earlier stay as they are.
 - **Fix 5, logo:** 24 KB down to 7 KB on the wire.
 
-Not started: fix 6 (serve fonts ourselves) and fix 7 (Sentry replay on demand).
+- **Fix 6, fonts:** Inter and the serif are now served from this site (`src/app/fonts`, SIL Open Font License) instead of through Google, so there are no third-party connections and nothing breaks if Google is slow or blocked. A fresh visit to the login page loads only Inter (47 KB); the serif loads only on pages that use it. The login page's first visit is now **393 KB in total** (it was 874 KB at the start of this work).
+- **Fix 7, Sentry replay: measured and not done.** Building without replay saved only about 20 KB (335 KB to 315 KB of JavaScript on the login page), far less than the 40 to 80 KB first guessed. Loading it later would also stop the "last minute before an error" recording from covering the first seconds of a visit. Left as it is.
+
+Other numbers from the audit that did not need changing: background polling pauses when the tab is hidden; static files are cached.
