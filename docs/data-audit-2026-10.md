@@ -55,3 +55,10 @@ Built and checked in the production build:
 - **Fix 7, Sentry replay: measured and not done.** Building without replay saved only about 20 KB (335 KB to 315 KB of JavaScript on the login page), far less than the 40 to 80 KB first guessed. Loading it later would also stop the "last minute before an error" recording from covering the first seconds of a visit. Left as it is.
 
 Other numbers from the audit that did not need changing: background polling pauses when the tab is hidden; static files are cached.
+
+## First checks on the live Manchester site (6 October 2026)
+The glitch checker (`e2e/`) was run against the live site as the student and the principal.
+- **The school crest was the heaviest thing on every signed-in page: 577 KB** (a 960 by 1064 picture shown 32 pixels high), downloaded again after the browser's one-hour cache expired. It is now served through Next's image resizer (`src/components/SchoolLogo.tsx`): 9 KB at 128 pixels, 28 KB for sharp phone screens. New uploads are also shrunk before they are saved.
+- The student home page took 4.4 to 6 seconds mostly because of that crest.
+- The tab icon (`icon.png`) went from 39 KB to 11 KB, and the Apple icon from 23 KB to 6 KB, with no visible change.
+- Found and fixed along the way: the student home page named every released test "Exam" (it now shows the real name and type); a stale "Continue" card for a book that was removed from the Library (it now only offers books still on the shelf, and the book page says plainly when a book is gone); a message box with no label for screen readers.

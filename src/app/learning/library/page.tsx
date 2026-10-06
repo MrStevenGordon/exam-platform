@@ -50,7 +50,11 @@ export default function LibraryHome() {
   const subjects = useMemo(() => Array.from(new Set(books.filter((b) => b.shelf === 'curriculum' && b.subject).map((b) => b.subject as string))).sort(), [books])
   const curriculum = visible.filter((b) => b.shelf === 'curriculum' && (!subject || b.subject === subject))
   const fun = visible.filter((b) => b.shelf === 'fun')
-  const continuing = progress.filter((p) => !p.finished_at && p.percent < 100).slice(0, 8)
+  // A book removed from the Library leaves its reading progress behind; only books still on the shelf are offered. (The shelf list is
+  // capped at 200 books, so when it is that long we cannot tell and show everything.)
+  const onShelf = new Set(books.map((b) => b.id))
+  const listIsComplete = books.length < 200
+  const continuing = progress.filter((p) => !p.finished_at && p.percent < 100 && (!listIsComplete || onShelf.has(p.book_id))).slice(0, 8)
   const showContinue = tab === 'all' && !term && continuing.length > 0
 
   const tabs: Array<{ id: Tab; label: string }> = [{ id: 'all', label: 'All' }, { id: 'curriculum', label: SHELF_LABEL.curriculum }, { id: 'fun', label: SHELF_LABEL.fun }]

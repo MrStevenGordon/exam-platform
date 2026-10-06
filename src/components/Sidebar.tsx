@@ -7,6 +7,7 @@ import { supabase } from '@/lib/supabase'
 import { releaseDeviceLock } from '@/lib/studentDeviceLock'
 import { presenceSignOut } from '@/lib/presence'
 import ProductSwitcher from '@/components/ProductSwitcher'
+import SchoolLogo from '@/components/SchoolLogo'
 import { useUnreadMessageCount, requestMessageNotificationPermission } from '@/lib/useUnreadMessages'
 
 type NavItem = { label: string; icon: string; href: string }
@@ -123,7 +124,7 @@ function SidebarInner({ navItems, portalLabel, resolveActivePathname, badges, lo
         style={{ padding: '20px 20px 16px', borderBottom: '1px solid rgba(255,255,255,0.08)', cursor: 'pointer' }}
       >
         {schoolLogoUrl && (
-          <img src={schoolLogoUrl} alt="School logo" style={{ maxHeight: 32, maxWidth: '100%', objectFit: 'contain', marginBottom: 10, display: 'block' }} />
+          <SchoolLogo url={schoolLogoUrl} />
         )}
         <div style={{ fontSize: 10, letterSpacing: 1.5, color: 'rgba(255,255,255,0.4)', fontWeight: 700, textTransform: 'uppercase' }}>
           Smart Assess Ja
