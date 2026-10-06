@@ -6,7 +6,7 @@ import { AI_USER_MESSAGES, callClaudeChat, NEEDS_ATTENTION, type AiFailureKind, 
 // a retired model) so it is seen straight away instead of by a teacher hitting an error.
 
 export type AskResult =
-  | { ok: true; text: string }
+  | { ok: true; text: string; stopReason?: string }
   | { ok: false; kind: AiFailureKind; status: number; message: string; httpStatus: number }
 
 // Alert once per kind per ten minutes per server instance, so a burst of failed requests does not become a flood of alerts.
@@ -25,7 +25,7 @@ export async function askClaude(args: { label: string; messages: ChatMessage[]; 
     return { ok: false, kind: 'invalid_key', status: 0, message: AI_USER_MESSAGES.invalid_key, httpStatus: 503 }
   }
   const reply = await callClaudeChat({ system: args.system, messages: args.messages }, { maxTokens: args.maxTokens, apiKey, model: args.model, timeoutMs: args.timeoutMs, retries: args.retries })
-  if (reply.ok) return { ok: true, text: reply.text }
+  if (reply.ok) return reply.stopReason ? { ok: true, text: reply.text, stopReason: reply.stopReason } : { ok: true, text: reply.text }
   console.error(`AI call failed (${args.label}):`, reply.kind, reply.status, reply.message)
   if (NEEDS_ATTENTION.includes(reply.kind)) alertOnce(reply.kind, args.label, reply.status, reply.message)
   // 503 for "not available right now" (the person can try again later or work by hand), 502 for a bad exchange.

@@ -4,7 +4,7 @@
 export const AI_MODEL = 'claude-sonnet-5'
 
 export type AiFailureKind = 'invalid_key' | 'no_credit' | 'busy' | 'bad_model' | 'too_large' | 'timeout' | 'network' | 'other'
-export type AiReply = { ok: true; text: string } | { ok: false; status: number; message: string; kind: AiFailureKind }
+export type AiReply = { ok: true; text: string; stopReason?: string } | { ok: false; status: number; message: string; kind: AiFailureKind }
 export type ContentBlock = Record<string, unknown>
 export type ChatMessage = { role: 'user' | 'assistant'; content: string | ContentBlock[] }
 type CallOpts = {
@@ -104,7 +104,7 @@ export async function callClaudeChat(input: { system?: string; messages: ChatMes
       } else {
         const data = await res.json()
         const text = extractText(data)
-        if (text !== null) return { ok: true, text }
+        if (text !== null) return typeof data?.stop_reason === 'string' ? { ok: true, text, stopReason: data.stop_reason } : { ok: true, text }
         const blocks = Array.isArray(data?.content) ? data.content : []
         // No text at all (for example the answer was declined): not worth retrying.
         return { ok: false, status: 502, kind: 'other', message: `The AI reply had no text (stop_reason: ${data?.stop_reason ?? 'unknown'}, blocks: ${blocks.map((b: { type?: unknown }) => b?.type).join(',') || 'none'}).` }

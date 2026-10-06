@@ -4,6 +4,7 @@ import { z } from 'zod'
 import { rateLimit } from '@/lib/rateLimit'
 import { validateBody } from '@/lib/validateBody'
 import { askClaude } from '@/lib/aiCall'
+import { parseAiJson } from '@/lib/aiJson'
 
 const MONTHLY_LIMIT = 10
 const MAX_PDF_BASE64_CHARS = 27_000_000 // ~20MB decoded
@@ -120,14 +121,14 @@ Respond ONLY with valid JSON in this exact format, no other text or markdown:
     })
     if (!reply.ok) return NextResponse.json({ error: reply.message, ai_problem: reply.kind }, { status: reply.httpStatus })
     const text = reply.text
-    const cleaned = text.replace(/```json|```/g, '').trim()
-
-    let parsed
-    try {
-      parsed = JSON.parse(cleaned)
-    } catch {
-      console.error('Failed to parse AI response:', text)
-      return NextResponse.json({ error: 'AI returned unexpected format. Try again.' }, { status: 500 })
+    const read = parseAiJson(text, { stopReason: reply.stopReason })
+    // The reply's shape is checked by the code below, as before.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let parsed: any
+    if (read.ok) parsed = read.value
+    else {
+      console.error(`AI reply could not be read (${read.reason}): ${read.detail}`)
+      return NextResponse.json({ error: 'AI returned an unexpected format. Try again.' }, { status: 500 })
     }
 
     await supabaseAdmin.from('ai_polish_usage').insert({

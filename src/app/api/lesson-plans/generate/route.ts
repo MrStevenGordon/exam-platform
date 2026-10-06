@@ -5,6 +5,8 @@ import { rateLimit } from '@/lib/rateLimit'
 import { validateBody } from '@/lib/validateBody'
 import { normalizeGeneratedPlan } from '@/lib/lessonPlan'
 import { askClaude } from '@/lib/aiCall'
+import { parseAiJson } from '@/lib/aiJson'
+import * as Sentry from '@sentry/nextjs'
 
 // A multi-lesson draft is a long response: the AI writes it all in one go, and several lessons took longer than the
 // old 60 seconds. 300 is the most the Hobby plan allows (with Fluid compute, which both projects have on).
@@ -108,19 +110,30 @@ Draft a unit plan of exactly ${lessonCount} lesson${lessonCount === 1 ? '' : 's'
 Unit-level fields: subTopics; prerequisiteKnowledge; fourCs (how Communication, Collaboration, Critical Thinking and Creativity feature across the unit); subjectPractices (the subject's practices/processes, e.g. mathematical practices); generalObjectives (a short numbered list of what students will be able to do by the end); keyTermsFormulae (key formulae and vocabulary); specificObjective; skills; successCriteria.
 Each lesson has: title; learning_objectives (start with "Students should be able to:"); engage; explore; explain; elaborate; evaluate; four_cs; resources; assessment (assessment / evidence of learning).
 
-Respond ONLY with valid JSON in this exact format, no other text:
+Respond ONLY with valid JSON in this exact format, no other text, no markdown and no code fence. Write any line break inside a value as \\n, never as a real line break:
 {"subTopics": "...", "prerequisiteKnowledge": "...", "fourCs": "...", "subjectPractices": "...", "generalObjectives": "...", "keyTermsFormulae": "...", "specificObjective": "...", "skills": "...", "successCriteria": "...", "lessons": [{"title": "...", "learning_objectives": "...", "engage": "...", "explore": "...", "explain": "...", "elaborate": "...", "evaluate": "...", "four_cs": "...", "resources": "...", "assessment": "..."}]}`
 
-    const reply = await askClaude({ label: 'lesson-plans', messages: [{ role: 'user', content: prompt }], maxTokens: 1500 + 900 * lessonCount, model: 'claude-sonnet-4-6', timeoutMs: AI_TIMEOUT_MS, retries: 1 })
-    if (!reply.ok) return NextResponse.json({ error: reply.message, ai_problem: reply.kind }, { status: reply.httpStatus })
-    const text = reply.text
-    const cleaned = text.replace(/```json|```/g, '').trim()
-
-    let parsed
-    try {
-      parsed = JSON.parse(cleaned)
-    } catch {
-      return NextResponse.json({ error: 'AI returned an unexpected format. Try again.' }, { status: 500 })
+    // The draft is a long JSON answer. If it comes back cut off (the AI ran out of room) or garbled, ask once more with more room and a
+    // plainer instruction, so the teacher is not told "try again" for something we can sort out ourselves.
+    const started = Date.now()
+    let parsed: unknown
+    let lastProblem = ''
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      const elapsed = Date.now() - started
+      if (attempt === 2 && elapsed > 150_000) break      // not enough time left for a second try before the platform cuts us off
+      const retryNote = attempt === 2 ? '\n\nIMPORTANT: your last answer could not be read. Keep every field to one or two short sentences, use plain text only (no markdown, no bullet characters), write line breaks inside a value as \\n, and make sure the JSON is complete.' : ''
+      const room = attempt === 1 ? 3000 + 1400 * lessonCount : 5000 + 2000 * lessonCount
+      const reply = await askClaude({ label: 'lesson-plans', messages: [{ role: 'user', content: prompt + retryNote }], maxTokens: room, model: 'claude-sonnet-4-6', timeoutMs: Math.min(AI_TIMEOUT_MS, 285_000 - elapsed), retries: 1 })
+      if (!reply.ok) return NextResponse.json({ error: reply.message, ai_problem: reply.kind }, { status: reply.httpStatus })
+      const result = parseAiJson(reply.text, { stopReason: reply.stopReason })
+      if (result.ok && result.value && typeof result.value === 'object') { parsed = result.value; break }
+      lastProblem = result.ok ? 'The reply was not a JSON object.' : `${result.reason}: ${result.detail}`
+      // Say why, so a failure can be understood from the logs instead of guessed at.
+      console.error(`Lesson plan generate: unreadable reply (attempt ${attempt}, stop_reason ${reply.stopReason ?? 'unknown'}, ${reply.text.length} characters). ${lastProblem}\nstart: ${JSON.stringify(reply.text.slice(0, 200))}\nend: ${JSON.stringify(reply.text.slice(-200))}`)
+      try { Sentry.captureMessage(`AI lesson plan: unreadable reply (${lastProblem})`, { level: 'warning', tags: { ai_feature: 'lesson-plans', attempt: String(attempt) } }) } catch { /* alerts must never break the request */ }
+    }
+    if (!parsed) {
+      return NextResponse.json({ error: 'The AI could not finish a readable draft this time. Please try again, or ask for fewer lessons at a time.' }, { status: 502 })
     }
 
     await supabaseAdmin.from('ai_polish_usage').insert({

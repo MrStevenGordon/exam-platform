@@ -36,7 +36,7 @@ test('every kind has a plain message that never shows the provider text', () => 
 test('a good reply, the default model, and the request shape', async () => {
   const f = script([reply(200, okBody)])
   const r = await callClaudeChat({ system: 'sys', messages: [{ role: 'user', content: 'hi' }] }, { maxTokens: 50, apiKey: 'k', fetchImpl: f })
-  assert.deepEqual(r, { ok: true, text: 'hello' })
+  assert.deepEqual(r, { ok: true, text: 'hello', stopReason: 'end_turn' })
   const sent = JSON.parse(f.calls[0].init.body)
   assert.equal(sent.model, AI_MODEL); assert.equal(sent.max_tokens, 50); assert.equal(sent.system, 'sys'); assert.equal(f.calls[0].init.headers['x-api-key'], 'k')
   assert.equal(f.calls.length, 1)
@@ -53,7 +53,7 @@ test('busy twice then fine: the person never sees an error', async () => {
   const f = script([reply(529, { error: { message: 'Overloaded' } }), reply(429, { error: { message: 'slow down' } }), reply(200, okBody)])
   const sleep = noSleep()
   const r = await callClaude('hi', { maxTokens: 10, apiKey: 'k', fetchImpl: f, sleep })
-  assert.deepEqual(r, { ok: true, text: 'hello' }); assert.equal(f.calls.length, 3); assert.deepEqual(sleep.waits, [800, 2500])
+  assert.deepEqual(r, { ok: true, text: 'hello', stopReason: 'end_turn' }); assert.equal(f.calls.length, 3); assert.deepEqual(sleep.waits, [800, 2500])
 })
 
 test('busy every time: gives up after three attempts and says busy', async () => {

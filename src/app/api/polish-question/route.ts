@@ -4,6 +4,7 @@ import { z } from 'zod'
 import { rateLimit } from '@/lib/rateLimit'
 import { validateBody } from '@/lib/validateBody'
 import { askClaude } from '@/lib/aiCall'
+import { parseAiJson } from '@/lib/aiJson'
 
 const MONTHLY_LIMIT = 5
 
@@ -108,12 +109,13 @@ Respond ONLY with valid JSON in this exact format, no other text:
     const reply = await askClaude({ label: 'polish-question', messages: [{ role: 'user', content: prompt }], maxTokens: 500, model: 'claude-sonnet-4-6' })
     if (!reply.ok) return NextResponse.json({ error: reply.message, ai_problem: reply.kind }, { status: reply.httpStatus })
     const text = reply.text
-    const cleaned = text.replace(/```json|```/g, '').trim()
-
-    let parsed
-    try {
-      parsed = JSON.parse(cleaned)
-    } catch {
+    const read = parseAiJson(text, { stopReason: reply.stopReason })
+    // The reply's shape is checked by the code below, as before.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let parsed: any
+    if (read.ok) parsed = read.value
+    else {
+      console.error(`AI reply could not be read (${read.reason}): ${read.detail}`)
       return NextResponse.json({ error: 'AI returned an unexpected format. Try again.' }, { status: 500 })
     }
 
