@@ -6,8 +6,10 @@
 /* Tabler Icons — every `ti ti-…` icon across the app (Sidebar, ProductSwitcher, login,
    Smart Learning) was referencing this class convention with no font ever loaded to back it,
    so every one of those icons was rendering as nothing. Self-hosted (bundled at build time)
-   rather than a runtime CDN link, same as everything else in this stylesheet is self-authored. */
-@import '@tabler/icons-webfont/dist/tabler-icons.css';
+   rather than a runtime CDN link, same as everything else in this stylesheet is self-authored.
+   Cut down to the icons actually used (13 KB instead of 500 KB). After adding a new icon run `npm run icons:build`;
+   the build refuses to run if an icon in use is missing from it. See docs/data-audit-2026-10.md. */
+@import './tabler-icons-subset.css';
 
 :root {
   /* Core palette — warm, deep, Caribbean */

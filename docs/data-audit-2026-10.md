@@ -44,4 +44,11 @@ Doing 1 to 5 would bring the login page from about 874 KB to roughly 300 KB, and
 There is no service worker, so a student cannot open the app, a lesson or flashcards without a connection. That is a separate piece of work (see the offline plan), and it is much easier once the app is lighter.
 
 ## Status (6 October 2026)
-Built and checked in the production build: fix 2 (charts load only when shown), fix 3 (autosave sends only changed answers), fix 4 (question pictures and the school logo are shrunk before upload; a test photo went from 376 KB to 26 KB), fix 5 (logo now 7 KB on the wire, from 24 KB). Fix 1 (icon font) needs a font subsetting tool; see the commit history for when it lands. Fixes 6 and 7 are not started.
+Built and checked in the production build:
+- **Fix 1, icon font:** cut from 5,229 icons (492 KB) to the 102 in use (13 KB). Every glyph was compared with the original, shape and width, with no differences, and all 102 were drawn in the browser. The login page's first visit went from **874 KB to about 360 KB** (the same measurement, not counting Google's fonts). Run `npm run icons:build` after adding a new icon (needs `python3 -m pip install fonttools brotli` once). `npm run build` now stops with a clear message if a used icon is missing from the font, so a forgotten icon can never reach students as a blank space. Icon names built in code (like `ti-chevron-${...}`) are handled; a name with nothing fixed in front of the template is refused.
+- **Fix 2, charts:** the score chart loads only when shown.
+- **Fix 3, exam autosave:** sends only changed answers (the first save sends everything; a failed save is retried).
+- **Fix 4, pictures:** question pictures and the school logo are shrunk before upload (a test photo went from 376 KB to 26 KB). Pictures uploaded earlier stay as they are.
+- **Fix 5, logo:** 24 KB down to 7 KB on the wire.
+
+Not started: fix 6 (serve fonts ourselves) and fix 7 (Sentry replay on demand).

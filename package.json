@@ -11,7 +11,10 @@
     "electron:dev": "SMART_ASSESS_URL=http://localhost:3000 electron electron/main.js",
     "electron:build": "electron-builder",
     "check:ai": "node --env-file-if-exists=.env.local --import ./scripts/tests/essay-marking/resolve-ts.mjs --experimental-strip-types --no-warnings scripts/check-ai.mjs",
-    "test:ai": "node --import ./scripts/tests/essay-marking/resolve-ts.mjs --experimental-strip-types --no-warnings --test scripts/tests/ai/ai.test.mjs"
+    "test:ai": "node --import ./scripts/tests/essay-marking/resolve-ts.mjs --experimental-strip-types --no-warnings --test scripts/tests/ai/ai.test.mjs",
+    "icons:build": "node scripts/build-icon-font.mjs",
+    "icons:check": "node scripts/check-icons.mjs",
+    "prebuild": "node scripts/check-icons.mjs"
   },
   "dependencies": {
     "@sentry/nextjs": "^10.69.0",
