@@ -2,6 +2,14 @@
 
 Tick a box when you have tested it on the live site. Each item points to its section in `docs/qa-checklist.md`. Add new items at the top when something is built. Last updated 2026-10-06.
 
+## New presentation deck (v2)
+- [ ] Open `marketing/presentation/Smart-Assess-Ja-Manchester-Presentation-v2.pptx` on the machine you will present from. Fonts: Impact and Arial (installed on most Windows and Mac machines); check the headings look condensed and bold, not plain
+- [ ] Read each slide's speaker notes (timings add up to 30 minutes; slides 11, 15 and 18 are marked optional)
+- [ ] Check every claim on slides 5 to 22 is something you are happy to say out loud, especially the Data Protection Act line (slide 21) and the "Already built" labels
+- [ ] Slide 22 shows offline as "in testing": finish QA 7q or remove that row
+- [ ] Competitor slide (19): sources in `marketing/presentation/Competitor-claims-verified.md`; know the answer if someone says "Moodle can do that"
+- [ ] The Manchester demo school shows mostly empty screens (no topic results, no flashcard decks, no exam insight, empty Library, no coverage topics). Seed demo data before the live demo, or the walk-through will show empty states
+
 ## Presentation day (before you print)
 - [ ] Sign in once on the live site with your own staff account and follow page 6 of a guide exactly (default password, new password, authenticator). Does it match the screens?
 - [ ] Check each staff account really exists with the default password still unchanged (a changed one will not work on the sheet) and that the sign-in email for each is known
