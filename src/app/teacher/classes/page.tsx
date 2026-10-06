@@ -129,6 +129,7 @@ export default function MyClassesPage() {
       {classes.length > 0 && (
         <input
           type="text"
+          aria-label="Search students"
           placeholder="Search students…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}

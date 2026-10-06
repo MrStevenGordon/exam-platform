@@ -9,7 +9,7 @@
 import { chromium } from 'playwright-core'
 import { mkdirSync, writeFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
-import { LANDING, PORTALS, badBaseUrl, cleanError, isNoise, pathToVisit, renderReport, summarizeSignInTrace } from './lib/analyze.mjs'
+import { LANDING, PORTALS, badBaseUrl, cleanError, isExpectedProbe, isNoise, pathToVisit, renderReport, summarizeSignInTrace } from './lib/analyze.mjs'
 
 const BASE = (process.env.BASE_URL || '').trim().replace(/\/+$/, '')
 if (!BASE) { console.error('Set BASE_URL in e2e/.env.e2e (the address of the site to check). See e2e/README.md.'); process.exit(1) }
@@ -45,7 +45,8 @@ async function openPage(page, role, path, viewport, { weigh }) {
   const onConsole = (m) => { if (m.type() === 'error' && !isNoise(m.text())) rec.consoleErrors.push(m.text().slice(0, 300)) }
   const onPageError = (e) => rec.pageErrors.push(String(e.message || e).slice(0, 300))
   const onFailed = (r) => { const reason = r.failure()?.errorText || 'failed'; if (!isNoise(r.url()) && !isNoise(reason)) rec.failedRequests.push({ url: r.url(), reason }) }
-  const onResponse = (r) => { if (r.status() >= 400 && !isNoise(r.url())) rec.badResponses.push({ url: r.url(), status: r.status() }) }
+  let probes = 0
+  const onResponse = (r) => { if (r.status() >= 400 && !isNoise(r.url())) { if (isExpectedProbe(r.url(), r.status())) probes++; else rec.badResponses.push({ url: r.url(), status: r.status() }) } }
   const onFinished = async (r) => { try { const s = await r.sizes(); const b = (s.responseBodySize || 0) + (s.responseHeadersSize || 0); bytes += b; const t = r.timing(); const u = new URL(r.url()); sized.push({ path: u.origin === new URL(BASE).origin ? u.pathname : `${u.host}${u.pathname}`, kb: b / 1024, ms: t && t.responseEnd > 0 ? Math.round(t.responseEnd) : 0 }) } catch { /* ignore */ } }
   page.on('console', onConsole); page.on('pageerror', onPageError); page.on('requestfailed', onFailed); page.on('response', onResponse); page.on('requestfinished', onFinished)
   const t0 = Date.now()
@@ -59,7 +60,8 @@ async function openPage(page, role, path, viewport, { weigh }) {
     rec.sentToLogin = role !== 'public' && finalPath.startsWith('/login') && !path.startsWith('/login')
     const facts = await page.evaluate(() => {
       const text = (document.body.innerText || '').trim()
-      const visible = (el) => { const r = el.getBoundingClientRect(); const s = getComputedStyle(el); return r.width > 0 && r.height > 0 && s.visibility !== 'hidden' && s.display !== 'none' }
+      // Things inside a collapsed section (<details> that is not open) are not on screen, and the browser reports no text for them.
+      const visible = (el) => { if (el.closest('details:not([open])') && !el.closest('summary')) return false; const r = el.getBoundingClientRect(); const s = getComputedStyle(el); return r.width > 0 && r.height > 0 && s.visibility !== 'hidden' && s.display !== 'none' }
       const banners = [...document.querySelectorAll('.banner-danger, [role="alert"]')].filter(visible).map((e) => e.innerText.trim().slice(0, 200)).filter(Boolean)
       const broken = [...document.images].filter((i) => i.complete && i.naturalWidth === 0 && i.currentSrc).map((i) => i.currentSrc)
       const noAlt = [...document.images].filter((i) => !i.hasAttribute('alt')).length
@@ -81,6 +83,8 @@ async function openPage(page, role, path, viewport, { weigh }) {
     await page.waitForTimeout(50)
     page.off('console', onConsole); page.off('pageerror', onPageError); page.off('requestfailed', onFailed); page.off('response', onResponse); page.off('requestfinished', onFinished)
   }
+  // The browser also prints a generic console line for each deliberate probe; drop that many of them.
+  for (let i = 0; i < probes; i++) { const k = rec.consoleErrors.findIndex((c) => /Failed to load resource: the server responded with a status of 4\d\d/.test(c)); if (k >= 0) rec.consoleErrors.splice(k, 1) }
   rec.kb = weigh ? bytes / 1024 : 0
   rec.top = weigh ? sized.sort((a, b) => b.kb - a.kb).slice(0, 5).map((x) => ({ path: x.path.slice(0, 90), kb: Math.round(x.kb * 10) / 10, ms: x.ms })) : []
   const { navLinks, mainLinks, ...clean } = rec
@@ -91,24 +95,45 @@ async function openPage(page, role, path, viewport, { weigh }) {
 async function signIn(page, person) {
   // While signing in, note what the page and the network did (paths and statuses only, never anything typed or any token), so a
   // sign-in that gets stuck can be understood from the report.
-  const trace = { url: '', buttonText: '', pageText: '', requests: [], consoleErrors: [], pageErrors: [] }
+  const trace = { url: '', buttonText: '', pageText: '', requests: [], sent: [], failed: [], consoleErrors: [], pageErrors: [] }
   const onResponse = (r) => { try { const u = new URL(r.url()); if (/\/(auth|rest|rpc)\/v1\//.test(u.pathname) || u.pathname.startsWith('/api/')) trace.requests.push({ method: r.request().method(), path: u.pathname, status: r.status() }) } catch { /* ignore */ } }
+  const onRequest = (r) => { try { const u = new URL(r.url()); if (/\/(auth|rest|rpc)\/v1\//.test(u.pathname) || u.pathname.startsWith('/api/')) trace.sent.push(`${r.method()} ${u.pathname}`) } catch { /* ignore */ } }
+  const onFailed = (r) => { try { trace.failed.push(`${new URL(r.url()).pathname} ${r.failure()?.errorText ?? ''}`.slice(0, 120)) } catch { /* ignore */ } }
   const onConsole = (m) => { if (m.type() === 'error' && !isNoise(m.text())) trace.consoleErrors.push(m.text().slice(0, 160)) }
   const onPageError = (e) => trace.pageErrors.push(String(e.message || e).slice(0, 160))
-  page.on('response', onResponse); page.on('console', onConsole); page.on('pageerror', onPageError)
+  page.on('response', onResponse); page.on('request', onRequest); page.on('requestfailed', onFailed); page.on('console', onConsole); page.on('pageerror', onPageError)
   try {
     await page.goto(BASE + '/login', { waitUntil: 'domcontentloaded', timeout: 30000 })
     await page.waitForSelector('select', { timeout: 15000 })
-    await page.selectOption('select', person.role)
-    await page.fill('form input:not([type=password]):not([type=hidden])', person.login)
-    await page.fill('form input[type=password]', person.password)
+    // The page shows the form before its scripts have finished starting. Anything typed in that moment is wiped when they finish (and
+    // the person type reverts to Student), so wait, then type, then check it all stuck before pressing the button.
+    await page.waitForLoadState('networkidle', { timeout: 10000 }).catch(() => {})
+    await page.waitForTimeout(800)
+    const idBox = page.locator('form input:not([type=password]):not([type=hidden])').first()
+    const pwBox = page.locator('form input[type=password]').first()
+    const roleBox = page.locator('select').first()
+    let stuck = false
+    for (let attempt = 0; attempt < 6 && !stuck; attempt++) {
+      await roleBox.selectOption(person.role)
+      await idBox.fill(person.login)
+      await pwBox.fill(person.password)
+      await page.waitForTimeout(700)
+      // compared here only; the typed values are never printed or saved
+      stuck = (await roleBox.inputValue()) === person.role && (await idBox.inputValue()) === person.login && (await pwBox.inputValue()) === person.password
+    }
+    if (!stuck) return { ok: false, why: 'The sign-in form kept resetting itself, so the person type and login could not be entered. Try again; if it keeps happening, run with HEADED=1 and watch what the form does.' }
     await page.click('form button[type=submit]')
     // Either the person is signed in, or the page asks for the code from their authenticator app (two-step sign-in).
     const codeBox = page.locator('input[placeholder="123456"]')
+    // A wait that fails must never count as an answer, so a failure waits forever and only the overall timer can end the race.
+    const never = () => new Promise(() => {})
     const first = await Promise.race([
-      page.waitForURL((u) => !u.pathname.startsWith('/login'), { timeout: 25000 }).then(() => 'arrived').catch(() => null),
-      codeBox.waitFor({ state: 'visible', timeout: 25000 }).then(() => 'code').catch(() => null),
+      page.waitForURL((u) => !u.pathname.startsWith('/login'), { timeout: 25000 }).then(() => 'arrived').catch(never),
+      codeBox.waitFor({ state: 'visible', timeout: 25000 }).then(() => 'code').catch(never),
+      page.locator('.banner-danger').first().waitFor({ state: 'visible', timeout: 25000 }).then(() => 'refused').catch(never),
+      new Promise((resolve) => setTimeout(() => resolve(null), 25500)),
     ])
+    if (first === 'refused') { const m = (await page.locator('.banner-danger').first().innerText().catch(() => '')).trim(); if (m) return { ok: false, why: `Sign-in refused: ${m}` } }
     if (first === 'arrived') return { ok: true, path: new URL(page.url()).pathname }
     if (first === 'code') {
       // The checker never stores or guesses codes. In a visible window the person types the code themselves and the checker waits.
@@ -131,9 +156,9 @@ async function signIn(page, person) {
     await page.fill('form input[type=password]', '').catch(() => {})
     mkdirSync(join(OUT, person.role), { recursive: true })
     await page.screenshot({ path: join(OUT, person.role, 'signin-stuck.jpg'), type: 'jpeg', quality: 55, fullPage: true }).catch(() => {})
-    return { ok: false, why: `Sign-in did not finish and no error was shown (waited 25 seconds). ${summarizeSignInTrace(trace)}. Screenshot: ${person.role}/signin-stuck.jpg` }
+    return { ok: false, retry: true, why: `Sign-in did not finish and no error was shown (waited 25 seconds). ${summarizeSignInTrace(trace)}. Screenshot: ${person.role}/signin-stuck.jpg` }
   } finally {
-    page.off('response', onResponse); page.off('console', onConsole); page.off('pageerror', onPageError)
+    page.off('response', onResponse); page.off('request', onRequest); page.off('requestfailed', onFailed); page.off('console', onConsole); page.off('pageerror', onPageError)
   }
 }
 
@@ -160,7 +185,7 @@ async function main() {
 
   // 1. public pages, no sign-in
   console.log('Checking public pages...')
-  for (const vp of Object.keys(VIEWPORTS)) {
+  for (const vp of process.env.SKIP_PUBLIC === '1' ? [] : Object.keys(VIEWPORTS)) {
     const ctx = await browser.newContext({ viewport: VIEWPORTS[vp] })
     const page = await ctx.newPage()
     for (const p of PUBLIC_PAGES) { console.log(`  ${vp} ${p}`); await openPage(page, 'public', p, vp, { weigh: vp === 'desktop' }) }
@@ -172,7 +197,10 @@ async function main() {
     console.log(`\nSigning in as ${person.label}...`)
     const ctx = await browser.newContext({ viewport: VIEWPORTS.desktop })
     const page = await ctx.newPage()
-    const result = await signIn(page, person).catch((e) => ({ ok: false, why: `Sign-in could not be completed: ${cleanError(e)}` }))
+    const attempt = () => signIn(page, person).catch((e) => ({ ok: false, why: `Sign-in could not be completed: ${cleanError(e)}` }))
+    let result = await attempt()
+    // A sign-in that simply never answered (a slow moment on the network) gets one more try; a refusal or a code request does not.
+    if (!result.ok && result.retry) { console.log('  no answer, trying once more...'); await page.waitForTimeout(3000); result = await attempt() }
     if (!result.ok) { notes.push(`${person.label}: ${result.why}`); console.log(`  skipped: ${result.why}`); await ctx.close(); continue }
     if (result.path.startsWith('/change-password')) notes.push(`${person.label}: this account is still on its starting password, so the site asked for a new one. The checker did not change it and carried on from the home page. Some pages may behave differently once the password is changed.`)
     // Crawl: the home page, then every menu link, then a few links from each of those pages.

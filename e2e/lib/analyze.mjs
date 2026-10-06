@@ -36,6 +36,11 @@ export function pathToVisit(href, baseUrl, role) {
 // Noise that is not a real problem: the browser asking for the icon, a request cancelled because the page moved on, and the error
 // recorder being blocked by an ad blocker.
 const NOISE = [/favicon/i, /ERR_ABORTED/i, /sentry\.io/i, /ingest\./i, /Failed to load resource: net::ERR_BLOCKED_BY_CLIENT/i, /\/_next\/image/]
+// Requests the app makes on purpose to find out whether a feature is installed: it asks about something that cannot exist, and an
+// "error" answer means "yes, installed". (See isCancelAbsenceAvailable in src/lib/substitution.ts.)
+const PROBES = [/\/rest\/v1\/rpc\/cancel_teacher_absence/]
+export const isExpectedProbe = (url, status) => status === 400 && PROBES.some((r) => r.test(url))
+
 export const isNoise = (text) => NOISE.some((r) => r.test(text))
 
 // Findings: { severity: 'high' | 'medium' | 'low', kind, detail }
@@ -89,7 +94,10 @@ export function summarizeSignInTrace(t) {
   if (t.buttonText) parts.push(`the button said "${t.buttonText}"`)
   if (t.pageText) parts.push(`the page said "${t.pageText}"`)
   const reqs = (t.requests || []).slice(0, 12).map((r) => `${r.method} ${r.path} -> ${r.status}`)
-  parts.push(reqs.length ? `requests: ${reqs.join('; ')}` : 'no data requests were made')
+  parts.push(reqs.length ? `answered requests: ${reqs.join('; ')}` : 'no data requests were answered')
+  const unanswered = (t.sent || []).filter((x) => !(t.requests || []).some((r) => x === `${r.method} ${r.path}`))
+  if (unanswered.length) parts.push(`sent but never answered: ${unanswered.slice(0, 6).join('; ')}`)
+  if ((t.failed || []).length) parts.push(`failed: ${t.failed.slice(0, 4).join('; ')}`)
   if ((t.consoleErrors || []).length) parts.push(`browser console errors: ${t.consoleErrors.slice(0, 3).join(' | ')}`)
   if ((t.pageErrors || []).length) parts.push(`script errors: ${t.pageErrors.slice(0, 3).join(' | ')}`)
   return parts.join('. ')

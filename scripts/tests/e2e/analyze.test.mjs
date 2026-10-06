@@ -1,7 +1,7 @@
 // Run: node --test scripts/tests/e2e/analyze.test.mjs
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { isExcluded, pathToVisit, isNoise, findingsForPage, groupFindings, renderReport, cleanError, badBaseUrl, summarizeSignInTrace, PORTALS } from '../../../e2e/lib/analyze.mjs'
+import { isExcluded, pathToVisit, isNoise, findingsForPage, groupFindings, renderReport, cleanError, badBaseUrl, summarizeSignInTrace, isExpectedProbe, PORTALS } from '../../../e2e/lib/analyze.mjs'
 
 const BASE = 'https://school.example.com'
 const clean = (o = {}) => ({ role: 'student', path: '/student', viewport: 'desktop', status: 200, loadMs: 800, kb: 400, consoleErrors: [], pageErrors: [], failedRequests: [], badResponses: [], banners: [], brokenImages: [], overflowX: false, blank: false, sentToLogin: false, imgNoAlt: 0, buttonNoName: 0, inputNoLabel: 0, screenshot: 'student/student-desktop.jpg', ...o })
@@ -108,7 +108,8 @@ test('a stuck sign-in is described from what the page and network did, and nothi
   assert.match(text, /ended on https:\/\/s\.example\/login/); assert.match(text, /button said "Signing in\.\.\."/)
   assert.match(text, /POST \/auth\/v1\/token -> 200; GET \/rest\/v1\/profiles -> 500/); assert.match(text, /browser console errors: boom/)
   assert.doesNotMatch(text, /\?/)
-  assert.match(summarizeSignInTrace({ url: '', requests: [] }), /no data requests were made/)
+  assert.match(summarizeSignInTrace({ url: '', requests: [] }), /no data requests were answered/)
+  assert.match(summarizeSignInTrace({ url: '', requests: [], sent: ['POST /auth/v1/token'], failed: ['/x net::ERR'] }), /sent but never answered: POST \/auth\/v1\/token.*failed: \/x net::ERR/)
 })
 
 test('the report says which files made the heaviest pages heavy', () => {
@@ -116,4 +117,10 @@ test('the report says which files made the heaviest pages heavy', () => {
   const md = renderReport({ baseUrl: BASE, startedAt: 'x', roles: [], publicPages: false, pages, notes: [] })
   assert.match(md, /What made the heaviest pages heavy/); assert.match(md, /\*\*\/student\*\* \(student\):/)
   assert.match(md, /- \/_next\/image: 400 KB, finished at 3\.0 s/); assert.match(md, /- \/x: 50 KB/)
+})
+
+test('the app\'s deliberate "is this feature installed?" request is not reported as a failure', () => {
+  assert.equal(isExpectedProbe('https://x.supabase.co/rest/v1/rpc/cancel_teacher_absence', 400), true)
+  assert.equal(isExpectedProbe('https://x.supabase.co/rest/v1/rpc/cancel_teacher_absence', 500), false)
+  assert.equal(isExpectedProbe('https://x.supabase.co/rest/v1/rpc/something_else', 400), false)
 })

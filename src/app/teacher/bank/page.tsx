@@ -57,12 +57,14 @@ export default function TeacherBankPage() {
       <div style={{ display: 'flex', gap: 10, marginBottom: 16, flexWrap: 'wrap' }}>
         <input
           type="text"
+          aria-label="Search questions"
           placeholder="Search questions…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           style={{ flex: 2, minWidth: 160 }}
         />
         <select
+          aria-label="Filter by subject"
           value={filterSubject}
           onChange={(e) => setFilterSubject(e.target.value)}
           style={{ flex: 1, minWidth: 120 }}
@@ -71,6 +73,7 @@ export default function TeacherBankPage() {
           {subjects.map((s) => <option key={s} value={s}>{s}</option>)}
         </select>
         <select
+          aria-label="Filter by question type"
           value={filterType}
           onChange={(e) => setFilterType(e.target.value)}
           style={{ flex: 1, minWidth: 140 }}

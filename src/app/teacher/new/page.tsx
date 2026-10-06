@@ -92,8 +92,8 @@ function NewExamForm() {
       <div className="card" style={{ marginTop: 20 }}>
         <form onSubmit={handleSubmit}>
           <div style={{ marginBottom: 16 }}>
-            <label style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)' }}>Exam type</label>
-            <select
+            <label htmlFor="new-exam-type-1" style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)' }}>Exam type</label>
+            <select id="new-exam-type-1"
               value={examKind}
               onChange={(e) => setExamKind(e.target.value)}
               style={{ width: '100%', marginTop: 6 }}
@@ -104,20 +104,20 @@ function NewExamForm() {
             </select>
           </div>
           <div style={{ marginBottom: 16 }}>
-            <label style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)' }}>Title</label>
-            <input value={title} onChange={(e) => setTitle(e.target.value)} required style={{ width: '100%', marginTop: 6 }} />
+            <label htmlFor="new-title-2" style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)' }}>Title</label>
+            <input id="new-title-2" value={title} onChange={(e) => setTitle(e.target.value)} required style={{ width: '100%', marginTop: 6 }} />
           </div>
           <div style={{ marginBottom: 16 }}>
-            <label style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)' }}>Subject</label>
-            <input value={subject} onChange={(e) => setSubject(e.target.value)} required style={{ width: '100%', marginTop: 6 }} />
+            <label htmlFor="new-subject-3" style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)' }}>Subject</label>
+            <input id="new-subject-3" value={subject} onChange={(e) => setSubject(e.target.value)} required style={{ width: '100%', marginTop: 6 }} />
           </div>
           <div style={{ marginBottom: 20 }}>
-            <label style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)' }}>Instructions (shown to students on the front page)</label>
-            <textarea value={instructions} onChange={(e) => setInstructions(e.target.value)} rows={4} style={{ width: '100%', marginTop: 6 }} />
+            <label htmlFor="new-instructions-shown-to-studen-4" style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)' }}>Instructions (shown to students on the front page)</label>
+            <textarea id="new-instructions-shown-to-studen-4" value={instructions} onChange={(e) => setInstructions(e.target.value)} rows={4} style={{ width: '100%', marginTop: 6 }} />
           </div>
           <div style={{ marginBottom: 16 }}>
-            <label style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)' }}>Year group (which grade is this exam for?)</label>
-            <select
+            <label htmlFor="new-year-group-which-grade-is-th-5" style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)' }}>Year group (which grade is this exam for?)</label>
+            <select id="new-year-group-which-grade-is-th-5"
               value={targetGrade}
               onChange={(e) => setTargetGrade(e.target.value ? parseInt(e.target.value) : '')}
               style={{ width: '100%', marginTop: 6 }}
@@ -131,8 +131,8 @@ function NewExamForm() {
             </select>
           </div>
           <div style={{ marginBottom: 16 }}>
-            <label style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)' }}>Questions per page</label>
-            <select
+            <label htmlFor="new-questions-per-page-6" style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)' }}>Questions per page</label>
+            <select id="new-questions-per-page-6"
               value={questionsPerPage}
               onChange={(e) => setQuestionsPerPage(parseInt(e.target.value))}
               style={{ width: '100%', marginTop: 6 }}
