@@ -304,6 +304,24 @@ Setup first: `docs/essay-marking-setup.md`. Use invented essays, not real studen
 - [ ] **Another teacher** cannot ask for a suggestion on an essay they cannot mark
 - [ ] The **privacy page** lists essay mark suggestions and says a teacher decides every mark
 
+## 7k. Student results by topic (Smart Assess, needs migration 083 and topics on questions)
+
+Use a test student who has sat at least one exam with topic-tagged questions whose results you have released.
+
+- [ ] Before 083 is applied there is no **My Topics** link in the student menu. After it, the link appears between My Progress and Smart Play
+- [ ] A student with no released results sees "No topic results yet"
+- [ ] A student whose exams have no topics sees "Your teachers have not added topics yet"
+- [ ] Topics appear weakest first, each with a bar and a percent that matches the marks (work out one by hand: marks earned over marks available on that topic)
+- [ ] Under 50% says **Needs work**, 75% and over **Strong**, in between **Getting there**
+- [ ] A topic with fewer than 3 questions is under "Topics with too few questions to judge", not judged
+- [ ] **Work on these first** lists up to three weak topics
+- [ ] With two subjects a Subject drop-down appears and filters
+- [ ] Hold back an exam's results (do not release): its questions do not count until released
+- [ ] An essay not yet marked does not pull a topic down
+- [ ] **Practise this topic** opens a practice mock with questions on that topic only, none of them essays
+- [ ] The page never shows question wording or correct answers, and a student only ever sees their own results (log in as a second student and compare)
+- [ ] A teacher or principal opening /student/topics is sent away (they are not students)
+
 ## 8. Owner console (you)
 
 - [ ] **School requests** and **Org requests**: approve and provision

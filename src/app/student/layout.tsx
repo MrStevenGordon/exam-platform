@@ -8,6 +8,7 @@ import InactivityLogout from '@/components/InactivityLogout'
 import PresenceHeartbeat from '@/components/PresenceHeartbeat'
 import OnboardingTour, { TourStep } from '@/components/OnboardingTour'
 import { verifyPortalRole } from '@/lib/verifyPortalRole'
+import { isStudentTopicsAvailable } from '@/lib/studentTopics'
 
 const STUDENT_NAV = [
   { label: 'Home', icon: 'ti-home', href: '/student' },
@@ -39,6 +40,8 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
   const pathname = usePathname()
   const isTakePage = pathname?.includes('/take')
   const [checked, setChecked] = useState(false)
+  const [topicsOn, setTopicsOn] = useState(false)
+  useEffect(() => { isStudentTopicsAvailable().then(setTopicsOn) }, [])
 
   useEffect(() => {
     async function checkAccess() {
@@ -61,7 +64,7 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
       <InactivityLogout />
       <PresenceHeartbeat />
       <main className="portal-content"><PageTransition>{children}</PageTransition></main>
-      <Sidebar navItems={STUDENT_NAV} portalLabel="Student Portal" />
+      <Sidebar navItems={topicsOn ? STUDENT_NAV.flatMap((n) => (n.href === '/student/history' ? [n, { label: 'My Topics', icon: 'ti-target', href: '/student/topics' }] : [n])) : STUDENT_NAV} portalLabel="Student Portal" />
       <OnboardingTour tourKey="student" steps={STUDENT_TOUR_STEPS} />
     </div>
   )
