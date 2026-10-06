@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase'
-import { checkCard, LIMITS, nextState, toCard, type Card } from '@/lib/flashcardsPure'
+import { checkCard, LIMITS, nextState, toCard, type Card, type CardUpdate } from '@/lib/flashcardsPure'
+import { isNetworkFailure } from '@/lib/offline/network'
 
 // The screen's side of Flashcards. Decks and cards belong to the student who made them; the database (migration 084) makes sure no
 // one else can read or change them, so every call here simply uses the student's own sign-in.
@@ -23,37 +24,38 @@ export function isFlashcardsAvailable(): Promise<boolean> {
   return availability
 }
 
-export async function loadDecks(): Promise<{ ok: true; decks: Array<Deck & { total: number; due: number }> } | { ok: false }> {
+export async function loadDecks(): Promise<{ ok: true; decks: Array<Deck & { total: number; due: number }> } | { ok: false; network: boolean }> {
   try {
     const { data: decks, error } = await supabase.from('flashcard_decks').select('id, title, subject, updated_at').order('updated_at', { ascending: false })
-    if (error) return { ok: false }
+    if (error) return { ok: false, network: isNetworkFailure(error) }
     const { data: cards, error: cardsError } = await supabase.from('flashcards').select('deck_id, due_at')
-    if (cardsError) return { ok: false }
+    if (cardsError) return { ok: false, network: isNetworkFailure(cardsError) }
     const now = Date.now()
     const out = (decks || []).map((d) => {
       const mine = (cards || []).filter((c) => c.deck_id === d.id)
       return { id: d.id, title: d.title, subject: d.subject, updatedAt: d.updated_at, total: mine.length, due: mine.filter((c) => new Date(c.due_at).getTime() <= now).length }
     })
     return { ok: true, decks: out }
-  } catch {
-    return { ok: false }
+  } catch (err) {
+    return { ok: false, network: isNetworkFailure(err) }
   }
 }
 
-export async function loadDeck(id: string): Promise<{ ok: true; deck: Deck; cards: Card[] } | { ok: false; notFound: boolean }> {
+export async function loadDeck(id: string): Promise<{ ok: true; deck: Deck; cards: Card[] } | { ok: false; notFound: boolean; network: boolean }> {
   try {
-    const { data: deck } = await supabase.from('flashcard_decks').select('id, title, subject, updated_at').eq('id', id).maybeSingle()
-    if (!deck) return { ok: false, notFound: true }
+    const { data: deck, error: deckError } = await supabase.from('flashcard_decks').select('id, title, subject, updated_at').eq('id', id).maybeSingle()
+    if (deckError) return { ok: false, notFound: false, network: isNetworkFailure(deckError) }
+    if (!deck) return { ok: false, notFound: true, network: false }
     const { data: rows, error } = await supabase.from('flashcards').select('*').eq('deck_id', id).order('created_at', { ascending: true })
-    if (error) return { ok: false, notFound: false }
+    if (error) return { ok: false, notFound: false, network: isNetworkFailure(error) }
     return { ok: true, deck: { id: deck.id, title: deck.title, subject: deck.subject, updatedAt: deck.updated_at }, cards: (rows || []).map(toCard) }
-  } catch {
-    return { ok: false, notFound: false }
+  } catch (err) {
+    return { ok: false, notFound: false, network: isNetworkFailure(err) }
   }
 }
 
-type Result = { ok: true } | { ok: false; error: string }
-const fail = (error: { message?: string } | null): { ok: false; error: string } => ({ ok: false, error: error?.message || 'Something went wrong. Please try again.' })
+type Result = { ok: true } | { ok: false; error: string; network?: boolean }
+const fail = (error: { message?: string } | null): { ok: false; error: string; network: boolean } => ({ ok: false, error: error?.message || 'Something went wrong. Please try again.', network: isNetworkFailure(error) })
 
 export async function createDeck(title: string, subject: string): Promise<{ ok: true; id: string } | { ok: false; error: string }> {
   const t = title.trim()
@@ -96,9 +98,22 @@ export async function deleteCard(id: string): Promise<Result> {
   return error ? fail(error) : { ok: true }
 }
 
+// Saves a card's new schedule. With onlyIfNewerThan (used when sending answers given offline), a card the server already has a later answer
+// for is left alone, so an old offline answer can never overwrite a newer one given somewhere else.
+export async function pushCardState(cardId: string, u: CardUpdate, onlyIfNewerThan?: string): Promise<{ ok: true; changed: number } | { ok: false; error: string; network: boolean }> {
+  try {
+    let q = supabase.from('flashcards').update({ box: u.box, due_at: u.dueAt, times_seen: u.timesSeen, times_correct: u.timesCorrect, last_reviewed_at: u.lastReviewedAt }).eq('id', cardId)
+    if (onlyIfNewerThan) q = q.or(`last_reviewed_at.is.null,last_reviewed_at.lt.${onlyIfNewerThan}`)
+    const { data, error } = await q.select('id')
+    if (error) return fail(error)
+    return { ok: true, changed: Array.isArray(data) ? data.length : 0 }
+  } catch (err) {
+    return { ok: false, error: 'Something went wrong. Please try again.', network: isNetworkFailure(err) }
+  }
+}
+
 // Records one answer while studying: moves the card between boxes and sets when it is next due.
 export async function recordReview(card: Card, knewIt: boolean): Promise<Result> {
-  const u = nextState(card, knewIt, new Date())
-  const { error } = await supabase.from('flashcards').update({ box: u.box, due_at: u.dueAt, times_seen: u.timesSeen, times_correct: u.timesCorrect, last_reviewed_at: u.lastReviewedAt }).eq('id', card.id)
-  return error ? fail(error) : { ok: true }
+  const r = await pushCardState(card.id, nextState(card, knewIt, new Date()))
+  return r.ok ? { ok: true } : r
 }

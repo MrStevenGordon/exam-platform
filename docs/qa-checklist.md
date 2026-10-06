@@ -404,6 +404,18 @@ Use a test student who has sat at least one exam with topic-tagged questions who
 - [ ] The page works on a phone, and the list is clear with 20+ items
 - [ ] In Supabase, Storage shows a **private** bucket called department-resources, and a file cannot be opened without signing in
 
+## 7q. Working offline (Smart Learning students; no migration; live site only, it needs https)
+
+- [ ] As a student, online: open **My flashcards**, a deck, **Study** and answer a card; open two lessons. (This is what saves them.)
+- [ ] Turn the phone to airplane mode (or in Chrome: DevTools > Network > Offline). Reopen **My flashcards**, the deck and **Study**: they open with the cards. A banner says you are offline
+- [ ] Answer 2 cards offline. The page says they are saved on this device. Add/Edit/Delete buttons are off
+- [ ] Reopen the two lessons offline: they show and are read-only; ticking finished says it needs a connection. A lesson never opened is marked and does not open
+- [ ] Try to open an **exam** or a test offline: the browser's normal "no connection" page, never a saved exam
+- [ ] Turn the connection back on: the banner clears, the waiting answers are sent, and the cards' review dates move on
+- [ ] Sign out: sign in as a different student on the same device and confirm they see none of the first student's decks
+- [ ] A teacher offline sees an "offline" notice, not saved pages
+- [ ] Data use: after the first visit, reopening Smart Learning on a poor connection feels instant (static files come from the device)
+
 ## 8. Owner console (you)
 
 - [ ] **School requests** and **Org requests**: approve and provision

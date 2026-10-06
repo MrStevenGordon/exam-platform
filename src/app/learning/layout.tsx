@@ -6,7 +6,6 @@ import Sidebar from '@/components/Sidebar'
 import PageTransition from '@/components/PageTransition'
 import InactivityLogout from '@/components/InactivityLogout'
 import PresenceHeartbeat from '@/components/PresenceHeartbeat'
-import { supabase } from '@/lib/supabase'
 import { getMfaRedirect } from '@/lib/mfaCheck'
 import { verifyPortalRole } from '@/lib/verifyPortalRole'
 import { getEnabledProducts, productHref } from '@/lib/products'
@@ -16,6 +15,9 @@ import { FLAGS_CHANGED_EVENT, loadFlagCounts } from '@/lib/tutorFlags'
 import { isLibraryAvailable } from '@/lib/library'
 import { isFlashcardsAvailable } from '@/lib/flashcards'
 import { isResourcesAvailable } from '@/lib/departmentResources'
+import { resolveRole } from '@/lib/offline/role'
+import { registerOfflineWorker, warmOfflinePages } from '@/lib/offline/serviceWorker'
+import OfflineBanner from '@/components/OfflineBanner'
 
 type Role = 'student' | 'teacher' | 'supervisor' | 'admin' | 'principal'
 const ROLES: Role[] = ['student', 'teacher', 'supervisor', 'admin', 'principal']
@@ -43,7 +45,7 @@ export default function LearningLayout({ children }: { children: React.ReactNode
   const router = useRouter()
   const pathname = usePathname()
   const [role, setRole] = useState<Role | null>(null)
-  const [state, setState] = useState<'checking' | 'ready' | 'off'>('checking')
+  const [state, setState] = useState<'checking' | 'ready' | 'off' | 'offline'>('checking')
   // Heads of department and school admins get a Coverage page once migration 063 is applied.
   const [coverageOn, setCoverageOn] = useState(false)
   // The principal team and school admins get the school-wide list of flagged tutor conversations once
@@ -68,11 +70,18 @@ export default function LearningLayout({ children }: { children: React.ReactNode
   useEffect(() => {
     let cancelled = false
     async function check() {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) { router.push('/login'); return }
-      const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
-      const r = profile?.role as Role | undefined
-      if (!r || !ROLES.includes(r)) { router.push('/login'); return }
+      // Who is this? Asked of the server, or, with no connection, the person last signed in on this device. Only a student gets an offline
+      // copy of Smart Learning (their flashcards and lessons already opened); everyone else needs to reconnect.
+      const who = await resolveRole()
+      if (!who || !ROLES.includes(who.role as Role)) { router.push('/login'); return }
+      const r = who.role as Role
+      if (who.fromCache) {
+        if (cancelled) return
+        if (r === 'student') setFlashcardsOn(true)
+        setRole(r)
+        setState(r === 'student' ? 'ready' : 'offline')
+        return
+      }
 
       // Same account checks as every portal (active, password changed, not the platform owner)...
       const mfaPromise = r === 'student' ? Promise.resolve(null) : getMfaRedirect(r)
@@ -109,6 +118,11 @@ export default function LearningLayout({ children }: { children: React.ReactNode
     return () => { cancelled = true }
   }, [router, pathname])
 
+  // Students get the offline copy: a small service worker keeps the Smart Learning pages and files they use, so they open without a connection.
+  useEffect(() => {
+    if (state === 'ready' && role === 'student') registerOfflineWorker().then(() => warmOfflinePages(['/learning', '/learning/flashcards']))
+  }, [state, role])
+
   // The lesson editor and lesson plans are for the people who teach. Anyone in an oversight role (school admin,
   // principal / VP) who types one of those addresses is sent to their overview.
   const blockedForOversight = (role === 'admin' || role === 'principal') && (pathname.startsWith('/learning/lessons') || pathname.startsWith('/learning/lesson-plans'))
@@ -126,6 +140,15 @@ export default function LearningLayout({ children }: { children: React.ReactNode
   if (blockedForOversight) return null
 
   if (state === 'checking' || !role) return null
+
+  if (state === 'offline') {
+    return (
+      <div className="page-container" style={{ maxWidth: 520 }}>
+        <h1>You are offline</h1>
+        <p style={{ color: 'var(--text-secondary)' }}>Smart Learning needs a connection for your role. Reconnect and try again.</p>
+      </div>
+    )
+  }
 
   if (state === 'off') {
     return (
@@ -152,7 +175,7 @@ export default function LearningLayout({ children }: { children: React.ReactNode
     <div className="portal-layout" style={{ minHeight: '100vh' }}>
       <InactivityLogout />
       <PresenceHeartbeat />
-      <main className="portal-content"><PageTransition>{children}</PageTransition></main>
+      <main className="portal-content">{role === 'student' && <OfflineBanner />}<PageTransition>{children}</PageTransition></main>
       <Sidebar navItems={nav} badges={badges} portalLabel="Smart Learning" resolveActivePathname={(p) => (p.startsWith('/learning/library') ? '/learning/library' : p.startsWith('/learning/flashcards') ? '/learning/flashcards' : p === '/learning/week' ? '/learning/week' : p.startsWith('/learning/resources') ? '/learning/resources' : p.startsWith('/learning/lesson/') || p.startsWith('/learning/lessons/') && p !== '/learning/lessons/new' ? '/learning' : p)} />
     </div>
   )

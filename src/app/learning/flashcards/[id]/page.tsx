@@ -3,7 +3,10 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { addCards, deleteCard, deleteDeck, loadDeck, renameDeck, updateCard, type Deck } from '@/lib/flashcards'
+import { addCards, deleteCard, deleteDeck, renameDeck, updateCard, type Deck } from '@/lib/flashcards'
+import { loadDeckResilient, syncFlashcards } from '@/lib/offline/flashcardsOffline'
+import { useOnline } from '@/lib/offline/useOnline'
+import { warmOfflinePages } from '@/lib/offline/serviceWorker'
 import { checkCard, deckStats, LIMITS, parseBulk, type Card } from '@/lib/flashcardsPure'
 
 // One deck: its cards (add, edit, delete, paste many at once), how well it is known, and the Study button.
@@ -22,15 +25,18 @@ export default function DeckPage() {
   const [editing, setEditing] = useState<{ id: string; front: string; back: string } | null>(null)
   const [title, setTitle] = useState('')
   const [busy, setBusy] = useState(false)
+  const [fromCache, setFromCache] = useState(false)
+  const online = useOnline()
 
-  const apply = useCallback((res: Awaited<ReturnType<typeof loadDeck>>) => {
+  const apply = useCallback((res: Awaited<ReturnType<typeof loadDeckResilient>>) => {
     if (!res.ok) { setError(res.notFound ? 'This deck was not found.' : 'Could not load this deck. Please try again.'); setLoading(false); return }
-    setDeck(res.deck); setCards(res.cards); setTitle(res.deck.title); setLoading(false)
+    setDeck(res.deck); setCards(res.cards); setTitle(res.deck.title); setFromCache(res.fromCache); setLoading(false)
+    if (!res.fromCache) warmOfflinePages([`/learning/flashcards/${res.deck.id}`, `/learning/flashcards/${res.deck.id}/study`])   // so the deck and its study page open without signal later
   }, [])
-  const refresh = useCallback(async () => { apply(await loadDeck(id)) }, [apply, id])
+  const refresh = useCallback(async () => { apply(await loadDeckResilient(id)) }, [apply, id])
   useEffect(() => {
     let cancelled = false
-    loadDeck(id).then((res) => { if (!cancelled) apply(res) })
+    syncFlashcards().then(() => loadDeckResilient(id)).then((res) => { if (!cancelled) apply(res) })
     return () => { cancelled = true }
   }, [id, apply])
 
@@ -79,6 +85,7 @@ export default function DeckPage() {
       <p style={{ color: 'var(--text-secondary)', marginTop: 4 }}>{deck.subject ? `${deck.subject} · ` : ''}{stats.total} card{stats.total === 1 ? '' : 's'}</p>
 
       {error && <p role="alert" className="banner banner-danger" style={{ marginTop: 16 }}>{error}</p>}
+      {(!online || fromCache) && <p className="banner banner-warning" style={{ marginTop: 16, fontSize: 13 }}>You are looking at the copy saved on this device. You can study these cards, but adding, changing or deleting cards needs a connection.</p>}
       {notice && <p role="status" className="banner banner-success" style={{ marginTop: 16 }}>{notice}</p>}
 
       {stats.total > 0 && (
@@ -102,13 +109,13 @@ export default function DeckPage() {
         <textarea id="front" value={front} rows={2} maxLength={LIMITS.maxFront} onChange={(e) => setFront(e.target.value)} style={field} />
         <label htmlFor="back" style={{ ...lab, display: 'block', marginTop: 10 }}>Back (the answer)</label>
         <textarea id="back" value={back} rows={2} maxLength={LIMITS.maxBack} onChange={(e) => setBack(e.target.value)} style={field} />
-        <button type="button" className="btn btn-primary" style={{ marginTop: 12 }} onClick={addOne} disabled={busy || !front.trim() || !back.trim() || cards.length >= LIMITS.maxCards}>Add card</button>
+        <button type="button" className="btn btn-primary" style={{ marginTop: 12 }} onClick={addOne} disabled={busy || !online || !front.trim() || !back.trim() || cards.length >= LIMITS.maxCards}>Add card</button>
 
         <details style={{ marginTop: 18 }}>
           <summary style={{ cursor: 'pointer', fontSize: 14, fontWeight: 600 }}>Add many cards at once</summary>
           <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: '8px 0' }}>One card on each line. Write the front, then a | (vertical bar), then the back. Example: <code>Photosynthesis | How plants make food using light</code></p>
           <textarea aria-label="Cards to add, one per line" value={bulk} rows={6} onChange={(e) => setBulk(e.target.value)} style={field} />
-          <button type="button" className="btn btn-secondary" style={{ marginTop: 10 }} onClick={addMany} disabled={busy || !bulk.trim()}>Add these cards</button>
+          <button type="button" className="btn btn-secondary" style={{ marginTop: 10 }} onClick={addMany} disabled={busy || !online || !bulk.trim()}>Add these cards</button>
         </details>
       </div>
 
@@ -125,7 +132,7 @@ export default function DeckPage() {
                     <label htmlFor={`eb-${c.id}`} style={{ ...lab, display: 'block', marginTop: 8 }}>Back</label>
                     <textarea id={`eb-${c.id}`} value={editing.back} rows={2} maxLength={LIMITS.maxBack} onChange={(e) => setEditing({ ...editing, back: e.target.value })} style={field} />
                     <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-                      <button type="button" className="btn btn-primary" style={{ fontSize: 13, padding: '5px 12px' }} disabled={busy} onClick={async () => { if (await run(() => updateCard(c.id, editing.front, editing.back))) setEditing(null) }}>Save</button>
+                      <button type="button" className="btn btn-primary" style={{ fontSize: 13, padding: '5px 12px' }} disabled={busy || !online} onClick={async () => { if (await run(() => updateCard(c.id, editing.front, editing.back))) setEditing(null) }}>Save</button>
                       <button type="button" className="btn btn-ghost" style={{ fontSize: 13 }} onClick={() => setEditing(null)}>Cancel</button>
                     </div>
                   </div>
@@ -136,8 +143,8 @@ export default function DeckPage() {
                       <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 2, overflowWrap: 'anywhere' }}>{c.back}</div>
                     </div>
                     <span className="badge badge-default" title="How well you know this card">{c.timesSeen === 0 ? 'New' : c.box === 5 ? 'Known' : `Box ${c.box}`}</span>
-                    <button type="button" className="btn btn-ghost" style={{ fontSize: 12 }} onClick={() => setEditing({ id: c.id, front: c.front, back: c.back })}>Edit</button>
-                    <button type="button" aria-label={`Delete card ${c.front}`} onClick={() => run(() => deleteCard(c.id))} disabled={busy} style={{ background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer', fontSize: 12 }}>Delete</button>
+                    <button type="button" className="btn btn-ghost" style={{ fontSize: 12 }} disabled={!online} onClick={() => setEditing({ id: c.id, front: c.front, back: c.back })}>Edit</button>
+                    <button type="button" aria-label={`Delete card ${c.front}`} onClick={() => run(() => deleteCard(c.id))} disabled={busy || !online} style={{ background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer', fontSize: 12 }}>Delete</button>
                   </div>
                 )}
               </div>
@@ -151,9 +158,9 @@ export default function DeckPage() {
         <label htmlFor="rename" style={lab}>Name</label>
         <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
           <input id="rename" value={title} maxLength={LIMITS.maxTitle} onChange={(e) => setTitle(e.target.value)} style={{ flex: 1 }} />
-          <button type="button" className="btn btn-secondary" disabled={busy || !title.trim() || title.trim() === deck.title} onClick={() => run(() => renameDeck(id, title), 'Renamed.')}>Rename</button>
+          <button type="button" className="btn btn-secondary" disabled={busy || !online || !title.trim() || title.trim() === deck.title} onClick={() => run(() => renameDeck(id, title), 'Renamed.')}>Rename</button>
         </div>
-        <button type="button" className="btn btn-ghost" style={{ marginTop: 14, color: 'var(--danger)' }} onClick={removeDeck} disabled={busy}>Delete this deck</button>
+        <button type="button" className="btn btn-ghost" style={{ marginTop: 14, color: 'var(--danger)' }} onClick={removeDeck} disabled={busy || !online}>Delete this deck</button>
       </div>
     </div>
   )

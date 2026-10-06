@@ -3,8 +3,10 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { supabase } from '@/lib/supabase'
-import { createDeck, loadDecks } from '@/lib/flashcards'
+import { createDeck } from '@/lib/flashcards'
+import { loadDecksResilient, syncFlashcards } from '@/lib/offline/flashcardsOffline'
+import { resolveRole } from '@/lib/offline/role'
+import { useOnline } from '@/lib/offline/useOnline'
 import { LIMITS } from '@/lib/flashcardsPure'
 import EmptyState from '@/components/EmptyState'
 
@@ -17,15 +19,17 @@ export default function FlashcardsPage() {
   const [title, setTitle] = useState('')
   const [subject, setSubject] = useState('')
   const [creating, setCreating] = useState(false)
+  const [fromCache, setFromCache] = useState(false)
+  const online = useOnline()
 
   useEffect(() => {
     async function load() {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) { router.push('/login'); return }
-      const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
-      if (profile?.role !== 'student') { router.replace('/learning'); return }
-      const res = await loadDecks()
-      if (res.ok) setDecks(res.decks); else setError('Could not load your decks. Please try again.')
+      const who = await resolveRole()
+      if (!who) { router.push('/login'); return }
+      if (who.role !== 'student') { router.replace('/learning'); return }
+      await syncFlashcards()    // send anything answered while offline before reading
+      const res = await loadDecksResilient()
+      if (res.ok) { setDecks(res.decks); setFromCache(res.fromCache) } else setError('Could not load your decks. Please try again.')
       setLoading(false)
     }
     load()
@@ -48,6 +52,7 @@ export default function FlashcardsPage() {
       </p>
 
       {error && <p role="alert" className="banner banner-danger" style={{ marginTop: 16 }}>{error}</p>}
+      {fromCache && <p className="banner banner-warning" style={{ marginTop: 16, fontSize: 13 }}>Showing the copy saved on this device. New decks need a connection.</p>}
 
       <div className="card" style={{ marginTop: 20 }}>
         <h2 style={{ marginBottom: 12 }}>New deck</h2>
@@ -60,7 +65,7 @@ export default function FlashcardsPage() {
             <label htmlFor="deck-subject" style={{ fontSize: 13, color: 'var(--text-secondary)' }}>Subject (optional)</label>
             <input id="deck-subject" value={subject} maxLength={100} onChange={(e) => setSubject(e.target.value)} placeholder="e.g. Biology" style={{ width: '100%', display: 'block', marginTop: 4 }} />
           </div>
-          <button type="button" className="btn btn-primary" onClick={create} disabled={creating || !title.trim()}>{creating ? 'Creating…' : 'Create deck'}</button>
+          <button type="button" className="btn btn-primary" onClick={create} disabled={creating || !title.trim() || !online}>{creating ? 'Creating…' : 'Create deck'}</button>
         </div>
       </div>
 

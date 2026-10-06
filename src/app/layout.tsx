@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import NavBar from "@/components/NavBar";
+import OfflineCleanup from "@/components/OfflineCleanup";
 import ChatWidget from "@/components/ChatWidget";
 
 const TITLE = 'Smart Assess Ja'
@@ -37,6 +38,7 @@ export default function RootLayout({
     <html lang="en">
       <body>
         <NavBar />
+        <OfflineCleanup />
         {children}
         <ChatWidget />
       </body>

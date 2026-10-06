@@ -5,6 +5,12 @@ import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { jamaicaDate } from '@/lib/attendance'
 import { STEP_INFO, STEP_KEYS, dueLabel, paragraphs, subjectIcon, type Resource, type StepKey } from '@/lib/learning'
+import { currentUserId } from '@/lib/offline/flashcardsOffline'
+import { idbKv } from '@/lib/offline/kv'
+import { isNetworkFailure } from '@/lib/offline/network'
+import { getLesson, saveLesson } from '@/lib/offline/offlineCache'
+import { warmOfflinePages } from '@/lib/offline/serviceWorker'
+import { useOnline } from '@/lib/offline/useOnline'
 import StudentLessonCheck from '@/components/learning/StudentLessonCheck'
 import PlayTopicLink from '@/components/learning/PlayTopicLink'
 import StudentTutor from '@/components/learning/StudentTutor'
@@ -36,6 +42,9 @@ export default function StudentLessonView({ lessonId }: { lessonId: string }) {
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState('')
   const [catchup, setCatchup] = useState<StudentCatchup | undefined>(undefined)
+  // Without a connection the lesson is the copy saved on this device when it was last opened. It can be read, not changed.
+  const [fromCache, setFromCache] = useState(false)
+  const online = useOnline()
   // How many paragraphs of a worked example (the Explain step) are revealed so far — a student
   // works through it one part at a time instead of the whole thing landing at once. Resets on
   // every step change, including coming back to Explain later.
@@ -60,10 +69,20 @@ export default function StudentLessonView({ lessonId }: { lessonId: string }) {
     async function load() {
       const { data, error: e } = await supabase.rpc('learning_get_lesson', { p_lesson_id: lessonId })
       if (cancelled) return
-      if (e) { setError(e.code === '42501' ? 'This lesson is not available to you.' : e.message || 'Could not open this lesson.'); return }
-      const l = data as LessonForStudent
+      const kv = idbKv(); const uid = await currentUserId()
+      let l: LessonForStudent | null = null
+      if (!e) {
+        l = data as LessonForStudent
+        if (kv && uid) await saveLesson(kv, uid, lessonId, l)        // keep a copy for reading offline
+        warmOfflinePages([`/learning/lesson/${lessonId}`])            // and the page that shows it
+      } else if (isNetworkFailure(e) && kv && uid) {
+        const cached = await getLesson(kv, uid, lessonId)
+        if (cached) { l = cached.lesson as LessonForStudent; setFromCache(true) }
+        else { setError('You are offline, and this lesson was not saved on this device. Open it once while you are online to read it offline.'); return }
+      } else {
+        setError(e.code === '42501' ? 'This lesson is not available to you.' : e.message || 'Could not open this lesson.'); return
+      }
       setLesson(l)
-      // Pick up at the first step they have not finished.
       const first = STEP_KEYS.findIndex((k) => !l.steps_done.includes(k))
       goToStep(first === -1 ? 0 : first)
     }
@@ -73,6 +92,7 @@ export default function StudentLessonView({ lessonId }: { lessonId: string }) {
 
   async function toggle(key: StepKey, done: boolean) {
     if (!lesson || busy) return
+    if (!online || fromCache) { setMessage('You are offline. Reconnect to tick off a step; nothing about the lesson can be saved until then.'); return }
     setBusy(true); setMessage('')
     const { data, error: e } = await supabase.rpc('learning_mark_step', { p_lesson_id: lessonId, p_step: key, p_done: done })
     setBusy(false)
@@ -103,6 +123,7 @@ export default function StudentLessonView({ lessonId }: { lessonId: string }) {
   return (
     <div style={{ maxWidth: 900 }}>
       <Link href="/learning" style={{ color: 'var(--text-secondary)', fontSize: 14 }}>&larr; My lessons</Link>
+      {(fromCache || !online) && <p className="banner banner-warning" style={{ marginTop: 10, fontSize: 13 }}>You are reading the copy of this lesson saved on this device. You can read it, but ticking off steps and the lesson check need a connection.</p>}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 8 }}>
         <div aria-hidden="true" style={{ width: 34, height: 34, borderRadius: 9, background: 'var(--accent-light)', color: 'var(--accent-dark)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17, flexShrink: 0 }}>
           <i className={`ti ${subjectIcon(lesson.subject)}`} />

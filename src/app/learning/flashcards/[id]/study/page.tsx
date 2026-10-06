@@ -3,7 +3,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
-import { loadDeck, recordReview } from '@/lib/flashcards'
+import { loadDeckResilient, recordReviewResilient, syncFlashcards } from '@/lib/offline/flashcardsOffline'
+import { announceQueueChange } from '@/lib/offline/useOnline'
 import { answer, current, dueCards, finished, nextDue, startSession, summary, LIMITS, type Card, type Session } from '@/lib/flashcardsPure'
 
 // A study round: a card shows its front, the student flips it, then says "Got it" or "Not yet". Missed cards come back later in
@@ -19,12 +20,13 @@ export default function StudyPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [saveError, setSaveError] = useState(false)
+  const [savedOffline, setSavedOffline] = useState(0)
   const [total, setTotal] = useState(0)
   const flipRef = useRef<HTMLButtonElement>(null)
 
   useEffect(() => {
     let cancelled = false
-    loadDeck(id).then((res) => {
+    syncFlashcards().then(() => loadDeckResilient(id)).then((res) => {
       if (cancelled) return
       if (!res.ok) { setError(res.notFound ? 'This deck was not found.' : 'Could not load this deck. Please try again.'); setLoading(false); return }
       const due = dueCards(res.cards, new Date())
@@ -43,9 +45,10 @@ export default function StudyPage() {
     setShown(false)
     setSession(answer(session, knewIt))
     // The card's own saved state moves on with each answer, so a card missed twice in one round is still counted twice.
-    const res = await recordReview(card, knewIt)
+    const res = await recordReviewResilient(card, knewIt, id)
     if (!res.ok) setSaveError(true)
-    else setById((m) => ({ ...m, [cardId]: { ...card, box: knewIt ? Math.min(5, card.box + 1) : 1, timesSeen: card.timesSeen + 1, timesCorrect: card.timesCorrect + (knewIt ? 1 : 0) } }))
+    else { if (res.queued) { setSavedOffline((n) => n + 1); announceQueueChange() }
+    setById((m) => ({ ...m, [cardId]: { ...card, box: knewIt ? Math.min(5, card.box + 1) : 1, timesSeen: card.timesSeen + 1, timesCorrect: card.timesCorrect + (knewIt ? 1 : 0) } })) }
   }
 
   useEffect(() => { if (!shown) flipRef.current?.focus() }, [shown, session])
@@ -75,6 +78,7 @@ export default function StudyPage() {
           <p style={{ fontSize: 18, margin: 0 }}><strong>{s.knewFirstTime}</strong> of {s.cards} card{s.cards === 1 ? '' : 's'} known first time.</p>
           {s.needMorePractice > 0 && <p style={{ color: 'var(--text-secondary)', margin: '8px 0 0' }}>{s.needMorePractice} will come back sooner so you can practise them.</p>}
           {saveError && <p role="alert" className="banner banner-warning" style={{ marginTop: 12 }}>Some answers could not be saved. Check your connection.</p>}
+          {savedOffline > 0 && <p role="status" className="banner banner-warning" style={{ marginTop: 12 }}>{savedOffline} answer{savedOffline === 1 ? ' is' : 's are'} saved on this device and will be sent when you are back online.</p>}
         </div>
         <div style={{ display: 'flex', gap: 12, marginTop: 20 }}>
           <Link href={`/learning/flashcards/${id}`} className="btn btn-primary">Back to the deck</Link>
@@ -108,6 +112,7 @@ export default function StudyPage() {
       )}
       <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 14 }}>A round is at most {LIMITS.sessionSize} cards. Be honest: cards you miss come back sooner, which is how they stick.</p>
       {saveError && <p role="alert" className="banner banner-warning" style={{ marginTop: 12 }}>An answer could not be saved. Check your connection.</p>}
+      {savedOffline > 0 && <p role="status" className="banner banner-warning" style={{ marginTop: 12, fontSize: 13 }}>Saved on this device. It will be sent when you are back online.</p>}
     </div>
   )
 }
