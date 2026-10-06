@@ -2,6 +2,11 @@
 
 Tick a box when you have tested it on the live site. Each item points to its section in `docs/qa-checklist.md`. Add new items at the top when something is built. Last updated 2026-10-06.
 
+## AI lesson plan fix (needs a push first)
+- [ ] After pushing: generate an AI lesson plan with 1 lesson, then 3 lessons, on the live site. It should return a draft
+- [ ] If it still says "could not finish a readable draft", open Vercel > the project > Logs and search `Lesson plan generate: unreadable reply`; the line says why (stop_reason, whether it was cut off) and shows the start and end of the reply. Send me that line
+- [ ] Also try Polish with AI and Import from PDF once, since they now share the same reader
+
 ## Demo data (new)
 - [ ] Run `scripts/demo/00-check-before.sql` on Manchester (read-only) and confirm the four accounts are found
 - [ ] Run `node scripts/reassign-student-ids.mjs --env <manchester env file>` (dry run), check the mapping file, then run it with `--apply --project <ref>`; confirm a changed student can sign in with the new ID
