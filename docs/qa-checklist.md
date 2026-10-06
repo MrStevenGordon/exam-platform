@@ -371,6 +371,22 @@ Use a test student who has sat at least one exam with topic-tagged questions who
 - [ ] Add 10 questions at one level: the 11th is refused with a clear message, but another level still takes questions
 - [ ] A student not in the class cannot open the check (same as before)
 
+## 7o. Weekly summary: My week and This week (Smart Learning, no migration)
+
+- [ ] A student sees **My week** in the Smart Learning menu; a teacher or HOD sees **This week**. Principal and school admin do not (typing /learning/week sends them to Smart Learning)
+- [ ] **Student, a normal week:** the headline matches their released results this week (work one out by hand: average of results shared in the last 7 days, and the change on the 7 days before)
+- [ ] **Coming up** lists an unfinished lesson with a due date in the next 7 days, and a test or task that closes in the next 7 days, soonest first. An overdue lesson shows "Overdue by N days" at the top in red
+- [ ] A lesson the student has finished does not appear in Coming up. A test they have already sat does not appear
+- [ ] **What to do next** gives sensible steps (an overdue lesson first, then a test closing soon, then the weakest topic, then due flashcards)
+- [ ] **Flashcards:** study some cards; My week then shows the number studied and the days studied
+- [ ] **A student with no activity** sees a friendly "quiet week" message and empty sections are not shown
+- [ ] **Teacher:** each of their classes is listed with the class average this week against last week (only fully marked results count: a result with an unmarked essay is not included)
+- [ ] A student under 50% over two weeks, and one who dropped 15 points or more, appear under **May need support** with the reason. A student with no results is not listed
+- [ ] **Lessons not finished by everyone** lists the teacher's lessons, with "N of M finished", overdue first
+- [ ] A teacher cannot see anything about students outside their classes, and nothing about flashcards
+- [ ] A teacher with no class sees a plain message, not an error
+- [ ] Both pages work on a phone
+
 ## 8. Owner console (you)
 
 - [ ] **School requests** and **Org requests**: approve and provision

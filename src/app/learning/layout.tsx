@@ -32,6 +32,8 @@ const REPORT_ABSENCE_ITEM = { label: 'Report Absence', icon: 'ti-user-off', href
 const MY_COVER_ITEM = { label: 'My Cover', icon: 'ti-calendar-event', href: '/teacher/cover' }
 const LIBRARY_ITEM = { label: 'Library', icon: 'ti-books', href: '/learning/library' }
 const FLASHCARDS_ITEM = { label: 'Flashcards', icon: 'ti-cards', href: '/learning/flashcards' }
+const WEEK_ITEM = { label: 'My week', icon: 'ti-calendar-event', href: '/learning/week' }
+const TEACHER_WEEK_ITEM = { label: 'This week', icon: 'ti-calendar-event', href: '/learning/week' }
 
 // Smart Learning's own shell. Everyone signed in can enter (the lessons themselves are
 // protected by the database), but only when the school has switched Smart Learning on.
@@ -135,7 +137,8 @@ export default function LearningLayout({ children }: { children: React.ReactNode
   const manageItem = { label: 'Substitution', icon: 'ti-replace', href: role === 'supervisor' ? '/supervisor/substitution' : '/school-admin/substitution' }
   const withTools = toolsOn && (role === 'supervisor' || role === 'admin') ? [...withSubstitution, manageItem] : withSubstitution
   const withFlags = flagsOn && (role === 'admin' || role === 'principal') ? [...withTools, FLAGS_ITEM] : withTools
-  const withFlashcards = flashcardsOn && role === 'student' ? [...withFlags, FLASHCARDS_ITEM] : withFlags
+  const withWeek = role === 'student' ? [...withFlags, WEEK_ITEM] : role === 'teacher' || role === 'supervisor' ? [...withFlags, TEACHER_WEEK_ITEM] : withFlags
+  const withFlashcards = flashcardsOn && role === 'student' ? [...withWeek, FLASHCARDS_ITEM] : withWeek
   const nav = libraryOn ? [...withFlashcards, LIBRARY_ITEM] : withFlashcards
   const badges = { ...(flagsOn ? { [FLAGS_ITEM.href]: flagCount } : {}), ...(toolsOn ? { [manageItem.href]: unfilled } : {}), ...(coverOn ? { [MY_COVER_ITEM.href]: coverCount } : {}) }
   return (
@@ -143,7 +146,7 @@ export default function LearningLayout({ children }: { children: React.ReactNode
       <InactivityLogout />
       <PresenceHeartbeat />
       <main className="portal-content"><PageTransition>{children}</PageTransition></main>
-      <Sidebar navItems={nav} badges={badges} portalLabel="Smart Learning" resolveActivePathname={(p) => (p.startsWith('/learning/library') ? '/learning/library' : p.startsWith('/learning/flashcards') ? '/learning/flashcards' : p.startsWith('/learning/lesson/') || p.startsWith('/learning/lessons/') && p !== '/learning/lessons/new' ? '/learning' : p)} />
+      <Sidebar navItems={nav} badges={badges} portalLabel="Smart Learning" resolveActivePathname={(p) => (p.startsWith('/learning/library') ? '/learning/library' : p.startsWith('/learning/flashcards') ? '/learning/flashcards' : p === '/learning/week' ? '/learning/week' : p.startsWith('/learning/lesson/') || p.startsWith('/learning/lessons/') && p !== '/learning/lessons/new' ? '/learning' : p)} />
     </div>
   )
 }
