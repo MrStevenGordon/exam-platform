@@ -86,10 +86,11 @@ export default function ForgotPasswordPage() {
 
             <form onSubmit={handleSubmit}>
               <div style={{ marginBottom: 16 }}>
-                <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: 0.5, textTransform: 'uppercase' }}>
+                <label htmlFor="fp-role" style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: 0.5, textTransform: 'uppercase' }}>
                   I am a
                 </label>
                 <select
+                  id="fp-role"
                   value={userType}
                   onChange={(e) => setUserType(e.target.value)}
                   style={{ marginTop: 4 }}
@@ -101,10 +102,11 @@ export default function ForgotPasswordPage() {
               </div>
 
               <div style={{ marginBottom: 16 }}>
-                <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: 0.5, textTransform: 'uppercase' }}>
+                <label htmlFor="fp-name" style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: 0.5, textTransform: 'uppercase' }}>
                   Full name
                 </label>
                 <input
+                  id="fp-name"
                   type="text"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
@@ -114,10 +116,11 @@ export default function ForgotPasswordPage() {
               </div>
 
               <div style={{ marginBottom: 16 }}>
-                <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: 0.5, textTransform: 'uppercase' }}>
+                <label htmlFor="fp-identifier" style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: 0.5, textTransform: 'uppercase' }}>
                   Email or student/staff ID
                 </label>
                 <input
+                  id="fp-identifier"
                   type="text"
                   value={identifier}
                   onChange={(e) => setIdentifier(e.target.value)}

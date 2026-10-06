@@ -69,10 +69,11 @@ export default function ContactClient() {
                   { name: 'email', label: 'Email address', placeholder: 'you@example.edu.jm', type: 'email' },
                 ] as const).map((field) => (
                   <div key={field.name} style={{ marginBottom: 14 }}>
-                    <label style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, color: 'var(--text-secondary)', display: 'block', marginBottom: 6 }}>
+                    <label htmlFor={`contact-${field.name}`} style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, color: 'var(--text-secondary)', display: 'block', marginBottom: 6 }}>
                       {field.label}
                     </label>
                     <input
+                      id={`contact-${field.name}`}
                       type={field.type}
                       name={field.name}
                       value={formData[field.name]}
@@ -84,10 +85,11 @@ export default function ContactClient() {
                   </div>
                 ))}
                 <div style={{ marginBottom: 20 }}>
-                  <label style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, color: 'var(--text-secondary)', display: 'block', marginBottom: 6 }}>
+                  <label htmlFor="contact-message" style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, color: 'var(--text-secondary)', display: 'block', marginBottom: 6 }}>
                     Message
                   </label>
                   <textarea
+                    id="contact-message"
                     name="message"
                     value={formData.message}
                     onChange={handleChange}

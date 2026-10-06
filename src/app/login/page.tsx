@@ -328,10 +328,11 @@ export default function LoginPage() {
               Enter the 6-digit code from your authenticator app.
             </p>
             <div style={{ marginBottom: 20 }}>
-              <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: 0.5, textTransform: 'uppercase' }}>
+              <label htmlFor="mfa-code" style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: 0.5, textTransform: 'uppercase' }}>
                 Authentication code
               </label>
               <input
+                id="mfa-code"
                 type="text"
                 value={mfaCode}
                 onChange={(e) => setMfaCode(e.target.value)}
@@ -405,10 +406,11 @@ export default function LoginPage() {
           )}
 
           <div style={{ marginBottom: 16 }}>
-            <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: 0.5, textTransform: 'uppercase' }}>
+            <label htmlFor="login-role" style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: 0.5, textTransform: 'uppercase' }}>
               I am a
             </label>
             <select
+              id="login-role"
               value={selectedRole}
               onChange={(e) => setSelectedRole(e.target.value)}
               style={{ width: '100%', marginTop: 8 }}
@@ -420,10 +422,11 @@ export default function LoginPage() {
           </div>
 
           <div style={{ marginBottom: 16 }}>
-            <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: 0.5, textTransform: 'uppercase' }}>
+            <label htmlFor="login-id" style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: 0.5, textTransform: 'uppercase' }}>
               Email / Student ID
             </label>
             <input
+              id="login-id"
               type="text"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -434,11 +437,12 @@ export default function LoginPage() {
           </div>
 
           <div style={{ marginBottom: 20 }}>
-            <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: 0.5, textTransform: 'uppercase' }}>
+            <label htmlFor="login-password" style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: 0.5, textTransform: 'uppercase' }}>
               Password
             </label>
             <div style={{ position: 'relative', marginTop: 6 }}>
               <input
+                id="login-password"
                 type={showPassword ? 'text' : 'password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}

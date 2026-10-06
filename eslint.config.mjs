@@ -15,6 +15,8 @@ const eslintConfig = defineConfig([
     // Vendored build output and the standalone marketing scripts are not part of the app.
     "public/pdf.worker.min.mjs",
     "marketing/**",
+    // The glitch checker is its own small project (see e2e/README.md).
+    "e2e/**",
   ]),
 ]);
 

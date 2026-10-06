@@ -1,0 +1,13 @@
+{
+  "name": "smart-assess-glitch-check",
+  "private": true,
+  "type": "module",
+  "description": "Opens the site's pages as each kind of user and reports errors. Read only. See README.md.",
+  "scripts": {
+    "check": "node --env-file=.env.e2e check.mjs",
+    "check:public": "node check.mjs"
+  },
+  "dependencies": {
+    "playwright-core": "^1.49.0"
+  }
+}
