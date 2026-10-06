@@ -4,7 +4,7 @@ import { z } from 'zod'
 import { rateLimit } from '@/lib/rateLimit'
 import { validateBody } from '@/lib/validateBody'
 import { normalizeGeneratedPlan } from '@/lib/lessonPlan'
-import { extractText } from '@/lib/ai'
+import { askClaude } from '@/lib/aiCall'
 
 // A multi-lesson draft is a long response: the AI writes it all in one go, and several lessons took longer than the
 // old 60 seconds. 300 is the most the Hobby plan allows (with Fluid compute, which both projects have on).
@@ -111,34 +111,9 @@ Each lesson has: title; learning_objectives (start with "Students should be able
 Respond ONLY with valid JSON in this exact format, no other text:
 {"subTopics": "...", "prerequisiteKnowledge": "...", "fourCs": "...", "subjectPractices": "...", "generalObjectives": "...", "keyTermsFormulae": "...", "specificObjective": "...", "skills": "...", "successCriteria": "...", "lessons": [{"title": "...", "learning_objectives": "...", "engage": "...", "explore": "...", "explain": "...", "elaborate": "...", "evaluate": "...", "four_cs": "...", "resources": "...", "assessment": "..."}]}`
 
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': process.env.ANTHROPIC_API_KEY!,
-        'anthropic-version': '2023-06-01',
-      },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
-        max_tokens: 1500 + 900 * lessonCount,
-        messages: [{ role: 'user', content: prompt }],
-      }),
-      signal: AbortSignal.timeout(AI_TIMEOUT_MS),
-    })
-
-    if (!response.ok) {
-      const errText = await response.text()
-      console.error('Anthropic API error:', errText)
-      let detail = 'AI request failed.'
-      try {
-        const parsedErr = JSON.parse(errText)
-        if (parsedErr?.error?.message) detail = parsedErr.error.message
-      } catch {}
-      return NextResponse.json({ error: detail }, { status: 500 })
-    }
-
-    const data = await response.json()
-    const text = extractText(data) || ''
+    const reply = await askClaude({ label: 'lesson-plans', messages: [{ role: 'user', content: prompt }], maxTokens: 1500 + 900 * lessonCount, model: 'claude-sonnet-4-6', timeoutMs: AI_TIMEOUT_MS, retries: 1 })
+    if (!reply.ok) return NextResponse.json({ error: reply.message, ai_problem: reply.kind }, { status: reply.httpStatus })
+    const text = reply.text
     const cleaned = text.replace(/```json|```/g, '').trim()
 
     let parsed

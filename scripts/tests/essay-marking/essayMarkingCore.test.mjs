@@ -126,7 +126,9 @@ test('the AI being unreachable is explained, nothing is stored and no allowance 
     [{ ok: false, status: 529, message: 'Overloaded' }, 503, /busy/, null],
     [{ ok: false, status: 429, message: 'rate' }, 503, /busy/, null],
     [{ ok: false, status: 500, message: 'boom' }, 502, /failed/, null],
-    [{ ok: false, status: 0, message: 'network down' }, 502, /failed/, null],
+    [{ ok: false, status: 0, message: 'network down' }, 503, /busy/, null],
+    [{ ok: false, status: 401, message: 'invalid x-api-key' }, 503, /not available/, 'creditProblem'],
+    [{ ok: false, status: 500, message: 'x', kind: 'busy' }, 503, /busy/, null],
   ]) {
     const { deps, log } = world({ callAi: async () => res })
     const out = await ask(deps)

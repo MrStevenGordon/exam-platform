@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { z } from 'zod'
 import { rateLimit } from '@/lib/rateLimit'
 import { validateBody } from '@/lib/validateBody'
-import { extractText } from '@/lib/ai'
+import { askClaude } from '@/lib/aiCall'
 
 const MONTHLY_LIMIT = 10
 const MAX_PDF_BASE64_CHARS = 27_000_000 // ~20MB decoded
@@ -112,49 +112,14 @@ Respond ONLY with valid JSON in this exact format, no other text or markdown:
   ]
 }`
 
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': process.env.ANTHROPIC_API_KEY!,
-        'anthropic-version': '2023-06-01',
-      },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
-        max_tokens: 8000,
-        messages: [{
-          role: 'user',
-          content: [
-            {
-              type: 'document',
-              source: {
-                type: 'base64',
-                media_type: 'application/pdf',
-                data: pdfBase64,
-              }
-            },
-            {
-              type: 'text',
-              text: prompt,
-            }
-          ]
-        }],
-      }),
+    const reply = await askClaude({
+      label: 'import-pdf-exam',
+      messages: [{ role: 'user', content: [{ type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: pdfBase64 } }, { type: 'text', text: prompt }] }],
+      maxTokens: 8000,
+      model: 'claude-sonnet-4-6',
     })
-
-    if (!response.ok) {
-      const errText = await response.text()
-      console.error('Anthropic API error:', response.status, errText)
-      let detail = errText
-      try {
-        const errJson = JSON.parse(errText)
-        detail = errJson.error?.message || errText
-      } catch {}
-      return NextResponse.json({ error: `AI processing failed (${response.status}): ${detail}` }, { status: 500 })
-    }
-
-    const data = await response.json()
-    const text = extractText(data) || ''
+    if (!reply.ok) return NextResponse.json({ error: reply.message, ai_problem: reply.kind }, { status: reply.httpStatus })
+    const text = reply.text
     const cleaned = text.replace(/```json|```/g, '').trim()
 
     let parsed

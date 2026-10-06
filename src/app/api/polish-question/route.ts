@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { z } from 'zod'
 import { rateLimit } from '@/lib/rateLimit'
 import { validateBody } from '@/lib/validateBody'
-import { extractText } from '@/lib/ai'
+import { askClaude } from '@/lib/aiCall'
 
 const MONTHLY_LIMIT = 5
 
@@ -105,33 +105,9 @@ Respond ONLY with valid JSON in this exact format, no other text:
 {"improved_question": "..."}`
     }
 
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': process.env.ANTHROPIC_API_KEY!,
-        'anthropic-version': '2023-06-01',
-      },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
-        max_tokens: 500,
-        messages: [{ role: 'user', content: prompt }],
-      }),
-    })
-
-    if (!response.ok) {
-      const errText = await response.text()
-      console.error('Anthropic API error:', errText)
-      let detail = 'AI request failed.'
-      try {
-        const parsedErr = JSON.parse(errText)
-        if (parsedErr?.error?.message) detail = parsedErr.error.message
-      } catch {}
-      return NextResponse.json({ error: detail }, { status: 500 })
-    }
-
-    const data = await response.json()
-    const text = extractText(data) || ''
+    const reply = await askClaude({ label: 'polish-question', messages: [{ role: 'user', content: prompt }], maxTokens: 500, model: 'claude-sonnet-4-6' })
+    if (!reply.ok) return NextResponse.json({ error: reply.message, ai_problem: reply.kind }, { status: reply.httpStatus })
+    const text = reply.text
     const cleaned = text.replace(/```json|```/g, '').trim()
 
     let parsed

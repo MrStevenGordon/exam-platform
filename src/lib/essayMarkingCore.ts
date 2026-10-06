@@ -1,10 +1,11 @@
+import { classifyAiFailure, NEEDS_ATTENTION, type AiFailureKind } from './ai'
 import { parseStoredRubric } from './essayRubricPure'
 import { blankSuggestion, buildPrompt, checkInput, LIMITS, parseReply, PROBLEM_MESSAGES, type Suggestion } from './essayMarkingPure'
 
 // The decisions behind /api/essay-marking, with everything that touches the outside world passed in. The route supplies the real
 // sign-in, database and AI; the tests (scripts/tests/essay-marking/essayMarkingCore.test.mjs) supply fakes and check every path.
 
-export type AiResult = { ok: true; text: string } | { ok: false; status: number; message: string }
+export type AiResult = { ok: true; text: string } | { ok: false; status: number; message: string; kind?: AiFailureKind }
 export type LoadedResponse = { answer: string | null; question: { question_text: string | null; question_type: string; essay_rubric: unknown } }
 export type SaveResult = { error?: { code?: string } | null }
 
@@ -64,8 +65,9 @@ export async function suggestMarks(deps: Deps, p: { responseId: string; accessTo
     const { system, user } = buildPrompt(input)
     const reply = await deps.callAi(system, user)
     if (!reply.ok) {
-      if (/credit|billing|balance/i.test(reply.message)) return { status: 503, body: { error: 'The AI service is not available at the moment. Please mark by hand and tell Smart Assess Ja.', creditProblem: true } }
-      if (reply.status === 429 || reply.status === 529) return { status: 503, body: { error: 'The AI service is busy. Please try again in a minute.' } }
+      const kind = reply.kind ?? classifyAiFailure(reply.status, reply.message)
+      if (NEEDS_ATTENTION.includes(kind)) return { status: 503, body: { error: 'The AI service is not available at the moment. Please mark by hand and tell Smart Assess Ja.', creditProblem: true } }
+      if (kind === 'busy' || kind === 'timeout' || kind === 'network') return { status: 503, body: { error: 'The AI service is busy. Please try again in a minute.' } }
       return { status: 502, body: { error: 'The AI request failed. Please try again, or mark by hand.' } }
     }
     const checked = parseReply(reply.text, input)

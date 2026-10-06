@@ -3,7 +3,8 @@ import { createClient } from '@supabase/supabase-js'
 import { z } from 'zod'
 import { rateLimit, getClientIp } from '@/lib/rateLimit'
 import { validateBody } from '@/lib/validateBody'
-import { extractText } from '@/lib/ai'
+import { askClaude } from '@/lib/aiCall'
+import type { ChatMessage } from '@/lib/ai'
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -145,29 +146,9 @@ export async function POST(req: NextRequest) {
       { role: 'user', content: `<visitor_message>\n${message}\n</visitor_message>` },
     ]
 
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': process.env.ANTHROPIC_API_KEY!,
-        'anthropic-version': '2023-06-01',
-      },
-      body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 400,
-        system: buildSystemPrompt(mode, role),
-        messages: anthropicMessages,
-      }),
-    })
-
-    if (!response.ok) {
-      const errText = await response.text()
-      console.error('Anthropic API error (chat):', errText)
-      return NextResponse.json({ error: 'Something went wrong. Please try again.' }, { status: 500 })
-    }
-
-    const data = await response.json()
-    const reply = extractText(data) || "Sorry, I didn't catch that — could you try rephrasing?"
+    const result = await askClaude({ label: 'chat', system: buildSystemPrompt(mode, role), messages: anthropicMessages as ChatMessage[], maxTokens: 400, model: 'claude-haiku-4-5-20251001' })
+    if (!result.ok) return NextResponse.json({ error: result.message, ai_problem: result.kind }, { status: result.httpStatus })
+    const reply = result.text.trim() || "Sorry, I didn't catch that — could you try rephrasing?"
 
     await supabaseAdmin.from('chat_messages').insert([
       { conversation_id: activeConversationId, role: 'user', content: message },

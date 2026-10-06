@@ -29,7 +29,7 @@ export const LIMITS = {
   maxAnswerChars: 12000,     // longer essays are refused, never cut short
   maxEvidenceChars: 300,
   maxNoteChars: 200,
-  maxTokens: 1500,
+  maxTokens: 4000,          // room for the model's own thinking as well as the JSON reply
 } as const
 
 export type ParseFailure = 'not_json' | 'wrong_shape' | 'incomplete'

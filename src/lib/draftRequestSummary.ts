@@ -4,7 +4,7 @@
 // null return the same as no draft (a person still has to review the raw
 // request either way), not as a reason to fail the submission.
 
-import { extractText } from '@/lib/ai'
+import { askClaude } from '@/lib/aiCall'
 
 type RequestFields = Record<string, string>
 
@@ -25,27 +25,8 @@ ${lines}
 
 export async function generateRequestDraft(kind: 'school' | 'org', fields: RequestFields): Promise<string | null> {
   try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': process.env.ANTHROPIC_API_KEY!,
-        'anthropic-version': '2023-06-01',
-      },
-      body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 300,
-        messages: [{ role: 'user', content: buildPrompt(kind, fields) }],
-      }),
-    })
-
-    if (!response.ok) {
-      console.error('generateRequestDraft: Anthropic API error', await response.text())
-      return null
-    }
-
-    const data = await response.json()
-    return extractText(data)?.trim() || null
+    const reply = await askClaude({ label: 'request-draft', messages: [{ role: 'user', content: buildPrompt(kind, fields) }], maxTokens: 300, model: 'claude-haiku-4-5-20251001' })
+    return reply.ok ? reply.text.trim() || null : null
   } catch (err) {
     console.error('generateRequestDraft failed:', err)
     return null

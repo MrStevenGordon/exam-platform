@@ -4,7 +4,7 @@ import { z } from 'zod'
 import { rateLimit } from '@/lib/rateLimit'
 import { validateBody } from '@/lib/validateBody'
 import { mergeIntegrityFlags, INTEGRITY_FLAG_LABELS } from '@/lib/essayIntegrity'
-import { extractText } from '@/lib/ai'
+import { askClaude } from '@/lib/aiCall'
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -86,28 +86,9 @@ ${response.answer || ''}
 Respond ONLY with valid JSON in this exact format, no other text:
 {"verdict": "likely_human" | "possibly_ai_assisted" | "inconclusive", "explanation": "2-3 sentences max, hedged, specific to this text"}`
 
-    const aiResponse = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': process.env.ANTHROPIC_API_KEY!,
-        'anthropic-version': '2023-06-01',
-      },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
-        max_tokens: 400,
-        messages: [{ role: 'user', content: prompt }],
-      }),
-    })
-
-    if (!aiResponse.ok) {
-      const errText = await aiResponse.text()
-      console.error('Anthropic API error (essay-integrity-check):', errText)
-      return NextResponse.json({ error: 'AI request failed. Please try again.' }, { status: 500 })
-    }
-
-    const data = await aiResponse.json()
-    const text = extractText(data) || ''
+    const reply = await askClaude({ label: 'essay-integrity-check', messages: [{ role: 'user', content: prompt }], maxTokens: 400, model: 'claude-sonnet-4-6' })
+    if (!reply.ok) return NextResponse.json({ error: reply.message, ai_problem: reply.kind }, { status: reply.httpStatus })
+    const text = reply.text
     const cleaned = text.replace(/```json|```/g, '').trim()
 
     let verdict: 'likely_human' | 'possibly_ai_assisted' | 'inconclusive' = 'inconclusive'

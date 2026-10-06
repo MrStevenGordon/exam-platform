@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { rateLimit } from '@/lib/rateLimit'
 import { validateBody } from '@/lib/validateBody'
-import { AI_MODEL, callClaudeChat } from '@/lib/ai'
+import { AI_MODEL } from '@/lib/ai'
+import { askClaude } from '@/lib/aiCall'
 import { LIMITS, type Suggestion } from '@/lib/essayMarkingPure'
 import { suggestMarks, type Deps, type LoadedResponse } from '@/lib/essayMarkingCore'
 import { authorizeMarker, callerClient, MONTHLY_LIMIT, monthKey, supabaseAdmin, usedThisMonth, USAGE_FEATURE } from '@/lib/essayMarkingServer'
@@ -47,9 +48,8 @@ export async function POST(req: NextRequest) {
       usedThisMonth,
       burstLimited: async (userId) => (await rateLimit(userId, 'essay-marking-burst', { limit: 30, windowSeconds: 60 })) !== null,
       callAi: async (system, user) => {
-        const reply = await callClaudeChat({ system, messages: [{ role: 'user', content: user }] }, { maxTokens: LIMITS.maxTokens, apiKey: process.env.ANTHROPIC_API_KEY! })
-        if (!reply.ok) console.error('essay-marking AI error:', reply.status, reply.message)
-        return reply
+        const reply = await askClaude({ label: 'essay-marking', system, messages: [{ role: 'user', content: user }], maxTokens: LIMITS.maxTokens })
+        return reply.ok ? reply : { ok: false, status: reply.status, message: reply.message, kind: reply.kind }
       },
       // A fresh suggestion replaces the old one and clears any recorded final marks.
       save: async (id, suggestion, userId) => {
