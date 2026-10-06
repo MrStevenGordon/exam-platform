@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts'
+import ScoreTrendChartLazy from '@/components/ScoreTrendChartLazy'
 import EmptyState from '@/components/EmptyState'
 
 type ScoreEntry = {
@@ -122,15 +122,7 @@ export default function ScoreHistoryPage() {
           {entries.length > 1 && (
             <div className="card" style={{ marginTop: 20 }}>
               <h2 style={{ marginBottom: 16 }}>Score trend</h2>
-              <ResponsiveContainer width="100%" height={200}>
-                <LineChart data={chartData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
-                  <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-                  <YAxis domain={[0, 100]} tick={{ fontSize: 11 }} />
-                  <Tooltip formatter={(v: any, _: any, props: any) => [`${v}%`, props.payload.title]} />
-                  <ReferenceLine y={50} stroke="var(--danger)" strokeDasharray="4 4" />
-                  <Line type="monotone" dataKey="pct" stroke="var(--accent)" strokeWidth={2} dot={{ fill: 'var(--accent)', r: 4 }} />
-                </LineChart>
-              </ResponsiveContainer>
+              <ScoreTrendChartLazy data={chartData} height={200} left={-20} />
               <p style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 8 }}>Dashed line = pass mark (50%)</p>
             </div>
           )}

@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import { shrinkImage } from '@/lib/imageShrink'
+import { LOGO_PICTURE } from '@/lib/imageShrinkPure'
 import { compareClassNames, CLASS_GRADES } from '@/lib/classNames'
 import { currentAcademicYear } from '@/lib/reportCard'
 import YearPromotionPanel from '@/components/YearPromotionPanel'
@@ -57,12 +59,14 @@ export default function SettingsPage() {
   }, [])
 
   async function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    if (!file || !settingsId) return
+    const picked = e.target.files?.[0]
+    if (!picked || !settingsId) return
 
     setUploadingLogo(true)
     setLogoError('')
 
+    // The logo is shown in every page's menu for everyone in the school, so it is shrunk to a sensible size first.
+    const file = await shrinkImage(picked, LOGO_PICTURE)
     const ext = file.name.split('.').pop()
     const path = `logo-${Date.now()}.${ext}`
 

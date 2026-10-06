@@ -4,6 +4,8 @@ import QuestionTopicField from '@/components/QuestionTopicField'
 import type { TopicChoice } from '@/lib/topics'
 import { useEffect, useState } from 'react'
 import { keywordsFor } from '@/lib/markingKeywords'
+import { shrinkImage } from '@/lib/imageShrink'
+import { QUESTION_PICTURE } from '@/lib/imageShrinkPure'
 import { useRouter, useParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import MathToolbar from '@/components/MathToolbar'
@@ -130,9 +132,11 @@ export default function AddQuestionPage() {
   }
 
   async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    if (!file) return
+    const picked = e.target.files?.[0]
+    if (!picked) return
     setUploadingImage(true)
+    // Shrunk before upload: every student sitting the exam downloads this picture, so a phone photo is cut to screen size first.
+    const file = await shrinkImage(picked, QUESTION_PICTURE)
     const { data: { user } } = await supabase.auth.getUser()
     const fileName = `${user?.id}/${Date.now()}-${file.name.replace(/\s/g, '_')}`
     const { error } = await supabase.storage.from('question-images').upload(fileName, file, { upsert: true })

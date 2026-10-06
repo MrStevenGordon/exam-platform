@@ -2,7 +2,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 
 // The brand mark: the supplied graduation-cap / open-book / checkmark artwork, cropped to just
-// the icon (public/brand/logo-mark.png, transparent background, 411x375 source). Same mark at
+// the icon (public/brand/logo-mark.png, transparent background, 144x131: the largest it is ever shown is 36 pixels, so a bigger file only costs data). Same mark at
 // every size so the nav, footer, and any future use stay visually identical — only the scale
 // changes.
 function LogoMark({ size }: { size: number }) {
@@ -11,8 +11,8 @@ function LogoMark({ size }: { size: number }) {
     <Image
       src="/brand/logo-mark.png"
       alt=""
-      width={411}
-      height={375}
+      width={144}
+      height={131}
       priority
       className="logo-mark"
       style={{ width: size, height, flexShrink: 0 }}

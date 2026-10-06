@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts'
+import ScoreTrendChartLazy from '@/components/ScoreTrendChartLazy'
 import EmptyState from '@/components/EmptyState'
 
 type StudentProfile = {
@@ -239,15 +239,7 @@ export default function StudentHome() {
       {chartData.length > 1 && (
         <div className="card" style={{ marginTop: 16 }}>
           <div className="section-label" style={{ marginBottom: 12 }}>Score trend</div>
-          <ResponsiveContainer width="100%" height={160}>
-            <LineChart data={chartData} margin={{ top: 0, right: 0, left: -24, bottom: 0 }}>
-              <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-              <YAxis domain={[0, 100]} tick={{ fontSize: 11 }} />
-              <Tooltip formatter={(v: any, _: any, p: any) => [`${v}%`, p.payload.title]} />
-              <ReferenceLine y={50} stroke="var(--danger)" strokeDasharray="4 4" />
-              <Line type="monotone" dataKey="pct" stroke="var(--accent)" strokeWidth={2} dot={{ fill: 'var(--accent)', r: 4 }} />
-            </LineChart>
-          </ResponsiveContainer>
+          <ScoreTrendChartLazy data={chartData} height={160} left={-24} />
         </div>
       )}
     </div>

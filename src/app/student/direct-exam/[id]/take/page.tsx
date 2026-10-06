@@ -11,6 +11,7 @@ import {
   initExamRecord, getExamRecord, saveAnswersLocally, markSynced,
   setPendingSubmit as setPendingSubmitLocal, queueViolation, clearQueuedViolations, clearExamRecord,
 } from '@/lib/examOfflineStore'
+import { changedRows, markSent, type SentMap } from '@/lib/examSyncPure'
 
 function mulberry32(seed: number) {
   let a = seed
@@ -354,6 +355,8 @@ export default function TakeDirectExamPage() {
   // the *final* submit is what fails — not just a local-only safety net.
   // Upsert rows deliberately omit points_awarded/graded_at so a sync tick
   // never clobbers grading data; only answer/working are ever touched here.
+  // What the server has accepted so far, so each save sends only the answers that changed (see examSyncPure.ts).
+  const sentRef = useRef<SentMap>(new Map())
   const syncToServer = useCallback(async () => {
     if (!session || questions.length === 0 || submittedRef.current) return
     const rows = questions.map((q) => ({
@@ -362,8 +365,10 @@ export default function TakeDirectExamPage() {
       answer: latestAnswersRef.current[q.id] || '',
       working: latestWorkingsRef.current[q.id] || null,
     }))
-    const { error } = await supabase.from('responses').upsert(rows, { onConflict: 'session_id,question_id' })
-    if (!error) await markSynced(session.id)
+    const changed = changedRows(rows, sentRef.current)
+    if (changed.length === 0) return
+    const { error } = await supabase.from('responses').upsert(changed, { onConflict: 'session_id,question_id' })
+    if (!error) { markSent(sentRef.current, changed); await markSynced(session.id) }
   }, [session, questions])
 
   useEffect(() => {

@@ -8,6 +8,7 @@ import {
   initExamRecord, getExamRecord, saveAnswersLocally, markSynced,
   setPendingSubmit as setPendingSubmitLocal, queueViolation, clearQueuedViolations, clearExamRecord,
 } from '@/lib/examOfflineStore'
+import { changedRows, markSent, type SentMap } from '@/lib/examSyncPure'
 
 function mulberry32(seed: number) {
   let a = seed
@@ -243,6 +244,8 @@ export default function TakeExamQuestionsPage() {
   // Progressive server sync: pushes locally-held answers up to Supabase
   // periodically and immediately on reconnect, so progress survives even if
   // the *final* submit is what fails.
+  // What the server has accepted so far, so each save sends only the answers that changed (see examSyncPure.ts).
+  const sentRef = useRef<SentMap>(new Map())
   const syncToServer = useCallback(async () => {
     if (!session || questions.length === 0 || submittedRef.current) return
     const rows = questions.map((q) => ({
@@ -250,8 +253,10 @@ export default function TakeExamQuestionsPage() {
       question_id: q.id,
       answer: latestAnswersRef.current[q.id] || '',
     }))
-    const { error } = await supabase.from('org_exam_responses').upsert(rows, { onConflict: 'session_id,question_id' })
-    if (!error) await markSynced(session.id)
+    const changed = changedRows(rows, sentRef.current)
+    if (changed.length === 0) return
+    const { error } = await supabase.from('org_exam_responses').upsert(changed, { onConflict: 'session_id,question_id' })
+    if (!error) { markSent(sentRef.current, changed); await markSynced(session.id) }
   }, [session, questions])
 
   useEffect(() => {
