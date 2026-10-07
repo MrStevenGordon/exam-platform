@@ -53,3 +53,4 @@ curriculum-source/
 
 # QA test school: authenticator secrets for the test accounts
 .qa-totp.json
+e2e/qa/out/

@@ -35,26 +35,23 @@ export default function IntegrityDashboard() {
   }
 
   async function loadDataInner() {
-    const [{ data: finalSessions }, { data: draftSessions }] = await Promise.all([
-      supabase.from('exam_sessions')
-        .select('id, profiles!exam_sessions_student_id_fkey(full_name), final_exams(title), responses(id, answer, integrity_signals, ai_review, questions(question_type))')
-        .not('final_exam_id', 'is', null),
-      supabase.from('exam_sessions')
-        .select('id, profiles!exam_sessions_student_id_fkey(full_name), draft_exams(title), responses(id, answer, integrity_signals, ai_review, questions(question_type))')
-        .not('draft_exam_id', 'is', null),
-    ])
+    // Ask the database only for the essay answers that carry integrity flags. (This used to fetch every session with every response and filter
+    // on screen, which timed out on a school with a few hundred sittings.) RLS still decides which of them this person may see.
+    const { data, error } = await supabase.from('responses')
+      .select('id, answer, integrity_signals, ai_review, questions!inner(question_type), exam_sessions!inner(profiles!exam_sessions_student_id_fkey(full_name), final_exams(title), draft_exams(title))')
+      .eq('questions.question_type', 'essay')
+      .not('integrity_signals', 'is', null)
+    if (error) throw error
 
     const flagged: FlaggedResponse[] = []
 
-    for (const session of [...(finalSessions || []), ...(draftSessions || [])] as any[]) {
-      const studentName = session.profiles?.full_name || 'Unknown'
-      const examTitle = session.final_exams?.title || session.draft_exams?.title || 'Unknown exam'
-      for (const r of session.responses || []) {
-        if (r.questions?.question_type !== 'essay') continue
-        const flags = mergeIntegrityFlags(r.integrity_signals)
-        if (flags.length === 0) continue
-        flagged.push({ id: r.id, answer: r.answer, studentName, examTitle, flags, aiReview: r.ai_review || null })
-      }
+    for (const r of (data || []) as any[]) {
+      const session = Array.isArray(r.exam_sessions) ? r.exam_sessions[0] : r.exam_sessions
+      const studentName = session?.profiles?.full_name || 'Unknown'
+      const examTitle = session?.final_exams?.title || session?.draft_exams?.title || 'Unknown exam'
+      const flags = mergeIntegrityFlags(r.integrity_signals)
+      if (flags.length === 0) continue
+      flagged.push({ id: r.id, answer: r.answer, studentName, examTitle, flags, aiReview: r.ai_review || null })
     }
 
     flagged.sort((a, b) => b.flags.length - a.flags.length)
