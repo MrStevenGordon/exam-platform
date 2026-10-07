@@ -484,6 +484,19 @@ Use a test student who has sat at least one exam with topic-tagged questions who
 - [ ] A school with fewer than 5 students with results shows "The school average appears once at least 5 students have results" and no below-average reasons
 - [ ] The demo data: one open plan (review next week, two actions) and one finished plan that improved
 
+## 7w. Videos (needs migration 093; Smart Learning)
+
+- [ ] Menu: **Videos** for students, teachers, HODs, principal team and school admin (not before 093 is applied)
+- [ ] As a **teacher**: **Add a video** with a YouTube link (try `youtu.be/...`, a `watch?v=` link and a Shorts link). The form says "YouTube link recognised". A link from any other site says it is not accepted. Add it with a title, subject and grades; the message says it waits for your head of department
+- [ ] The video does **not** show for students yet. Under **Manage > Added by you** it shows "Waiting for approval"
+- [ ] As the **HOD**: **Manage (1 to decide)** lists it. **Open to check it** opens it in a new tab. **Approve**. Now a Grade 9 student sees it; a student outside its grades does not
+- [ ] A video added by the **HOD** (or principal) is live at once
+- [ ] As a **student**: the feed shows one video per screen, subject buttons at the top. **Play** loads the video (nothing loads before that). **Open on YouTube** opens a new tab. A Khan Academy link opens a new tab
+- [ ] **Low-data mode**: tick it. No pictures, a compact list, and a video loads only when Play is tapped. Reload: the choice is remembered. On a phone with data saver on, it starts switched on
+- [ ] **Report a problem** as two different students: the video disappears for students and appears under **Reported by students** for the HOD. **Approve again** brings it back
+- [ ] A teacher who edits their live video: it goes back to "Waiting for approval". Adding the same video twice is refused
+- [ ] A teacher cannot approve their own video; another department's head cannot approve it
+
 ## 8. Owner console (you)
 
 - [ ] **School requests** and **Org requests**: approve and provision

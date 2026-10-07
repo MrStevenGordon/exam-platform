@@ -16,6 +16,7 @@ import { isLibraryAvailable } from '@/lib/library'
 import { isFlashcardsAvailable } from '@/lib/flashcards'
 import { isClassFeedbackAvailable } from '@/lib/classFeedback'
 import { isSupportAvailable } from '@/lib/support'
+import { isVideosAvailable } from '@/lib/videos'
 import { isResourcesAvailable } from '@/lib/departmentResources'
 import { resolveRole } from '@/lib/offline/role'
 import { registerOfflineWorker, warmOfflinePages } from '@/lib/offline/serviceWorker'
@@ -41,6 +42,7 @@ const RESOURCES_ITEM = { label: 'Resources', icon: 'ti-file-text', href: '/learn
 const FEEDBACK_ITEM = { label: 'Class feedback', icon: 'ti-message-circle', href: '/learning/feedback' }
 const SUPPORT_ITEM = { label: 'Student support', icon: 'ti-users', href: '/learning/support' }
 const PROGRESS_ITEM = { label: 'My progress', icon: 'ti-chart-line', href: '/learning/progress' }
+const VIDEOS_ITEM = { label: 'Videos', icon: 'ti-player-play', href: '/learning/videos' }
 const WEEK_ITEM = { label: 'Current and future', icon: 'ti-calendar-event', href: '/learning/week' }
 const TEACHER_WEEK_ITEM = { label: 'Current and future', icon: 'ti-calendar-event', href: '/learning/week' }
 
@@ -75,6 +77,8 @@ export default function LearningLayout({ children }: { children: React.ReactNode
   const [feedbackOn, setFeedbackOn] = useState(false)
   // Staff get Student support and students get My progress once migration 092 is applied.
   const [supportOn, setSupportOn] = useState(false)
+  // Everyone gets Videos once migration 093 is applied.
+  const [videosOn, setVideosOn] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -112,9 +116,11 @@ export default function LearningLayout({ children }: { children: React.ReactNode
       const resources = r === 'teacher' || r === 'supervisor' || r === 'admin' ? await isResourcesAvailable() : false
       const feedback = await isClassFeedbackAvailable()
       const support = await isSupportAvailable()
+      const videos = await isVideosAvailable()
       if (cancelled) return
       setFeedbackOn(feedback)
       setSupportOn(support)
+      setVideosOn(videos)
       setCoverageOn(coverage)
       setFlagsOn(!!flags)
       setFlagCount(flags?.open_total ?? 0)
@@ -182,7 +188,8 @@ export default function LearningLayout({ children }: { children: React.ReactNode
   const withWeek = role === 'student' ? [...withFlags, WEEK_ITEM] : role === 'teacher' || role === 'supervisor' ? [...withFlags, TEACHER_WEEK_ITEM] : withFlags
   const withFeedback = feedbackOn ? [...withWeek, FEEDBACK_ITEM] : withWeek
   const withSupport = supportOn ? [...withFeedback, role === 'student' ? PROGRESS_ITEM : SUPPORT_ITEM] : withFeedback
-  const withResources = resourcesOn ? [...withSupport, RESOURCES_ITEM] : withSupport
+  const withVideos = videosOn ? [...withSupport, VIDEOS_ITEM] : withSupport
+  const withResources = resourcesOn ? [...withVideos, RESOURCES_ITEM] : withVideos
   const withFlashcards = flashcardsOn && role === 'student' ? [...withResources, FLASHCARDS_ITEM] : withResources
   const nav = libraryOn ? [...withFlashcards, LIBRARY_ITEM] : withFlashcards
   const badges = { ...(flagsOn ? { [FLAGS_ITEM.href]: flagCount } : {}), ...(toolsOn ? { [manageItem.href]: unfilled } : {}), ...(coverOn ? { [MY_COVER_ITEM.href]: coverCount } : {}) }
@@ -191,7 +198,7 @@ export default function LearningLayout({ children }: { children: React.ReactNode
       <InactivityLogout />
       <PresenceHeartbeat />
       <main className="portal-content">{role === 'student' && <OfflineBanner />}<PageTransition>{children}</PageTransition></main>
-      <Sidebar navItems={nav} badges={badges} portalLabel="Smart Learning" resolveActivePathname={(p) => (p.startsWith('/learning/library') ? '/learning/library' : p.startsWith('/learning/flashcards') ? '/learning/flashcards' : p === '/learning/week' ? '/learning/week' : p.startsWith('/learning/resources') ? '/learning/resources' : p.startsWith('/learning/feedback') ? '/learning/feedback' : p.startsWith('/learning/support') ? '/learning/support' : p.startsWith('/learning/progress') ? '/learning/progress' : p.startsWith('/learning/lesson/') || p.startsWith('/learning/lessons/') && p !== '/learning/lessons/new' ? '/learning' : p)} />
+      <Sidebar navItems={nav} badges={badges} portalLabel="Smart Learning" resolveActivePathname={(p) => (p.startsWith('/learning/library') ? '/learning/library' : p.startsWith('/learning/flashcards') ? '/learning/flashcards' : p === '/learning/week' ? '/learning/week' : p.startsWith('/learning/resources') ? '/learning/resources' : p.startsWith('/learning/feedback') ? '/learning/feedback' : p.startsWith('/learning/support') ? '/learning/support' : p.startsWith('/learning/videos') ? '/learning/videos' : p.startsWith('/learning/progress') ? '/learning/progress' : p.startsWith('/learning/lesson/') || p.startsWith('/learning/lessons/') && p !== '/learning/lessons/new' ? '/learning' : p)} />
     </div>
   )
 }

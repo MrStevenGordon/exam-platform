@@ -2,6 +2,11 @@
 
 Tick a box when you have tested it on the live site. Each item points to its section in `docs/qa-checklist.md`. Add new items at the top when something is built. Last updated 2026-10-06.
 
+## Videos (built 2026-10-06; needs 093, then a push)
+- [ ] Apply `scripts/migrations/093_learning_videos.sql` on Manchester (`pbcopy < scripts/migrations/093_learning_videos.sql`; in a new empty query tab, Cmd+A before pasting), push
+- [ ] Walk **QA 7w** (teacher adds, HOD approves, student feed and Play, low-data mode, two student reports hide a video)
+- [ ] Add two or three real videos before the presentation so the student feed is not empty (nothing is seeded)
+
 ## Student support (built 2026-10-06; needs 091 then 092, then a push)
 - [ ] Apply `scripts/migrations/092_student_support.sql` on Manchester after 091 (`pbcopy < scripts/migrations/092_student_support.sql`), push, then re-run the demo seed for a demo plan
 - [ ] Walk **QA 7v** (staff list and filters, starting and tracking a plan, HOD and principal views, the student's My progress shows nothing about anyone else)
