@@ -47,3 +47,6 @@ scripts/student-credentials.csv
 
 # student ID mapping files written by scripts/reassign-student-ids.mjs (contain names)
 student-id-changes-*.csv
+
+# The Ministry curriculum PDFs used by scripts/load-curriculum.mjs (large; kept on your computer, not in git)
+curriculum-source/
