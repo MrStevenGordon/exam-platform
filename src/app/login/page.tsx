@@ -1,5 +1,6 @@
 'use client'
 
+import { randomId } from '@/lib/randomId'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -267,7 +268,7 @@ export default function LoginPage() {
       // resuming its own still-valid lock; a stale lock being bypassed
       // means the device that set it is gone, so this is a fresh session
       // and gets a fresh token rather than inheriting a dead one.
-      const newToken = dbToken && dbToken === myToken ? dbToken : crypto.randomUUID()
+      const newToken = dbToken && dbToken === myToken ? dbToken : randomId()
       localStorage.setItem(`device_lock_${userId}`, newToken)
       const now = new Date().toISOString()
       await supabase.from('profiles').update({

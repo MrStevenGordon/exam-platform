@@ -5,6 +5,7 @@
   "main": "electron/main.js",
   "scripts": {
     "dev": "next dev",
+    "dev:lan": "next dev -H 0.0.0.0",
     "build": "TURBOPACK=1 next build",
     "start": "next start",
     "lint": "eslint",

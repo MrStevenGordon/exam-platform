@@ -1,3 +1,4 @@
+import { randomId } from '@/lib/randomId'
 import { supabase } from '@/lib/supabase'
 import { checkDescription, checkFile, checkLink, checkTitle, mimeFor, storagePath, toResource, type Resource } from '@/lib/resourcesPure'
 
@@ -56,7 +57,7 @@ export async function shareLink(departmentId: string, f: { title: string; descri
 export async function shareFile(departmentId: string, file: File, f: { title: string; description: string } & Tags): Promise<Result> {
   const problem = checkTitle(f.title) || checkDescription(f.description) || checkFile({ name: file.name, size: file.size, type: file.type })
   if (problem) return { ok: false, error: problem }
-  const id = crypto.randomUUID()
+  const id = randomId()
   const path = storagePath(departmentId, id, file.name)
   const { error: upError } = await supabase.storage.from(BUCKET).upload(path, file, { contentType: mimeFor(file), upsert: false })
   if (upError) return { ok: false, error: 'The file could not be uploaded. Check your connection and try again.' }

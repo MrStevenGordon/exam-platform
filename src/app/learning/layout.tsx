@@ -21,6 +21,7 @@ import { isResourcesAvailable } from '@/lib/departmentResources'
 import { resolveRole } from '@/lib/offline/role'
 import { registerOfflineWorker, warmOfflinePages } from '@/lib/offline/serviceWorker'
 import OfflineBanner from '@/components/OfflineBanner'
+import OnboardingTour, { type TourStep } from '@/components/OnboardingTour'
 
 type Role = 'student' | 'teacher' | 'supervisor' | 'admin' | 'principal'
 const ROLES: Role[] = ['student', 'teacher', 'supervisor', 'admin', 'principal']
@@ -45,6 +46,36 @@ const PROGRESS_ITEM = { label: 'My progress', icon: 'ti-chart-line', href: '/lea
 const VIDEOS_ITEM = { label: 'Videos', icon: 'ti-player-play', href: '/learning/videos' }
 const WEEK_ITEM = { label: 'Current and future', icon: 'ti-calendar-event', href: '/learning/week' }
 const TEACHER_WEEK_ITEM = { label: 'Current and future', icon: 'ti-calendar-event', href: '/learning/week' }
+
+// The first-visit tour of Smart Learning, one per kind of person. OnboardingTour skips any stop whose menu item is not on the page for this person
+// (a school without the Library, say), and shows once per person (profiles.onboarding_tours_seen).
+const STUDENT_LEARN_TOUR: TourStep[] = [
+  { href: '/learning', title: 'My lessons', body: 'Lessons from your teachers. Each has five steps and short check questions at your level. If you miss a class, the lesson waits here as a catch-up.' },
+  { href: '/learning/week', title: 'Current and future', body: 'What changed in the last 7 days, and what is coming up in the next 7.' },
+  { href: '/learning/feedback', title: 'Class feedback', body: 'Tell your teachers how the week went in each class. It takes about a minute, and it helps them teach you better.' },
+  { href: '/learning/progress', title: 'My progress', body: 'Your results compared with your own earlier results, with a few gentle tips. Never compared with classmates.' },
+  { href: '/learning/flashcards', title: 'Flashcards', body: 'Make your own decks. Cards you miss come back sooner, so you spend your time on what you find hard.' },
+  { href: '/learning/videos', title: 'Videos', body: 'Short videos your teachers chose. Tap Play to watch. Low-data mode saves your data.' },
+  { href: '/learning/library', title: 'Library', body: 'Books to read or listen to, for school and for fun.' },
+]
+const TEACHER_LEARN_TOUR: TourStep[] = [
+  { href: '/learning', title: 'My lessons', body: 'The lessons you have written, and who has finished them.' },
+  { href: '/learning/lessons/new', title: 'New lesson', body: 'Build a five-step lesson with check questions at three levels. The AI can draft one for you to review.' },
+  { href: '/learning/lesson-plans', title: 'Lesson plans', body: 'A full 5E plan with a general objective, specific objectives and a DOK level, shaped for Jamaica. You review everything the AI drafts.' },
+  { href: '/learning/week', title: 'Current and future', body: 'How each of your classes did in the last 7 days, who may need support, and what is coming up.' },
+  { href: '/learning/feedback', title: 'Class feedback', body: 'See what each class said this week, write your end-of-week reflection, and get an AI summary you check. A reminder email comes on Friday.' },
+  { href: '/learning/support', title: 'Student support', body: 'Students who may need help, and why. Start a support plan, record what you did, and see whether results moved.' },
+  { href: '/learning/coverage', title: 'Coverage', body: 'Which topics each class has been taught, and where the gaps are.' },
+  { href: '/learning/resources', title: 'Resources', body: 'Share links and files with your department, tagged by subject and topic.' },
+  { href: '/learning/videos', title: 'Videos', body: 'Add links to YouTube, Vimeo or Khan Academy videos. Your head of department approves them before students see them.' },
+]
+const LEADER_LEARN_TOUR: TourStep[] = [
+  { href: '/learning', title: 'Coverage', body: 'Which topics each class has been taught, and where the gaps are.' },
+  { href: '/learning/flags', title: 'Tutor flags', body: 'Worrying AI-tutor conversations are flagged here for an adult to read.' },
+  { href: '/learning/support', title: 'Student support', body: 'Students who may need help across the school, and the support plans in progress.' },
+  { href: '/learning/feedback', title: 'Class feedback', body: 'What students said about each class. Anonymous, and shown only when 5 or more students have answered.' },
+  { href: '/learning/videos', title: 'Videos', body: 'Review and approve videos your teachers add, and bring back any that students reported.' },
+]
 
 // Smart Learning's own shell. Everyone signed in can enter (the lessons themselves are
 // protected by the database), but only when the school has switched Smart Learning on.
@@ -198,6 +229,7 @@ export default function LearningLayout({ children }: { children: React.ReactNode
       <InactivityLogout />
       <PresenceHeartbeat />
       <main className="portal-content">{role === 'student' && <OfflineBanner />}<PageTransition>{children}</PageTransition></main>
+      <OnboardingTour key={role} tourKey={role === 'student' ? 'learning-student' : role === 'teacher' || role === 'supervisor' ? 'learning-teacher' : 'learning-leader'} steps={role === 'student' ? STUDENT_LEARN_TOUR : role === 'teacher' || role === 'supervisor' ? TEACHER_LEARN_TOUR : LEADER_LEARN_TOUR} />
       <Sidebar navItems={nav} badges={badges} portalLabel="Smart Learning" resolveActivePathname={(p) => (p.startsWith('/learning/library') ? '/learning/library' : p.startsWith('/learning/flashcards') ? '/learning/flashcards' : p === '/learning/week' ? '/learning/week' : p.startsWith('/learning/resources') ? '/learning/resources' : p.startsWith('/learning/feedback') ? '/learning/feedback' : p.startsWith('/learning/support') ? '/learning/support' : p.startsWith('/learning/videos') ? '/learning/videos' : p.startsWith('/learning/progress') ? '/learning/progress' : p.startsWith('/learning/lesson/') || p.startsWith('/learning/lessons/') && p !== '/learning/lessons/new' ? '/learning' : p)} />
     </div>
   )

@@ -2,6 +2,8 @@ import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
 
 const nextConfig: NextConfig = {
+  // Lets another laptop or phone on the same Wi-Fi open the dev server (npm run dev:lan). Development only: it has no effect on a deployed site.
+  allowedDevOrigins: ['10.*.*.*', '192.168.*.*', '172.*.*.*', '*.local'],
   // School crests are uploaded to each school's own Supabase storage; they are shown through Next's image resizer (see
   // src/components/SchoolLogo.tsx) so a large upload is not downloaded at full size on every page.
   images: {

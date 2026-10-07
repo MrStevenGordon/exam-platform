@@ -120,7 +120,7 @@ for (const s of STAFF) {
   await db.query(
     `insert into profiles (id, full_name, first_name, last_name, role, department_id, is_active, must_change_password, leadership_title)
      values ($1,$2,$3,$4,$5,$6,true,false,$7)
-     on conflict (id) do update set full_name = excluded.full_name, role = excluded.role, department_id = excluded.department_id, is_active = true, must_change_password = false, leadership_title = excluded.leadership_title`,
+     on conflict (id) do update set full_name = excluded.full_name, role = excluded.role, department_id = excluded.department_id, is_active = true, must_change_password = false, leadership_title = excluded.leadership_title, onboarding_tours_seen = '{}'::jsonb`,
     [u.id, s.name, first, rest.join(' '), s.role, dId, s.title ?? null])
   if (s.subject) {
     await db.query(`insert into teacher_subjects (teacher_id, department_id, subject) select $1,$2,$3 where not exists (select 1 from teacher_subjects where teacher_id = $1 and subject = $3)`, [u.id, dId, s.subject])
@@ -141,7 +141,7 @@ for (const st of STUDENTS) {
   await db.query(
     `insert into profiles (id, full_name, first_name, last_name, role, student_id, grade_level, is_active, must_change_password)
      values ($1,$2,$3,$4,'student',$5,9,true,false)
-     on conflict (id) do update set full_name = excluded.full_name, student_id = excluded.student_id, grade_level = 9, is_active = true, must_change_password = false`,
+     on conflict (id) do update set full_name = excluded.full_name, student_id = excluded.student_id, grade_level = 9, is_active = true, must_change_password = false, onboarding_tours_seen = '{}'::jsonb`,
     [u.id, `${st.first} ${st.last}`, st.first, st.last, st.id])
   await db.query(`insert into enrollments (student_id, class_group_id) select $1,$2 where not exists (select 1 from enrollments where student_id = $1 and class_group_id = $2)`, [u.id, cls.id])
 }
@@ -155,7 +155,7 @@ for (const x of EXTRA) {
     await db.query(
       `insert into profiles (id, full_name, first_name, last_name, role, student_id, grade_level, is_active, must_change_password)
        values ($1,$2,$3,$4,'student',$5,$6,true,false)
-       on conflict (id) do update set full_name = excluded.full_name, student_id = excluded.student_id, grade_level = excluded.grade_level, is_active = true, must_change_password = false`,
+       on conflict (id) do update set full_name = excluded.full_name, student_id = excluded.student_id, grade_level = excluded.grade_level, is_active = true, must_change_password = false, onboarding_tours_seen = '{}'::jsonb`,
       [u.id, `${FIRST2[i]} ${last}`, FIRST2[i], last, id, x.gradeNum])
     await db.query(`insert into enrollments (student_id, class_group_id) select $1,$2 where not exists (select 1 from enrollments where student_id = $1 and class_group_id = $2)`, [u.id, c2.id])
   }
