@@ -74,6 +74,9 @@ function resolveActivePathname(pathname: string, searchParams: URLSearchParams) 
     if (kind === 'task') return '/teacher/tasks'
     if (kind === 'test') return '/teacher/tests'
   }
+  // Pages opened from a section light that section instead of nothing.
+  if (pathname.startsWith('/teacher/exam') || pathname.startsWith('/teacher/grade') || pathname.startsWith('/teacher/insight')) return '/teacher/tests'
+  if (pathname.startsWith('/teacher/student/')) return '/teacher/classes'
   return pathname
 }
 

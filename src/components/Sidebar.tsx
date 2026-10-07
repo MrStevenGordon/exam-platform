@@ -1,5 +1,6 @@
 'use client'
 
+import { activeNavHref } from '@/lib/sidebarActive'
 import { Suspense, useEffect, useState } from 'react'
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
@@ -138,9 +139,9 @@ function SidebarInner({ navItems, portalLabel, resolveActivePathname, badges, lo
       {/* Nav */}
       <nav style={{ flex: 1, padding: '12px 10px', display: 'flex', flexDirection: 'column', gap: 2, overflowY: 'auto' }}>
         {(() => {
-          const hasExactMatch = navItems.some((i) => i.href === activePathname)
+          const activeHref = activeNavHref(navItems.map((i) => i.href), activePathname)
           return navItems.map((item) => {
-            const isActive = hasExactMatch ? item.href === activePathname : (item.href !== '/' && activePathname?.startsWith(item.href))
+            const isActive = item.href === activeHref
             const badgeCount = item.href.endsWith('/messages') ? unreadMessages : (badges?.[item.href] ?? 0)
             const showUnreadBadge = badgeCount > 0
             return (

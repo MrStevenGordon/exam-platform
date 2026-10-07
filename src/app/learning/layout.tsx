@@ -35,8 +35,8 @@ const AUTHOR_NAV = [
 const OVERVIEW_NAV = [{ label: 'Coverage', icon: 'ti-chart-grid-dots', href: '/learning' }]
 const COVERAGE_ITEM = { label: 'Coverage', icon: 'ti-chart-grid-dots', href: '/learning/coverage' }
 const FLAGS_ITEM = { label: 'Tutor flags', icon: 'ti-shield-check', href: '/learning/flags' }
-const REPORT_ABSENCE_ITEM = { label: 'Report Absence', icon: 'ti-user-off', href: '/teacher/report-absence' }
-const MY_COVER_ITEM = { label: 'My Cover', icon: 'ti-calendar-event', href: '/teacher/cover' }
+const REPORT_ABSENCE_ITEM = { label: 'Report Absence', icon: 'ti-user-off', href: '/learning/report-absence' }
+const MY_COVER_ITEM = { label: 'My Cover', icon: 'ti-calendar-event', href: '/learning/cover' }
 const LIBRARY_ITEM = { label: 'Library', icon: 'ti-books', href: '/learning/library' }
 const FLASHCARDS_ITEM = { label: 'Flashcards', icon: 'ti-cards', href: '/learning/flashcards' }
 const RESOURCES_ITEM = { label: 'Resources', icon: 'ti-file-text', href: '/learning/resources' }
@@ -177,6 +177,9 @@ export default function LearningLayout({ children }: { children: React.ReactNode
   // principal / VP) who types one of those addresses is sent to their overview.
   const blockedForOversight = (role === 'admin' || role === 'principal') && (pathname.startsWith('/learning/lessons') || pathname.startsWith('/learning/lesson-plans'))
   useEffect(() => { if (blockedForOversight) router.replace('/learning') }, [blockedForOversight, router])
+  // Report absence, My cover and Substitution are staff pages (they open inside Smart Learning so the menu stays here).
+  const blockedForStudent = role === 'student' && /^\/learning\/(report-absence|cover|substitution)(\/|$)/.test(pathname)
+  useEffect(() => { if (blockedForStudent) router.replace('/learning') }, [blockedForStudent, router])
 
   // When someone marks a flagged conversation read, the menu count updates without a page change.
   useEffect(() => {
@@ -187,7 +190,7 @@ export default function LearningLayout({ children }: { children: React.ReactNode
     return () => { cancelled = true; window.removeEventListener(FLAGS_CHANGED_EVENT, refresh) }
   }, [flagsOn])
 
-  if (blockedForOversight) return null
+  if (blockedForOversight || blockedForStudent) return null
 
   if (state === 'checking' || !role) return null
 
@@ -213,7 +216,7 @@ export default function LearningLayout({ children }: { children: React.ReactNode
   // School admins and the principal team oversee Smart Learning (Coverage, flagged tutor chats); they do not teach in it.
   const base = role === 'student' ? STUDENT_NAV : (role === 'principal' || role === 'admin') ? OVERVIEW_NAV : coverageOn ? [...AUTHOR_NAV, COVERAGE_ITEM] : AUTHOR_NAV
   const withSubstitution = (role === 'teacher' || role === 'supervisor') && substitutionOn ? [...base, REPORT_ABSENCE_ITEM, ...(coverOn ? [MY_COVER_ITEM] : [])] : base
-  const manageItem = { label: 'Substitution', icon: 'ti-replace', href: role === 'supervisor' ? '/supervisor/substitution' : '/school-admin/substitution' }
+  const manageItem = { label: 'Substitution', icon: 'ti-replace', href: '/learning/substitution' }
   const withTools = toolsOn && (role === 'supervisor' || role === 'admin') ? [...withSubstitution, manageItem] : withSubstitution
   const withFlags = flagsOn && (role === 'admin' || role === 'principal') ? [...withTools, FLAGS_ITEM] : withTools
   const withWeek = role === 'student' ? [...withFlags, WEEK_ITEM] : role === 'teacher' || role === 'supervisor' ? [...withFlags, TEACHER_WEEK_ITEM] : withFlags
