@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import FeedbackReminder from '@/components/learning/FeedbackReminder'
 import { loadTeacherWeek, type TeacherWeekLoad } from '@/lib/weekSummary'
 
 // A teacher's week, class by class. It only shows what the teacher can already see: results of their own students that are fully
@@ -25,6 +26,7 @@ export default function TeacherWeekView() {
     <div className="page-container" style={{ maxWidth: 820 }}>
       <h1 className="portal-page-title">Current and future</h1>
       <p style={{ ...sub, marginTop: 4 }}>How each of your classes did in the last 7 days, who may need support, and what is coming up. Only fully marked results are counted.</p>
+      <FeedbackReminder />
       {data.note && <p className="banner banner-warning" style={{ marginTop: 16 }}>{data.note}</p>}
 
       {data.classes.map((c) => (

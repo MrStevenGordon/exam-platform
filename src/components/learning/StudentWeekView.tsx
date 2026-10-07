@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import FeedbackReminder from '@/components/learning/FeedbackReminder'
 import { loadStudentWeek } from '@/lib/weekSummary'
 import type { StudentWeek } from '@/lib/weekSummaryPure'
 
@@ -27,6 +28,7 @@ export default function StudentWeekView() {
       <h1 className="portal-page-title">Current and future</h1>
       <p style={{ ...sub, marginTop: 4 }}>The last 7 days, and what is coming up in the next 7.</p>
 
+      <FeedbackReminder />
       <div className="card" style={{ marginTop: 18 }}>
         <p style={{ margin: 0, fontSize: 16, fontWeight: 600 }}>{week.quiet ? 'A quiet week so far. A little practice goes a long way.' : week.headline}</p>
         {!week.quiet && (

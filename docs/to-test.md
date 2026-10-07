@@ -2,6 +2,11 @@
 
 Tick a box when you have tested it on the live site. Each item points to its section in `docs/qa-checklist.md`. Add new items at the top when something is built. Last updated 2026-10-06.
 
+## Weekly class feedback (built 2026-10-06; needs 091, then a push)
+- [ ] Apply `scripts/migrations/091_class_feedback.sql` on Manchester (paste via `pbcopy < scripts/migrations/091_class_feedback.sql`), push, then re-run the demo seed to get two weeks of demo feedback
+- [ ] Walk **QA 7u** (student form, teacher report and reflection, AI summary, print, HOD, principal sees no names)
+- [ ] Decide whether teachers should get a Friday reminder email (not built; today there is a card on Current and future)
+
 ## National curriculum for AI lesson plans (needs a push first)
 - [ ] Apply `scripts/migrations/central/003_curriculum.sql` on the CENTRAL project, then load the four guides with `scripts/load-curriculum.mjs` (commands in `docs/curriculum-setup.md`; dry run first)
 - [ ] Walk **QA 7t**: Owner console > Curriculum guides, Test a topic, then draft Civics Grade 7 and English Grade 8 plans and check the "Lined up with the national curriculum" note

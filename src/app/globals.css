@@ -782,3 +782,19 @@ body.exam-fullscreen .portal-content {
 .lib-switch[aria-checked="true"]::after { left: 19px; }
 .lib-switch:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .lib-switch:disabled { opacity: 0.5; cursor: default; }
+
+/* Printing (the Class feedback report): only the page content, on white, one class card never split across pages. */
+.print-only { display: none; }
+@media print {
+  .desktop-sidebar, .mobile-topbar, .mobile-drawer, .mobile-overlay, .no-print { display: none !important; }
+  .print-only { display: block !important; }
+  .portal-layout { display: block; }
+  .portal-content { padding: 0 !important; overflow: visible !important; background: #fff !important; }
+  .page-container { max-width: none !important; padding: 0 !important; }
+  .class-report { break-inside: avoid; box-shadow: none !important; border: 1px solid #bbb !important; }
+  body { background: #fff !important; }
+}
+
+/* Sentence-case text inside a screen that has questions and sentences on its buttons and labels (the base styles capitalise them). */
+.sentence-case, .sentence-case * { text-transform: none; }
+.sentence-case .portal-page-title { text-transform: capitalize; }

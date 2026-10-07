@@ -40,5 +40,13 @@ where da.marked_by = (select id from profiles where full_name = 'Testing Teacher
 -- school part: the demo timetable
 delete from section_enrollments where pg_temp.is_demo(section_id);
 delete from timetable_sections where pg_temp.is_demo(id);
+
+-- weekly class feedback (only if migration 091 is applied)
+do $$ begin
+  if to_regclass('public.weekly_class_feedback') is not null then
+    delete from weekly_class_feedback where pg_temp.is_demo(id);
+    delete from weekly_class_reflections where pg_temp.is_demo(id);
+  end if;
+end $$;
 commit;
 select 'Demo data removed' as result;

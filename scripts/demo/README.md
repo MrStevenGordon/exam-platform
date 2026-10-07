@@ -17,6 +17,7 @@ Fills the four test accounts with realistic demo data so every screen in the liv
 - About 60 questions across 9 topics, and **results for the whole class** (about 30 students): a believable spread, a weak topic (Simple interest about 50%), two essays' worth of marking points, **about 20 essays still waiting to be marked**, 8 flagged exam sessions, results released on all but the last test (so you can release it live)
 - **Testing Student**: Grade 9, in the demo class, 6 results (weak at Simple interest and Compound interest, so My Topics has something to say), 2 flashcard decks with cards due now, 3 lessons (one finished, one in progress that they were **absent for** so catch-up shows, one upcoming)
 - **Learning:** 3 five-step lessons with check questions at support, core and stretch levels, student progress, check results, a coverage grid, 2 lesson plans, 5 department resources (one pinned by the HOD)
+- **Class feedback** (only if migration 091 is applied): two weeks of student feedback for the demo class (22 students, a dip in understanding last week at Simple interest) and Testing Teacher's reflection for last week. Testing Student is left out so you can give feedback live
 - **Attendance:** 3 weeks of morning register for the demo class (a few absent and late)
 
 ## It changes (and the remove file does NOT undo)

@@ -455,6 +455,21 @@ Use a test student who has sat at least one exam with topic-tagged questions who
 - [ ] A **Grade 10** English plan: no note (Grades 10 and 11 follow CSEC), draft still works
 - [ ] If the central project is unreachable, drafting still works without the note
 
+## 7u. Weekly class feedback (needs migration 091; Smart Learning)
+
+- [ ] Menu: students, teachers, HODs, principal and school admin see **Class feedback** in Smart Learning
+- [ ] As a **student** (54321 after the demo seed): the page lists each class on their timetable with the teacher and lesson count. Give feedback for one class (only "how well you understood" is required), save, and the card shows **Done** with a **Change** button. Last week works too; there is no way to answer older weeks
+- [ ] The **Current and future** page shows "N of your classes are waiting for your feedback" until all are done
+- [ ] On a phone the buttons wrap and are easy to tap
+- [ ] As **Testing Teacher**: the page lists their classes with the figures, advice banners, hardest topics, the **named** list of students who may need help, and anonymous comments. Switch weeks with the week picker
+- [ ] Write the **end-of-week reflection**, save, edit it again. It shows under the figures
+- [ ] **Write a progress summary with AI**: a short overview, going well, to watch, next week. (Needs Anthropic credit.) It never names a student
+- [ ] **Print report** shows only the report (no menu), one class per block
+- [ ] As **Testing HOD**: sees the department's classes with names; cannot write a reflection for someone else's class
+- [ ] As **Testing Principal** and a **school admin**: every class, **no student names**, and a class with fewer than 5 answers shows "kept private"
+- [ ] A student cannot see another student's answers or any class report (the page sends them to their own form)
+- [ ] The demo data: two weeks for Testing Teacher's class (understanding dips last week at Simple interest), and Testing Student has nothing answered so you can give feedback live in the presentation
+
 ## 8. Owner console (you)
 
 - [ ] **School requests** and **Org requests**: approve and provision
