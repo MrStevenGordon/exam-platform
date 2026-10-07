@@ -7,6 +7,8 @@ import { normalizeGeneratedPlan } from '@/lib/lessonPlan'
 import { askClaude } from '@/lib/aiCall'
 import { parseAiJson } from '@/lib/aiJson'
 import { buildLessonPlanPrompt } from '@/lib/lessonPlanPrompt'
+import { curriculumExcerpts } from '@/lib/curriculum'
+import { describeSources } from '@/lib/curriculumPure'
 import { problemRef, recordAiProblem } from '@/lib/aiProblems'
 import * as Sentry from '@sentry/nextjs'
 
@@ -96,7 +98,9 @@ export async function POST(req: NextRequest) {
     // wrapped in explicit delimiters with an instruction that they're data,
     // not instructions, matching the convention already used in
     // /api/polish-question and /api/essay-integrity-check.
-    const prompt = buildLessonPlanPrompt({ subject, grade, topic, lessonCount, duration, focusQuestion, attainmentTarget })
+    // The national curriculum text for this subject and grade, when it has been loaded (central migration 003). Drafting works without it.
+    const curriculum = await curriculumExcerpts({ subject, grade, topic, focusQuestion, attainmentTarget })
+    const prompt = buildLessonPlanPrompt({ subject, grade, topic, lessonCount, duration, focusQuestion, attainmentTarget, curriculum: curriculum.text })
 
     // The draft is a long JSON answer. If it comes back cut off (the AI ran out of room) or garbled, ask once more with more room and a
     // plainer instruction, so the teacher is not told "try again" for something we can sort out ourselves.
@@ -132,6 +136,8 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       ...normalizeGeneratedPlan(parsed, lessonCount),
+      // What the draft was lined up with, so the teacher can see it and check the guide.
+      alignedWith: describeSources(curriculum.sources),
       usage: { used: usedCount + 1, limit: MONTHLY_LIMIT, remaining: MONTHLY_LIMIT - usedCount - 1 }
     })
 

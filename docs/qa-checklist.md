@@ -445,6 +445,16 @@ Use a test student who has sat at least one exam with topic-tagged questions who
 - [ ] **Library (after central migration 002):** "Browse by" has Shelves, Genre and Subject. Genre groups books (Plays, Poetry...) with unsorted books last; Subject groups by subject with "General reading" last. Search still works in each view. Owner console: a book's **Genre** can be set and cleared
 - [ ] Before the central migration the Library works exactly as before (no errors, no genres)
 
+## 7t. National curriculum in AI lesson plans (needs central migration 003 and at least one guide loaded)
+
+- [ ] Owner console > **Curriculum guides** lists the loaded guides (English Language 7-9, Civics 7-9, Resource and Technology 7 and 8) with their pieces count. **Test a topic**: Civics, Grade 7, "free villages cultural identity" returns the Valuing Heritage unit (pages about 61 to 62); English Language, Grade 9, "persuasive writing" returns Grade 9 pages
+- [ ] **Withdraw** a guide: the same test no longer finds it; **Use again** brings it back. (Do not remove one you want to keep.)
+- [ ] As a teacher: **Lesson Plans > draft with AI** for **Civics, Grade 7, "Free villages"**. After the draft, a green note says **"Lined up with the national curriculum: ... (pages ...)"**. The objectives and activities use the guide's wording and are Jamaican (Sturge Town, Maidstone, Sligoville) and the DOK level is filled in
+- [ ] Same for **English (or English Language), Grade 8, "Poetry"**. The draft names units or targets that exist in the guide. Open the guide at the pages named to confirm
+- [ ] **Mathematics, Grade 9, "Simple interest"** (no guide loaded yet): the draft works exactly as before and there is **no** "Lined up" note
+- [ ] A **Grade 10** English plan: no note (Grades 10 and 11 follow CSEC), draft still works
+- [ ] If the central project is unreachable, drafting still works without the note
+
 ## 8. Owner console (you)
 
 - [ ] **School requests** and **Org requests**: approve and provision

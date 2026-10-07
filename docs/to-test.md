@@ -2,6 +2,11 @@
 
 Tick a box when you have tested it on the live site. Each item points to its section in `docs/qa-checklist.md`. Add new items at the top when something is built. Last updated 2026-10-06.
 
+## National curriculum for AI lesson plans (needs a push first)
+- [ ] Apply `scripts/migrations/central/003_curriculum.sql` on the CENTRAL project, then load the four guides with `scripts/load-curriculum.mjs` (commands in `docs/curriculum-setup.md`; dry run first)
+- [ ] Walk **QA 7t**: Owner console > Curriculum guides, Test a topic, then draft Civics Grade 7 and English Grade 8 plans and check the "Lined up with the national curriculum" note
+- [ ] Send me the other subjects' NSC guides (Mathematics, Science, Social Studies, Spanish...) when you have them, and I will tell you the exact load command for each
+
 ## Feedback round 2026-10-07 (batch 1: needs a push)
 - [ ] Open the updated deck (`Smart-Assess-Ja-Manchester-Presentation-v2.pptx`, now 27 slides: bigger headers and more spacing, a short intro slide for each product, "Subject tools", 'one tap' in quotes, "Current and future") and check the wording and timing
 - [ ] Walk **QA 7s** (lesson plan objectives and DOK, Jamaican focus in the AI features, "Current and future", Library genres)

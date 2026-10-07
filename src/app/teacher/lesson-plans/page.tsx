@@ -166,6 +166,7 @@ export default function LessonPlansPage() {
   const [errorMsg, setErrorMsg] = useState('')
   const [generating, setGenerating] = useState(false)
   const [generateError, setGenerateError] = useState('')
+  const [alignedWith, setAlignedWith] = useState<string[]>([])
   const [libraryPlans, setLibraryPlans] = useState<SharedPlan[]>([])
   const [libraryLoading, setLibraryLoading] = useState(false)
   const [libraryError, setLibraryError] = useState('')
@@ -252,6 +253,7 @@ export default function LessonPlansPage() {
     if (hasWrittenLessons && !confirm('The AI draft will replace the lessons you have already written. Continue?')) return
     setGenerating(true)
     setGenerateError('')
+    setAlignedWith([])
     try {
       const { data: { session } } = await supabase.auth.getSession()
       const res = await fetch('/api/lesson-plans/generate', {
@@ -275,6 +277,7 @@ export default function LessonPlansPage() {
         setGenerating(false)
         return
       }
+      setAlignedWith(Array.isArray(data.alignedWith) ? data.alignedWith.filter((x: unknown) => typeof x === 'string') : [])
       setForm((prev) => ({
         ...prev,
         sub_topics: data.subTopics || prev.sub_topics,
@@ -638,6 +641,11 @@ export default function LessonPlansPage() {
             </p>
           )}
           {generateError && <p className="banner banner-danger" style={{ marginBottom: 14 }}>{generateError}</p>}
+          {alignedWith.length > 0 && !generating && (
+            <p role="status" className="banner banner-success" style={{ marginBottom: 14, fontSize: 13 }}>
+              <strong>Lined up with the national curriculum:</strong> {alignedWith.join(' · ')}. Check the outcomes against the guide before you use them.
+            </p>
+          )}
 
           <div className="card" style={{ marginBottom: 16 }}>
             {UNIT_FIELDS.map(({ key, label, rows, placeholder }) => (
