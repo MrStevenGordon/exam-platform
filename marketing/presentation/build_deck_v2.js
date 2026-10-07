@@ -1,5 +1,5 @@
 // Smart Assess Ja, Manchester High School: strategy deck v2 (design E1: ruled paper, index tabs, copper/gold/teal on deep-brown ink).
-// 24 slides for a 30 minute slot, with speaker notes and timings. Editable PowerPoint (native text, shapes, tables and charts).
+// 27 slides for a 30 minute slot (the three newest Smart Learning slides are class feedback, student support and videos; videos is optional), with speaker notes and timings. Editable PowerPoint (native text, shapes, tables and charts).
 // Run: NODE_PATH=<folder with pptxgenjs> node build_deck_v2.js   (needs paper.png, shot-lesson.png, shot-builder.png in ./assets-v2)
 const path = require('path')
 const pptxgen = require('pptxgenjs')
@@ -248,7 +248,7 @@ intro('LEARN', GOLD, INK, 2, 'Smart Learning', 'Deliver and recover learning.',
     text(s, h.toUpperCase(), x + 0.18, y + 0.15, 3.0, 0.4, { font: HEAD, size: 16 })
     text(s, b, x + 0.18, y + 0.6, 3.0, 0.8, { size: 12.5, color: GREY })
   })
-  text(s, 'For learning only. It does not make or mark assessments.', 1.55, 6.6, 10.4, 0.35, { size: 13, color: GREY })
+  text(s, 'Also in Smart Learning: weekly class feedback, student support and videos (next slides). For learning only; it does not make or mark assessments.', 1.55, 6.6, 10.4, 0.35, { size: 12, color: GREY })
 }
 // ---------- 13. catch-up ----------
 {
@@ -283,6 +283,57 @@ intro('LEARN', GOLD, INK, 2, 'Smart Learning', 'Deliver and recover learning.',
   s.addShape(SH.rect, { x: 7.0, y: 1.85, w: 4.95, h: 3.2, fill: { type: 'none' }, line: { color: INK, width: 2 } })
   text(s, 'A teacher\'s lesson builder, with the optional "Draft with AI" button. Demo data.', 7.0, 5.12, 4.95, 0.5, { size: 10, color: GREY })
   bar(s, '7 of 12 students chose flashcards. 9 of 10 teachers asked for activities at different ability levels.', 6.3, 13)
+}
+// ---------- 14b. class feedback ----------
+{
+  const s = base('LEARN', note(1.5, 'Teachers asked how they would know whether lessons are landing. Each week, every student gives a one-minute evaluation of each class on their timetable: how well they understood, which topic was hardest, whether they want help, the pace, and what helped. Each teacher writes a short end-of-week reflection. The system then builds a progress report for each class with plain advice, for example "many students said the lessons went too fast", and an optional AI summary the teacher checks. Privacy is built into the database, not just the screen: the class teacher and head of department see names against the first three answers so they can help; everything else is anonymous and appears only once five students have answered. The principal team sees anonymous results only. A teacher who still has reflections to write gets one email on Friday afternoon.'))
+  label(s, 'Smart Learning')
+  title(s, 'Hear from every class, every week', { size: 38 })
+  chip(s, 'Already built', 10.0, 0.55, 1.9, GOLD, INK)
+  const steps = [['Students', 'One minute per class. How well did you follow? Which topic was hardest? Was the pace right? Anything that helped?'], ['Teachers', 'A short end-of-week reflection for each class: where you are against plan, what went well, what to do next.'], ['The report', 'A progress report for each class, with plain advice and an AI summary you check. Printable.']]
+  steps.forEach(([h, b], i) => {
+    const x = 1.55 + i * 3.5
+    box(s, x, 1.95, 3.3, 2.55, { fill: i === 2 ? TINT : 'FFFFFF' })
+    num(s, i + 1, x, 1.95, 3.3, 0.85, i === 2 ? COPPER : GOLD)
+    text(s, h.toUpperCase(), x + 0.2, 2.9, 2.9, 0.4, { font: HEAD, size: 18 })
+    text(s, b, x + 0.2, 3.38, 2.9, 1.1, { size: 12, color: GREY })
+  })
+  box(s, 1.55, 4.75, 10.4, 1.4, { fill: INK })
+  text(s, 'PRIVATE BY DESIGN', 1.8, 4.85, 9.9, 0.4, { font: HEAD, size: 20, color: GOLD })
+  text(s, 'Only the class teacher and head of department see names, and only so they can help. Everything else is anonymous and shown only when 5 or more students have answered. The principal team sees anonymous results.', 1.8, 5.3, 9.9, 0.8, { size: 13, color: 'FFFFFF', bold: true })
+  bar(s, 'A teacher with reflections still to write gets one email on Friday afternoon.', 6.35, 14)
+}
+// ---------- 14c. student support ----------
+{
+  const s = base('LEARN', note(1.5, 'You asked how to focus on students below the school average. Four parts. One: a staff list that shows, in plain words, who may need help and why: results well below the school average or falling, absences, lessons left unfinished, a long time since sign-in, or asking for help in class feedback. Two: a support plan for each student with a goal, a review date and a record of what was done, and it shows whether their results moved afterwards. Three: for the student, a My progress page that compares them only with their own earlier results, never with classmates. Four: gentle nudges to the student, such as lessons past their date. The school average is only shown once five students have results. Teachers see marks only in the subjects they teach; heads of department see their department; the principal team sees all subjects. Students never see the staff list, a plan or the school average.'))
+  label(s, 'Smart Learning')
+  title(s, 'Help students before they fall behind', { size: 36 })
+  chip(s, 'Already built', 10.0, 0.55, 1.9, GOLD, INK)
+  const cards = [['A clear list for staff', 'Who may need help, and why, in plain words: marks below the school average or falling, absences, unfinished lessons.'], ['Support plans', 'A goal, a review date and what was done. Shows whether results moved: "Up 12 points in Science".'], ['My progress for students', 'Compared only with their own earlier results. Never classmates, never the school average.'], ['Gentle nudges', 'Away from school? Lessons past their date? A kind prompt with a button to the right place.']]
+  cards.forEach(([h, b], i) => {
+    const x = 1.55 + (i % 2) * 5.25, y = 1.95 + Math.floor(i / 2) * 1.75
+    box(s, x, y, 5.15, 1.6); s.addShape(SH.rect, { x, y, w: 0.14, h: 1.6, fill: { color: i === 2 ? COPPER : GOLD }, line: { type: 'none' } })
+    text(s, h.toUpperCase(), x + 0.35, y + 0.15, 4.6, 0.4, { font: HEAD, size: 16 })
+    text(s, b, x + 0.35, y + 0.62, 4.6, 0.95, { size: 12, color: GREY })
+  })
+  box(s, 1.55, 5.5, 10.4, 0.75, { fill: INK })
+  text(s, 'Teachers see marks only in the subjects they teach. Students never see the staff list, a plan or the school average.', 1.8, 5.5, 9.9, 0.75, { size: 13.5, bold: true, color: 'FFFFFF', valign: 'middle' })
+  text(s, 'For staff to act on, never to label students. The school average appears only once 5 or more students have results.', 1.55, 6.45, 10.4, 0.4, { size: 12.5, color: GREY })
+}
+// ---------- 14d. videos ----------
+{
+  const s = base('LEARN', note(1, 'Videos: teachers and heads of department add links to videos that already exist on YouTube, Vimeo or Khan Academy. Nothing is uploaded or hosted by the school. A teacher\'s video waits for the head of department to approve it; a head\'s video is live at once. Students get a short-video feed by subject and for their grade, and a YouTube or Vimeo video plays right inside Smart Learning. Low-data mode shows no pictures and loads a video only when tapped, and turns on by itself for a phone that is saving data or on a slow connection. Students can report a problem: two reports hide the video until a teacher looks.', true))
+  label(s, 'Smart Learning')
+  title(s, 'Videos your teachers have chosen', { size: 38 })
+  chip(s, 'Already built', 10.0, 0.55, 1.9, GOLD, INK)
+  const it = [['Add a link', 'YouTube, Vimeo or Khan Academy. Nothing is uploaded, so the school hosts nothing.'], ['Approved first', 'A teacher\'s video waits for the head of department. A head\'s video is live at once.'], ['A short-video feed', 'By subject and grade. YouTube and Vimeo play right inside Smart Learning.'], ['Low-data mode', 'No pictures, and a video loads only when tapped. On by itself for slow connections.'], ['Report a problem', 'Two student reports hide a video until a teacher checks it.']]
+  it.forEach(([h, b], i) => {
+    const y = 1.9 + i * 0.86
+    num(s, i + 1, 1.55, y, 0.75, 0.74, GOLD); box(s, 2.3, y, 9.65, 0.74)
+    text(s, h.toUpperCase(), 2.5, y, 3.0, 0.74, { font: HEAD, size: 16, valign: 'middle' })
+    text(s, b, 5.3, y, 6.5, 0.74, { size: 12.5, color: GREY, valign: 'middle' })
+  })
+  bar(s, 'Videos stay on their own site. Wifi was raised unprompted, so low-data mode is built in.', 6.35, 14)
 }
 // ---------- 15. library ----------
 {
