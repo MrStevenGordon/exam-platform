@@ -1,10 +1,10 @@
 // Smart Assess Ja, Manchester High School: strategy deck v2 (design E1: ruled paper, index tabs, copper/gold/teal on deep-brown ink).
-// 27 slides for a 30 minute slot (the three newest Smart Learning slides are class feedback, student support and videos; videos is optional), with speaker notes and timings. Editable PowerPoint (native text, shapes, tables and charts).
+// 31 slides for a 30 minute slot (the three newest Smart Learning slides are class feedback, student support and videos; videos is optional), with speaker notes and timings. Editable PowerPoint (native text, shapes, tables and charts).
 // Run: NODE_PATH=<folder with pptxgenjs> node build_deck_v2.js   (needs paper.png, shot-lesson.png, shot-builder.png in ./assets-v2)
 const path = require('path')
 const pptxgen = require('pptxgenjs')
 const A = (f) => path.join(__dirname, 'assets-v2', f)
-const OUT = path.join(__dirname, 'Smart-Assess-Ja-Manchester-Presentation-v2.pptx')
+const OUT = process.env.DECK_OUT || path.join(__dirname, 'Smart-Assess-Ja-Manchester-Presentation-v2.pptx')
 
 const COPPER = 'D4762A', GOLD = 'E3B51E', INK = '1E1208', TEAL = '1F8A84', TINT = 'FBE9D6', PAPER = 'FDFDFB', GREY = '555555', MUTED = '8A7A62'
 const HEAD = 'Impact', BODY = 'Arial', MONO = 'Courier New'
@@ -250,6 +250,26 @@ intro('LEARN', GOLD, INK, 2, 'Smart Learning', 'Deliver and recover learning.',
     text(s, b, x + 0.18, y + 0.6, 3.0, 0.8, { size: 12.5, color: GREY })
   })
   text(s, 'Also in Smart Learning: weekly class feedback, student support and videos (next slides). For learning only; it does not make or mark assessments.', 1.55, 6.6, 10.4, 0.35, { size: 12, color: GREY })
+}
+// ---------- 12b. DOK ----------
+{
+  const s = base('LEARN', note(1, 'DOK is Depth of Knowledge, a simple scale from 1 to 4 for how deeply a student has to think. It is about the thinking, not how hard the topic is. Level 1 is recall, level 2 is using a method, level 3 is reasoning and justifying, and level 4 is an extended investigation. Every lesson plan in Smart Learning carries a DOK level next to a general objective and specific objectives. When a teacher asks the AI to draft a plan it suggests a level, and the teacher always reviews and can change it. The point is balance: it helps a teacher see when every task has stayed at recall, without turning everything into a project. The examples use simple interest because it is in the Grade 9 mathematics topic list.'))
+  label(s, 'Smart Learning')
+  title(s, 'DOK: how deeply students think', { size: 40 })
+  chip(s, 'Already built', 10.0, 0.55, 1.9, GOLD, INK)
+  text(s, 'Every lesson plan has a general objective, specific objectives and a DOK level from 1 to 4.', 1.55, 1.72, 10.4, 0.4, { size: 15, bold: true, color: TEAL })
+  const levels = [['1', 'Recall', 'Remember a fact, a term or a step.', 'State the formula for simple interest.', TINT, INK], ['2', 'Skill', 'Use a method on a familiar problem.', 'Find the interest on J$20,000 saved for 2 years at 5%.', GOLD, INK], ['3', 'Reasoning', 'Explain why, compare, and justify an answer.', 'Compare two savings accounts and justify the better one for a student.', COPPER, INK], ['4', 'Extended thinking', 'Investigate a real problem over days or weeks.', 'Plan and present a savings goal for a class trip, using real bank rates.', INK, 'FFFFFF']]
+  levels.forEach(([n, h, d, ex, fill, fg], i) => {
+    const x = 1.55 + i * 2.62, top = 2.9 - i * 0.15, bottom = 5.95
+    box(s, x, top, 2.45, bottom - top)
+    s.addShape(SH.rect, { x, y: top, w: 2.45, h: 0.8, fill: { color: fill }, line: { color: INK, width: 2 } })
+    text(s, 'LEVEL ' + n, x + 0.15, top, 2.2, 0.8, { font: HEAD, size: 26, color: fg, valign: 'middle' })
+    text(s, h.toUpperCase(), x + 0.15, top + 0.92, 2.2, 0.4, { font: HEAD, size: 18 })
+    text(s, d, x + 0.15, top + 1.38, 2.2, 0.75, { size: 11.5, bold: true })
+    text(s, 'EXAMPLE', x + 0.15, bottom - 1.2, 2.2, 0.25, { font: MONO, size: 9.5, bold: true, cs: 2, color: MUTED })
+    text(s, ex, x + 0.15, bottom - 0.95, 2.2, 0.9, { size: 11, color: GREY, italic: true })
+  })
+  bar(s, 'The AI suggests a level. The teacher reviews it and can change it. Aim for a mix, not all level 4.', 6.35, 14)
 }
 // ---------- 13. catch-up ----------
 {
