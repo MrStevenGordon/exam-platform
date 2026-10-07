@@ -50,3 +50,6 @@ student-id-changes-*.csv
 
 # The Ministry curriculum PDFs used by scripts/load-curriculum.mjs (large; kept on your computer, not in git)
 curriculum-source/
+
+# QA test school: authenticator secrets for the test accounts
+.qa-totp.json
