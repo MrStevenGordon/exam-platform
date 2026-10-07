@@ -5,7 +5,7 @@ cd "$(dirname "$0")"
   echo "-- Safe to run again: it first removes what an earlier run added."
   echo "begin;"
   cat parts/00-remove.sql parts/10-assess.sql parts/11-assess-results.sql parts/12-assess-responses.sql
-  ls parts/2*.sql >/dev/null 2>&1 && cat parts/2*.sql
+  ls parts/[23]*.sql >/dev/null 2>&1 && cat parts/[23]*.sql
   echo "commit;"
   echo "select 'Demo data added' as result;"; } > manchester-demo-seed.sql
 { echo "begin;"; cat parts/00-remove.sql; echo "commit;"; echo "select 'Demo data removed' as result;"; } > manchester-demo-remove.sql

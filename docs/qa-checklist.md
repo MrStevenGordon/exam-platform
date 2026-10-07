@@ -416,6 +416,22 @@ Use a test student who has sat at least one exam with topic-tagged questions who
 - [ ] A teacher offline sees an "offline" notice, not saved pages
 - [ ] Data use: after the first visit, reopening Smart Learning on a poor connection feels instant (static files come from the device)
 
+## 7r. School day and timetable (needs migrations 088 and 089, and scripts/data/manchester-school-day.sql)
+
+- [ ] As the **school admin**: School admin > Timetable & Report Cards shows tabs Timetable, **School day**, Report Cards. School day shows 7 periods and 2 lunch windows (Grades 7 to 9 at 11 to 12, Grades 10 to 12 at 12 to 1)
+- [ ] Add an event: **General devotion**, weekly, Monday, 8:00 to 9:00, every grade. Add **Clubs and societies**, Wednesday 8:00 to 9:00. Add a one-day event (**Sports day**, a date, all day, Grades 7 to 11). Edit one, then remove one
+- [ ] A weekly event with no day chosen, an end before the start, and a last day before the first day are all refused with a clear message
+- [ ] As the **principal and a vice principal**: the menu has **School day** and the same changes work
+- [ ] As a **head of department**: the Timetable builder shows the periods but no way to add or delete one, and no School day page
+- [ ] In the Timetable builder, place a class with **Lasts: 2 periods**. It shows as "2 periods (9:00 to 11:00)". Placing the same teacher or class into the second hour is refused. A 2-period class in the last period is refused
+- [ ] Place a class on Monday 8 to 9: a warning says it would run into General devotion, and it can still be saved. The class then shows "Clashes with General devotion" in the list and in **Classes that clash** on School day
+- [ ] As a **student (Grade 9)**: My Timetable week shows devotion on Monday, clubs on Wednesday, lunch 11 to 12 every day, and a double period as one tall block. As a **Grade 10 student**: lunch is 12 to 1
+- [ ] On a **phone**: the timetable opens on **Today** with what is on now, minutes left and what is next; Tomorrow and Week work
+- [ ] As a **teacher**: both lunch windows are shown, labelled by grade; events show; their classes show with the class name and room
+- [ ] As the **principal**: Timetable by class and by teacher shows the same week view, with lunch and events
+- [ ] Cover: report a teacher absent for a day that includes their double period. The cover list shows the double once, and the substitute offered is free for both hours
+- [ ] Nothing about **cafe duty** appears anywhere (it is not built yet)
+
 ## 8. Owner console (you)
 
 - [ ] **School requests** and **Org requests**: approve and provision

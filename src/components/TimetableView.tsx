@@ -1,17 +1,14 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { jamaicaDate, isoWeekday, shiftDate } from '@/lib/attendance'
-
-const DAYS = [
-  { value: 1, label: 'Mon' },
-  { value: 2, label: 'Tue' },
-  { value: 3, label: 'Wed' },
-  { value: 4, label: 'Thu' },
-  { value: 5, label: 'Fri' },
-]
+import { loadBlocks, loadPeriods, loadSections } from '@/lib/schoolDay'
+import { dayBounds, gradesLabel, jamaicaMinutes, range12, toMinutes, weekItems, type BlockRow, type PeriodRow, type SectionLike } from '@/lib/schoolDayPure'
+import { gradeFromText } from '@/lib/topics'
+import WeekGrid from '@/components/timetable/WeekGrid'
+import TodayView from '@/components/timetable/TodayView'
 
 function currentAcademicYear() {
   const now = new Date()
@@ -19,12 +16,10 @@ function currentAcademicYear() {
   return now.getMonth() >= 7 ? `${y}-${y + 1}` : `${y - 1}-${y}`
 }
 
-type Period = { id: string; name: string; start_time: string; order_index: number }
-type Section = {
-  id: string; subject: string; day_of_week: number; period_id: string; room: string | null
-  class_group_id: string | null
+type Section = SectionLike & {
+  subject: string; room: string | null
   teacher: { full_name: string } | null
-  class_group: { name: string } | null
+  class_group: { name: string; year_grade?: string | null } | null
 }
 
 // A class a substitute is taking on a particular day this week (from student_cover, migration 075).
@@ -42,24 +37,42 @@ const shortDate = (d: string) => new Intl.DateTimeFormat('en-JM', { timeZone: 'U
 
 export default function TimetableView({ viewerRole }: { viewerRole: 'teacher' | 'student' }) {
   const [loading, setLoading] = useState(true)
-  const [periods, setPeriods] = useState<Period[]>([])
+  const [periods, setPeriods] = useState<PeriodRow[]>([])
   const [sections, setSections] = useState<Section[]>([])
+  const [blocks, setBlocks] = useState<BlockRow[]>([])
+  const [grade, setGrade] = useState<number | null>(null)
   const [covers, setCovers] = useState<Record<string, Cover>>({})
-  const weekDates = viewerRole === 'student' ? schoolWeekDates() : []
+  const [tab, setTab] = useState<'today' | 'tomorrow' | 'week' | null>(null)
+  const [narrow, setNarrow] = useState(false)
+  const [now, setNow] = useState<Date>(() => new Date())
+  const weekDates = schoolWeekDates()
+
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 760px)')
+    const sync = () => setNarrow(mq.matches)
+    sync(); mq.addEventListener('change', sync)
+    const tick = setInterval(() => setNow(new Date()), 30000)
+    return () => { mq.removeEventListener('change', sync); clearInterval(tick) }
+  }, [])
 
   useEffect(() => {
     async function load() {
       const academicYear = currentAcademicYear()
-      const [{ data: periodData }, { data: sectionData }] = await Promise.all([
-        supabase.from('timetable_periods').select('id, name, start_time, order_index').eq('academic_year', academicYear).order('order_index'),
-        supabase
-          .from('timetable_sections')
-          .select('id, subject, day_of_week, period_id, room, class_group_id, teacher:profiles!teacher_id(full_name), class_group:class_groups(name)')
-          .eq('academic_year', academicYear),
+      const [periodData, sectionData, blockData] = await Promise.all([
+        loadPeriods(academicYear),
+        loadSections<Section>('id, subject, day_of_week, period_id, room, class_group_id, teacher:profiles!teacher_id(full_name), class_group:class_groups(name, year_grade)', academicYear),
+        loadBlocks(academicYear),
       ])
-      setPeriods(periodData || [])
-      setSections((sectionData as any) || [])
+      setPeriods(periodData)
+      setSections(sectionData)
+      setBlocks(blockData.blocks)
       if (viewerRole === 'student') {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (user) {
+          const { data: me } = await supabase.from('profiles').select('grade_level').eq('id', user.id).single()
+          const g = gradeFromText(me?.grade_level) ?? gradeFromText(sectionData.find((s) => s.class_group?.year_grade)?.class_group?.year_grade)
+          setGrade(g)
+        }
         // Before migration 075 this simply errors and no cover is shown.
         const week = schoolWeekDates()
         const { data: coverData, error: coverError } = await supabase.rpc('student_cover', { p_from: week[0], p_to: week[4] })
@@ -74,83 +87,92 @@ export default function TimetableView({ viewerRole }: { viewerRole: 'teacher' | 
     load()
   }, [viewerRole])
 
+  const days = useMemo(() => weekItems(sections, periods, blocks, { grade: viewerRole === 'student' ? grade : null, dates: weekDates }), [sections, periods, blocks, grade, viewerRole]) // eslint-disable-line react-hooks/exhaustive-deps
+  const bounds = dayBounds(periods)
+  const today = jamaicaDate(now)
+  const todayDow = isoWeekday(today)
+  const isSchoolDay = todayDow >= 1 && todayDow <= 5
+  const nowMin = jamaicaMinutes(now)
+  const nextSchoolDow = (from: number) => { let d = from + 1; if (d > 5 || d < 1) d = 1; return d }
+  const activeTab = tab ?? (narrow ? 'today' : 'week')
+  const myLunch = viewerRole === 'student' ? blocks.find((b) => b.kind === 'lunch' && (!b.grades || b.grades.includes(grade ?? -1))) : undefined
+  const lunchStart = toMinutes(myLunch?.start_time), lunchEnd = toMinutes(myLunch?.end_time)
+  const lunchText = lunchStart !== null && lunchEnd !== null ? ` · lunch ${range12(lunchStart, lunchEnd)}` : ''
+  const lunchLabel = (b: BlockRow) => viewerRole === 'student' ? 'Lunch' : `Lunch · ${gradesLabel(b.grades)}`
+
   if (loading) return <div className="page-container">Loading…</div>
 
-  function sectionFor(periodId: string, day: number) {
-    return sections.find((s) => s.period_id === periodId && s.day_of_week === day)
+  const line = (s: Section) => {
+    const parts = [viewerRole === 'student' ? (s.teacher?.full_name || '') : (s.class_group?.name || 'Individual'), s.room ? `Room ${s.room}` : ''].filter(Boolean)
+    return parts.join(' · ')
   }
+  const tabBtn = (id: 'today' | 'tomorrow' | 'week', label: string) => (
+    <button key={id} type="button" aria-pressed={activeTab === id} onClick={() => setTab(id)} className={activeTab === id ? 'btn btn-primary' : 'btn btn-ghost'} style={{ padding: '6px 16px', fontSize: 13 }}>{label}</button>
+  )
+  const dayFor = (dow: number) => days[dow - 1]
+  const dayShown = activeTab === 'tomorrow' ? nextSchoolDow(todayDow) : (isSchoolDay ? todayDow : 1)
+  const dayName = ['', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'][dayShown]
 
   return (
-    <div className="page-container">
+    <div className="page-container" style={{ maxWidth: activeTab === 'week' ? 1180 : 640 }}>
       <p className="portal-page-title" style={{ margin: 0 }}>My Timetable</p>
-      <p className="portal-page-sub" style={{ margin: '4px 0 20px' }}>{currentAcademicYear()}</p>
+      <p className="portal-page-sub" style={{ margin: '4px 0 14px' }}>
+        {currentAcademicYear()}
+        {viewerRole === 'student' && grade ? ` · Grade ${grade}` : ''}
+        {lunchText}
+      </p>
       {Object.keys(covers).length > 0 && (
-        <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '-8px 0 16px' }}>
+        <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '-6px 0 14px' }}>
           A class marked <strong>Covered</strong> has a substitute teacher on that day this week.
         </p>
       )}
 
-      {periods.length === 0 ? (
+      {periods.length === 0 || !bounds ? (
         <p style={{ fontSize: 13, color: 'var(--text-secondary)' }}>No timetable has been set up yet.</p>
       ) : (
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 640 }}>
-            <thead>
-              <tr>
-                <th style={{ textAlign: 'left', padding: '8px 10px', fontSize: 12, color: 'var(--text-secondary)', textTransform: 'uppercase', borderBottom: '1px solid var(--border)' }}>Period</th>
-                {DAYS.map((d) => (
-                  <th key={d.value} style={{ textAlign: 'left', padding: '8px 10px', fontSize: 12, color: 'var(--text-secondary)', textTransform: 'uppercase', borderBottom: '1px solid var(--border)' }}>
-                    {d.label}
-                    {weekDates[d.value - 1] && <div style={{ fontWeight: 400, fontSize: 10, textTransform: 'none' }}>{shortDate(weekDates[d.value - 1])}</div>}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {periods.map((p) => (
-                <tr key={p.id}>
-                  <td style={{ padding: '10px', fontSize: 13, fontWeight: 700, borderBottom: '1px solid var(--border)', whiteSpace: 'nowrap' }}>
-                    {p.name}<br /><span style={{ fontWeight: 400, color: 'var(--text-secondary)', fontSize: 11 }}>{p.start_time}</span>
-                  </td>
-                  {DAYS.map((d) => {
-                    const s = sectionFor(p.id, d.value)
-                    const cover = s ? covers[`${s.id}|${weekDates[d.value - 1]}`] : undefined
-                    return (
-                      <td key={d.value} style={{ padding: '10px', borderBottom: '1px solid var(--border)', verticalAlign: 'top' }}>
-                        {s ? (
-                          <div style={{ background: cover ? 'var(--warning-bg)' : 'var(--accent-light)', border: `1px solid ${cover ? 'var(--warning)' : 'var(--border)'}`, borderRadius: 8, padding: '8px 10px' }}>
-                            <div style={{ fontWeight: 700, fontSize: 13 }}>{s.subject}</div>
-                            {cover ? (
-                              <>
-                                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase', color: 'var(--warning)', marginTop: 2 }}>Covered</div>
-                                <div style={{ fontSize: 12, marginTop: 2 }}>{cover.substitute_name}</div>
-                                <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 2 }}>For {cover.absent_name}</div>
-                                {cover.lesson_label && (
-                                  <div style={{ fontSize: 11, marginTop: 2 }}>
-                                    {cover.lesson_id
-                                      ? <Link href={`/learning/lesson/${cover.lesson_id}`}>Open lesson: {cover.lesson_label}</Link>
-                                      : <>Lesson: {cover.lesson_label}</>}
-                                  </div>
-                                )}
-                              </>
-                            ) : (
-                              <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 2 }}>
-                                {viewerRole === 'student' ? (s.teacher?.full_name || '') : (s.class_group?.name || 'Individual')}
-                              </div>
-                            )}
-                            {s.room && <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>{s.room}</div>}
-                          </div>
-                        ) : (
-                          <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>—</span>
-                        )}
-                      </td>
-                    )
-                  })}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <>
+          <div role="group" aria-label="View" style={{ display: 'flex', gap: 6, marginBottom: 16 }}>
+            {tabBtn('today', isSchoolDay ? 'Today' : 'Next school day')}
+            {tabBtn('tomorrow', 'Tomorrow')}
+            {tabBtn('week', 'Week')}
+          </div>
+
+          {activeTab === 'week' ? (
+            <div style={{ overflowX: 'auto', paddingBottom: 8 }}>
+              <WeekGrid<Section>
+                days={days} bounds={bounds} todayDow={isSchoolDay ? todayDow : null} nowMin={isSchoolDay ? nowMin : null} lunchLabel={lunchLabel}
+                dayLabels={weekDates.map(shortDate)}
+                renderClass={({ section: s, start, end }) => {
+                  const cover = viewerRole === 'student' ? covers[`${s.id}|${weekDates[s.day_of_week - 1]}`] : undefined
+                  return (
+                    <div style={{ fontSize: 11 }}>
+                      <div style={{ fontWeight: 700, fontSize: 12.5, lineHeight: 1.2 }}>{s.subject}</div>
+                      {cover ? (
+                        <>
+                          <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase', color: 'var(--warning)', marginTop: 2 }}>Covered</div>
+                          <div>{cover.substitute_name}</div>
+                          <div style={{ color: 'var(--text-secondary)' }}>For {cover.absent_name}</div>
+                          {cover.lesson_label && (cover.lesson_id ? <Link href={`/learning/lesson/${cover.lesson_id}`}>Lesson: {cover.lesson_label}</Link> : <>Lesson: {cover.lesson_label}</>)}
+                        </>
+                      ) : (
+                        <div style={{ color: 'var(--text-secondary)', marginTop: 1 }}>{line(s)}</div>
+                      )}
+                      {end - start > 60 && <div style={{ color: 'var(--text-muted)', marginTop: 1 }}>{range12(start, end)}</div>}
+                    </div>
+                  )
+                }}
+              />
+            </div>
+          ) : (
+            <>
+              <h2 style={{ fontSize: 16, margin: '0 0 10px' }}>{activeTab === 'tomorrow' ? 'Tomorrow' : (isSchoolDay ? 'Today' : 'Next school day')}, {dayName}</h2>
+              <TodayView<Section>
+                day={dayFor(dayShown)} nowMin={activeTab === 'today' && isSchoolDay ? nowMin : null} renderLine={line} lunchLabel={lunchLabel}
+                emptyText="Nothing is on the timetable for this day."
+              />
+            </>
+          )}
+        </>
       )}
     </div>
   )

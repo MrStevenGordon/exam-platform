@@ -45,7 +45,7 @@ const SCHOOL_ADMIN_NAV = [
 
 // Pages that share one menu entry and are switched between with tabs.
 const TAB_GROUPS: { tabs: SectionTab[] }[] = [
-  { tabs: [{ label: 'Timetable', href: '/school-admin/timetable' }, { label: 'Report Cards', href: '/school-admin/report-cards' }] },
+  { tabs: [{ label: 'Timetable', href: '/school-admin/timetable' }, { label: 'School day', href: '/school-admin/school-day' }, { label: 'Report Cards', href: '/school-admin/report-cards' }] },
   { tabs: [{ label: 'Analytics', href: '/school-admin/analytics' }, { label: 'Integrity', href: '/school-admin/integrity' }] },
 ]
 // Old addresses that now live under another menu entry.

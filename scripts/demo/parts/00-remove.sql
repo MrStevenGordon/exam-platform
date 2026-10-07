@@ -35,3 +35,7 @@ where da.marked_by = (select id from profiles where full_name = 'Testing Teacher
   and da.att_date >= current_date - 30
   and da.student_id in (select e.student_id from enrollments e where e.class_group_id in
         (select tcg.class_group_id from teacher_class_groups tcg where tcg.teacher_id = (select id from profiles where full_name = 'Testing Teacher' and role = 'teacher' limit 1)));
+
+-- school part: the demo timetable
+delete from section_enrollments where pg_temp.is_demo(section_id);
+delete from timetable_sections where pg_temp.is_demo(id);

@@ -1,28 +1,24 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { supabase } from '@/lib/supabase'
 import EmptyState from '@/components/EmptyState'
-import { jamaicaDate, isoWeekday, schoolYear, attendanceError } from '@/lib/attendance'
+import { jamaicaDate, isoWeekday, shiftDate, schoolYear, attendanceError } from '@/lib/attendance'
+import { loadBlocks, loadPeriods, loadSections } from '@/lib/schoolDay'
+import { dayBounds, gradesLabel, jamaicaMinutes, range12, weekItems, type BlockRow, type PeriodRow, type SectionLike } from '@/lib/schoolDayPure'
+import { gradeFromText } from '@/lib/topics'
+import WeekGrid from '@/components/timetable/WeekGrid'
 
-type Period = { id: string; name: string; start_time: string; end_time: string; order_index: number }
-type Section = {
-  id: string; subject: string; day_of_week: number; period_id: string; room: string | null
-  class_group_id: string | null; teacher_id: string
-  teacher: { full_name: string } | null; class_group: { name: string } | null
+type Section = SectionLike & {
+  subject: string; room: string | null; teacher_id: string
+  teacher: { full_name: string } | null; class_group: { name: string; year_grade?: string | null } | null
 }
 
-const DAYS = [{ value: 1, label: 'Mon' }, { value: 2, label: 'Tue' }, { value: 3, label: 'Wed' }, { value: 4, label: 'Thu' }, { value: 5, label: 'Fri' }]
-
-const clock = (t: string) => {
-  const [h, m] = t.split(':').map(Number)
-  return `${h % 12 || 12}:${String(m).padStart(2, '0')} ${h >= 12 ? 'pm' : 'am'}`
-}
 
 // The whole school's timetable, read-only, by class or by teacher.
 export default function PrincipalTimetablePage() {
   const today = jamaicaDate()
-  const [periods, setPeriods] = useState<Period[]>([])
+  const [periods, setPeriods] = useState<PeriodRow[]>([])
+  const [blocks, setBlocks] = useState<BlockRow[]>([])
   const [sections, setSections] = useState<Section[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -34,17 +30,15 @@ export default function PrincipalTimetablePage() {
     async function load() {
       try {
         const year = schoolYear(today)
-        const [periodRes, sectionRes] = await Promise.all([
-          supabase.from('timetable_periods').select('id, name, start_time, end_time, order_index').eq('academic_year', year).order('order_index'),
-          supabase.from('timetable_sections')
-            .select('id, subject, day_of_week, period_id, room, class_group_id, teacher_id, teacher:profiles!teacher_id(full_name), class_group:class_groups(name)')
-            .eq('academic_year', year),
+        const [periodData, sectionData, blockData] = await Promise.all([
+          loadPeriods(year),
+          loadSections<Section>('id, subject, day_of_week, period_id, room, class_group_id, teacher_id, teacher:profiles!teacher_id(full_name), class_group:class_groups(name, year_grade)', year),
+          loadBlocks(year),
         ])
-        if (periodRes.error) throw periodRes.error
-        if (sectionRes.error) throw sectionRes.error
         if (cancelled) return
-        setPeriods((periodRes.data as Period[]) || [])
-        setSections((sectionRes.data as unknown as Section[]) || [])
+        setPeriods(periodData)
+        setSections(sectionData)
+        setBlocks(blockData.blocks)
       } catch (err) {
         if (!cancelled) setError(attendanceError(err))
       } finally {
@@ -67,8 +61,14 @@ export default function PrincipalTimetablePage() {
 
   const current = options.some(([id]) => id === selected) ? selected : (options[0]?.[0] ?? '')
   const shown = sections.filter((s) => (mode === 'class' ? s.class_group_id === current : s.teacher_id === current))
-  const cell = (periodId: string, day: number) => shown.find((s) => s.period_id === periodId && s.day_of_week === day)
   const todayDow = isoWeekday(today)
+  const wd = todayDow
+  const monday = wd >= 6 ? shiftDate(today, 8 - wd) : shiftDate(today, 1 - wd)
+  const weekDates = [0, 1, 2, 3, 4].map((i) => shiftDate(monday, i))
+  const shortDate = (d: string) => new Intl.DateTimeFormat('en-JM', { timeZone: 'UTC', day: 'numeric', month: 'short' }).format(new Date(`${d}T12:00:00Z`))
+  const classGrade = mode === 'class' ? gradeFromText(shown.find((x) => x.class_group?.year_grade)?.class_group?.year_grade) : null
+  const days = weekItems(shown, periods, blocks, { grade: classGrade, dates: weekDates })
+  const bounds = dayBounds(periods)
 
   if (loading) return <div>Loading…</div>
 
@@ -97,45 +97,21 @@ export default function PrincipalTimetablePage() {
             </select>
           </div>
 
-          <div className="card" style={{ padding: 0, overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 640 }}>
-              <thead>
-                <tr>
-                  <th style={{ textAlign: 'left', padding: '10px', fontSize: 12, color: 'var(--text-secondary)', textTransform: 'uppercase', borderBottom: '1px solid var(--border)' }}>Period</th>
-                  {DAYS.map((d) => (
-                    <th key={d.value} style={{ textAlign: 'left', padding: '10px', fontSize: 12, textTransform: 'uppercase', borderBottom: '1px solid var(--border)', color: d.value === todayDow ? 'var(--accent-dark)' : 'var(--text-secondary)' }}>
-                      {d.label}{d.value === todayDow ? ' · today' : ''}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {periods.map((p) => (
-                  <tr key={p.id}>
-                    <td style={{ padding: '10px', fontSize: 13, fontWeight: 700, borderBottom: '1px solid var(--border)', whiteSpace: 'nowrap' }}>
-                      {p.name}<br /><span style={{ fontWeight: 400, color: 'var(--text-secondary)', fontSize: 11 }}>{clock(p.start_time)}–{clock(p.end_time)}</span>
-                    </td>
-                    {DAYS.map((d) => {
-                      const s = cell(p.id, d.value)
-                      return (
-                        <td key={d.value} style={{ padding: '8px', borderBottom: '1px solid var(--border)', verticalAlign: 'top', background: d.value === todayDow ? 'var(--accent-light)' : undefined }}>
-                          {s ? (
-                            <div>
-                              <div style={{ fontWeight: 700, fontSize: 13 }}>{s.subject}</div>
-                              <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 2 }}>
-                                {mode === 'class' ? (s.teacher?.full_name || '') : (s.class_group?.name || 'Subject class')}
-                              </div>
-                              {s.room && <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>Room {s.room}</div>}
-                            </div>
-                          ) : <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>—</span>}
-                        </td>
-                      )
-                    })}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          {bounds && (
+            <div style={{ overflowX: 'auto', paddingBottom: 8 }}>
+              <WeekGrid<Section>
+                days={days} bounds={bounds} todayDow={todayDow >= 1 && todayDow <= 5 ? todayDow : null} nowMin={todayDow >= 1 && todayDow <= 5 ? jamaicaMinutes(new Date()) : null}
+                lunchLabel={(b) => `Lunch · ${gradesLabel(b.grades)}`} dayLabels={weekDates.map(shortDate)}
+                renderClass={({ section: x, start, end }) => (
+                  <div style={{ fontSize: 11 }}>
+                    <div style={{ fontWeight: 700, fontSize: 12.5, lineHeight: 1.2 }}>{x.subject}</div>
+                    <div style={{ color: 'var(--text-secondary)', marginTop: 1 }}>{mode === 'class' ? (x.teacher?.full_name || '') : (x.class_group?.name || 'Subject class')}{x.room ? ` · Room ${x.room}` : ''}</div>
+                    {end - start > 60 && <div style={{ color: 'var(--text-muted)', marginTop: 1 }}>{range12(start, end)}</div>}
+                  </div>
+                )}
+              />
+            </div>
+          )}
         </>
       )}
     </div>

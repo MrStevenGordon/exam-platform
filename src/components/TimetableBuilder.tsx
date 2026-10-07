@@ -1,7 +1,11 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
+import { loadBlocks, loadSections } from '@/lib/schoolDay'
+import { findClashes, range12, sectionTimes, toMinutes, type BlockRow, type SectionLike } from '@/lib/schoolDayPure'
+import { gradeFromText } from '@/lib/topics'
 
 const DAYS = [
   { value: 1, label: 'Monday' },
@@ -23,7 +27,7 @@ type Teacher = { id: string; full_name: string }
 type ClassGroup = { id: string; name: string; year_grade: string }
 type Section = {
   id: string; department_id: string; subject: string; teacher_id: string
-  class_group_id: string | null; day_of_week: number; period_id: string; room: string | null; academic_year: string
+  class_group_id: string | null; day_of_week: number; period_id: string; room: string | null; academic_year: string; span?: number | null
 }
 type Student = { id: string; full_name: string }
 
@@ -43,10 +47,9 @@ export default function TimetableBuilder() {
   const [allStudents, setAllStudents] = useState<Student[]>([])
   const [rosters, setRosters] = useState<Record<string, string[]>>({})
 
-  const [showPeriodForm, setShowPeriodForm] = useState(false)
-  const [periodName, setPeriodName] = useState('')
-  const [periodStart, setPeriodStart] = useState('')
-  const [periodEnd, setPeriodEnd] = useState('')
+  const [blocks, setBlocks] = useState<BlockRow[]>([])
+  const [schoolDayReady, setSchoolDayReady] = useState(false)
+  const [myRole, setMyRole] = useState('')
 
   const [showSectionForm, setShowSectionForm] = useState(false)
   const [secDept, setSecDept] = useState('')
@@ -55,6 +58,7 @@ export default function TimetableBuilder() {
   const [secClassGroup, setSecClassGroup] = useState('')
   const [secDay, setSecDay] = useState(1)
   const [secPeriod, setSecPeriod] = useState('')
+  const [secSpan, setSecSpan] = useState(1)
   const [secRoom, setSecRoom] = useState('')
 
   const [expandedSection, setExpandedSection] = useState<string | null>(null)
@@ -75,17 +79,21 @@ export default function TimetableBuilder() {
 
   async function loadDataInner() {
     const { data: { user } } = await supabase.auth.getUser()
-    const [{ data: myProfile }, { data: periodData }, { data: deptData }, { data: subjectData }, { data: teacherSubData }, { data: cgData }, { data: sectionData }, { data: studentData }] = await Promise.all([
+    const [{ data: myProfile }, { data: periodData }, { data: deptData }, { data: subjectData }, { data: teacherSubData }, { data: cgData }, { data: studentData }] = await Promise.all([
       user ? supabase.from('profiles').select('role, department_id').eq('id', user.id).single() : Promise.resolve({ data: null }),
       supabase.from('timetable_periods').select('id, name, start_time, end_time, order_index, academic_year').eq('academic_year', academicYear).order('order_index'),
       supabase.from('departments').select('id, name').order('name'),
       supabase.from('department_subjects').select('department_id, subject'),
       supabase.from('teacher_subjects').select('teacher_id, department_id, profiles(id, full_name)'),
       supabase.from('class_groups').select('id, name, year_grade').order('year_grade').order('name'),
-      supabase.from('timetable_sections').select('id, department_id, subject, teacher_id, class_group_id, day_of_week, period_id, room, academic_year').eq('academic_year', academicYear),
       supabase.from('profiles').select('id, full_name').eq('role', 'student').order('full_name'),
     ])
 
+    const sectionData = await loadSections<Section>('id, department_id, subject, teacher_id, class_group_id, day_of_week, period_id, room, academic_year', academicYear)
+    const blockData = await loadBlocks(academicYear)
+    setBlocks(blockData.blocks)
+    setSchoolDayReady(blockData.available)
+    setMyRole(myProfile?.role || '')
     setPeriods(periodData || [])
     // Supervisors can only create sections for their own department (RLS
     // enforces this server-side; scoping the dropdown here just stops them
@@ -111,9 +119,9 @@ export default function TimetableBuilder() {
     setTeachersByDept(teachMap)
 
     setClassGroups(cgData || [])
-    setSections(sectionData || [])
+    setSections(sectionData)
 
-    const sectionIds = (sectionData || []).map((s) => s.id)
+    const sectionIds = sectionData.map((s) => s.id)
     if (sectionIds.length > 0) {
       const { data: rosterData } = await supabase.from('section_enrollments').select('section_id, student_id').in('section_id', sectionIds)
       const counts: Record<string, number> = {}
@@ -133,31 +141,6 @@ export default function TimetableBuilder() {
     setLoading(false)
   }
 
-  async function handleCreatePeriod() {
-    if (!periodName.trim() || !periodStart || !periodEnd) return
-    setSaving(true)
-    setErrorMsg('')
-    const { error } = await supabase.from('timetable_periods').insert({
-      name: periodName.trim(),
-      start_time: periodStart,
-      end_time: periodEnd,
-      order_index: periods.length,
-      academic_year: academicYear,
-    })
-    if (error) { setErrorMsg(error.message); setSaving(false); return }
-    setPeriodName(''); setPeriodStart(''); setPeriodEnd('')
-    setShowPeriodForm(false); setSaving(false)
-    setSuccessMsg('Period added.')
-    setTimeout(() => setSuccessMsg(''), 3000)
-    loadData()
-  }
-
-  async function handleDeletePeriod(id: string) {
-    if (!confirm('Delete this period? Any sections using it will also be removed.')) return
-    await supabase.from('timetable_periods').delete().eq('id', id)
-    loadData()
-  }
-
   async function handleCreateSection() {
     if (!secDept || !secSubject || !secTeacher || !secPeriod) return
     setSaving(true)
@@ -172,13 +155,16 @@ export default function TimetableBuilder() {
       period_id: secPeriod,
       room: secRoom.trim() || null,
       academic_year: academicYear,
+      ...(schoolDayReady && secSpan > 1 ? { span: secSpan } : {}),
     }).select('id').single()
 
     if (error) {
       setErrorMsg(
         error.code === '23505'
           ? 'That teacher or class is already scheduled for this day and period.'
-          : error.message
+          : error.code === '23514' && /enough periods/i.test(error.message)
+            ? 'There are not enough periods left in the day for a lesson that long.'
+            : error.message
       )
       setSaving(false)
       return
@@ -196,7 +182,7 @@ export default function TimetableBuilder() {
       }
     }
 
-    setSecSubject(''); setSecTeacher(''); setSecClassGroup(''); setSecPeriod(''); setSecRoom('')
+    setSecSubject(''); setSecTeacher(''); setSecClassGroup(''); setSecPeriod(''); setSecRoom(''); setSecSpan(1)
     setShowSectionForm(false); setSaving(false)
     setSuccessMsg('Section created.')
     setTimeout(() => setSuccessMsg(''), 3000)
@@ -236,6 +222,15 @@ export default function TimetableBuilder() {
   const departmentName = (id: string) => departments.find((d) => d.id === id)?.name || 'Unknown department'
   const studentName = (id: string) => allStudents.find((s) => s.id === id)?.full_name || 'Unknown student'
 
+  const gradeOfSection = (sec: SectionLike) => gradeFromText(classGroups.find((c) => c.id === sec.class_group_id)?.year_grade)
+  const clashBySection: Record<string, string[]> = {}
+  for (const c of findClashes(sections, periods, blocks.filter((b) => b.days), gradeOfSection)) (clashBySection[c.sectionId] ||= []).push(c.title)
+  const formClashes = secPeriod && secDay ? findClashes([{ id: 'new', day_of_week: secDay, period_id: secPeriod, span: secSpan, class_group_id: secClassGroup || null }], periods, blocks.filter((b) => b.days), gradeOfSection) : []
+  const lengthText = (s: Section) => {
+    const t = sectionTimes(s, periods)
+    return (s.span ?? 1) > 1 && t ? ` · ${s.span} periods (${range12(t.start, t.end)})` : ''
+  }
+
   return (
     <div className="page-container">
       <p className="portal-page-title" style={{ margin: 0 }}>Timetable</p>
@@ -245,38 +240,26 @@ export default function TimetableBuilder() {
       {errorMsg && <div className="banner banner-danger" style={{ marginBottom: 16 }}>{errorMsg}</div>}
 
       <div className="card" style={{ marginBottom: 20 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: periods.length > 0 ? 12 : 0 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
           <h2 style={{ margin: 0, fontSize: 16 }}>Periods</h2>
-          <button className="btn btn-secondary" onClick={() => setShowPeriodForm(!showPeriodForm)}>+ New period</button>
+          {myRole === 'admin'
+            ? <Link href="/school-admin/school-day" className="btn btn-secondary">Change bell times, lunch and events</Link>
+            : <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>The school admin or principal sets the bell times.</span>}
         </div>
-
-        {periods.length > 0 && (
+        {periods.length > 0 ? (
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 12 }}>
             {periods.map((p) => (
-              <span key={p.id} className="badge badge-default" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                {p.name} ({p.start_time}–{p.end_time})
-                <button onClick={() => handleDeletePeriod(p.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--danger)', fontSize: 12 }}>✕</button>
-              </span>
+              <span key={p.id} className="badge badge-default">{p.name}: {range12(toMinutes(p.start_time) ?? 0, toMinutes(p.end_time) ?? 0)}</span>
             ))}
           </div>
+        ) : (
+          <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '10px 0 0' }}>No periods have been set up yet. The school admin or principal adds them under School day.</p>
         )}
-
-        {showPeriodForm && (
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr auto', gap: 10, marginTop: 14, alignItems: 'end' }}>
-            <div>
-              <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Name</label>
-              <input value={periodName} onChange={(e) => setPeriodName(e.target.value)} placeholder="Period 1" style={{ width: '100%', marginTop: 4 }} />
-            </div>
-            <div>
-              <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Start</label>
-              <input type="time" value={periodStart} onChange={(e) => setPeriodStart(e.target.value)} style={{ width: '100%', marginTop: 4 }} />
-            </div>
-            <div>
-              <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>End</label>
-              <input type="time" value={periodEnd} onChange={(e) => setPeriodEnd(e.target.value)} style={{ width: '100%', marginTop: 4 }} />
-            </div>
-            <button onClick={handleCreatePeriod} disabled={saving} className="btn btn-primary">Add</button>
-          </div>
+        {blocks.length > 0 && (
+          <p style={{ fontSize: 12.5, color: 'var(--text-secondary)', margin: '12px 0 0' }}>
+            {blocks.filter((b) => b.kind === 'lunch').length > 0 && <>Lunch is set by grade. </>}
+            {blocks.filter((b) => b.kind === 'event').length > 0 && <>School events ({blocks.filter((b) => b.kind === 'event').map((b) => b.title).join(', ')}) take time out of lessons, so avoid placing classes in them.</>}
+          </p>
         )}
       </div>
 
@@ -284,7 +267,7 @@ export default function TimetableBuilder() {
         <h2 style={{ margin: 0, fontSize: 16 }}>Sections</h2>
         <button className="btn btn-primary" onClick={() => setShowSectionForm(!showSectionForm)} disabled={periods.length === 0}>+ New section</button>
       </div>
-      {periods.length === 0 && <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 12 }}>Add a period first.</p>}
+      {periods.length === 0 && <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 12 }}>Periods must be set up first (School day).</p>}
 
       {showSectionForm && (
         <div className="card" style={{ marginBottom: 20 }}>
@@ -330,11 +313,24 @@ export default function TimetableBuilder() {
                 {periods.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
               </select>
             </div>
+            {schoolDayReady && (
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Lasts</label>
+                <select value={secSpan} onChange={(e) => setSecSpan(Number(e.target.value))} style={{ width: '100%', marginTop: 4 }} aria-label="How many periods the class lasts">
+                  <option value={1}>1 period</option><option value={2}>2 periods (double)</option><option value={3}>3 periods</option>
+                </select>
+              </div>
+            )}
             <div>
               <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Room (optional)</label>
               <input value={secRoom} onChange={(e) => setSecRoom(e.target.value)} style={{ width: '100%', marginTop: 4 }} />
             </div>
           </div>
+          {formClashes.length > 0 && (
+            <p role="status" className="banner banner-warning" style={{ marginBottom: 12, fontSize: 13 }}>
+              This class would run into {formClashes.map((c) => `${c.title} (${c.when})`).join(' and ')}. You can still save it, but that time belongs to the school, so the timetable will show the event instead.
+            </p>
+          )}
           <div style={{ display: 'flex', gap: 8 }}>
             <button onClick={handleCreateSection} disabled={saving || !secDept || !secSubject || !secTeacher || !secPeriod} className="btn btn-primary">
               {saving ? 'Creating…' : 'Create section'}
@@ -361,9 +357,9 @@ export default function TimetableBuilder() {
                       style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 16px', cursor: 'pointer' }}
                     >
                       <div>
-                        <div style={{ fontWeight: 700, fontSize: 15 }}>{s.subject} · {departmentName(s.department_id)}</div>
+                        <div style={{ fontWeight: 700, fontSize: 15 }}>{s.subject} · {departmentName(s.department_id)}{clashBySection[s.id] && <span className="badge badge-warning" style={{ marginLeft: 8, fontSize: 11 }}>Clashes with {[...new Set(clashBySection[s.id])].join(', ')}</span>}</div>
                         <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 2 }}>
-                          {teacherName(s.teacher_id)} · {periodName_(s.period_id)}{s.room ? ` · ${s.room}` : ''} · {cgName ? cgName : `${enrollmentCounts[s.id] || 0} students enrolled`}
+                          {teacherName(s.teacher_id)} · {periodName_(s.period_id)}{lengthText(s)}{s.room ? ` · ${s.room}` : ''} · {cgName ? cgName : `${enrollmentCounts[s.id] || 0} students enrolled`}
                         </div>
                       </div>
                       <span style={{ fontSize: 20, color: 'var(--text-secondary)' }}>{expandedSection === s.id ? '▲' : '▼'}</span>

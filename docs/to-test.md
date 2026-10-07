@@ -2,6 +2,12 @@
 
 Tick a box when you have tested it on the live site. Each item points to its section in `docs/qa-checklist.md`. Add new items at the top when something is built. Last updated 2026-10-06.
 
+## School day and timetable (needs a push, then 088, 089 and the Manchester school day script)
+- [ ] Apply `088_school_day.sql` then `089_substitution_spans.sql`; run `scripts/data/manchester-school-day.sql`
+- [ ] Walk **QA 7r** (school day page, events, double periods, student/teacher/principal timetable views, phone Today view, cover with a double period)
+- [ ] Pick which design details you want changed (mockups are in `docs/mockups/timetable/`)
+- [ ] Tell me whether other subjects in the demo should be taught by other staff accounts (today the demo timetable is Mathematics only, by Testing Teacher)
+
 ## AI lesson plan fix (needs a push first)
 - [ ] After pushing: generate an AI lesson plan with 1 lesson, then 3 lessons, on the live site. It should return a draft
 - [ ] If it still says "could not finish a readable draft", open Vercel > the project > Logs and search `Lesson plan generate: unreadable reply`; the line says why (stop_reason, whether it was cut off) and shows the start and end of the reply. Send me that line
