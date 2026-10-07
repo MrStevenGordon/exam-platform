@@ -76,18 +76,20 @@ const note = (min, body, skip) => `${skip ? 'OPTIONAL: skip if you are short of 
     text(s, h.toUpperCase(), x + 0.82, y + 0.25, 1.55, 0.4, { font: HEAD, size: 20 })
     text(s, b, x + 0.82, y + 0.75, 1.55, 0.8, { size: 12.5, color: GREY })
   })
-  bar(s, 'Time. Cost. Paper. Administration. Repetition.', 5.95)
+  bar(s, 'This consumes time, money, paper and administrative effort.', 5.95)
   text(s, 'The assessment itself may take one hour. The work around it can take much longer.', 1.55, 6.6, 10.4, 0.35, { size: 14, color: GREY })
 }
 // ---------- 4. one school ----------
 {
-  const s = base('', note(1, 'Manchester High School is about 1,800 students. Every test, lesson and class produces information. The question is whether teachers and leaders can see it, in time to act.'))
+  const s = base('', note(1, 'Manchester High School is about 1,800 students and more than 100 members of staff. Every test, lesson and class produces information. The question is whether teachers and leaders can see it, in time to act.'))
   label(s, 'Your school')
-  title(s, 'One school of about 1,800 students', { size: 38 })
+  title(s, 'One school of about 1,800 students and 100+ staff', { size: 36 })
   box(s, 1.55, 1.95, 4.2, 4.1, { fill: COPPER })
-  text(s, '≈1,800', 1.8, 2.2, 3.8, 1.8, { font: HEAD, size: 88, color: INK })
-  text(s, 'STUDENTS', 1.8, 4.0, 3.7, 0.7, { font: HEAD, size: 30 })
-  text(s, 'Every test, lesson and class creates information. The question is whether teachers and leaders can see it.', 1.8, 4.75, 3.7, 1.1, { size: 14, bold: true })
+  text(s, '≈1,800', 1.8, 2.05, 3.8, 1.1, { font: HEAD, size: 66, color: INK })
+  text(s, 'STUDENTS', 1.8, 3.1, 3.7, 0.45, { font: HEAD, size: 24 })
+  text(s, '100+', 1.8, 3.6, 3.8, 1.0, { font: HEAD, size: 66, color: INK })
+  text(s, 'MEMBERS OF STAFF', 1.8, 4.6, 3.7, 0.45, { font: HEAD, size: 24 })
+  text(s, 'Every test, lesson and class creates information. Can teachers and leaders see it?', 1.8, 5.2, 3.7, 0.8, { size: 13, bold: true })
   ;[['Students', 'Take work, see results, catch up'], ['Teachers', 'Set, mark and teach'], ['Heads of department', 'See a whole department'], ['Principal and administrators', 'See the whole school']].forEach(([h, b], i) => {
     const y = 1.95 + i * 1.05
     box(s, 6.0, y, 5.95, 0.92)
@@ -98,37 +100,36 @@ const note = (min, body, skip) => `${skip ? 'OPTIONAL: skip if you are short of 
 // ---------- 5. students survey ----------
 {
   const s = base('SURVEY', note(1.5, 'Twelve students filled in a short paper survey. A small sample, so read it as a signal, not a verdict. Step-by-step explanations came first, then practice questions. Ask the room: do these sound like your students? Wifi and offline access came up unprompted.'))
-  label(s, 'What 12 Manchester students told us')
+  label(s, 'What Manchester students told us')
   title(s, 'Students want to be shown how', { size: 38 })
-  const opts = (c) => ({ barDir: 'bar', chartColors: [c], catAxisOrientation: 'maxMin', valAxisHidden: true, valGridLine: { style: 'none' }, catGridLine: { style: 'none' }, showValue: true, dataLabelFontFace: HEAD, dataLabelFontSize: 14, dataLabelColor: INK, catAxisLabelFontFace: BODY, catAxisLabelFontSize: 12, catAxisLabelColor: INK, barGapWidthPct: 45, showLegend: false, valAxisMaxVal: 13, valAxisMinVal: 0 })
+  const opts = (c) => ({ barDir: 'bar', chartColors: [c], catAxisOrientation: 'maxMin', valAxisHidden: true, valGridLine: { style: 'none' }, catGridLine: { style: 'none' }, showValue: true, dataLabelFontFace: HEAD, dataLabelFontSize: 14, dataLabelColor: INK, catAxisLabelFontFace: BODY, catAxisLabelFontSize: 12, catAxisLabelColor: INK, barGapWidthPct: 45, showLegend: false, valAxisMaxVal: 105, valAxisMinVal: 0, dataLabelFormatCode: '0"%"' })
   text(s, 'WHAT WOULD HELP YOU LEARN A DIFFICULT TOPIC?', 1.55, 1.85, 5.2, 0.3, { font: MONO, size: 10.5, bold: true, cs: 1 })
-  s.addChart(pres.charts.BAR, [{ name: 'Students', labels: ['Step-by-step explanations', 'Practice questions', 'Quizzes', 'Games or challenges', 'Examples', 'Study at my own pace'], values: [11, 7, 6, 4, 3, 3] }], { x: 1.45, y: 2.15, w: 5.4, h: 3.5, ...opts(COPPER) })
+  s.addChart(pres.charts.BAR, [{ name: 'Percent of students', labels: ['Step-by-step explanations', 'Practice questions', 'Quizzes', 'Games or challenges', 'Examples', 'Study at my own pace'], values: [92, 58, 50, 33, 25, 25] }], { x: 1.45, y: 2.15, w: 5.4, h: 3.5, ...opts(COPPER) })
   text(s, 'WHAT WOULD YOU WANT TO SEE ABOUT YOUR PROGRESS?', 7.0, 1.85, 5.0, 0.3, { font: MONO, size: 10.5, bold: true, cs: 1 })
-  s.addChart(pres.charts.BAR, [{ name: 'Students', labels: ['Topics I need to improve', 'Grades', 'Compare with previous results', 'Strongest topics', 'Progress toward goals'], values: [9, 7, 6, 5, 5] }], { x: 6.9, y: 2.15, w: 5.1, h: 3.5, ...opts(TEAL) })
-  bar(s, '10 of 12 want help studying for exams. 7 of 12 chose flashcards for practice.', 5.85)
+  s.addChart(pres.charts.BAR, [{ name: 'Percent of students', labels: ['Topics I need to improve', 'Grades', 'Compare with previous results', 'Strongest topics', 'Progress toward goals'], values: [75, 58, 50, 42, 42] }], { x: 6.9, y: 2.15, w: 5.1, h: 3.5, ...opts(TEAL) })
+  bar(s, '83% want help studying for exams. 58% chose flashcards for practice.', 5.85)
   foot(s, 'Manchester High School student survey, 12 students, who ticked as many answers as they liked. A small sample: read it as a signal.')
 }
 // ---------- 6. teachers survey ----------
 {
-  const s = base('SURVEY', note(1.5, 'Ten teachers. Marking is the biggest time cost (8 of 10). Nine of ten want the system to show what an absent student missed, and nine of ten want activities for different ability levels. Eight of ten want AI-assisted lesson planning. Everything on this slide is something we have now built; the last two slides before the demo show how.'))
-  label(s, 'What 10 Manchester teachers told us')
+  const s = base('SURVEY', note(1.5, 'Ten teachers. Marking is the biggest time cost (80% of teachers). 90% want the system to show what an absent student missed, and 90% want activities for different ability levels. 80% want AI-assisted lesson planning. Everything on this slide is something we have now built; the last two slides before the demo show how.'))
+  label(s, 'What Manchester teachers told us')
   title(s, 'Marking is where the time goes', { size: 38 })
   text(s, 'WHICH PARTS OF ASSESSMENT TAKE THE MOST TIME OR EFFORT?', 1.55, 1.85, 6.2, 0.3, { font: MONO, size: 10.5, bold: true, cs: 1 })
-  s.addChart(pres.charts.BAR, [{ name: 'Teachers', labels: ['Marking', 'Creating questions', 'Analysing performance', 'Calculating results', 'Recording grades'], values: [8, 6, 5, 4, 3] }], { x: 1.45, y: 2.15, w: 6.2, h: 3.3, barDir: 'bar', chartColors: [COPPER], catAxisOrientation: 'maxMin', valAxisHidden: true, valGridLine: { style: 'none' }, showValue: true, dataLabelFontFace: HEAD, dataLabelFontSize: 14, dataLabelColor: INK, catAxisLabelFontFace: BODY, catAxisLabelFontSize: 12, catAxisLabelColor: INK, barGapWidthPct: 45, showLegend: false, valAxisMaxVal: 10, valAxisMinVal: 0 })
-  ;[['9', 'of 10', 'want the system to show what an absent student missed'], ['9', 'of 10', 'want different activities for different ability levels'], ['8', 'of 10', 'want AI-assisted lesson planning']].forEach(([n, o, t], i) => {
+  s.addChart(pres.charts.BAR, [{ name: 'Percent of teachers', labels: ['Marking', 'Creating questions', 'Analysing performance', 'Calculating results', 'Recording grades'], values: [80, 60, 50, 40, 30] }], { x: 1.45, y: 2.15, w: 6.2, h: 3.3, barDir: 'bar', chartColors: [COPPER], catAxisOrientation: 'maxMin', valAxisHidden: true, valGridLine: { style: 'none' }, showValue: true, dataLabelFontFace: HEAD, dataLabelFontSize: 14, dataLabelColor: INK, catAxisLabelFontFace: BODY, catAxisLabelFontSize: 12, catAxisLabelColor: INK, barGapWidthPct: 45, showLegend: false, valAxisMaxVal: 105, valAxisMinVal: 0, dataLabelFormatCode: '0"%"' })
+  ;[['90%', 'of teachers', 'want the system to show what an absent student missed'], ['90%', 'of teachers', 'want different activities for different ability levels'], ['80%', 'of teachers', 'want AI-assisted lesson planning']].forEach(([n, o, t], i) => {
     const y = 1.95 + i * 1.2
     box(s, 8.0, y, 3.95, 1.05, { fill: i === 0 ? COPPER : i === 1 ? GOLD : TINT })
-    text(s, n, 8.15, y, 0.7, 1.05, { font: HEAD, size: 46, valign: 'middle' })
-    text(s, o.toUpperCase(), 8.85, y + 0.12, 1.0, 0.3, { font: HEAD, size: 14 })
-    text(s, t, 8.85, y + 0.38, 3.0, 0.65, { size: 11.5, bold: true })
+    text(s, n, 8.15, y, 1.45, 1.05, { font: HEAD, size: 40, valign: 'middle' })
+    text(s, t, 9.6, y, 2.25, 1.05, { size: 11, bold: true, valign: 'middle' })
   })
   bar(s, '"A learning gap tracker that analyses assessment results and suggests activities for reteaching and practice."', 5.7, 13)
   foot(s, 'Manchester High School teacher survey, 10 teachers, who could tick as many answers as they liked. A small sample, so read it as a signal.')
 }
 // ---------- 7. three products ----------
 {
-  const s = base('ASSESS', note(1, 'One school, three products with three different jobs. Assess measures learning. Learning delivers and recovers it. Play makes practice engaging. Two are already built and in use at Manchester; Play is built and held back until you choose to launch it.'))
-  label(s, 'One school, three products')
+  const s = base('ASSESS', note(1, 'One platform, three products with three different jobs. Assess measures learning. Learning delivers and recovers it. Play makes practice engaging. Two are already built and in use at Manchester; Play is built and held back until you choose to launch it.'))
+  label(s, 'One platform, three products')
   title(s, 'Already built. Ready to use.', { size: 42 })
   const rows = [['1', 'Smart Assess', 'Measure learning. Set, sit, mark and understand tests, exams and results.', 'Already built', COPPER], ['2', 'Smart Learning', 'Deliver and recover learning. Lessons, plans, study support and catch-up.', 'Already built', GOLD], ['3', 'Smart Play', 'Engage and reinforce learning. Quick games, duels and rewards.', 'Coming soon', PAPER]]
   rows.forEach(([n, h, b, tag, f], i) => {
@@ -161,7 +162,7 @@ intro('ASSESS', COPPER, INK, 1, 'Smart Assess', 'Measure learning.',
   'Set, sit, mark and understand tests and exams in one secure record. Teachers save time on marking, students see exactly what to work on, and leaders see how every class and department is doing.',
   ['Build tests and exams, with AI help you always review', 'Mark automatically, with AI-suggested essay marks you decide on', 'See what the class missed and who needs support'],
   'For teachers, students, heads of department and leaders.', 'Already built', INK,
-  'About half a minute. One line: Smart Assess is for assessment only. The next four slides show building, marking, results and security. 8 of 10 teachers named marking as their biggest time cost, so that is where we start.')
+  'About half a minute. One line: Smart Assess is for assessment only. The next four slides show building, marking, results and security. 80% of teachers named marking as their biggest time cost, so that is where we start.')
 // ---------- 8. assess overview ----------
 {
   const s = base('ASSESS', note(1.5, 'Smart Assess is for assessments only: set it, sit it, mark it, understand it. Walk the six cards quickly. The demo will show building a test and the results screens.'))
@@ -193,11 +194,11 @@ intro('ASSESS', COPPER, INK, 1, 'Smart Assess', 'Measure learning.',
   box(s, 1.55, 4.95, 10.4, 1.15, { fill: INK })
   text(s, 'THE AI NEVER SAVES A MARK.', 1.8, 5.07, 9.9, 0.4, { font: HEAD, size: 22, color: GOLD })
   text(s, 'It never sees a student\'s name, and it runs only when a teacher asks. The school switches it on.', 1.8, 5.5, 9.9, 0.5, { size: 14, color: 'FFFFFF', bold: true })
-  text(s, '8 of 10 teachers named marking as the biggest drain on their time.', 1.55, 6.35, 10.4, 0.4, { size: 14, color: GREY })
+  text(s, '80% of teachers named marking as the biggest drain on their time.', 1.55, 6.35, 10.4, 0.4, { size: 14, color: GREY })
 }
 // ---------- 10. results ----------
 {
-  const s = base('ASSESS', note(1.5, 'Teachers asked who is struggling and what the common mistakes are (8 and 7 of 10). Exam insight shows, per test, which questions the class missed, the wrong answer most students chose, which students may need support and why, and the class against its last five tests. Students get My Topics: their own results by topic, with a practise button. Leaders get department and school analytics.'))
+  const s = base('ASSESS', note(1.5, 'Teachers asked who is struggling and what the common mistakes are (80% and 70%). Exam insight shows, per test, which questions the class missed, the wrong answer most students chose, which students may need support and why, and the class against its last five tests. Students get My Topics: their own results by topic, with a practise button. Leaders get department and school analytics.'))
   label(s, 'Smart Assess')
   title(s, 'Results that tell you what to do', { size: 38 })
   const cards = [['Exam insight', ['Which questions the class missed', 'The wrong answer most students chose', 'Who may need support, and why', 'Compared with the last five tests'], 'For teachers'], ['My Topics', ['Students see which topics need work', 'Built from released, marked results', '\u2018One tap\u2019 to practise a weak topic', 'Links to lessons on that topic'], 'For students'], ['School analytics', ['Pass rates by subject and department', 'Flagged exam sessions in one place', 'Report cards for every student', 'Downloadable as a spreadsheet'], 'For HODs and leaders']]
@@ -209,13 +210,13 @@ intro('ASSESS', COPPER, INK, 1, 'Smart Assess', 'Measure learning.',
     text(s, items.map((t) => ({ text: t, options: { bullet: { code: '25A0' }, breakLine: true } })), x + 0.2, 3.05, 2.9, 2.2, { size: 13.5 })
     chip(s, who, x + 0.2, 5.55, 2.9, INK)
   })
-  text(s, 'Teachers asked who is struggling (8 of 10) and what mistakes are common (7 of 10).', 1.55, 6.4, 10.4, 0.4, { size: 14, color: GREY })
+  text(s, 'Teachers asked who is struggling (80%) and what mistakes are common (70%).', 1.55, 6.4, 10.4, 0.4, { size: 14, color: GREY })
 }
 // ---------- 11. secure ----------
 {
   const s = base('ASSESS', note(1, 'Fair and secure by design. Tab switches are logged and pasting is blocked. A student can only be signed in on one device. A lost connection does not lose the exam. Teachers can switch on read-aloud support. Integrity flags are only prompts: a person always decides.', true))
   label(s, 'Smart Assess')
-  title(s, 'Fair, secure and accessible by design', { size: 38 })
+  title(s, 'Fair, secure and supportive of each student\'s accessibility', { size: 30 })
   const cards = [['Lock-down and tab logging', 'A desktop app for Windows and Mac locks the screen to the exam. Tab switches are logged and pasting is blocked.'], ['One device at a time', 'A student is signed in on one device only while sitting an exam.'], ['Safe if the connection drops', 'Answers are kept on the device and sent when the connection returns. Late work is flagged, not lost.'], ['Support for each student', 'A teacher can switch on read-aloud and other accommodations for a student who needs them.']]
   cards.forEach(([h, b], i) => {
     const x = 1.55 + (i % 2) * 5.25, y = 1.95 + Math.floor(i / 2) * 2.1
@@ -232,7 +233,7 @@ intro('LEARN', GOLD, INK, 2, 'Smart Learning', 'Deliver and recover learning.',
   'About half a minute. Assessment tells you what happened; Smart Learning helps you act on it. The next slides cover lessons, catch-up, study support and the Library.')
 // ---------- 12. learning overview ----------
 {
-  const s = base('LEARN', note(1.5, 'Smart Learning is for learning only: lessons, study support, catch-up and reading. Assessment tells you what happened; Learning helps you act on it. Lessons follow the national curriculum 5E model. Short check questions come at three levels, support, core and stretch, which answers the 9 of 10 who asked for different activities for different ability levels. The AI drafts a lesson plan from a subject, grade and topic; the teacher reviews it.'))
+  const s = base('LEARN', note(1.5, 'Smart Learning is for learning only: lessons, study support, catch-up and reading. Assessment tells you what happened; Learning helps you act on it. Lessons follow the national curriculum 5E model. Short check questions come at three levels, support, core and stretch, which answers the 90% who asked for different activities for different ability levels. The AI drafts a lesson plan from a subject, grade and topic; the teacher reviews it.'))
   label(s, 'Smart Learning')
   title(s, 'Deliver and recover learning', { size: 40 })
   chip(s, 'Already built', 10.0, 0.55, 1.9, GOLD, INK)
@@ -252,7 +253,7 @@ intro('LEARN', GOLD, INK, 2, 'Smart Learning', 'Deliver and recover learning.',
 }
 // ---------- 13. catch-up ----------
 {
-  const s = base('LEARN', note(1.5, 'The scenario: a student misses three days. The teacher records when each lesson was taught. The absent student is offered the lesson as a catch-up, works through it at their own pace, and the teacher sees who has caught up. 9 of 10 teachers asked for exactly this. The screen on the left is a real lesson from the Manchester demo school.'))
+  const s = base('LEARN', note(1.5, 'The scenario: a student misses three days. The teacher records when each lesson was taught. The absent student is offered the lesson as a catch-up, works through it at their own pace, and the teacher sees who has caught up. 90% of teachers asked for exactly this. The screen on the left is a real lesson from the Manchester demo school.'))
   label(s, 'Smart Learning')
   title(s, 'When a student misses three days', { size: 36 })
   s.addImage({ path: A('shot-lesson.png'), x: 1.55, y: 1.85, w: 5.2, h: 4.35, sizing: { type: 'contain', w: 5.2, h: 4.35 } })
@@ -269,7 +270,7 @@ intro('LEARN', GOLD, INK, 2, 'Smart Learning', 'Deliver and recover learning.',
 }
 // ---------- 14. study support ----------
 {
-  const s = base('LEARN', note(1.5, 'What students and teachers told us they want, and what is built: flashcards (7 of 12 students chose them) with review spacing, so cards you miss come back sooner; support, core and stretch practice per lesson; a "Current and future" page for students and teachers (what is happening now and what is coming, including upcoming assignment reminders, with no email); and the teacher resource space. The screen on the right is a real lesson builder from the demo school, with the optional AI drafting button.'))
+  const s = base('LEARN', note(1.5, 'What students and teachers told us they want, and what is built: flashcards (58% of students chose them) with review spacing, so cards you miss come back sooner; support, core and stretch practice per lesson; a "Current and future" page for students and teachers (what is happening now and what is coming, including upcoming assignment reminders, with no email); and the teacher resource space. The screen on the right is a real lesson builder from the demo school, with the optional AI drafting button.'))
   label(s, 'Smart Learning')
   title(s, 'Study support that fits each student', { size: 36 })
   const items = [['Flashcards', 'Students build their own decks. Flip, then "Got it" or "Not yet". Cards you miss come back sooner.'], ['Three levels of practice', 'Support, core and stretch questions for each lesson, suggested from a student\'s topic results.'], ['Current and future', 'What is happening now and what is coming, for students and teachers, with upcoming assignment reminders. No email.'], ['Weak topic to lesson', 'From a weak topic in Smart Assess, \u2018one tap\u2019 to the lessons and practice for it.']]
@@ -282,7 +283,7 @@ intro('LEARN', GOLD, INK, 2, 'Smart Learning', 'Deliver and recover learning.',
   s.addImage({ path: A('shot-builder.png'), x: 7.0, y: 1.85, w: 4.95, h: 4.95 * 680 / 1050, sizing: { type: 'contain', w: 4.95, h: 3.2 } })
   s.addShape(SH.rect, { x: 7.0, y: 1.85, w: 4.95, h: 3.2, fill: { type: 'none' }, line: { color: INK, width: 2 } })
   text(s, 'A teacher\'s lesson builder, with the optional "Draft with AI" button. Demo data.', 7.0, 5.12, 4.95, 0.5, { size: 10, color: GREY })
-  bar(s, '7 of 12 students chose flashcards. 9 of 10 teachers asked for activities at different ability levels.', 6.3, 13)
+  bar(s, '58% of students chose flashcards. 90% of teachers asked for activities at different ability levels.', 6.3, 13)
 }
 // ---------- 14b. class feedback ----------
 {
@@ -454,14 +455,14 @@ intro('PLAY', INK, 'FFFFFF', 3, 'Smart Play', 'Make practice fun.',
   const c = (t, b) => ({ text: t, options: { fontFace: BODY, fontSize: 12, bold: !!b, color: INK, valign: 'middle', fill: { color: 'FFFFFF' } } })
   const h = (t) => ({ text: t.toUpperCase(), options: { bold: true, fontFace: MONO, fontSize: 9.5, color: 'FFFFFF', fill: { color: INK } } })
   const rows = [[h('You said'), h('What exists'), h('Status')],
-    [c('Marking takes the most time (8 of 10 teachers)'), c('Auto-marking, marking points, AI-suggested essay marks', true), st('Built')],
-    [c('Who is struggling, what mistakes are common (8 and 7 of 10)'), c('Exam insight for every test', true), st('Built')],
-    [c('What a missed student missed (9 of 10)'), c('Catch-up lessons for absent students', true), st('Built')],
-    [c('Activities for different ability levels (9 of 10)'), c('Support, core and stretch practice', true), st('Built')],
-    [c('AI-assisted lesson planning (8 of 10)'), c('AI-drafted 5E lesson plans', true), st('Built')],
-    [c('Topics I need to improve (9 of 12 students)'), c('My Topics, with a "practise this topic" button', true), st('Built')],
-    [c('Flashcards (7 of 12 students)'), c('Flashcards with review spacing', true), st('Built')],
-    [c('Step-by-step explanations (11 of 12 students)'), c('5E lessons and the optional AI tutor, with more to come', true), st('Partly')],
+    [c('Marking takes the most time (80% of teachers)'), c('Auto-marking, marking points, AI-suggested essay marks', true), st('Built')],
+    [c('Who is struggling, what mistakes are common (80% and 70% of teachers)'), c('Exam insight for every test', true), st('Built')],
+    [c('What a missed student missed (90% of teachers)'), c('Catch-up lessons for absent students', true), st('Built')],
+    [c('Activities for different ability levels (90% of teachers)'), c('Support, core and stretch practice', true), st('Built')],
+    [c('AI-assisted lesson planning (80% of teachers)'), c('AI-drafted 5E lesson plans', true), st('Built')],
+    [c('Topics I need to improve (75% of students)'), c('My Topics, with a "practise this topic" button', true), st('Built')],
+    [c('Flashcards (58% of students)'), c('Flashcards with review spacing', true), st('Built')],
+    [c('Step-by-step explanations (92% of students)'), c('5E lessons and the optional AI tutor, with more to come', true), st('Partly')],
     [c('Wifi and offline access (raised unprompted)'), c('Flashcards and opened lessons offline', true), st('In testing')]]
   s.addTable(rows, { x: 1.55, y: 1.65, w: 10.4, colW: [4.6, 4.5, 1.3], border: { type: 'solid', pt: 1, color: INK }, margin: [0.04, 0.1, 0.04, 0.1], rowH: 0.5 })
 }
