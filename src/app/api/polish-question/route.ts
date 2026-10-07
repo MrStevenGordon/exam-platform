@@ -5,6 +5,7 @@ import { rateLimit } from '@/lib/rateLimit'
 import { validateBody } from '@/lib/validateBody'
 import { askClaude } from '@/lib/aiCall'
 import { parseAiJson } from '@/lib/aiJson'
+import { problemRef, recordAiProblem } from '@/lib/aiProblems'
 
 const MONTHLY_LIMIT = 5
 
@@ -116,7 +117,8 @@ Respond ONLY with valid JSON in this exact format, no other text:
     if (read.ok) parsed = read.value
     else {
       console.error(`AI reply could not be read (${read.reason}): ${read.detail}`)
-      return NextResponse.json({ error: 'AI returned an unexpected format. Try again.' }, { status: 500 })
+      await recordAiProblem(supabaseAdmin, { feature: 'polish-question', reason: read.reason, stopReason: reply.stopReason, text })
+      return NextResponse.json({ error: `AI returned an unexpected format. Try again. (ref: ${problemRef(read.reason)})` }, { status: 500 })
     }
 
     // Record usage

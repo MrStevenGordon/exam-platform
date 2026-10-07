@@ -8,7 +8,8 @@ Tick a box when you have tested it on the live site. Each item points to its sec
 - [ ] Pick which design details you want changed (mockups are in `docs/mockups/timetable/`)
 - [ ] Tell me whether other subjects in the demo should be taught by other staff accounts (today the demo timetable is Mathematics only, by Testing Teacher)
 
-## AI lesson plan fix (needs a push first)
+## AI lesson plan fix (needs a push first; apply 090 to keep a record of failures)
+- [ ] Apply `090_ai_reply_problems.sql`; after a few weeks run the query in `docs/ai-reliability.md` to see whether any replies ever failed (an empty table is good)
 - [ ] After pushing: generate an AI lesson plan with 1 lesson, then 3 lessons, on the live site. It should return a draft
 - [ ] If it still says "could not finish a readable draft", open Vercel > the project > Logs and search `Lesson plan generate: unreadable reply`; the line says why (stop_reason, whether it was cut off) and shows the start and end of the reply. Send me that line
 - [ ] Also try Polish with AI and Import from PDF once, since they now share the same reader
