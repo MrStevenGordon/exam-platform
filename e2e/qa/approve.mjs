@@ -1,0 +1,10 @@
+import { b, log, session } from './lib.mjs'
+const s = await session('supervisor', 'testing.hod@mhs.smartassess')
+s.page.on('response', async (r) => { if (r.url().includes('/api/review-exam')) log('api/review-exam ->', r.status(), (await r.text()).slice(0, 300)) })
+await s.page.goto('http://localhost:3000/supervisor/exam/dd000000-0000-4000-8000-000000001300', { waitUntil: 'domcontentloaded', timeout: 180000 }); await s.page.waitForSelector('text=Approve', { timeout: 120000 }); await s.page.waitForTimeout(3000); await s.skip()
+s.page.on('request', (r) => { if (!/_next|favicon/.test(r.url())) log('  request:', r.method(), r.url().replace(/\?.*/, '').slice(0, 110)) }); s.page.on('console', (m) => { if (m.type() === 'error') log('  console error:', m.text().slice(0, 200)) }); s.page.on('pageerror', (e) => log('  page error:', e.message.slice(0, 200)))
+const btn = s.page.getByRole('button', { name: 'Approve' }); log('approve buttons:', await btn.count(), 'disabled:', await btn.first().isDisabled())
+const t0 = Date.now(); s.page.on('response', (r) => { if (/rest\/v1\/questions/.test(r.url())) log(`  response ${r.status()} after ${Date.now() - t0}ms`) })
+await btn.first().click(); await s.page.waitForTimeout(70000)
+const t = await s.text(); log('top:', t.slice(0, 200).replace(/\n/g, ' / ')); log('has error text:', /error|failed|could not|not allowed|unauthorized/i.test(t) ? t.match(/.{0,80}(error|failed|could not|not allowed|unauthorized).{0,120}/i)[0] : 'no')
+await b.close()
