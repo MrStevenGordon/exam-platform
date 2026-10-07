@@ -1,0 +1,10 @@
+import { b, log, session, admin } from './lib.mjs'
+const h = await session('supervisor', 'testing.hod@mhs.smartassess')
+await h.page.goto('http://localhost:3000/learning/substitution', { waitUntil: 'domcontentloaded', timeout: 180000 }); await h.page.waitForSelector('text=Choose someone', { timeout: 120000 }); await h.page.waitForTimeout(2500); await h.skip()
+await h.page.getByRole('button', { name: 'Choose someone' }).click(); await h.page.waitForTimeout(1500)
+await h.page.locator('select').last().selectOption({ label: /Science/.test('x') ? '' : (await h.page.locator('select').last().locator('option').allInnerTexts()).find((o) => /Science/.test(o)) })
+await h.page.getByRole('button', { name: 'Confirm' }).click(); await h.page.waitForTimeout(7000)
+const t = await h.text(); log('after Confirm:', t.match(/Fri, 9 Oct[\s\S]{0,260}/)?.[0].replace(/\n/g, ' / '))
+log('errors:', h.errs.join(' ; ') || 'none'); await h.ctx.close()
+const sc = await session('teacher', 'testing.science@mhs.smartassess').catch((e) => { log('science sign-in skipped:', String(e.message).slice(0, 60)); return null })
+await b.close()

@@ -1,0 +1,16 @@
+import { b, log, session, admin } from './lib.mjs'
+const s = await session('student', '54321@mhs.smartassess')
+await s.page.goto('http://localhost:3000/learning', { waitUntil: 'domcontentloaded', timeout: 180000 }); await s.page.waitForTimeout(8000); await s.skip()
+await s.page.getByText('Expanding and Factorising Expressions', { exact: true }).first().click(); await s.page.waitForSelector('text=Done, next step', { timeout: 60000 }); await s.page.waitForTimeout(2000)
+for (let i = 0; i < 6; i++) { const n = s.page.getByRole('button', { name: /Done, next step|Finish|Mark as done/i }); if (!(await n.count())) break; await n.first().click(); await s.page.waitForTimeout(1500) }
+log('after the steps:', (await s.text()).match(/\d of 5 steps/)?.[0], '|', (await s.text()).slice(0, 220).replace(/\n/g, ' / '))
+await s.page.getByRole('button', { name: /Start the check/i }).click(); await s.page.waitForTimeout(3000)
+log('check page:', (await s.text()).slice(0, 500).replace(/\n/g, ' / '))
+const radios = s.page.locator('input[type=radio]'); const nr = await radios.count(); const nums = s.page.locator('input[type=number], main input:not([type=radio]):not([type=checkbox])'); log('radios:', nr, 'number inputs:', await nums.count())
+const groups = await s.page.evaluate(() => [...new Set([...document.querySelectorAll('input[type=radio]')].map((r) => r.name))])
+for (const g of groups) await s.page.locator(`input[type=radio][name="${g}"]`).first().check().catch(() => {})
+for (let i = 0; i < (await nums.count()); i++) await nums.nth(i).fill('8').catch(() => {})
+await s.page.getByRole('button', { name: /Submit|Check my answers|Finish/i }).first().click().catch(() => log('   (no submit button found)')); await s.page.waitForTimeout(6000)
+log('after the check:', (await s.text()).slice(0, 500).replace(/\n/g, ' / ')); log('errors:', s.errs.join(' ; ') || 'none')
+const { data } = await admin.from('learning_check_attempts').select('level, score, max_score').eq('lesson_id', 'dd000000-0000-4000-8000-000000007002').order('submitted_at', { ascending: false }).limit(1); log('stored attempt:', JSON.stringify(data))
+await admin.from('profiles').update({ active_login_token: null }).eq('student_id', '54321'); await b.close()
