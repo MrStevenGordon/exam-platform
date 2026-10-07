@@ -177,8 +177,9 @@ export default function LearningLayout({ children }: { children: React.ReactNode
   // principal / VP) who types one of those addresses is sent to their overview.
   const blockedForOversight = (role === 'admin' || role === 'principal') && (pathname.startsWith('/learning/lessons') || pathname.startsWith('/learning/lesson-plans'))
   useEffect(() => { if (blockedForOversight) router.replace('/learning') }, [blockedForOversight, router])
-  // Report absence, My cover and Substitution are staff pages (they open inside Smart Learning so the menu stays here).
-  const blockedForStudent = role === 'student' && /^\/learning\/(report-absence|cover|substitution)(\/|$)/.test(pathname)
+  // The lesson editor, lesson plans, coverage, resources, student support, tutor flags, report absence, my cover and substitution are staff pages:
+  // a student who types one of those addresses is sent back to their lessons. (/learning/lesson/<id>, with no "s", is the student's own lesson.)
+  const blockedForStudent = role === 'student' && /^\/learning\/(lessons|lesson-plans|coverage|resources|support|flags|report-absence|cover|substitution)(\/|$)/.test(pathname)
   useEffect(() => { if (blockedForStudent) router.replace('/learning') }, [blockedForStudent, router])
 
   // When someone marks a flagged conversation read, the menu count updates without a page change.

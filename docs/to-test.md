@@ -7,6 +7,10 @@ Tick a box when you have tested it on the live site. Each item points to its sec
 - [ ] Walk **QA 7w** (teacher adds, HOD approves, student feed and Play, low-data mode, two student reports hide a video)
 - [ ] Add two or three real videos before the presentation so the student feed is not empty (nothing is seeded)
 
+## Fixes from QA (2026-10-07, needs a push, and 094 on Manchester)
+- [ ] Apply `scripts/migrations/094_lesson_plans_staff_only.sql` on Manchester (`pbcopy < scripts/migrations/094_lesson_plans_staff_only.sql`): only teachers, heads of department and the school admin can write lesson plans
+- [ ] Open the **bug log** (`docs/bug-log.md`) and decide on **B-009** (a student could create and publish an exam through the database connection)
+
 ## Student support (built 2026-10-06; needs 091 then 092, then a push)
 - [ ] Apply `scripts/migrations/092_student_support.sql` on Manchester after 091 (`pbcopy < scripts/migrations/092_student_support.sql`), push, then re-run the demo seed for a demo plan
 - [ ] Walk **QA 7v** (staff list and filters, starting and tracking a plan, HOD and principal views, the student's My progress shows nothing about anyone else)

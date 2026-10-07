@@ -1,0 +1,10 @@
+import { b, log, session, admin } from './lib.mjs'
+const [STUDENT, EXAM] = process.argv.slice(2)
+const s = await session('student', `${STUDENT}@mhs.smartassess`)
+await s.page.goto('http://localhost:3000/student/tests', { waitUntil: 'domcontentloaded', timeout: 180000 }); await s.page.waitForTimeout(8000); await s.skip()
+log('tests list:', (await s.text()).slice(0, 260).replace(/\n/g, ' / '))
+await s.page.goto(`http://localhost:3000/student/direct-exam/${EXAM}/results`, { waitUntil: 'domcontentloaded', timeout: 180000 }); await s.page.waitForTimeout(9000)
+log('results page:', (await s.text()).slice(0, 700).replace(/\n/g, ' / ')); await s.page.screenshot({ path: 'qa/out/student-results.png', fullPage: true })
+await s.page.goto('http://localhost:3000/student', { waitUntil: 'domcontentloaded' }); await s.page.waitForTimeout(8000)
+log('home:', (await s.text()).slice(0, 300).replace(/\n/g, ' / ')); log('errors:', s.errs.join(' ; ') || 'none')
+await admin.from('profiles').update({ active_login_token: null }).eq('student_id', STUDENT); await b.close()

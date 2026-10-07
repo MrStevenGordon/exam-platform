@@ -306,12 +306,23 @@ export default function TakeExamQuestionsPage() {
     }
   }
 
+  // Answers are written to this device a fraction of a second after each change, and again when the page is hidden or closed, so a refresh,
+  // a crash or a closed tab straight after an answer does not lose it (they also reach the server every 15 seconds).
+  useEffect(() => {
+    if (!session) return
+    const flush = () => { saveAnswersLocally(session.id, latestAnswersRef.current, {}) }
+    const onHide = () => { if (document.visibilityState === 'hidden') flush() }
+    window.addEventListener('pagehide', flush)
+    document.addEventListener('visibilitychange', onHide)
+    return () => { window.removeEventListener('pagehide', flush); document.removeEventListener('visibilitychange', onHide) }
+  }, [session])
+
   function scheduleLocalSave() {
     if (!session) return
     if (localSaveTimerRef.current) clearTimeout(localSaveTimerRef.current)
     localSaveTimerRef.current = setTimeout(() => {
       saveAnswersLocally(session.id, latestAnswersRef.current, {})
-    }, 2000)
+    }, 300)
   }
 
   function updateAnswer(questionId: string, value: string) {

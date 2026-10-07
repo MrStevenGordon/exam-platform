@@ -40,7 +40,8 @@ async function login(who, viewport = { width: 1280, height: 900 }) {
   return { page, ctx, errors, studentId }
 }
 async function done(s) { if (s.studentId) await admin.from('profiles').update({ active_login_token: null, active_login_started_at: null, active_login_last_seen_at: null }).eq('student_id', s.studentId); await s.ctx.close() }
-const go = async (page, p) => { await page.goto(BASE + p, { waitUntil: 'domcontentloaded', timeout: 120000 }); await page.waitForLoadState('networkidle', { timeout: 20000 }).catch(() => {}); await page.waitForTimeout(800) }
+const skipTours = async (page) => { for (let i = 0; i < 12; i++) { const b = page.getByRole('button', { name: /skip tour/i }); if (await b.count()) await b.first().click().catch(() => {}); else break; await page.waitForTimeout(250) } }
+const go = async (page, p) => { await page.goto(BASE + p, { waitUntil: 'domcontentloaded', timeout: 120000 }); await page.waitForLoadState('networkidle', { timeout: 20000 }).catch(() => {}); await page.waitForTimeout(2500); await skipTours(page) }
 const body = async (page) => (await page.locator('body').innerText().catch(() => '')) || ''
 const shot = (page, name) => page.screenshot({ path: path.join(OUT, name + '.png') }).catch(() => {})
 const monday = () => { const d = new Date(Date.now() - 5 * 3600e3); d.setUTCDate(d.getUTCDate() - ((d.getUTCDay() || 7) - 1)); return d.toISOString().slice(0, 10) }
@@ -118,7 +119,7 @@ async function support() {
   check(f, 'the Plans tab shows it with a starting line and review date', /Goal:/.test(t) && /Review/.test(t) && /(since the plan began|No new results)/.test(t), t.slice(0, 300))
   await tch.page.getByRole('button', { name: 'Record what was done' }).first().click(); await tch.page.locator('textarea').first().fill('Went through percentages at lunch'); await tch.page.getByRole('button', { name: 'Save', exact: true }).click(); await tch.page.waitForTimeout(2500); t = await body(tch.page)
   check(f, 'an action is recorded and listed', /Went through percentages at lunch/.test(t) && /What has been done \(1\)/.test(t), t.slice(0, 300))
-  await tch.page.getByRole('button', { name: 'Change goal or review date' }).first().click(); await tch.page.locator('select').nth(1).selectOption('monitoring'); await tch.page.getByRole('button', { name: 'Save', exact: true }).click(); await tch.page.waitForTimeout(2500); t = await body(tch.page)
+  await tch.page.getByRole('button', { name: 'Change goal or review date' }).first().click(); await tch.page.locator('select').last().selectOption('monitoring'); await tch.page.getByRole('button', { name: 'Save', exact: true }).click(); await tch.page.waitForTimeout(2500); t = await body(tch.page)
   check(f, 'status can be changed to Monitoring', /Monitoring/.test(t))
   await tch.page.getByRole('button', { name: 'Finish this plan' }).first().click(); await tch.page.getByRole('button', { name: 'Finish plan' }).click(); await tch.page.waitForTimeout(2500)
   await tch.page.getByRole('tab', { name: 'Finished' }).click(); await tch.page.waitForTimeout(2500); t = await body(tch.page)
@@ -200,9 +201,9 @@ async function progress() {
 async function access() {
   const f = 'access'
   const s = await login('54327')
-  for (const p of ['/teacher', '/supervisor', '/school-admin', '/principal', '/learning/support', '/learning/lessons/new']) {
-    await go(s.page, p); const path = new URL(s.page.url()).pathname
-    check(f, `a student cannot open ${p}`, !path.startsWith(p) || (p === '/learning/lessons/new' ? false : false) , `ended at ${path}`)
+  for (const p of ['/teacher', '/supervisor', '/school-admin', '/principal', '/learning/support', '/learning/lessons/new', '/learning/lesson-plans', '/learning/coverage', '/learning/resources', '/learning/flags', '/learning/report-absence', '/learning/cover', '/learning/substitution']) {
+    await go(s.page, p); await s.page.waitForTimeout(2500); const path = new URL(s.page.url()).pathname
+    check(f, `a student cannot open ${p}`, !path.startsWith(p), `ended at ${path}`)
   }
   const r = await s.page.evaluate(async () => { const m = await import('/_next/static/chunks/main.js').catch(() => null); return !!m })
   await done(s)
@@ -224,7 +225,11 @@ async function access() {
 }
 
 const FLOWS = { feedback, support, videos, progress, access }
-for (const name of want) { try { await FLOWS[name]() } catch (e) { check(name, 'flow ran to the end', false, String(e.message).split('\n').slice(0, 3).join(' ')) } }
+// a failed flow must not leave students signed in somewhere (they can be signed in on one device only)
+const releaseAll = () => admin.from('profiles').update({ active_login_token: null, active_login_started_at: null, active_login_last_seen_at: null }).eq('role', 'student')
+await releaseAll()
+for (const name of want) { try { await FLOWS[name]() } catch (e) { check(name, 'flow ran to the end', false, String(e.message).split('\n').slice(0, 3).join(' ')) } finally { await releaseAll() } }
+await releaseAll()
 await browser.close()
 const failed = results.filter((r) => !r.ok)
 fs.writeFileSync(path.join(OUT, 'flows.json'), JSON.stringify(results, null, 2))
