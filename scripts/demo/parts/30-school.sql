@@ -75,3 +75,42 @@ begin
   on conflict do nothing;
   raise notice 'Class feedback: % student answers added for the demo class', v_n;
 end $$;
+
+-- ====================== SCHOOL: student support plans (needs migration 092) ======================
+-- Two plans for students in the demo class: an open one for the student with the lowest Mathematics average (with two actions already recorded and a
+-- review date next week), and a finished one that improved, so the Plans and Finished tabs both have something to show.
+do $$
+declare
+  c record;
+  s record;
+  v_n int := 0;
+  v_school numeric;
+begin
+  if to_regclass('public.support_cases') is null then raise notice 'Support plans skipped: migration 092 is not applied.'; return; end if;
+  select * into c from demo_ctx;
+  select avg(a) into v_school from (select avg(100.0 * es.total_score / es.max_possible_score) as a from exam_sessions es
+     where es.status = 'completed' and es.fully_graded and es.max_possible_score > 0 group by es.student_id) q;
+  for s in
+    select e.student_id, round(avg(100.0 * es.total_score / es.max_possible_score), 1) as avg
+    from enrollments e join exam_sessions es on es.student_id = e.student_id and es.status = 'completed' and es.fully_graded and es.max_possible_score > 0
+    where e.class_group_id = c.class_id and e.student_id <> c.student
+    group by e.student_id order by avg(100.0 * es.total_score / es.max_possible_score) limit 2
+  loop
+    v_n := v_n + 1;
+    if v_n = 1 then
+      insert into support_cases (id, student_id, subject, reason, goal, owner_id, status, review_on, baseline_pct, baseline_school_pct, opened_by, opened_at)
+      values (pg_temp.did(9500), s.student_id, 'Mathematics', 'Averaging well below the school average in Mathematics and missed two lessons on simple interest.',
+              'Raise the Mathematics average to 55% by the next test', c.teacher, 'open', public.school_today() + 7, s.avg, round(v_school, 1), c.teacher, now() - interval '18 days');
+      insert into support_actions (id, case_id, kind, note, done_on, created_by) values
+        (pg_temp.did(9510), pg_temp.did(9500), 'one_to_one', 'Went through percentages and simple interest at lunch.', public.school_today() - 12, c.teacher),
+        (pg_temp.did(9511), pg_temp.did(9500), 'parent_contact', 'Spoke to the parent about attendance and a quiet place to study.', public.school_today() - 6, c.teacher);
+    else
+      insert into support_cases (id, student_id, subject, reason, goal, owner_id, status, baseline_pct, baseline_school_pct, opened_by, opened_at, closed_at, outcome, outcome_note)
+      values (pg_temp.did(9501), s.student_id, 'Mathematics', 'Low marks on the first two tests.', 'Pass the next test', c.teacher, 'closed', s.avg, round(v_school, 1), c.teacher,
+              now() - interval '70 days', now() - interval '20 days', 'improved', 'Peer tutor sessions worked. Passed the last two tests.');
+      insert into support_actions (id, case_id, kind, note, done_on, created_by) values
+        (pg_temp.did(9512), pg_temp.did(9501), 'peer_tutor', 'Paired with a Grade 9 student twice a week.', public.school_today() - 50, c.teacher);
+    end if;
+  end loop;
+  raise notice 'Support plans: % added for the demo class', v_n;
+end $$;

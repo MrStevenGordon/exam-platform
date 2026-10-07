@@ -471,6 +471,19 @@ Use a test student who has sat at least one exam with topic-tagged questions who
 - [ ] **Friday reminder email**: the dry-run link (docs/class-feedback-setup.md) returns a count; a teacher with a class that has no reflection receives one email on Friday afternoon, and a second run the same week sends nothing
 - [ ] The demo data: two weeks for Testing Teacher's class (understanding dips last week at Simple interest), and Testing Student has nothing answered so you can give feedback live in the presentation
 
+## 7v. Student support (needs migrations 091 and 092; Smart Learning)
+
+- [ ] Menu: **Student support** for teachers, HODs, principal team and school admin; **My progress** for students; nobody else, and neither shows before 092 is applied
+- [ ] As **Testing Teacher**: the Students tab lists students in their classes with plain reasons ("Mathematics: averaging 38%, 26 points below the school average (64%)", "Absent 4 of the last 10 school days marked"...). The summary shows how many need support, are high priority, and have plans. Filters (name, grade, class, reason, priority, plan) narrow the list
+- [ ] **Start a support plan** from a student: the reason and goal are pre-filled; edit and save. The card then shows "Plan: open". Try starting a second plan for the same subject: it is refused with a clear message
+- [ ] **Plans** tab: the plan shows why, goal, review date badge (Overdue / due soon), "Up N points in Science" progress, and the actions. **Record what was done** adds one. **Change goal or review date** and **Finish this plan** (needs an outcome) work for the owner
+- [ ] **Finished** tab shows finished plans with how many improved
+- [ ] As **Testing HOD**: sees every student taught by the department; can edit a teacher's plan
+- [ ] As **Testing Principal** or a school admin: sees every student, can read all plans; cannot see "asked for help" flags
+- [ ] As a **student** (54321): no Support link; typing `/learning/support` sends them back; **My progress** shows only their own results, a chart per subject, kind wording and up to three nudges. **No school average and no other student appears anywhere**
+- [ ] A school with fewer than 5 students with results shows "The school average appears once at least 5 students have results" and no below-average reasons
+- [ ] The demo data: one open plan (review next week, two actions) and one finished plan that improved
+
 ## 8. Owner console (you)
 
 - [ ] **School requests** and **Org requests**: approve and provision

@@ -48,5 +48,13 @@ do $$ begin
     delete from weekly_class_reflections where pg_temp.is_demo(id);
   end if;
 end $$;
+
+-- student support plans (only if migration 092 is applied)
+do $$ begin
+  if to_regclass('public.support_cases') is not null then
+    delete from support_actions where pg_temp.is_demo(id);
+    delete from support_cases where pg_temp.is_demo(id);
+  end if;
+end $$;
 commit;
 select 'Demo data removed' as result;

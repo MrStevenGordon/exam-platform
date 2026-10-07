@@ -18,6 +18,7 @@ Fills the four test accounts with realistic demo data so every screen in the liv
 - **Testing Student**: Grade 9, in the demo class, 6 results (weak at Simple interest and Compound interest, so My Topics has something to say), 2 flashcard decks with cards due now, 3 lessons (one finished, one in progress that they were **absent for** so catch-up shows, one upcoming)
 - **Learning:** 3 five-step lessons with check questions at support, core and stretch levels, student progress, check results, a coverage grid, 2 lesson plans, 5 department resources (one pinned by the HOD)
 - **Class feedback** (only if migration 091 is applied): two weeks of student feedback for the demo class (22 students, a dip in understanding last week at Simple interest) and Testing Teacher's reflection for last week. Testing Student is left out so you can give feedback live
+- **Student support** (only if migration 092 is applied): an open support plan (two actions recorded, review next week) for the demo class's lowest-scoring student and a finished plan that improved. The Support list itself fills from the results and attendance above
 - **Attendance:** 3 weeks of morning register for the demo class (a few absent and late)
 
 ## It changes (and the remove file does NOT undo)
