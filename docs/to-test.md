@@ -3,7 +3,7 @@
 Tick a box when you have tested it on the live site. Each item points to its section in `docs/qa-checklist.md`. Add new items at the top when something is built. Last updated 2026-10-06.
 
 ## School day and timetable (needs a push, then 088, 089 and the Manchester school day script)
-- [ ] Apply `088_school_day.sql` then `089_substitution_spans.sql`; run `scripts/data/manchester-school-day.sql`
+- [x] Applied 088 and 089, and ran the Manchester school day script (7 periods, 2 lunch windows), 2026-10-07
 - [ ] Walk **QA 7r** (school day page, events, double periods, student/teacher/principal timetable views, phone Today view, cover with a double period)
 - [ ] Pick which design details you want changed (mockups are in `docs/mockups/timetable/`)
 - [ ] Tell me whether other subjects in the demo should be taught by other staff accounts (today the demo timetable is Mathematics only, by Testing Teacher)
