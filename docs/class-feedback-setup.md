@@ -6,6 +6,7 @@ Product: **Smart Learning**. It needs the school timetable (sections and student
 
 ## Turn it on
 1. Apply `scripts/migrations/091_class_feedback.sql` on the school's Supabase project (SQL editor). It only adds tables and functions; nothing existing is changed. Undo: `scripts/migrations/rollback/091_class_feedback_rollback.sql`.
+   If 091 was applied before the Friday reminder email was added, run `scripts/migrations/091b_class_feedback_reminders.sql` instead of repeating 091 (safe to run more than once).
 2. Push the code. The **Class feedback** link appears in the Smart Learning menu for students, teachers, heads of department, principal team and school admin. Until 091 is applied, no link shows.
 3. Optional demo data: `scripts/demo/manchester-demo-seed.sql` now adds two weeks of feedback for the demo class and a reflection for Testing Teacher.
 
