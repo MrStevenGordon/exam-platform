@@ -18,6 +18,14 @@ declare r text;
 begin perform pg_temp.as_user(who); set local role authenticated; execute q into r; reset role; return r;
 exception when others then reset role; return 'ERR ' || sqlstate; end $$;
 
+create or replace function pg_temp.val_srv(q text) returns text language plpgsql as $$
+declare r text;
+begin set local role service_role; execute q into r; reset role; return r;
+exception when others then reset role; return 'ERR ' || sqlstate; end $$;
+-- the test harness grants everything to signed-in people; the server-only reminder pieces stay closed to them
+revoke execute on function public.class_feedback_reminder_candidates(date) from authenticated;
+revoke all on public.weekly_feedback_reminder_log from authenticated;
+
 -- ---- the school: periods and classes for the current school year ----
 do $$
 declare
@@ -41,7 +49,7 @@ begin
     (pg_temp.u(6105), deptB, 'Science', pg_temp.u(75), cg1, 4, p[3], y);
   insert into section_enrollments (section_id, student_id) select s.id, e.student_id from timetable_sections s join enrollments e on e.class_group_id = s.class_group_id;
   insert into curriculum_topics (id, code, subject, grade, name, status) values (pg_temp.u(950), 't1', 'Mathematics', 9, 'Simple interest', 'active'), (pg_temp.u(951), 't2', 'Mathematics', 9, 'Ratios', 'active') on conflict do nothing;
-  delete from weekly_class_feedback; delete from weekly_class_reflections;
+  delete from weekly_class_feedback; delete from weekly_class_reflections; delete from weekly_feedback_reminder_log;
 end $$;
 
 do $$
@@ -146,6 +154,18 @@ begin
   perform pg_temp.chk('status for a teacher: 2 classes, 1 reflection, 9 responses', pg_temp.val_as(t1, $q$select (class_feedback_status()->>'classes') || '/' || (class_feedback_status()->>'done') || '/' || (class_feedback_status()->>'responses')$q$) = '2/1/9');
   perform pg_temp.chk('status for the principal is nothing', pg_temp.val_as(principal, $q$select coalesce(class_feedback_status()::text, 'none')$q$) = 'none');
   perform pg_temp.chk('the feature probe answers true', pg_temp.val_as(pg_temp.u(11), 'select class_feedback_ready()::text') = 'true');
+  -- ===== Friday reminder (server only) =====
+  perform pg_temp.chk('a signed-in teacher cannot call the reminder list', pg_temp.try_as(t1, 'select * from class_feedback_reminder_candidates()') = '42501');
+  perform pg_temp.chk('nor can a student', pg_temp.try_as(pg_temp.u(11), 'select * from class_feedback_reminder_candidates()') = '42501');
+  perform pg_temp.chk('the server sees a teacher who still has a class without a reflection', pg_temp.val_srv(format($q$select count(*)::text from class_feedback_reminder_candidates(%L) where teacher_id = %L$q$, this_week, t1)) = '1');
+  perform pg_temp.chk('the list names every class, with reflections marked (Maths 3-1 done, 3-2 not)',
+    pg_temp.val_srv(format($q$select ((classes @> '[{"class_name":"3-1","reflected":true}]'::jsonb) and (classes @> '[{"class_name":"3-2","reflected":false}]'::jsonb))::text from class_feedback_reminder_candidates(%L) where teacher_id = %L$q$, this_week, t1)) = 'true');
+  perform pg_temp.chk('a teacher with no reflection yet is listed', pg_temp.val_srv(format($q$select count(*)::text from class_feedback_reminder_candidates(%L) where teacher_id = %L$q$, this_week, t4)) = '1');
+  insert into weekly_class_reflections (teacher_id, week_start, subject, class_group_id) values (t1, this_week, 'Mathematics', pg_temp.u(802));
+  perform pg_temp.chk('once every class has a reflection the teacher is no longer listed', pg_temp.val_srv(format($q$select count(*)::text from class_feedback_reminder_candidates(%L) where teacher_id = %L$q$, this_week, t1)) = '0');
+  insert into weekly_feedback_reminder_log (teacher_id, week_start) values (t4, this_week);
+  perform pg_temp.chk('a teacher already reminded this week is not listed again', pg_temp.val_srv(format($q$select count(*)::text from class_feedback_reminder_candidates(%L) where teacher_id = %L$q$, this_week, t4)) = '0');
+  perform pg_temp.chk('the reminder log cannot be read by a signed-in person', pg_temp.val_as(t1, 'select count(*)::text from weekly_feedback_reminder_log') = 'ERR 42501');
 end $$;
 
 select n, case when ok then 'PASS' else 'FAIL' end as result, name from results order by n;

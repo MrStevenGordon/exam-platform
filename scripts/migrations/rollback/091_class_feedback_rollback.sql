@@ -1,5 +1,7 @@
 -- Removes weekly class feedback and teacher reflections. All students' answers and teachers' reflections are deleted.
 begin;
+drop function if exists public.class_feedback_reminder_candidates(date);
+drop table if exists public.weekly_feedback_reminder_log;
 drop function if exists public.class_feedback_status(date);
 drop function if exists public.class_feedback_report(date, date);
 drop function if exists public.class_feedback_submit(date, text, uuid, integer, integer, integer, integer, integer, uuid, boolean, text, text);

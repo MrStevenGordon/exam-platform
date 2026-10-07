@@ -468,6 +468,7 @@ Use a test student who has sat at least one exam with topic-tagged questions who
 - [ ] As **Testing HOD**: sees the department's classes with names; cannot write a reflection for someone else's class
 - [ ] As **Testing Principal** and a **school admin**: every class, **no student names**, and a class with fewer than 5 answers shows "kept private"
 - [ ] A student cannot see another student's answers or any class report (the page sends them to their own form)
+- [ ] **Friday reminder email**: the dry-run link (docs/class-feedback-setup.md) returns a count; a teacher with a class that has no reflection receives one email on Friday afternoon, and a second run the same week sends nothing
 - [ ] The demo data: two weeks for Testing Teacher's class (understanding dips last week at Simple interest), and Testing Student has nothing answered so you can give feedback live in the presentation
 
 ## 8. Owner console (you)

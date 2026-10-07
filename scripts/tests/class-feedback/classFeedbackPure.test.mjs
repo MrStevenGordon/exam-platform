@@ -85,3 +85,14 @@ test('a summary reply is tidied; one with no overview is refused', () => {
   assert.deepEqual(s, { overview: 'Good week.', going_well: ['a', 'b', 'c'], concerns: [], next_steps: ['x'] })
   assert.equal(normalizeSummary({ overview: '  ' }), null); assert.equal(normalizeSummary(null), null)
 })
+
+import { classFeedbackReminderEmail } from '../../../src/lib/emailTemplates.ts'
+test('the Friday email lists each class, counts answers, and escapes names', () => {
+  const e = classFeedbackReminderEmail('Mr. <b>Brown</b>', [
+    { subject: 'Mathematics', class_name: '8-2', enrolled: 30, responded: 18, reflected: false },
+    { subject: 'Science', class_name: null, enrolled: 25, responded: 0, reflected: true }], 'https://x.test/learning/feedback')
+  assert.equal(e.subject, 'Your class feedback for the week: 1 reflection to write')
+  assert.match(e.html, /Mathematics, 8-2/); assert.match(e.html, /18 of 30 students gave feedback/); assert.match(e.html, /Reflection written/)
+  assert.match(e.html, /href="https:\/\/x\.test\/learning\/feedback"/); assert.doesNotMatch(e.html, /<b>Brown<\/b>/)
+  assert.match(classFeedbackReminderEmail('A', [{ subject: 'S', class_name: null, enrolled: 1, responded: 0, reflected: false }, { subject: 'T', class_name: null, enrolled: 1, responded: 0, reflected: false }], 'u').subject, /2 reflections to write/)
+})

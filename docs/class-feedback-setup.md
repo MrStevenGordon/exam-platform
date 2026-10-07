@@ -35,6 +35,13 @@ Per class and week: ahead / on track / behind plan, what was covered, what went 
 - **Write a progress summary with AI** drafts a short overview, what is going well, what to watch and next steps. It is a draft to check, saved nowhere. The AI is sent figures and anonymous comments only, never student names. Limit: 40 summaries per person per month.
 - The **Current and future** page shows a reminder card ("2 of your 5 classes are waiting for your feedback").
 
+## Friday reminder email
+Every **Friday at 2:00pm Jamaica time** a teacher or head of department who still has a class without an end-of-week reflection gets one email listing their classes (how many students gave feedback, which reflections are still to write) and a button to Class feedback. Nobody gets more than one a week, and nobody is emailed when all their reflections are written.
+- Route: `/api/cron/class-feedback-reminders` (schedule in `vercel.json`, guarded by `CRON_SECRET`). Add `?dry=1` to see how many people would be emailed without sending anything.
+- The address used is the person's school email if one is on file, else their sign-in address; made-up sign-in addresses are skipped.
+- It starts working as soon as 091 is applied and the code is pushed. To stop it, remove its entry from `vercel.json`.
+- Needs the email sender key (Resend) like the other emails. The database keeps a small log (`weekly_feedback_reminder_log`) so a failed send is retried on the next run and a sent one never repeats.
+
 ## Tests
-- Database: `scripts/tests/class-feedback/tests.sql` (68 checks, run on a sandbox copy of the schema)
+- Database: `scripts/tests/class-feedback/tests.sql` (76 checks, run on a sandbox copy of the schema)
 - Logic and AI prompt: `node --import ./scripts/tests/essay-marking/resolve-ts.mjs --experimental-strip-types --no-warnings --test scripts/tests/class-feedback/classFeedbackPure.test.mjs`

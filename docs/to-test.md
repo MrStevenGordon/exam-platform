@@ -5,7 +5,7 @@ Tick a box when you have tested it on the live site. Each item points to its sec
 ## Weekly class feedback (built 2026-10-06; needs 091, then a push)
 - [ ] Apply `scripts/migrations/091_class_feedback.sql` on Manchester (paste via `pbcopy < scripts/migrations/091_class_feedback.sql`), push, then re-run the demo seed to get two weeks of demo feedback
 - [ ] Walk **QA 7u** (student form, teacher report and reflection, AI summary, print, HOD, principal sees no names)
-- [ ] Decide whether teachers should get a Friday reminder email (not built; today there is a card on Current and future)
+- [ ] **Friday reminder email** goes out Fridays 2pm Jamaica time once 091 is applied and pushed. Before then, check the list with a dry run: `curl -H "Authorization: Bearer $CRON_SECRET" "https://exam-platform-chi.vercel.app/api/cron/class-feedback-reminders?dry=1"` (shows how many teachers would be emailed, sends nothing). Remove the entry from `vercel.json` if you do not want it yet
 
 ## National curriculum for AI lesson plans (needs a push first)
 - [ ] Apply `scripts/migrations/central/003_curriculum.sql` on the CENTRAL project, then load the four guides with `scripts/load-curriculum.mjs` (commands in `docs/curriculum-setup.md`; dry run first)

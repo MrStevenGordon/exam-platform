@@ -368,6 +368,28 @@ export function substitutionReminderEmail(name: string, classes: CoverLine[], co
   }
 }
 
+export type FeedbackReminderClass = { subject: string; class_name: string | null; enrolled: number; responded: number; reflected: boolean }
+
+// The Friday email to a teacher with classes still waiting for their end-of-week reflection. Student answers are counted, never quoted.
+export function classFeedbackReminderEmail(name: string, classes: FeedbackReminderClass[], feedbackUrl: string) {
+  const todo = classes.filter((c) => !c.reflected).length
+  const rows: Array<[string, string]> = classes.map((c) => [
+    escapeHtml(c.class_name ? `${c.subject}, ${c.class_name}` : c.subject),
+    `${c.reflected ? 'Reflection written' : 'Reflection to write'}<br><span style="font-weight: 400; color: ${COLOR.textSecondary}; font-size: 13px;">${c.responded} of ${c.enrolled} students gave feedback</span>`,
+  ])
+  return {
+    subject: `Your class feedback for the week: ${todo} ${todo === 1 ? 'reflection' : 'reflections'} to write`,
+    html: wrapper(`
+      ${badge('End of week')}
+      <p>Good afternoon ${escapeHtml(name)},</p>
+      <p>${todo === 1 ? 'One of your classes is' : `${todo} of your classes are`} waiting for your end-of-week reflection. It takes a couple of minutes, and your students&rsquo; feedback is ready to read beside it.</p>
+      ${infoBox(rows)}
+      ${button('Open Class Feedback', feedbackUrl)}
+      ${finePrint('You can write a reflection for this week until the end of next week. You are getting this because you teach classes on the school timetable.')}
+    `),
+  }
+}
+
 export function orgRequestReceivedEmail(orgName: string, contactName: string) {
   return {
     subject: `We've received your Smart Assess request for ${orgName}`,
