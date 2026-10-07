@@ -37,7 +37,7 @@ const PRODUCTS = [
     name: 'Smart Assess', accent: COPPER, tint: TINT, status: 'Already built',
     job: 'Measure learning. Set tests and exams, sit them securely, mark them, and understand the results.',
     points: [
-      ['Build tests and exams', 'Multiple choice, true/false, short answer, fill in the blank and essay, with images, audio and a maths toolbar. Save questions in a bank and reuse them. Turn a PDF into questions, or let the AI draft questions from a topic. You review every one.'],
+      ['Build tests and exams', 'Multiple choice, true/false, short answer, fill in the blank and essay, with images, audio and subject tools, such as an equation toolbar for maths. Save questions in a bank and reuse them. Turn a PDF into questions, or let the AI draft questions from a topic. You review every one.'],
       ['School exams across a department', 'A team lead drafts a standardised exam, heads of department vet it, and it is published to the right classes.'],
       ['Secure sitting', 'Tab switches are logged, pasting is blocked, and a desktop app can lock the screen to the exam. Answers are saved if the connection drops.'],
       ['Marking that saves time', 'Multiple choice and short answers are marked the moment a student submits. Essays get a marking page with marking points, and an optional AI suggestion you always edit before saving.'],
@@ -60,7 +60,7 @@ const PRODUCTS = [
       ['Catch-up for absent students', 'Record the day a lesson was taught. Students who were absent are offered it, and you see who has caught up.'],
       ['Coverage', 'A grid of which classes have been taught which topics, so gaps show early.'],
       ['Student study support', 'Flashcards with review spacing, an optional AI tutor the school controls, and a Library of books to read or listen to.'],
-      ['Your week at a glance', 'A weekly summary of what is due, what needs attention and which students may need support. Teachers can also share resources with their department.'],
+      ['Current and future', 'What is happening now and what is coming: what is due, what needs attention and which students may need support. Teachers can also share resources with their department.'],
     ],
     forYou: {
       teacher: 'Plan faster, and know which students missed a lesson and which topics need another go. Share what works with your department.',

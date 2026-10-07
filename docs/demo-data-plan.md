@@ -21,7 +21,7 @@
 | Student: results, My Topics | At least 3 questions per topic across released tests | Comes from the tests above, for the demo student |
 | Student: Smart Learning | Lessons with progress; an absent day | 3 five-step lessons assigned to the class (checks at support, core and stretch), some finished, one overdue; 3 students marked absent the day a lesson was taught, so catch-up shows |
 | Flashcards | A deck with due cards | One deck of about 12 cards for the demo student, some due today |
-| This week / My week | Derived | Comes from the above |
+| Current and future | Derived | Comes from the above |
 | Lesson plans and shared library | A couple of plans | 2 plans for the teacher, 1 published to the shared library |
 | Coverage grid | A topic list and taught lessons | About 12 Grade 9 Mathematics topics (permanent codes), lessons mapped to them, so the grid shows covered and behind |
 | Teacher resources | A few shared items | 5 department resources (links) in Mathematics |

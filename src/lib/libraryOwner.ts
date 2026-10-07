@@ -4,6 +4,7 @@ import { z } from 'zod'
 import { getLibraryAdmin } from '@/lib/libraryDb'
 import { verifySystemAdmin } from '@/lib/verifySystemAdmin'
 import { bearerToken, LIBRARY_BUCKET, UUID_RE } from '@/lib/libraryServer'
+import { GENRES } from '@/lib/libraryBrowsePure'
 
 // Server-only helpers for the platform owner's Library catalog. Only the platform owner may add, change or
 // publish books; the owner is checked from their own sign-in, then the central library is used with its service key.
@@ -20,6 +21,7 @@ export const bookSchema = z.object({
   description: optionalText(2000),
   shelf: z.enum(['curriculum', 'fun']),
   subject: optionalText(100),
+  genre: z.enum(GENRES).nullish(),      // omitted = leave as it is; null = clear it
   topic: optionalText(100),
   levels: z.array(z.enum(LEVELS)).min(1),
   licence: z.enum(LICENCES),

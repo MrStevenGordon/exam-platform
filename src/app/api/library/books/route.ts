@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { authorizeLibraryUser, bookVisible, cleanSearch, filesAllowed, formatsOf, PUBLIC_BOOK_COLUMNS } from '@/lib/libraryServer'
+import { authorizeLibraryUser, bookVisible, cleanSearch, filesAllowed, formatsOf, GENRE_BOOK_COLUMNS, PUBLIC_BOOK_COLUMNS } from '@/lib/libraryServer'
 
 const LIMIT = 200
 
@@ -15,13 +15,19 @@ export async function GET(req: NextRequest) {
     const subject = req.nextUrl.searchParams.get('subject')?.trim().slice(0, 100)
     const q = cleanSearch(req.nextUrl.searchParams.get('q'))
 
-    let query = library.from('library_books').select(PUBLIC_BOOK_COLUMNS).eq('status', 'published').order('title').limit(LIMIT)
-    if (shelf === 'curriculum' || shelf === 'fun') query = query.eq('shelf', shelf)
-    if (subject) query = query.eq('subject', subject)
-    if (q) query = query.or(`title.ilike.%${q}%,author.ilike.%${q}%,topic.ilike.%${q}%,subject.ilike.%${q}%`)
-
-    const { data: books, error } = await query
+    const run = (columns: string) => {
+      let query = library.from('library_books').select(columns).eq('status', 'published').order('title').limit(LIMIT)
+      if (shelf === 'curriculum' || shelf === 'fun') query = query.eq('shelf', shelf)
+      if (subject) query = query.eq('subject', subject)
+      if (q) query = query.or(`title.ilike.%${q}%,author.ilike.%${q}%,topic.ilike.%${q}%,subject.ilike.%${q}%`)
+      return query
+    }
+    // Genres need central migration 002; until it is applied the list simply comes back without them.
+    let result = await run(`${PUBLIC_BOOK_COLUMNS}, ${GENRE_BOOK_COLUMNS}`)
+    if (result.error && /genre/i.test(result.error.message)) result = await run(PUBLIC_BOOK_COLUMNS)
+    const { error } = result
     if (error) throw error
+    const books = (result.data || []) as unknown as Array<Record<string, unknown>>
     const ids = (books || []).map((b) => b.id as string)
 
     const formats = new Map<string, Array<{ kind: string }>>()

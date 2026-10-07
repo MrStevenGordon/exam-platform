@@ -26,14 +26,19 @@ function base(active, notes) {
     s.addText(name, { x: 13.333 - w, y: 0.55 + i * 1.38, w, h: 1.26, vert: 'vert270', fontFace: MONO, fontSize: 12, bold: true, charSpacing: 3, color: fg, align: 'center', valign: 'middle', margin: 0 })
   })
   if (notes) s.addNotes(notes)
+  // A little more room between the header and everything under it: anything placed from 1.7in down moves down by 0.2in.
+  const DY = 0.2
+  const lower = (o) => (o && typeof o === 'object' && typeof o.y === 'number' && o.y >= 1.7 ? { ...o, y: o.y + DY } : o)
+  const wrap = (name, idx) => { const orig = s[name].bind(s); s[name] = (...a) => { a[idx] = lower(a[idx]); return orig(...a) } }
+  wrap('addText', 1); wrap('addShape', 1); wrap('addImage', 0); wrap('addChart', 2); wrap('addTable', 1)
   return s
 }
 const label = (s, t, y = 0.5) => s.addText(t.toUpperCase(), { x: 1.55, y, w: 10, h: 0.3, fontFace: MONO, fontSize: 11.5, bold: true, charSpacing: 3, color: INK, margin: 0 })
-const title = (s, t, o = {}) => s.addText(t.toUpperCase(), { x: 1.55, y: o.y || 0.8, w: o.w || 10.4, h: o.h || 1.0, fontFace: HEAD, fontSize: o.size || 40, color: o.color || INK, margin: 0, valign: 'top', fit: 'shrink' })
+const title = (s, t, o = {}) => s.addText(t.toUpperCase(), { x: 1.55, y: o.y || 0.85, w: o.w || 10.4, h: o.h || 1.1, fontFace: HEAD, fontSize: Math.round((o.size || 40) * 1.2), color: o.color || INK, margin: 0, valign: 'top', fit: 'shrink' })
 const box = (s, x, y, w, h, o = {}) => s.addShape(SH.rect, { x, y, w, h, fill: { color: o.fill || 'FFFFFF' }, line: o.noLine ? { type: 'none' } : { color: INK, width: o.dash ? 2 : 2, dashType: o.dash ? 'dash' : 'solid' } })
 const text = (s, t, x, y, w, h, o = {}) => s.addText(t, { x, y, w, h, fontFace: o.font || BODY, fontSize: o.size || 15, bold: !!o.bold, color: o.color || INK, align: o.align || 'left', valign: o.valign || 'top', margin: 0, charSpacing: o.cs, lineSpacingMultiple: o.ls || 1.1, italic: o.italic, fit: o.fit })
 const bar = (s, t, y = 6.35, size = 15) => { s.addShape(SH.rect, { x: 1.55, y, w: 10.4, h: 0.55, fill: { color: INK }, line: { type: 'none' } }); text(s, t, 1.75, y, 10.0, 0.55, { size, bold: true, color: 'FFFFFF', valign: 'middle' }) }
-const foot = (s, t) => text(s, t, 1.55, 7.0, 10.4, 0.3, { size: 9.5, color: GREY })
+const foot = (s, t) => text(s, t, 1.55, 7.0, 10.4, 0.3, { size: 9, color: GREY })
 const chip = (s, t, x, y, w, fill = INK, fg = 'FFFFFF') => { s.addShape(SH.rect, { x, y, w, h: 0.34, fill: { color: fill }, line: { color: INK, width: 1.5 } }); text(s, t.toUpperCase(), x, y, w, 0.34, { font: MONO, size: 10, bold: true, color: fg, align: 'center', valign: 'middle', cs: 2 }) }
 const num = (s, n, x, y, w, h, fill, fg = INK) => { s.addShape(SH.rect, { x, y, w, h, fill: { color: fill }, line: { color: INK, width: 2 } }); text(s, String(n), x, y, w, h, { font: HEAD, size: 44, color: fg, align: 'center', valign: 'middle' }) }
 const note = (min, body, skip) => `${skip ? 'OPTIONAL: skip if you are short of time.\n' : ''}About ${min} minute${min === 1 ? '' : 's'}.\n\n${body}`
@@ -101,7 +106,7 @@ const note = (min, body, skip) => `${skip ? 'OPTIONAL: skip if you are short of 
   text(s, 'WHAT WOULD YOU WANT TO SEE ABOUT YOUR PROGRESS?', 7.0, 1.85, 5.0, 0.3, { font: MONO, size: 10.5, bold: true, cs: 1 })
   s.addChart(pres.charts.BAR, [{ name: 'Students', labels: ['Topics I need to improve', 'Grades', 'Compare with previous results', 'Strongest topics', 'Progress toward goals'], values: [9, 7, 6, 5, 5] }], { x: 6.9, y: 2.15, w: 5.1, h: 3.5, ...opts(TEAL) })
   bar(s, '10 of 12 want help studying for exams. 7 of 12 chose flashcards for practice.', 5.85)
-  foot(s, 'Manchester High School student survey, 12 students, who could tick as many answers as they liked. A small sample, so read it as a signal. Wifi and offline access came up in their own words.')
+  foot(s, 'Manchester High School student survey, 12 students, who ticked as many answers as they liked. A small sample: read it as a signal.')
 }
 // ---------- 6. teachers survey ----------
 {
@@ -137,17 +142,37 @@ const note = (min, body, skip) => `${skip ? 'OPTIONAL: skip if you are short of 
   })
   text(s, 'They share one school, one set of people and one topic list.', 1.55, 6.45, 10.4, 0.4, { size: 15, bold: true })
 }
+// ---------- product introductions ----------
+function intro(active, accent, accentFg, n, name, tagline, summary, points, who, status, statusFill, notes) {
+  const s = base(active, notes)
+  label(s, 'Meet the product')
+  box(s, 1.55, 1.9, 4.3, 4.3, { fill: accent })
+  text(s, String(n), 1.8, 2.0, 3.8, 1.6, { font: HEAD, size: 96, color: accentFg })
+  text(s, name.toUpperCase().replace(' ', '\n'), 1.8, 3.55, 3.8, 1.5, { font: HEAD, size: 44, color: accentFg, ls: 0.95 })
+  text(s, tagline, 1.8, 5.2, 3.8, 0.9, { size: 18, bold: true, color: accentFg })
+  text(s, summary, 6.15, 1.95, 5.8, 1.7, { size: 16, bold: true, ls: 1.15 })
+  text(s, 'WHAT IT DOES', 6.15, 3.85, 5.8, 0.3, { font: MONO, size: 11, bold: true, cs: 2 })
+  points.forEach((t, i) => { const y = 4.22 + i * 0.6; box(s, 6.15, y, 5.8, 0.52, { fill: i % 2 ? TINT : 'FFFFFF' }); text(s, t, 6.35, y, 5.45, 0.52, { size: 13, bold: true, valign: 'middle' }) })
+  text(s, who, 6.15, 6.1, 3.6, 0.5, { size: 12, color: GREY, valign: 'middle' })
+  chip(s, status, 9.85, 6.17, 2.1, statusFill, statusFill === INK ? 'FFFFFF' : INK)
+  return s
+}
+intro('ASSESS', COPPER, INK, 1, 'Smart Assess', 'Measure learning.',
+  'Set, sit, mark and understand tests and exams in one secure record. Teachers save time on marking, students see exactly what to work on, and leaders see how every class and department is doing.',
+  ['Build tests and exams, with AI help you always review', 'Mark automatically, with AI-suggested essay marks you decide on', 'See what the class missed and who needs support'],
+  'For teachers, students, heads of department and leaders.', 'Already built', INK,
+  'About half a minute. One line: Smart Assess is for assessment only. The next four slides show building, marking, results and security. 8 of 10 teachers named marking as their biggest time cost, so that is where we start.')
 // ---------- 8. assess overview ----------
 {
   const s = base('ASSESS', note(1.5, 'Smart Assess is for assessments only: set it, sit it, mark it, understand it. Walk the six cards quickly. The demo will show building a test and the results screens.'))
   label(s, 'Smart Assess')
   title(s, 'Every assessment, one secure record', { size: 38 })
   chip(s, 'Already built', 10.0, 0.55, 1.9, COPPER, INK)
-  const cards = [['Exams, tests and tasks', 'Pop quizzes to end-of-year exams, plus assignments and homework. Five question types, with images and audio.'], ['Question bank', 'Save a question once, tag it to a topic, reuse it in future tests.'], ['Maths tools', 'A toolbar for equations and symbols, and an optional on-screen calculator.'], ['PDF import and AI drafting', 'Turn an exam PDF into questions, or draft questions from a topic. You review every one.'], ['Secure sitting', 'One device, tab-switch logging, blocked pasting, a desktop lock-down app, saved answers.'], ['Marking and results', 'Automatic marking, essay marking points, controlled release and report cards.']]
+  const cards = [['Exams, tests and tasks', 'Pop quizzes to end-of-year exams, plus assignments and homework. Five question types, with images and audio.'], ['Question bank', 'Save a question once, tag it to a topic, reuse it in future tests.'], ['Subject tools', 'Built for each subject, starting with an equation toolbar and calculator for maths.'], ['PDF import and AI drafting', 'Turn an exam PDF into questions, or draft questions from a topic. You review every one.'], ['Secure sitting', 'One device, tab-switch logging, blocked pasting, a desktop lock-down app, saved answers.'], ['Marking and results', 'Automatic marking, essay marking points, controlled release and report cards.']]
   cards.forEach(([h, b], i) => {
     const x = 1.55 + (i % 3) * 3.5, y = 1.95 + Math.floor(i / 3) * 2.15
     box(s, x, y, 3.3, 1.95); s.addShape(SH.rect, { x, y, w: 3.3, h: 0.12, fill: { color: COPPER }, line: { type: 'none' } })
-    text(s, h.toUpperCase(), x + 0.2, y + 0.3, 2.9, 0.65, { font: HEAD, size: 19 })
+    text(s, h.toUpperCase(), x + 0.2, y + 0.3, 2.9, 0.65, { font: HEAD, size: 17 })
     text(s, b, x + 0.2, y + 0.95, 2.9, 0.95, { size: 12.5, color: GREY })
   })
   bar(s, 'For assessment only. Lessons belong to Smart Learning, games to Smart Play.', 6.3, 14)
@@ -175,7 +200,7 @@ const note = (min, body, skip) => `${skip ? 'OPTIONAL: skip if you are short of 
   const s = base('ASSESS', note(1.5, 'Teachers asked who is struggling and what the common mistakes are (8 and 7 of 10). Exam insight shows, per test, which questions the class missed, the wrong answer most students chose, which students may need support and why, and the class against its last five tests. Students get My Topics: their own results by topic, with a practise button. Leaders get department and school analytics.'))
   label(s, 'Smart Assess')
   title(s, 'Results that tell you what to do', { size: 38 })
-  const cards = [['Exam insight', ['Which questions the class missed', 'The wrong answer most students chose', 'Who may need support, and why', 'Compared with the last five tests'], 'For teachers'], ['My Topics', ['Students see which topics need work', 'Built from released, marked results', 'One tap to practise a weak topic', 'Links to lessons on that topic'], 'For students'], ['School analytics', ['Pass rates by subject and department', 'Flagged exam sessions in one place', 'Report cards for every student', 'Downloadable as a spreadsheet'], 'For HODs and leaders']]
+  const cards = [['Exam insight', ['Which questions the class missed', 'The wrong answer most students chose', 'Who may need support, and why', 'Compared with the last five tests'], 'For teachers'], ['My Topics', ['Students see which topics need work', 'Built from released, marked results', '\u2018One tap\u2019 to practise a weak topic', 'Links to lessons on that topic'], 'For students'], ['School analytics', ['Pass rates by subject and department', 'Flagged exam sessions in one place', 'Report cards for every student', 'Downloadable as a spreadsheet'], 'For HODs and leaders']]
   cards.forEach(([h, items, who], i) => {
     const x = 1.55 + i * 3.5
     box(s, x, 1.95, 3.3, 4.2)
@@ -200,6 +225,11 @@ const note = (min, body, skip) => `${skip ? 'OPTIONAL: skip if you are short of 
   })
   bar(s, 'A person always decides. Integrity flags are prompts for a teacher or leader, never proof.', 6.3, 14)
 }
+intro('LEARN', GOLD, INK, 2, 'Smart Learning', 'Deliver and recover learning.',
+  'Lessons, lesson plans, catch-up and study support that act on what Smart Assess finds. Students get a clear path back in after a missed lesson, and teachers plan faster with AI help they always review.',
+  ['Five-step lessons with checks at three levels', 'Catch-up for absent students, flashcards and the Library', 'AI lesson plans shaped by Jamaica and the national curriculum'],
+  'For teachers, students, heads of department and leaders.', 'Already built', INK,
+  'About half a minute. Assessment tells you what happened; Smart Learning helps you act on it. The next slides cover lessons, catch-up, study support and the Library.')
 // ---------- 12. learning overview ----------
 {
   const s = base('LEARN', note(1.5, 'Smart Learning is for learning only: lessons, study support, catch-up and reading. Assessment tells you what happened; Learning helps you act on it. Lessons follow the national curriculum 5E model. Short check questions come at three levels, support, core and stretch, which answers the 9 of 10 who asked for different activities for different ability levels. The AI drafts a lesson plan from a subject, grade and topic; the teacher reviews it.'))
@@ -211,7 +241,7 @@ const note = (min, body, skip) => `${skip ? 'OPTIONAL: skip if you are short of 
     const x = 1.55 + i * 2.1
     num(s, i + 1, x, 2.3, 0.7, 0.7, GOLD); box(s, x + 0.7, 2.3, 1.25, 0.7); text(s, t.toUpperCase(), x + 0.78, 2.3, 1.15, 0.7, { font: HEAD, size: 13, valign: 'middle' })
   })
-  const cards = [['Check your understanding', 'Short questions in each lesson, at support, core and stretch levels.'], ['AI lesson plans', 'Draft a full 5E plan from a subject, grade and topic. You review it.'], ['Shared plan library', 'Browse and copy published plans from teachers at other schools.'], ['Coverage grid', 'Which topics each class has been taught, and where gaps remain.'], ['Catch-up', 'Absent students are offered the lesson they missed.'], ['Teacher resources', 'Share links and files with your department, tagged by subject and topic.']]
+  const cards = [['Check your understanding', 'Short questions in each lesson, at support, core and stretch levels.'], ['AI lesson plans', 'A full 5E plan with objectives and a DOK level, shaped by Jamaica. You review it.'], ['Shared plan library', 'Browse and copy published plans from teachers at other schools.'], ['Coverage grid', 'Which topics each class has been taught, and where gaps remain.'], ['Catch-up', 'Absent students are offered the lesson they missed.'], ['Teacher resources', 'Share links and files with your department, tagged by subject and topic.']]
   cards.forEach(([h, b], i) => {
     const x = 1.55 + (i % 3) * 3.5, y = 3.3 + Math.floor(i / 3) * 1.6
     box(s, x, y, 3.3, 1.45)
@@ -239,10 +269,10 @@ const note = (min, body, skip) => `${skip ? 'OPTIONAL: skip if you are short of 
 }
 // ---------- 14. study support ----------
 {
-  const s = base('LEARN', note(1.5, 'What students and teachers told us they want, and what is built: flashcards (7 of 12 students chose them) with review spacing, so cards you miss come back sooner; support, core and stretch practice per lesson; a weekly summary, My week for students and This week for teachers, including upcoming assignment reminders, with no email; and the teacher resource space. The screen on the right is a real lesson builder from the demo school, with the optional AI drafting button.'))
+  const s = base('LEARN', note(1.5, 'What students and teachers told us they want, and what is built: flashcards (7 of 12 students chose them) with review spacing, so cards you miss come back sooner; support, core and stretch practice per lesson; a "Current and future" page for students and teachers (what is happening now and what is coming, including upcoming assignment reminders, with no email); and the teacher resource space. The screen on the right is a real lesson builder from the demo school, with the optional AI drafting button.'))
   label(s, 'Smart Learning')
   title(s, 'Study support that fits each student', { size: 36 })
-  const items = [['Flashcards', 'Students build their own decks. Flip, then "Got it" or "Not yet". Cards you miss come back sooner.'], ['Three levels of practice', 'Support, core and stretch questions for each lesson, suggested from a student\'s topic results.'], ['My week and This week', 'A weekly summary for students and teachers, with upcoming assignment reminders. No email.'], ['Weak topic to lesson', 'From a weak topic in Smart Assess, one tap to the lessons and practice for it.']]
+  const items = [['Flashcards', 'Students build their own decks. Flip, then "Got it" or "Not yet". Cards you miss come back sooner.'], ['Three levels of practice', 'Support, core and stretch questions for each lesson, suggested from a student\'s topic results.'], ['Current and future', 'What is happening now and what is coming, for students and teachers, with upcoming assignment reminders. No email.'], ['Weak topic to lesson', 'From a weak topic in Smart Assess, \u2018one tap\u2019 to the lessons and practice for it.']]
   items.forEach(([h, b], i) => {
     const y = 1.85 + i * 1.12
     box(s, 1.55, y, 5.2, 1.0); s.addShape(SH.rect, { x: 1.55, y, w: 0.14, h: 1.0, fill: { color: GOLD }, line: { type: 'none' } })
@@ -259,7 +289,7 @@ const note = (min, body, skip) => `${skip ? 'OPTIONAL: skip if you are short of 
   const s = base('LEARN', note(1, 'The Library: books for the curriculum and books for the joy of reading, in the same place as the lessons. Smart Assess Ja chooses and clears every title (public domain or openly licensed), so schools do not upload books. The Library is built and switched on; titles are being added.', true))
   label(s, 'Smart Learning')
   title(s, 'The Library: read it, listen to it, assign it', { size: 36 })
-  const it = [['Read or listen', 'Page by page, or audio that remembers where the student stopped.'], ['Two shelves', 'Books for the curriculum, and reading for fun.'], ['Teacher assignments', 'Assign a book or chapter with a due date and see who finished.'], ['Bookmarks and notes', 'Students keep private bookmarks and notes. Teachers cannot read them.'], ['School controls', 'The school chooses shelves, year groups, audio and which titles are visible.']]
+  const it = [['Read or listen', 'Page by page, or audio that remembers where the student stopped.'], ['Browse your way', 'By shelf, genre or subject: curriculum books and reading for fun.'], ['Teacher assignments', 'Assign a book or chapter with a due date and see who finished.'], ['Bookmarks and notes', 'Students keep private bookmarks and notes. Teachers cannot read them.'], ['School controls', 'The school chooses shelves, year groups, audio and which titles are visible.']]
   it.forEach(([h, b], i) => {
     const y = 1.9 + i * 0.86
     num(s, i + 1, 1.55, y, 0.75, 0.74, GOLD); box(s, 2.3, y, 9.65, 0.74)
@@ -268,6 +298,11 @@ const note = (min, body, skip) => `${skip ? 'OPTIONAL: skip if you are short of 
   })
   bar(s, 'Every title is chosen and cleared by Smart Assess Ja. Schools do not upload books.', 6.35, 14)
 }
+intro('PLAY', INK, 'FFFFFF', 3, 'Smart Play', 'Make practice fun.',
+  'Quick classroom games and challenges that make practice something students want to do. Games and exams are kept apart: Smart Play never holds a school\'s official results.',
+  ['Duels, live quizzes, boards and team games', 'Points, streaks, badges and class leaderboards', 'Questions from the same topic list as lessons and tests'],
+  'For students and teachers.', 'Coming soon', PAPER,
+  'About half a minute. Built and tested, held back until the school chooses to launch it. The next slide shows the games.')
 // ---------- 16. play ----------
 {
   const s = base('PLAY', note(1, 'Smart Play is built and tested but held back until you choose to launch it. Quick, fun practice for the classroom. It does not replace formal assessment and it never holds the school\'s official results. Games and exams are kept apart on purpose.'))
@@ -329,7 +364,7 @@ const note = (min, body, skip) => `${skip ? 'OPTIONAL: skip if you are short of 
   ]
   s.addTable(rows, { x: 1.55, y: 1.75, w: 10.4, colW: [1.9, 4.6, 3.9], border: { type: 'solid', pt: 1.5, color: INK }, margin: [0.06, 0.1, 0.06, 0.1], rowH: [0.38, 0.95, 0.75, 0.7, 0.62, 0.62] })
   bar(s, 'The question is not "can another tool do one of these things?" It is "how many tools and handoffs does the school need?"', 6.2, 12.5)
-  foot(s, 'Compared with Google Classroom, Microsoft Teams, Moodle, Canvas, Kahoot and Quizizz, from each product\'s public documentation, October 2026. Every school sets these up differently.')
+  foot(s, 'Google Classroom, Microsoft Teams, Moodle, Canvas, Kahoot and Quizizz: from public documentation, October 2026. Every school sets them up differently.')
 }
 // ---------- 20. is not ----------
 {
@@ -350,13 +385,13 @@ const note = (min, body, skip) => `${skip ? 'OPTIONAL: skip if you are short of 
   const s = base('WHY US', note(1.5, 'Trust, data and AI. Each school\'s data lives in its own separate environment. Access rules are enforced by the database itself. Two-factor sign-in is required for every staff account, which you set up today. AI helps a teacher write and suggest; it never saves a mark and never decides. Every suggestion is reviewed by a person before it is used. The optional AI tutor stays inside a lesson, is switched on by the school, can be switched off by the principal at any time, and its conversations can be read by the teacher; worrying conversations are flagged for an adult.'))
   label(s, 'Trust')
   title(s, 'Trust, data and AI with a person in charge', { size: 36 })
-  const cols = [['Your data', INK, 'FFFFFF', ['Each school\'s data lives in its own separate environment', 'Access rules are enforced by the database itself', 'Two-factor sign-in is required for all staff', 'Handled in line with Jamaica\'s Data Protection Act']], ['AI on a short leash', COPPER, INK, ['AI helps a teacher write: polish a question, import a PDF, draft a lesson plan', 'AI suggests essay marks. It never saves one; the teacher edits and decides', 'Every suggestion is reviewed by a person before it is used', 'The optional AI tutor stays inside a lesson; the principal can switch it off']]]
+  const cols = [['Your data', INK, 'FFFFFF', ['Each school\'s data lives in its own separate environment', 'Access rules are enforced by the database itself', 'Two-factor sign-in is required for all staff', 'Handled in line with Jamaica\'s Data Protection Act']], ['AI on a short leash', COPPER, INK, ['AI helps a teacher write: polish a question, import a PDF, draft a lesson plan', 'AI suggests essay marks. It never saves one; the teacher edits and decides', 'Every suggestion is reviewed by a person before it is used', 'The optional AI tutor stays inside a lesson; the principal can switch it off', 'AI is told to use Jamaican examples, the National Standards Curriculum and Vision 2030']]]
   cols.forEach(([h, f, fg, items], i) => {
     const x = 1.55 + i * 5.25
-    box(s, x, 1.95, 5.1, 3.9)
+    box(s, x, 1.95, 5.1, 4.5)
     s.addShape(SH.rect, { x, y: 1.95, w: 5.1, h: 0.8, fill: { color: f }, line: { color: INK, width: 2 } })
     text(s, h.toUpperCase(), x + 0.25, 1.95, 4.6, 0.8, { font: HEAD, size: 24, color: fg, valign: 'middle' })
-    text(s, items.map((t) => ({ text: t, options: { bullet: { code: '25A0' }, breakLine: true } })), x + 0.25, 3.0, 4.6, 3.2, { size: 13.5, ls: 1.3 })
+    text(s, items.map((t) => ({ text: t, options: { bullet: { code: '25A0' }, breakLine: true } })), x + 0.25, 3.0, 4.6, 3.35, { size: 13, ls: 1.2 })
   })
 }
 // ---------- 22. you asked, we built ----------

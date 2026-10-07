@@ -12,6 +12,7 @@ export const SIGNED_URL_SECONDS = 3600
 export const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 // What a reader may know about a title. Never the status, the rights flag or the storage paths.
+export const GENRE_BOOK_COLUMNS = 'genre'
 export const PUBLIC_BOOK_COLUMNS = 'id, title, author, description, shelf, subject, topic, levels, licence, licence_note, source_url, attribution, cover_bg, cover_fg'
 export const PUBLIC_FILE_COLUMNS = 'id, book_id, kind, label, position, pages, duration_seconds'
 

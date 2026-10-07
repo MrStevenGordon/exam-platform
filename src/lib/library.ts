@@ -15,6 +15,7 @@ export type LibraryBook = {
   description: string | null
   shelf: LibraryShelf
   subject: string | null
+  genre?: string | null        // needs central migration 002; missing until then
   topic: string | null
   levels: string[]
   licence: string

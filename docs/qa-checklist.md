@@ -371,14 +371,14 @@ Use a test student who has sat at least one exam with topic-tagged questions who
 - [ ] Add 10 questions at one level: the 11th is refused with a clear message, but another level still takes questions
 - [ ] A student not in the class cannot open the check (same as before)
 
-## 7o. Weekly summary: My week and This week (Smart Learning, no migration)
+## 7o. Current and future (the weekly summary) (Smart Learning, no migration)
 
-- [ ] A student sees **My week** in the Smart Learning menu; a teacher or HOD sees **This week**. Principal and school admin do not (typing /learning/week sends them to Smart Learning)
+- [ ] A student, teacher or HOD sees **Current and future** in the Smart Learning menu (different content for a student and for staff). Principal and school admin do not (typing /learning/week sends them to Smart Learning)
 - [ ] **Student, a normal week:** the headline matches their released results this week (work one out by hand: average of results shared in the last 7 days, and the change on the 7 days before)
 - [ ] **Coming up** lists an unfinished lesson with a due date in the next 7 days, and a test or task that closes in the next 7 days, soonest first. An overdue lesson shows "Overdue by N days" at the top in red
 - [ ] A lesson the student has finished does not appear in Coming up. A test they have already sat does not appear
 - [ ] **What to do next** gives sensible steps (an overdue lesson first, then a test closing soon, then the weakest topic, then due flashcards)
-- [ ] **Flashcards:** study some cards; My week then shows the number studied and the days studied
+- [ ] **Flashcards:** study some cards; Current and future then shows the number studied and the days studied
 - [ ] **A student with no activity** sees a friendly "quiet week" message and empty sections are not shown
 - [ ] **Teacher:** each of their classes is listed with the class average this week against last week (only fully marked results count: a result with an unmarked essay is not included)
 - [ ] A student under 50% over two weeks, and one who dropped 15 points or more, appear under **May need support** with the reason. A student with no results is not listed
@@ -431,6 +431,19 @@ Use a test student who has sat at least one exam with topic-tagged questions who
 - [ ] As the **principal**: Timetable by class and by teacher shows the same week view, with lunch and events
 - [ ] Cover: report a teacher absent for a day that includes their double period. The cover list shows the double once, and the substitute offered is free for both hours
 - [ ] Nothing about **cafe duty** appears anywhere (it is not built yet)
+
+## 7s. Lesson plans, Jamaican focus, Library genres (no school migration; central 002 for genres)
+
+- [ ] **Lesson plan editor:** each lesson shows **General Objective**, **Specific Objectives** and a **Depth of Knowledge (DOK) level** dropdown (levels 1 to 4) before Engage. Pick a level, save, reopen: it is kept. Download Word and PDF: the three appear (the DOK level in words, for example "DOK 3: Strategic thinking")
+- [ ] The unit overview says **Subject Practices** (not "Mathematical"), in the editor, the read-only view and the downloads, for a Mathematics plan too
+- [ ] An older plan still opens, with the new fields empty
+- [ ] **AI lesson plan:** draft a 2-lesson Grade 9 Mathematics plan on Simple interest. It should fill general objective, specific objectives and a DOK level for each lesson (rising from lesson 1 to 2), use Jamaican examples (J$ prices, local places or food, Jamaican names) and British spelling
+- [ ] Try the same for English (Poetry) and Social Studies: the examples are Jamaican, and Vision 2030 is mentioned only where it fits
+- [ ] **AI questions** (Draft questions) and **Draft with AI** for a lesson: Jamaican contexts and J$ in word problems. **AI tutor**: friendly, Jamaican Standard English, no mocking of Patois
+- [ ] **AI essay marking:** an essay written partly in Patois is not marked down for that
+- [ ] **Current and future:** the Smart Learning menu item (student, teacher, HOD) is called "Current and future" and the page title matches
+- [ ] **Library (after central migration 002):** "Browse by" has Shelves, Genre and Subject. Genre groups books (Plays, Poetry...) with unsorted books last; Subject groups by subject with "General reading" last. Search still works in each view. Owner console: a book's **Genre** can be set and cleared
+- [ ] Before the central migration the Library works exactly as before (no errors, no genres)
 
 ## 8. Owner console (you)
 

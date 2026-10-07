@@ -3,16 +3,17 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { LICENCE_LABEL, LEVEL_LABEL, SHELF_LABEL, formatDuration } from '@/lib/library'
+import { GENRES, GENRE_LABEL } from '@/lib/libraryBrowsePure'
 
 type Book = {
-  id: string; title: string; author: string; description: string | null; shelf: 'curriculum' | 'fun'; subject: string | null; topic: string | null
+  id: string; title: string; author: string; description: string | null; shelf: 'curriculum' | 'fun'; subject: string | null; genre?: string | null; topic: string | null
   levels: string[]; licence: string; licence_note: string | null; source_url: string | null; attribution: string | null
   cover_bg: string; cover_fg: string; status: 'draft' | 'needs_review' | 'published'; rights_confirmed: boolean; files?: { pdf: number; audio: number }
 }
 type FileRow = { id: string; book_id: string; kind: 'pdf' | 'audio'; label: string; position: number; bytes: number | null; pages: number | null; duration_seconds: number | null }
 type Form = Omit<Book, 'id' | 'status' | 'files'>
 
-const EMPTY: Form = { title: '', author: '', description: '', shelf: 'fun', subject: '', topic: '', levels: ['forms_1_3', 'forms_4_5', 'sixth_form'], licence: 'public_domain', licence_note: '', source_url: '', attribution: '', cover_bg: '#1E1208', cover_fg: '#F6EDE0', rights_confirmed: false }
+const EMPTY: Form = { title: '', author: '', description: '', shelf: 'fun', subject: '', genre: '', topic: '', levels: ['forms_1_3', 'forms_4_5', 'sixth_form'], licence: 'public_domain', licence_note: '', source_url: '', attribution: '', cover_bg: '#1E1208', cover_fg: '#F6EDE0', rights_confirmed: false }
 const STATUS_BADGE = { draft: 'badge-default', needs_review: 'badge-warning', published: 'badge-success' } as const
 const STATUS_LABEL = { draft: 'Draft', needs_review: 'Needs review', published: 'Published' } as const
 const labelStyle: React.CSSProperties = { display: 'flex', flexDirection: 'column', gap: 4, fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: 12 }
@@ -128,7 +129,10 @@ export default function OwnerLibraryPage() {
   async function save() {
     setBusy(true); setError(''); setNotice('')
     try {
-      const body = JSON.stringify(form)
+      // The genre is only sent when there is one, or to clear one that was set, so saving still works before central migration 002 is applied.
+      const { genre, ...rest } = form
+      const hadGenre = !!books.find((b) => b.id === selected)?.genre
+      const body = JSON.stringify({ ...rest, ...(genre ? { genre } : hadGenre ? { genre: null } : {}) })
       if (selected === 'new') {
         const res = await api<{ book: Book }>('/api/owner/library/books', { method: 'POST', body })
         setSelected(res.book.id)
@@ -248,6 +252,7 @@ export default function OwnerLibraryPage() {
                 <label style={labelStyle}>Shelf<select value={form.shelf} onChange={(e) => set('shelf', e.target.value as Form['shelf'])} style={fieldStyle}><option value="curriculum">Curriculum</option><option value="fun">Read for fun</option></select></label>
                 <label style={labelStyle}>Subject<input value={form.subject ?? ''} onChange={(e) => set('subject', e.target.value)} style={fieldStyle} maxLength={100} placeholder="English" /></label>
               </div>
+              <label style={labelStyle}>Genre<select value={form.genre ?? ''} onChange={(e) => set('genre', e.target.value)} style={fieldStyle}><option value="">Not yet sorted</option>{GENRES.map((g) => <option key={g} value={g}>{GENRE_LABEL[g]}</option>)}</select></label>
               <label style={labelStyle}>Topic<input value={form.topic ?? ''} onChange={(e) => set('topic', e.target.value)} style={fieldStyle} maxLength={100} placeholder="Tragedy" /></label>
               <div style={{ ...labelStyle, gap: 6 }}>Levels
                 <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', textTransform: 'none', fontWeight: 400, fontSize: 13 }}>

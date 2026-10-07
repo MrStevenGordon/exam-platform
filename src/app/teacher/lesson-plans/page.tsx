@@ -10,7 +10,7 @@ import { downloadLessonPlanPdf } from '@/lib/lessonPlanPdf'
 import TopicPicker from '@/components/TopicPicker'
 import { isTopicsAvailable } from '@/lib/topics'
 import type { PlanForDoc } from '@/lib/lessonPlanContent'
-import { Lesson, LESSON_FIELDS, UNIT_FIELDS, emptyLesson, lessonsForPlan, legacyFieldsFromLessons, cleanLessons } from '@/lib/lessonPlan'
+import { Lesson, LESSON_FIELDS, UNIT_FIELDS, DOK_LEVELS, dokLabel, emptyLesson, lessonsForPlan, legacyFieldsFromLessons, cleanLessons } from '@/lib/lessonPlan'
 
 type LessonPlan = {
   id: string
@@ -141,7 +141,7 @@ function PlanBody({ plan }: { plan: SharedPlan }) {
       {lessons.map((lesson, i) => (
         <div key={i} className="card" style={{ marginBottom: 16 }}>
           <div style={{ fontWeight: 700, marginBottom: 12 }}>Lesson {i + 1}{lesson.title ? ` – ${lesson.title}` : ''}</div>
-          {LESSON_FIELDS.map(({ key, label }) => <div key={key}>{show(label, lesson[key])}</div>)}
+          {LESSON_FIELDS.map(({ key, label }) => <div key={key}>{show(label, key === 'dok_level' ? dokLabel(lesson[key]) : lesson[key])}</div>)}
         </div>
       ))}
     </>
@@ -700,8 +700,15 @@ export default function LessonPlansPage() {
               </div>
               {LESSON_FIELDS.map(({ key, label, rows }) => (
                 <div key={key} style={{ marginBottom: 12 }}>
-                  <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)' }}>{label}</label>
-                  <textarea value={lesson[key]} onChange={(e) => updateLesson(i, key, e.target.value)} rows={rows} style={{ width: '100%', marginTop: 4 }} />
+                  <label htmlFor={`lesson-${i}-${key}`} style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)' }}>{label}</label>
+                  {key === 'dok_level' ? (
+                    <select id={`lesson-${i}-${key}`} value={lesson[key]} onChange={(e) => updateLesson(i, key, e.target.value)} style={{ width: '100%', marginTop: 4 }}>
+                      <option value="">Not chosen</option>
+                      {DOK_LEVELS.map((d) => <option key={d.level} value={d.level}>DOK {d.level}: {d.name} ({d.hint})</option>)}
+                    </select>
+                  ) : (
+                    <textarea id={`lesson-${i}-${key}`} value={lesson[key]} onChange={(e) => updateLesson(i, key, e.target.value)} rows={rows} style={{ width: '100%', marginTop: 4 }} />
+                  )}
                 </div>
               ))}
             </div>

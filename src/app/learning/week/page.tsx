@@ -6,7 +6,7 @@ import { supabase } from '@/lib/supabase'
 import StudentWeekView from '@/components/learning/StudentWeekView'
 import TeacherWeekView from '@/components/learning/TeacherWeekView'
 
-// "My week" for a student, "This week" for a teacher or head of department. Everyone else is sent back to Smart Learning.
+// "Current and future" for a student and for a teacher or head of department (different content for each). Everyone else is sent back to Smart Learning.
 export default function WeekPage() {
   const router = useRouter()
   const [role, setRole] = useState<string | null>(null)

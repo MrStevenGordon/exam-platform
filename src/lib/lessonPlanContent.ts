@@ -1,4 +1,4 @@
-import { lessonsForPlan, LESSON_FIELDS, type Lesson } from '@/lib/lessonPlan'
+import { dokLabel, lessonsForPlan, LESSON_FIELDS, type Lesson } from '@/lib/lessonPlan'
 
 // What goes into an exported lesson plan (Word or PDF), decided once so the two
 // formats always say the same thing.
@@ -60,7 +60,7 @@ export function planSubtitle(plan: PlanForDoc, lessonCount: number): string {
 }
 
 export function overviewRows(plan: PlanForDoc): [string, string][] {
-  const practicesLabel = /math/i.test(plan.subject) ? 'Mathematical Practices' : 'Subject Practices'
+  const practicesLabel = 'Subject Practices'
   const all: [string, string | null | undefined][] = [
     ['Topic', plan.topic],
     ['Sub-topics', plan.sub_topics],
@@ -96,5 +96,5 @@ export function lessonHeading(lesson: Lesson, index: number): string {
 }
 
 export function lessonRows(lesson: Lesson): [string, string][] {
-  return LESSON_FIELDS.filter(({ key }) => lesson[key].trim()).map(({ key, label }) => [label, lesson[key]] as [string, string])
+  return LESSON_FIELDS.filter(({ key }) => lesson[key].trim()).map(({ key, label }) => [label, key === 'dok_level' ? dokLabel(lesson[key]) : lesson[key]] as [string, string])
 }

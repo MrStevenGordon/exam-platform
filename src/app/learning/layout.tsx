@@ -36,8 +36,8 @@ const MY_COVER_ITEM = { label: 'My Cover', icon: 'ti-calendar-event', href: '/te
 const LIBRARY_ITEM = { label: 'Library', icon: 'ti-books', href: '/learning/library' }
 const FLASHCARDS_ITEM = { label: 'Flashcards', icon: 'ti-cards', href: '/learning/flashcards' }
 const RESOURCES_ITEM = { label: 'Resources', icon: 'ti-file-text', href: '/learning/resources' }
-const WEEK_ITEM = { label: 'My week', icon: 'ti-calendar-event', href: '/learning/week' }
-const TEACHER_WEEK_ITEM = { label: 'This week', icon: 'ti-calendar-event', href: '/learning/week' }
+const WEEK_ITEM = { label: 'Current and future', icon: 'ti-calendar-event', href: '/learning/week' }
+const TEACHER_WEEK_ITEM = { label: 'Current and future', icon: 'ti-calendar-event', href: '/learning/week' }
 
 // Smart Learning's own shell. Everyone signed in can enter (the lessons themselves are
 // protected by the database), but only when the school has switched Smart Learning on.

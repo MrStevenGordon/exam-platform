@@ -32,6 +32,9 @@ Then redeploy both. Adding the first two to Manchester also connects the existin
 
 Owner console, **Library catalog**: add a book, tick the rights confirmation only when you have checked the licence, upload the PDF and/or audio, then **Publish**.
 
+## 5. Genres (optional, central migration 002)
+Run `scripts/migrations/central/002_library_genres.sql` on the CENTRAL Supabase project (the one that holds the catalog). Then, in **Library catalog**, give each book a **Genre** (Novels, Short stories, Poetry, Plays, Biography and memoir, Folktales and legends, Non-fiction). Students can then browse the Library **by shelf, by genre or by subject**; books without a genre appear under "Not yet sorted", and books without a subject under "General reading". Until the migration is applied the Library works as before and the Genre box in the catalog is ignored. The prepared Shakespeare titles in `marketing/library-content/catalog-ready.json` are already tagged as Plays.
+
 ## Undoing it
 
 `scripts/migrations/rollback/079_library_school_controls_and_notes_rollback.sql` removes the settings, hidden titles and everyone's notes (everything goes back to on). `scripts/migrations/rollback/078_library_assignments_rollback.sql` removes reading assignments (progress is kept). `scripts/migrations/rollback/077_library_progress_rollback.sql` removes the progress table. `scripts/migrations/rollback/central_001_library_catalog_rollback.sql` removes the catalog tables (files in storage are not deleted). Untick the Library switch to hide it without losing anything.

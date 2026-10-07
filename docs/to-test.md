@@ -2,6 +2,12 @@
 
 Tick a box when you have tested it on the live site. Each item points to its section in `docs/qa-checklist.md`. Add new items at the top when something is built. Last updated 2026-10-06.
 
+## Feedback round 2026-10-07 (batch 1: needs a push)
+- [ ] Open the updated deck (`Smart-Assess-Ja-Manchester-Presentation-v2.pptx`, now 27 slides: bigger headers and more spacing, a short intro slide for each product, "Subject tools", 'one tap' in quotes, "Current and future") and check the wording and timing
+- [ ] Walk **QA 7s** (lesson plan objectives and DOK, Jamaican focus in the AI features, "Current and future", Library genres)
+- [ ] Apply `scripts/migrations/central/002_library_genres.sql` on the central Supabase project when you want genres
+- [ ] Reprint the guides (`All-19-guides-print.pdf`: "subject tools" and "Current and future" wording changed; still 6 pages each)
+
 ## School day and timetable (needs a push, then 088, 089 and the Manchester school day script)
 - [x] Applied 088 and 089, and ran the Manchester school day script (7 periods, 2 lunch windows), 2026-10-07
 - [ ] Walk **QA 7r** (school day page, events, double periods, student/teacher/principal timetable views, phone Today view, cover with a double period)
@@ -32,7 +38,7 @@ Tick a box when you have tested it on the live site. Each item points to its sec
 ## Presentation day (before you print)
 - [ ] Sign in once on the live site with your own staff account and follow page 6 of a guide exactly (default password, new password, authenticator). Does it match the screens?
 - [ ] Check each staff account really exists with the default password still unchanged (a changed one will not work on the sheet) and that the sign-in email for each is known
-- [ ] Every feature named on pages 3 to 5 works on Manchester (My Topics, flashcards, three practice levels, resources, My week, AI drafting, AI essay marking; leave offline out until tested)
+- [ ] Every feature named on pages 3 to 5 works on Manchester (My Topics, flashcards, three practice levels, resources, Current and future, AI drafting, AI essay marking; leave offline out until tested)
 - [x] AI key has credit (`npm run check:ai` passed 2026-10-06). Re-run it the day before as a cheap check
 - [ ] Print `marketing/presentation/guides/All-18-guides-print.pdf` double-sided (flip on long edge); 18 guides x 6 pages
 - [ ] Collect or shred the printed guides afterwards (they show the shared first-time password)
@@ -40,7 +46,7 @@ Tick a box when you have tested it on the live site. Each item points to its sec
 ## Built, pushed, needs your testing
 - [ ] **7q Offline flashcards and opened lessons** (no migration; live https site, student login, airplane mode)
 - [ ] **7p Teacher resource space** (migration 087 applied; teacher, HOD, student must NOT see it)
-- [ ] **7o My week (students) / This week (teachers)** (no migration)
+- [ ] **7o Current and future (students and teachers)** (no migration)
 - [ ] **7n Support / Core / Stretch practice on lesson checks** (migration 086)
 - [ ] **7m Flashcards** (migration 084; also check the topic-to-lesson link, migration 085)
 - [ ] **7l AI question drafting** (needs Anthropic credit; 20 a month per teacher)

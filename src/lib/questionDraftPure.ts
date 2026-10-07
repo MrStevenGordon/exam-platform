@@ -1,3 +1,4 @@
+import { JAMAICA_CONTEXT } from '@/lib/aiContext'
 // AI-drafted exam questions: the instructions sent to the AI, the strict checking of what comes back, and the conversion of an
 // approved draft into the row a normal question is saved as. No network, no database, no screen, so every rule can be tested
 // with made-up replies (scripts/tests/question-draft/questionDraftPure.test.mjs).
@@ -70,8 +71,9 @@ export function buildPrompt(r: DraftRequest): { system: string; user: string } {
   const system = [
     'You help a Jamaican secondary school teacher draft exam questions. You only draft. The teacher checks, edits and decides every question.',
     '',
+    JAMAICA_CONTEXT,
+    '',
     'Rules:',
-    '- Write for Jamaican students following the National Standards Curriculum. Use Jamaican (British) spelling and familiar local contexts, names and currency (JMD) where it helps.',
     '- Ask exactly the number of each type requested. Every question must be clear, self-contained, factually correct, and pitched at the stated grade and difficulty. Do not repeat a question or test the same fact twice.',
     '- multiple_choice: exactly 4 options, one clearly correct, three plausible wrong answers that are really wrong. No "all of the above" or "none of the above". Give "correct_index" as 0 to 3.',
     '- true_false: a statement that is plainly true or plainly false. Give "answer" as true or false.',

@@ -23,7 +23,7 @@ export default function TeacherWeekView() {
   const sub = { fontSize: 13, color: 'var(--text-secondary)' } as const
   return (
     <div className="page-container" style={{ maxWidth: 820 }}>
-      <h1 className="portal-page-title">This week</h1>
+      <h1 className="portal-page-title">Current and future</h1>
       <p style={{ ...sub, marginTop: 4 }}>How each of your classes did in the last 7 days, who may need support, and what is coming up. Only fully marked results are counted.</p>
       {data.note && <p className="banner banner-warning" style={{ marginTop: 16 }}>{data.note}</p>}
 

@@ -24,7 +24,7 @@ export default function StudentWeekView() {
   const h = { marginBottom: 10, fontSize: 16 } as const
   return (
     <div className="page-container" style={{ maxWidth: 760 }}>
-      <h1 className="portal-page-title">My week</h1>
+      <h1 className="portal-page-title">Current and future</h1>
       <p style={{ ...sub, marginTop: 4 }}>The last 7 days, and what is coming up in the next 7.</p>
 
       <div className="card" style={{ marginTop: 18 }}>

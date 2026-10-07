@@ -4,9 +4,11 @@ import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import BookCard from '@/components/library/BookCard'
 import { libraryGet, libraryErrorText, loadMyProgress, SHELF_LABEL, type LibraryBook, type LibraryProgress, type LibraryShelf } from '@/lib/library'
+import { groupBooks } from '@/lib/libraryBrowsePure'
 import { dueLabel, getMyRole, isAssignmentsAvailable, loadMyAssignments, type MyAssignment } from '@/lib/libraryAssignments'
 
 type Tab = 'all' | LibraryShelf
+type View = 'shelves' | 'genre' | 'subject'
 
 export default function LibraryHome() {
   const [books, setBooks] = useState<LibraryBook[]>([])
@@ -16,6 +18,7 @@ export default function LibraryHome() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [tab, setTab] = useState<Tab>('all')
+  const [view, setView] = useState<View>('shelves')
   const [subject, setSubject] = useState<string | null>(null)
   const [search, setSearch] = useState('')
 
@@ -42,10 +45,10 @@ export default function LibraryHome() {
 
   const term = search.trim().toLowerCase()
   const visible = useMemo(() => books.filter((b) => {
-    if (tab !== 'all' && b.shelf !== tab) return false
+    if (view === 'shelves' && tab !== 'all' && b.shelf !== tab) return false
     if (term && !`${b.title} ${b.author} ${b.subject ?? ''} ${b.topic ?? ''}`.toLowerCase().includes(term)) return false
     return true
-  }), [books, tab, term])
+  }), [books, tab, term, view])
 
   const subjects = useMemo(() => Array.from(new Set(books.filter((b) => b.shelf === 'curriculum' && b.subject).map((b) => b.subject as string))).sort(), [books])
   const curriculum = visible.filter((b) => b.shelf === 'curriculum' && (!subject || b.subject === subject))
@@ -55,7 +58,8 @@ export default function LibraryHome() {
   const onShelf = new Set(books.map((b) => b.id))
   const listIsComplete = books.length < 200
   const continuing = progress.filter((p) => !p.finished_at && p.percent < 100 && (!listIsComplete || onShelf.has(p.book_id))).slice(0, 8)
-  const showContinue = tab === 'all' && !term && continuing.length > 0
+  const showContinue = view === 'shelves' && tab === 'all' && !term && continuing.length > 0
+  const groups = useMemo(() => (view === 'shelves' ? [] : groupBooks(visible, view)), [visible, view])
 
   const tabs: Array<{ id: Tab; label: string }> = [{ id: 'all', label: 'All' }, { id: 'curriculum', label: SHELF_LABEL.curriculum }, { id: 'fun', label: SHELF_LABEL.fun }]
 
@@ -75,11 +79,20 @@ export default function LibraryHome() {
         </div>
       </div>
 
-      <div className="lib-tabs" role="tablist" aria-label="Shelves">
-        {tabs.map((t) => (
-          <button key={t.id} role="tab" aria-selected={tab === t.id} className="lib-tab" onClick={() => { setTab(t.id); setSubject(null) }}>{t.label}</button>
+      <div role="group" aria-label="Browse by" style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', margin: '14px 0 4px' }}>
+        <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Browse by</span>
+        {([['shelves', 'Shelves'], ['genre', 'Genre'], ['subject', 'Subject']] as const).map(([id, label]) => (
+          <button key={id} type="button" className="lib-chip" aria-pressed={view === id} onClick={() => { setView(id); setSubject(null) }}>{label}</button>
         ))}
       </div>
+
+      {view === 'shelves' && (
+        <div className="lib-tabs" role="tablist" aria-label="Shelves">
+          {tabs.map((t) => (
+            <button key={t.id} role="tab" aria-selected={tab === t.id} className="lib-tab" onClick={() => { setTab(t.id); setSubject(null) }}>{t.label}</button>
+          ))}
+        </div>
+      )}
 
       {error && <div className="banner banner-danger" style={{ marginTop: 16 }}>{error}</div>}
       {loading && !error && <p style={{ color: 'var(--text-secondary)', marginTop: 20 }}>Loading the Library…</p>}
@@ -95,7 +108,7 @@ export default function LibraryHome() {
         <p style={{ color: 'var(--text-secondary)', marginTop: 20 }}>Nothing matches that search.</p>
       )}
 
-      {tab === 'all' && !term && assignments.some((a) => !a.done) && (
+      {view === 'shelves' && tab === 'all' && !term && assignments.some((a) => !a.done) && (
         <>
           <div className="lib-shelf-head"><h2>Assigned to you</h2></div>
           <div className="lib-shelf">
@@ -122,7 +135,16 @@ export default function LibraryHome() {
         </>
       )}
 
-      {curriculum.length > 0 && (tab === 'all' || tab === 'curriculum') && (
+      {view !== 'shelves' && groups.map((g) => (
+        <section key={g.key || 'none'} aria-label={g.label}>
+          <div className="lib-shelf-head"><h2>{g.label}</h2></div>
+          <div className="lib-shelf">
+            {g.books.map((b) => <BookCard key={b.id} id={b.id} title={b.title} author={b.author} coverBg={b.cover_bg} coverFg={b.cover_fg} formats={b.formats} licence={b.licence} />)}
+          </div>
+        </section>
+      ))}
+
+      {view === 'shelves' && curriculum.length > 0 && (tab === 'all' || tab === 'curriculum') && (
         <>
           <div className="lib-shelf-head"><h2>{SHELF_LABEL.curriculum}</h2></div>
           {subjects.length > 1 && (
@@ -137,7 +159,7 @@ export default function LibraryHome() {
         </>
       )}
 
-      {fun.length > 0 && (tab === 'all' || tab === 'fun') && (
+      {view === 'shelves' && fun.length > 0 && (tab === 'all' || tab === 'fun') && (
         <>
           <div className="lib-shelf-head"><h2>{SHELF_LABEL.fun}</h2></div>
           <div className="lib-shelf">
