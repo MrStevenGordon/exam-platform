@@ -10,7 +10,7 @@ Tick a box when you have tested it on the live site. Each item points to its sec
 ## Student support (built 2026-10-06; needs 091 then 092, then a push)
 - [ ] Apply `scripts/migrations/092_student_support.sql` on Manchester after 091 (`pbcopy < scripts/migrations/092_student_support.sql`), push, then re-run the demo seed for a demo plan
 - [ ] Walk **QA 7v** (staff list and filters, starting and tracking a plan, HOD and principal views, the student's My progress shows nothing about anyone else)
-- [ ] Tell me whether teachers should see a student's results in **all** subjects (as built) or only their own subject (see `docs/student-support-setup.md`)
+- [ ] Run `scripts/migrations/092b_support_subject_limit.sql` if 092 was applied before 2026-10-07 (limits marks to the subjects each person teaches; safe to run twice)
 
 ## Weekly class feedback (built 2026-10-06; needs 091, then a push)
 - [ ] Apply `scripts/migrations/091_class_feedback.sql` on Manchester (paste via `pbcopy < scripts/migrations/091_class_feedback.sql`), push, then re-run the demo seed to get two weeks of demo feedback

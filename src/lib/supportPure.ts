@@ -149,7 +149,7 @@ export const outcomeLabel = (v: string | null) => OUTCOMES.find((o) => o.value =
 export type SupportCase = {
   id: string; student_id: string; student: string; grade: number | null; classes: string[]; subject: string | null; reason: string; goal: string
   status: 'open' | 'monitoring' | 'closed'; review_on: string | null; owner_id: string; owner: string; opened_by: string; opened_at: string; closed_at: string | null
-  outcome: string | null; outcome_note: string | null; baseline_pct: number | null; baseline_school_pct: number | null; since_pct: number | null; can_edit: boolean
+  outcome: string | null; outcome_note: string | null; baseline_pct: number | null; baseline_school_pct: number | null; since_pct: number | null; progress_visible: boolean; can_edit: boolean
   actions: { id: string; kind: string; note: string | null; done_on: string; by: string }[]
 }
 
@@ -164,7 +164,8 @@ export function reviewState(reviewOn: string | null, today: string): ReviewState
 
 export type Progress = { tone: 'up' | 'down' | 'same' | 'unknown'; delta: number | null; text: string }
 // How results moved since the plan began: the student's average on results after it started against the starting line.
-export function caseProgress(c: Pick<SupportCase, 'baseline_pct' | 'since_pct' | 'subject'>): Progress {
+export function caseProgress(c: Pick<SupportCase, 'baseline_pct' | 'since_pct' | 'subject'> & { progress_visible?: boolean }): Progress {
+  if (c.progress_visible === false) return { tone: 'unknown', delta: null, text: `Marks${c.subject ? ` in ${c.subject}` : ''} are shown only to staff who teach this subject.` }
   const where = c.subject ? ` in ${c.subject}` : ''
   if (c.since_pct === null) return { tone: 'unknown', delta: null, text: `No new results${where} since the plan began.` }
   if (c.baseline_pct === null) return { tone: 'unknown', delta: null, text: `Averaging ${pct(c.since_pct)}${where} since the plan began (no starting figure to compare).` }

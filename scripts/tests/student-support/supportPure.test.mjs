@@ -82,5 +82,10 @@ test('how a plan is going: up, down, the same, or no new results', () => {
   assert.equal(caseProgress({ baseline_pct: 50, since_pct: 42, subject: null }).tone, 'down'); assert.equal(caseProgress({ baseline_pct: 50, since_pct: 51, subject: null }).tone, 'same')
   assert.equal(caseProgress({ baseline_pct: 50, since_pct: null, subject: null }).tone, 'unknown'); assert.equal(caseProgress({ baseline_pct: null, since_pct: 45, subject: null }).tone, 'unknown')
 })
+test('a plan in a subject the viewer does not teach shows no marks', () => {
+  const p = caseProgress({ baseline_pct: null, since_pct: null, subject: 'English Language', progress_visible: false })
+  assert.equal(p.tone, 'unknown'); assert.match(p.text, /shown only to staff who teach this subject/)
+  assert.equal(caseProgress({ baseline_pct: 30, since_pct: 50, subject: 'Mathematics', progress_visible: true }).tone, 'up')
+})
 test('outcomes are counted', () => assert.deepEqual(outcomeSummary([{ outcome: 'improved' }, { outcome: 'improved' }, { outcome: 'no_change' }, { outcome: 'referred' }]), { total: 4, improved: 2, noChange: 1, other: 1 }))
 test('days since a date', () => { assert.equal(daysSince('2026-10-07T12:00:00Z', NOW), 3); assert.equal(daysSince(null, NOW), null); assert.equal(daysSince('nonsense', NOW), null) })

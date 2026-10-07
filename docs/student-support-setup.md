@@ -19,7 +19,9 @@ Product: **Smart Learning**. It reads results (Smart Assess), attendance, lesson
 
 Class-feedback signals ("asked for help") reach only the teacher the feedback was addressed to, or a head of department for their own teachers. The principal team and school admin never get them (same rule as migration 091).
 
-**Decision to confirm:** the list shows a student's results in all subjects to any staff member who has the student in scope (the same way attendance already works), because support needs the whole picture. If you would rather a teacher saw only their own subject's results, say so and I will narrow it.
+**Marks are limited to the subjects the person teaches** (decided 2026-10-06). A teacher sees results only in their own subjects (their timetable and subject list); a head of department sees the subjects their department teaches; the principal team and school admin see every subject. A student's overall average, the "below the school average" reasons and the school averages all use only the subjects the person may see, and a plan's starting and current marks show only to staff who teach that subject (general plans: to the owner, whoever opened it, heads of department and the principal team). A teacher can only start a plan in a subject they teach, or a general one. Attendance, lessons and help requests are not subject-specific, so they stay visible to any staff member who can see the student. Subject names match loosely ("Maths" = Mathematics, "English" = English Language).
+
+If a school applied 092 before this change, run `scripts/migrations/092b_support_subject_limit.sql` (safe to run more than once).
 
 ## Why a student is listed
 A student appears when the reasons add up to at least 2 points. All thresholds are named constants at the top of `src/lib/supportPure.ts`.
@@ -44,5 +46,5 @@ A plan has a subject (or general), the reason, a goal, an owner and a review dat
 - **Nudges** (at most three, built from the student's own data): away from school, lessons past their date, a quiet spell, flashcards due, their weakest topic. Each has a button to go to the right place.
 
 ## Tests
-- Database: `scripts/tests/student-support/tests.sql` (66 checks, on a sandbox copy of the schema with the demo fixture)
+- Database: `scripts/tests/student-support/tests.sql` (77 checks, on a sandbox copy of the schema with the demo fixture)
 - Logic: `node --import ./scripts/tests/essay-marking/resolve-ts.mjs --experimental-strip-types --no-warnings --test scripts/tests/student-support/*.test.mjs`

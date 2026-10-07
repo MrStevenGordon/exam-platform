@@ -1,110 +1,8 @@
--- 092: support for students who need it (Smart Learning).
---
--- WHAT: a staff "Support" page that lists the students who may need help (results below the school average or falling, absences,
--- lessons left unfinished, long gaps since they signed in, asking for help in class feedback), and an intervention tracker: a support
--- plan per student with a goal, a review date, the actions taken, and whether results moved afterwards.
---
--- WHO SEES WHAT
---   * A TEACHER sees the students in the classes they teach (class groups or timetable sections).
---   * A HEAD OF DEPARTMENT sees those students plus the students taught by anyone in their department.
---   * The PRINCIPAL, vice principals and SCHOOL ADMIN see every student.
---   * RESULTS shown in support are limited to subjects the person teaches: a teacher's own subjects, a head of department's department's
---     subjects, everything for the principal team and school admin. Attendance, lessons and help requests are not subject-specific.
---   * A STUDENT never sees any of this: not the list, not the plans, and never the school average or any classmate's figures.
---     (The student's own "My progress" page compares them only with their own earlier results and uses no database function from here.)
---   * Class feedback signals ("asked for help") are included only for feedback addressed to that teacher (or, for a head of department,
---     to teachers in their department), exactly as migration 091 shows it. The principal team and school admin get none.
---
--- The school average is only ever an average of at least 5 students. Nothing is written by the list; plans are written only by the
--- functions below, which check the caller can see the student.
---
--- Needs migration 091 (class feedback) and the timetable tables. Adds tables and functions only.
--- Roll back with scripts/migrations/rollback/092_student_support_rollback.sql
-
+-- 092b: limit support RESULTS to the subjects the person teaches (a teacher's own, a head of department's department's; everyone's for the principal team
+-- and school admin). For a school that applied 092 BEFORE this change. Safe to run more than once. Do not run it if you have not applied 092 at all
+-- (apply 092 instead, it already contains this).
 begin;
 
-do $$
-begin
-  if to_regclass('public.weekly_class_feedback') is null then raise exception 'Apply migration 091 (class feedback) first.'; end if;
-  if to_regclass('public.timetable_sections') is null then raise exception 'Apply the timetable migrations (060s and 088) first.'; end if;
-end $$;
-
-create or replace function public.support_ready() returns boolean language sql stable as $$ select true $$;
-grant execute on function public.support_ready() to authenticated;
-
--- Can the caller see this student in the support list? (teacher of the student; head of department of anyone teaching them; principal; school admin)
-create or replace function public.support_in_scope(p_student uuid)
-returns boolean
-language plpgsql stable security definer set search_path = public, pg_temp
-as $$
-declare
-  v_role text := public.my_role();
-  v_dept uuid;
-begin
-  if auth.uid() is null or v_role is null or v_role not in ('teacher', 'supervisor', 'principal', 'admin') then return false; end if;
-  if not exists (select 1 from profiles s where s.id = p_student and s.role = 'student' and s.is_active) then return false; end if;
-  if v_role in ('principal', 'admin') then return true; end if;
-  if public.is_teacher_of_class_student(p_student) or public.is_teacher_of_timetable_student(p_student) then return true; end if;
-  if v_role = 'supervisor' then
-    v_dept := public.my_supervised_department();
-    if v_dept is null then return false; end if;
-    return exists (select 1 from enrollments e join teacher_class_groups tcg on tcg.class_group_id = e.class_group_id
-                     join profiles t on t.id = tcg.teacher_id where e.student_id = p_student and t.department_id = v_dept)
-        or exists (select 1 from section_enrollments se join timetable_sections s on s.id = se.section_id
-                     join profiles t on t.id = s.teacher_id where se.student_id = p_student and t.department_id = v_dept);
-  end if;
-  return false;
-end $$;
-revoke all on function public.support_in_scope(uuid) from public, anon;
-grant execute on function public.support_in_scope(uuid) to authenticated;
-
--- ---------- support plans ----------
-create table public.support_cases (
-  id uuid primary key default gen_random_uuid(),
-  student_id uuid not null references public.profiles(id) on delete cascade,
-  subject text check (subject is null or length(btrim(subject)) between 1 and 100),   -- null = general support
-  reason text not null check (length(btrim(reason)) between 1 and 500),
-  goal text not null check (length(btrim(goal)) between 1 and 500),
-  owner_id uuid not null references public.profiles(id),
-  status text not null default 'open' check (status in ('open', 'monitoring', 'closed')),
-  review_on date,
-  baseline_pct numeric(5,1),            -- the student's average in that subject (or overall) over the 60 days before the plan started
-  baseline_school_pct numeric(5,1),     -- the school average at that time (only when at least 5 students sat that subject)
-  opened_by uuid not null references public.profiles(id),
-  opened_at timestamptz not null default now(),
-  closed_at timestamptz,
-  outcome text check (outcome is null or outcome in ('improved', 'no_change', 'referred', 'moved', 'other')),
-  outcome_note text check (outcome_note is null or length(outcome_note) <= 500),
-  check ((status = 'closed') = (closed_at is not null))
-);
-create unique index support_cases_one_open on public.support_cases (student_id, coalesce(lower(btrim(subject)), ''))
-  where status <> 'closed';
-create index support_cases_student on public.support_cases (student_id);
-create index support_cases_owner on public.support_cases (owner_id, status);
-
-create table public.support_actions (
-  id uuid primary key default gen_random_uuid(),
-  case_id uuid not null references public.support_cases(id) on delete cascade,
-  kind text not null check (kind in ('extra_practice', 'one_to_one', 'small_group', 'peer_tutor', 'parent_contact', 'counsellor', 'attendance_follow_up', 'other')),
-  note text check (note is null or length(note) <= 500),
-  done_on date not null default current_date,
-  created_by uuid not null references public.profiles(id),
-  created_at timestamptz not null default now()
-);
-create index support_actions_case on public.support_actions (case_id, done_on desc);
-
-alter table public.support_cases enable row level security;
-alter table public.support_actions enable row level security;
-revoke all on public.support_cases, public.support_actions from anon, public;
-grant select on public.support_cases, public.support_actions to authenticated;
-create policy "Staff read plans for students they can see" on public.support_cases for select using (public.support_in_scope(student_id));
-create policy "Staff read actions on plans they can see" on public.support_actions for select
-  using (exists (select 1 from public.support_cases c where c.id = case_id and public.support_in_scope(c.student_id)));
--- no insert, update or delete policies: plans are written only by the functions below
-
--- ---------- the list ----------
--- One document: the school and subject averages, and for each student the caller can see, the figures the screen turns into reasons.
--- Does one subject name match another? Lower-case, "maths" = "mathematics", and one name containing the other counts ("English" matches "English Language").
 create or replace function public.support_subject_matches(a text, b text)
 returns boolean
 language sql immutable
@@ -117,8 +15,6 @@ as $$
 $$;
 grant execute on function public.support_subject_matches(text, text) to authenticated;
 
--- The subjects whose RESULTS the caller may see in support: a teacher's own subjects (timetable and subject list); a head of department also the
--- subjects their department teaches. The principal team and school admin see every subject (this returns nothing for them: they are not limited).
 create or replace function public.support_allowed_subjects()
 returns setof text
 language plpgsql stable security definer set search_path = public, pg_temp
@@ -239,28 +135,6 @@ end $$;
 revoke all on function public.support_students(integer) from public, anon;
 grant execute on function public.support_students(integer) to authenticated;
 
--- ---------- plans: write ----------
-create or replace function public.support_staff_ok(p_user uuid) returns boolean language sql stable security definer set search_path = public, pg_temp as $$
-  select exists (select 1 from profiles where id = p_user and role in ('teacher', 'supervisor', 'principal', 'admin') and is_active)
-$$;
-revoke all on function public.support_staff_ok(uuid) from public, anon, authenticated;
-
-create or replace function public.support_can_edit_case(p_case uuid)
-returns boolean
-language plpgsql stable security definer set search_path = public, pg_temp
-as $$
-declare c support_cases; v_role text := public.my_role();
-begin
-  if auth.uid() is null then return false; end if;
-  select * into c from support_cases where id = p_case;
-  if not found then return false; end if;
-  if v_role in ('principal', 'admin') or c.owner_id = auth.uid() or c.opened_by = auth.uid() then return true; end if;
-  return v_role = 'supervisor' and public.support_in_scope(c.student_id);
-end $$;
-revoke all on function public.support_can_edit_case(uuid) from public, anon;
-grant execute on function public.support_can_edit_case(uuid) to authenticated;
-
--- The student's average (and the school's) in a subject, or overall, over the 60 days up to now: the starting line for a plan.
 create or replace function public.support_average(p_student uuid, p_subject text, p_since timestamptz default null)
 returns table (student_pct numeric, school_pct numeric)
 language sql stable security definer set search_path = public, pg_temp
@@ -307,62 +181,6 @@ end $$;
 revoke all on function public.support_case_open(uuid, text, text, text, date, uuid) from public, anon;
 grant execute on function public.support_case_open(uuid, text, text, text, date, uuid) to authenticated;
 
-create or replace function public.support_case_update(p_case uuid, p_status text, p_review_on date, p_goal text, p_owner uuid default null)
-returns void
-language plpgsql security definer set search_path = public, pg_temp
-as $$
-declare c support_cases;
-begin
-  if auth.uid() is null then raise exception 'Please sign in again.' using errcode = '28000'; end if;
-  select * into c from support_cases where id = p_case;
-  if not found or not public.support_can_edit_case(p_case) then raise exception 'You cannot change this plan.' using errcode = '42501'; end if;
-  if c.status = 'closed' then raise exception 'This plan is closed.' using errcode = 'P0001'; end if;
-  if p_status not in ('open', 'monitoring') then raise exception 'Choose open or monitoring. To finish a plan, close it with an outcome.' using errcode = 'P0001'; end if;
-  if nullif(btrim(coalesce(p_goal, '')), '') is null or length(btrim(p_goal)) > 500 then raise exception 'Write a goal under 500 characters.' using errcode = 'P0001'; end if;
-  if p_review_on is not null and p_review_on < public.school_today() and p_review_on is distinct from c.review_on then raise exception 'Choose a review date that is today or later.' using errcode = 'P0001'; end if;
-  if p_owner is not null and p_owner <> c.owner_id and not public.support_staff_ok(p_owner) then raise exception 'That person cannot own a plan.' using errcode = 'P0001'; end if;
-  update support_cases set status = p_status, review_on = p_review_on, goal = btrim(p_goal), owner_id = coalesce(p_owner, owner_id) where id = p_case;
-end $$;
-revoke all on function public.support_case_update(uuid, text, date, text, uuid) from public, anon;
-grant execute on function public.support_case_update(uuid, text, date, text, uuid) to authenticated;
-
-create or replace function public.support_case_close(p_case uuid, p_outcome text, p_note text default null)
-returns void
-language plpgsql security definer set search_path = public, pg_temp
-as $$
-declare c support_cases;
-begin
-  if auth.uid() is null then raise exception 'Please sign in again.' using errcode = '28000'; end if;
-  select * into c from support_cases where id = p_case;
-  if not found or not public.support_can_edit_case(p_case) then raise exception 'You cannot change this plan.' using errcode = '42501'; end if;
-  if c.status = 'closed' then raise exception 'This plan is already closed.' using errcode = 'P0001'; end if;
-  if p_outcome is null or p_outcome not in ('improved', 'no_change', 'referred', 'moved', 'other') then raise exception 'Choose how the plan ended.' using errcode = 'P0001'; end if;
-  if length(coalesce(p_note, '')) > 500 then raise exception 'Please keep the note under 500 characters.' using errcode = 'P0001'; end if;
-  update support_cases set status = 'closed', closed_at = now(), outcome = p_outcome, outcome_note = nullif(btrim(coalesce(p_note, '')), '') where id = p_case;
-end $$;
-revoke all on function public.support_case_close(uuid, text, text) from public, anon;
-grant execute on function public.support_case_close(uuid, text, text) to authenticated;
-
-create or replace function public.support_action_add(p_case uuid, p_kind text, p_note text default null, p_done_on date default null)
-returns void
-language plpgsql security definer set search_path = public, pg_temp
-as $$
-declare c support_cases; v_day date := coalesce(p_done_on, public.school_today());
-begin
-  if auth.uid() is null then raise exception 'Please sign in again.' using errcode = '28000'; end if;
-  select * into c from support_cases where id = p_case;
-  if not found or not public.support_in_scope(c.student_id) then raise exception 'You cannot add to this plan.' using errcode = '42501'; end if;
-  if c.status = 'closed' then raise exception 'This plan is closed.' using errcode = 'P0001'; end if;
-  if p_kind is null or p_kind not in ('extra_practice', 'one_to_one', 'small_group', 'peer_tutor', 'parent_contact', 'counsellor', 'attendance_follow_up', 'other') then raise exception 'Choose what was done.' using errcode = 'P0001'; end if;
-  if length(coalesce(p_note, '')) > 500 then raise exception 'Please keep the note under 500 characters.' using errcode = 'P0001'; end if;
-  if v_day > public.school_today() then raise exception 'That date has not happened yet.' using errcode = 'P0001'; end if;
-  insert into support_actions (case_id, kind, note, done_on, created_by) values (p_case, p_kind, nullif(btrim(coalesce(p_note, '')), ''), v_day, auth.uid());
-end $$;
-revoke all on function public.support_action_add(uuid, text, text, date) from public, anon;
-grant execute on function public.support_action_add(uuid, text, text, date) to authenticated;
-
--- ---------- plans: read (the tracker) ----------
--- Plans the caller can see, with the student's name, the actions so far, and how results moved since the plan began.
 create or replace function public.support_cases_list(p_scope text default 'active')
 returns jsonb
 language plpgsql stable security definer set search_path = public, pg_temp
@@ -397,4 +215,4 @@ grant execute on function public.support_cases_list(text) to authenticated;
 
 commit;
 
-select 'Migration 092 applied' as result;
+select 'Migration 092b applied' as result;

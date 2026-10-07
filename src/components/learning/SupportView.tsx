@@ -109,7 +109,7 @@ export default function SupportView({ role }: { role: 'teacher' | 'supervisor' |
   return (
     <div className="page-container sentence-case" style={{ maxWidth: 860 }}>
       <h1 className="portal-page-title">Student support</h1>
-      <p style={{ ...sub, marginTop: 4 }}>Students who may need extra help, from {scope}: results below the school average or falling, absences, unfinished lessons and requests for help. Only staff see this page. Students never see it, the school average or a support plan.</p>
+      <p style={{ ...sub, marginTop: 4 }}>Students who may need extra help, from {scope}: results below the school average or falling, absences, unfinished lessons and requests for help. Marks shown are for the subjects you teach{role === 'supervisor' ? ' and your department teaches' : ''}{role === 'principal' || role === 'admin' ? ' (all subjects)' : ''}. Only staff see this page. Students never see it, the school average or a support plan.</p>
 
       <div role="tablist" style={{ display: 'flex', gap: 8, marginTop: 14, flexWrap: 'wrap' }}>
         {tabBtn('students', 'Students')}{tabBtn('plans', 'Plans')}{tabBtn('closed', 'Finished')}

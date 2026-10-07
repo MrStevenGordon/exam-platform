@@ -42,9 +42,9 @@ begin
   insert into timetable_sections (id, department_id, subject, teacher_id, class_group_id, day_of_week, period_id, academic_year) values
     (pg_temp.u(6101), dept, 'Mathematics', pg_temp.u(1), cg1, 1, p[1], y), (pg_temp.u(6102), dept, 'Mathematics', pg_temp.u(1), cg2, 3, p[1], y),
     (pg_temp.u(6103), dept, 'English Language', pg_temp.u(4), cg1, 1, p[2], y), (pg_temp.u(6105), deptB, 'Science', pg_temp.u(75), cg1, 4, p[3], y);
+  delete from enrollments where student_id = pg_temp.u(10); insert into enrollments (student_id, class_group_id) values (pg_temp.u(10), pg_temp.u(803));   -- the testing student sits in 1-1, as in the fixture
   insert into section_enrollments (section_id, student_id) select s.id, e.student_id from timetable_sections s join enrollments e on e.class_group_id = s.class_group_id;
   insert into teacher_class_groups (teacher_id, class_group_id) values (pg_temp.u(4), pg_temp.u(803));
-  delete from enrollments where student_id = pg_temp.u(10); insert into enrollments (student_id, class_group_id) values (pg_temp.u(10), pg_temp.u(803));   -- the testing student sits in 1-1, as in the fixture
 
   -- three papers: Mathematics and English for 3-1, Science for only four students (too few for a school average)
   insert into draft_exams (id, title, subject, created_by, status) values
@@ -105,16 +105,24 @@ begin
   -- ===== the figures =====
   j := pg_temp.list_as(t1);
   perform pg_temp.chk('school average for Mathematics is 63.3 over 30 students', (select (b->>'avg')::numeric = 63.3 and (b->>'n')::int = 30 from jsonb_array_elements(j->'subjects') b where b->>'subject' = 'Mathematics'));
-  perform pg_temp.chk('school average for English Language is 60.0', (select (b->>'avg')::numeric = 60.0 from jsonb_array_elements(j->'subjects') b where b->>'subject' = 'English Language'));
+  perform pg_temp.chk('school average for English Language is 60.0 (as the English teacher sees it)', (select (b->>'avg')::numeric = 60.0 from jsonb_array_elements(pg_temp.list_as(t4)->'subjects') b where b->>'subject' = 'English Language'));
   perform pg_temp.chk('Science is left out: only four students sat it', not exists (select 1 from jsonb_array_elements(j->'subjects') b where b->>'subject' = 'Science'));
   perform pg_temp.chk('an overall school average is given', (j->>'school_avg') is not null);
   s := pg_temp.stu(j, pg_temp.u(11));
   perform pg_temp.chk('student 11: Mathematics average is 30 (the 90-day-old 80 is the earlier period, not the average)', (select (x->>'avg')::numeric = 30.0 and (x->>'prev')::numeric = 80.0 from jsonb_array_elements(s->'subjects') x where x->>'subject' = 'Mathematics'));
-  perform pg_temp.chk('student 11: overall average counts Mathematics, English and Science: 3 results', (s->'overall'->>'n')::int = 3);
+  perform pg_temp.chk('student 11 as Teacher 1 sees: only Mathematics counts (1 result in the last 60 days)', (s->'overall'->>'n')::int = 1 and (select count(*) from jsonb_array_elements(s->'subjects')) = 1);
   perform pg_temp.chk('student 11: absent 4 times in the last 14 days', (s->>'absent')::int = 4 and (s->>'marked')::int = 4);
   perform pg_temp.chk('student 11: last seen 12 days ago is passed on', s->>'last_seen' is not null);
   perform pg_temp.chk('an ungraded result is not counted (student 41 has none)', pg_temp.stu(j, pg_temp.u(41)) is null or (pg_temp.stu(j, pg_temp.u(41))->'overall') is null or (pg_temp.stu(j, pg_temp.u(41))->'overall') = 'null'::jsonb);
   perform pg_temp.chk('the class names come with the student', (s->'classes') @> '["3-1"]'::jsonb);
+
+  -- ===== results are limited to the person's own subjects =====
+  perform pg_temp.chk('Teacher 1 (Mathematics) is shown no English or Science results', not exists (select 1 from jsonb_array_elements(pg_temp.stu(j, pg_temp.u(12))->'subjects') x where x->>'subject' <> 'Mathematics') and (select count(*) from jsonb_array_elements(j->'subjects')) = 1);
+  perform pg_temp.chk('Teacher 4 (English) is shown English only', (select string_agg(x->>'subject', ',') from jsonb_array_elements(pg_temp.stu(pg_temp.list_as(t4), pg_temp.u(12))->'subjects') x) = 'English Language');
+  perform pg_temp.chk('the Science teacher is shown Science only, with no school average for it (4 students)', (select string_agg(x->>'subject', ',') from jsonb_array_elements(pg_temp.stu(pg_temp.list_as(tB), pg_temp.u(11))->'subjects') x) = 'Science' and jsonb_array_length(pg_temp.list_as(tB)->'subjects') = 0);
+  perform pg_temp.chk('the head of Mathematics is shown what their department teaches: Mathematics and English', (select string_agg(x->>'subject', ',' order by x->>'subject') from jsonb_array_elements(pg_temp.stu(pg_temp.list_as(hod), pg_temp.u(12))->'subjects') x) = 'English Language,Mathematics');
+  perform pg_temp.chk('the principal is shown every subject', (select count(*) from jsonb_array_elements(pg_temp.stu(pg_temp.list_as(principal), pg_temp.u(11))->'subjects')) = 3);
+  perform pg_temp.chk('a teacher''s subject list also counts ("Maths" matches Mathematics)', (select public.support_subject_matches('Maths', 'Mathematics') and public.support_subject_matches('English', 'English Language') and not public.support_subject_matches('Science', 'Mathematics') and not public.support_subject_matches('ab', 'abc')));
 
   -- ===== class feedback signals follow the 091 rule =====
   perform pg_temp.chk('Teacher 1 sees that student 12 asked them for help', (pg_temp.stu(j, pg_temp.u(12))->>'asked_help')::boolean);
@@ -129,6 +137,7 @@ begin
   select id into case_id from support_cases where student_id = pg_temp.u(11);
   perform pg_temp.chk('the starting line is recorded: student 30.0, school 63.3', (select baseline_pct = 30.0 and baseline_school_pct = 63.3 from support_cases where id = case_id));
   perform pg_temp.chk('the owner and opener are the teacher', (select owner_id = t1 and opened_by = t1 and status = 'open' from support_cases where id = case_id));
+  perform pg_temp.chk('a plan in a subject the teacher does not teach is refused', pg_temp.try_as(t1, format($q$select support_case_open(%L, 'English Language', 'x', 'y')$q$, pg_temp.u(12))) = 'P0001' and pg_temp.try_as(t1, format($q$select support_case_open(%L, 'Science', 'x', 'y')$q$, pg_temp.u(12))) = 'P0001');
   perform pg_temp.chk('a second open plan for the same student and subject is refused', pg_temp.try_as(t1, format($q$select support_case_open(%L, ' mathematics', 'again', 'again')$q$, pg_temp.u(11))) = 'P0001');
   perform pg_temp.chk('a general plan (no subject) is a separate plan and is allowed', pg_temp.try_as(t1, format($q$select support_case_open(%L, null, 'Attendance', 'Be in school every day this month')$q$, pg_temp.u(11))) = 'ok');
   perform pg_temp.chk('a student cannot open a plan', pg_temp.try_as(pg_temp.u(12), format($q$select support_case_open(%L, null, 'x', 'y')$q$, pg_temp.u(12))) = '42501');
@@ -141,6 +150,10 @@ begin
   -- ===== who can read plans =====
   perform pg_temp.chk('Teacher 1 reads their plans (2)', jsonb_array_length(coalesce((select pg_temp.val_as(t1, 'select support_cases_list()::text')::jsonb), '[]'::jsonb)) = 2);
   perform pg_temp.chk('the Science teacher also sees them (they teach student 11)', jsonb_array_length(pg_temp.val_as(tB, 'select support_cases_list()::text')::jsonb) = 2);
+  perform pg_temp.chk('but the Mathematics plan shows them no marks (not their subject), and nor does the general plan', pg_temp.val_as(tB, $q$select count(*)::text from jsonb_array_elements(support_cases_list()) e where not (e->>'progress_visible')::boolean and e->>'baseline_pct' is null and e->>'since_pct' is null$q$) = '2');
+  perform pg_temp.chk('Teacher 1 sees the starting marks on both plans', pg_temp.val_as(t1, $q$select count(*)::text from jsonb_array_elements(support_cases_list()) e where (e->>'progress_visible')::boolean and e->>'baseline_pct' is not null$q$) = '2');
+  perform pg_temp.chk('the general plan''s starting line counts only the opener''s subjects (Mathematics: 30)', (select baseline_pct = 30.0 from support_cases where subject is null and student_id = pg_temp.u(11)));
+  perform pg_temp.chk('the head of Mathematics and the principal see the marks', pg_temp.val_as(hod, $q$select count(*)::text from jsonb_array_elements(support_cases_list()) e where (e->>'progress_visible')::boolean$q$) = '2' and pg_temp.val_as(principal, $q$select count(*)::text from jsonb_array_elements(support_cases_list()) e where (e->>'progress_visible')::boolean$q$) = '2');
   perform pg_temp.chk('a teacher with no link to the student sees none', jsonb_array_length(pg_temp.val_as(lone, 'select support_cases_list()::text')::jsonb) = 0);
   perform pg_temp.chk('a student cannot list plans', pg_temp.val_as(pg_temp.u(11), 'select support_cases_list()::text') = 'ERR 42501');
   perform pg_temp.chk('a student reading the table directly gets nothing', pg_temp.val_as(pg_temp.u(11), 'select count(*)::text from support_cases') = '0');
