@@ -2,6 +2,14 @@
 -- It does NOT undo: moving Testing Student into the demo class and setting them to Grade 9, or the Testing Teacher's class link.
 create or replace function pg_temp.is_demo(u uuid) returns boolean language sql immutable as $$ select u::text like 'dd000000-%' $$;
 
+-- cover for the demo absence first (only if migration 073 is applied): it points at demo lesson plans and lessons, which are removed below
+do $$ begin
+  if to_regclass('public.substitution_assignments') is not null then
+    delete from substitution_assignments where pg_temp.is_demo(id);
+    delete from teacher_absences where pg_temp.is_demo(id);
+  end if;
+end $$;
+
 delete from marking_point_responses where response_id in (select r.id from responses r join exam_sessions s on s.id = r.session_id where pg_temp.is_demo(s.id));
 delete from responses where session_id in (select id from exam_sessions where pg_temp.is_demo(id));
 delete from exam_sessions where pg_temp.is_demo(id);
@@ -35,6 +43,14 @@ where da.marked_by = (select id from profiles where full_name = 'Testing Teacher
   and da.att_date >= current_date - 30
   and da.student_id in (select e.student_id from enrollments e where e.class_group_id in
         (select tcg.class_group_id from teacher_class_groups tcg where tcg.teacher_id = (select id from profiles where full_name = 'Testing Teacher' and role = 'teacher' limit 1)));
+
+-- the demo timetable
+-- the second pack's attendance (the English and Science teachers' classes)
+delete from daily_attendance da
+where da.att_date >= current_date - 30
+  and da.marked_by in (select id from profiles where full_name in ('Testing English Teacher', 'Testing Science Teacher') and role = 'teacher')
+  and da.student_id in (select e.student_id from enrollments e where e.class_group_id in
+        (select tcg.class_group_id from teacher_class_groups tcg where tcg.teacher_id in (select id from profiles where full_name in ('Testing English Teacher', 'Testing Science Teacher') and role = 'teacher')));
 
 -- school part: the demo timetable
 delete from section_enrollments where pg_temp.is_demo(section_id);

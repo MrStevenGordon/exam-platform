@@ -53,12 +53,17 @@ const STAFF = [
   { key: 'testing.hod', name: 'Testing HOD', role: 'supervisor', dept: 'Mathematics', subject: 'Mathematics', head: true },
   { key: 'testing.principal', name: 'Testing Principal', role: 'principal', dept: null, title: 'Principal' },
   { key: 'testing.admin', name: 'Testing Admin', role: 'admin', dept: null },
-  { key: 'testing.english', name: 'Testing English Teacher', role: 'teacher', dept: 'English', subject: 'English Language', teachesClass: true },
+  { key: 'testing.english', name: 'Testing English Teacher', role: 'teacher', dept: 'English', subject: 'English Language', teachesClass: false },
+  { key: 'testing.science', name: 'Testing Science Teacher', role: 'teacher', dept: 'Science', subject: 'Science', teachesClass: false },
 ]
 const FIRST = ['Jordan', 'Kemar', 'Shanice', 'Andre', 'Tanya', 'Marlon', 'Alicia', 'Devon', 'Kayla', 'Rohan', 'Nia', 'Chevaughn', 'Brianna', 'Tyrese', 'Latoya', 'Omar', 'Jada', 'Nathan', 'Simone', 'Dwayne', 'Camille', 'Leon', 'Abigail', 'Rashad', 'Monique', 'Kyle', 'Shelly-Ann', 'Javier', 'Crystal', 'Dane']
 const LAST = ['Campbell', 'Reid', 'Brown', 'Williams', 'Clarke', 'Gordon', 'Thompson', 'Henry', 'Morgan', 'Bailey', 'Grant', 'Walker', 'Francis', 'Blake', 'Scott']
 const STUDENTS = [{ id: '54321', first: 'Testing', last: 'Student' }, ...FIRST.map((f, i) => ({ id: String(54322 + i), first: f, last: LAST[(i * 7) % LAST.length] }))]
 const CLASS_NAME = '3-1'
+// the second demo pack: a Grade 8 class (English) and a Grade 10 class (Science), 25 students each
+const FIRST2 = ['Aaliyah', 'Brandon', 'Chantelle', 'Damion', 'Elisha', 'Fabian', 'Gabrielle', 'Hakeem', 'Imani', 'Jermaine', 'Kadeem', 'Lisa-Marie', 'Marcia', 'Nathaniel', 'Olivia', 'Peta-Gaye', 'Quincy', 'Renae', 'Stefan', 'Tamika', 'Usain', 'Venesha', 'Warren', 'Yvonne', 'Zion']
+const LAST2 = ['Ainsworth', 'Barrett', 'Chin', 'Dixon', 'Edwards', 'Foster', 'Graham', 'Hamilton', 'Ingram', 'Johnson', 'Kerr', 'Lewis', 'McKenzie', 'Nelson', 'Palmer', 'Robinson', 'Samuels', 'Taylor']
+const EXTRA = [{ cls: '2-1', grade: 'Grade 8', gradeNum: 8, first: 54353 }, { cls: '4-1', grade: 'Grade 10', gradeNum: 10, first: 54378 }]
 
 async function findUser(email) {
   for (let page = 1; ; page++) {
@@ -85,10 +90,11 @@ for (const p of ['class_feedback_ready', 'support_ready', 'videos_ready', 'flash
   const { error } = await admin.rpc(p)
   if (error) { console.error(`The migrations are not all applied yet (${p} is missing). Run apply-migrations.mjs first.`); process.exit(1) }
 }
-const realStudents = await q(`select count(*)::int as n from profiles where role = 'student' and student_id <> all($1)`, [STUDENTS.map((s) => s.id)])
+const ALL_IDS = [...STUDENTS.map((s) => s.id), ...EXTRA.flatMap((x) => FIRST2.map((_, i) => String(x.first + i)))]
+const realStudents = await q(`select count(*)::int as n from profiles where role = 'student' and student_id <> all($1)`, [ALL_IDS])
 const realStaff = await q(`select count(*)::int as n from profiles where role in ('teacher','supervisor') and full_name <> all($1)`, [STAFF.map((s) => s.name)])
 if (realStudents[0].n > 0 || realStaff[0].n >= 20) { console.error(`This looks like a real school (${realStudents[0].n} other students, ${realStaff[0].n} other staff). Refusing.`); process.exit(1) }
-console.log(`Plan: ${STAFF.length} staff accounts, ${STUDENTS.length} students in class ${CLASS_NAME} (Grade 9), the school day, and the demo data.`)
+console.log(`Plan: ${STAFF.length} staff accounts, ${STUDENTS.length} students in class ${CLASS_NAME} (Grade 9) plus 50 in two more classes, the school day, and the demo data.`)
 if (!apply) { console.log('\nDry run only. Re-run with --apply --project ' + ref); await db.end(); process.exit(0) }
 
 // ---- departments, class ----
@@ -96,7 +102,9 @@ let [dept] = await q(`select id from departments where name = 'Mathematics' limi
 if (!dept) [dept] = await q(`insert into departments (name) values ('Mathematics') returning id`)
 let [eng] = await q(`select id from departments where name = 'English' limit 1`)
 if (!eng) [eng] = await q(`insert into departments (name) values ('English') returning id`)
-const deptId = { Mathematics: dept.id, English: eng.id }
+let [sci] = await q(`select id from departments where name = 'Science' limit 1`)
+if (!sci) [sci] = await q(`insert into departments (name) values ('Science') returning id`)
+const deptId = { Mathematics: dept.id, English: eng.id, Science: sci.id }
 let [cls] = await q(`select id from class_groups where name = $1 and year_grade = 'Grade 9' and department_id = $2 limit 1`, [CLASS_NAME, dept.id])
 if (!cls) [cls] = await q(`insert into class_groups (name, year_grade, department_id, academic_year) values ($1, 'Grade 9', $2, $3) returning id`, [CLASS_NAME, dept.id, '2026-2027'])
 console.log(`Class ${CLASS_NAME} ready.`)
@@ -123,6 +131,9 @@ for (const s of STAFF) {
   console.log(`  ${u.created ? 'created' : 'updated'}  ${email}`)
 }
 
+// the English teacher teaches the Grade 8 class (the second demo pack), not the Grade 9 maths class an earlier version linked them to
+await db.query(`delete from teacher_class_groups where teacher_id = $1 and class_group_id = $2`, [ids['testing.english'], cls.id])
+
 // ---- students ----
 for (const st of STUDENTS) {
   const email = `${st.id}@${DOMAIN}`
@@ -133,6 +144,22 @@ for (const st of STUDENTS) {
      on conflict (id) do update set full_name = excluded.full_name, student_id = excluded.student_id, grade_level = 9, is_active = true, must_change_password = false`,
     [u.id, `${st.first} ${st.last}`, st.first, st.last, st.id])
   await db.query(`insert into enrollments (student_id, class_group_id) select $1,$2 where not exists (select 1 from enrollments where student_id = $1 and class_group_id = $2)`, [u.id, cls.id])
+}
+for (const x of EXTRA) {
+  let [c2] = await q(`select id from class_groups where name = $1 and year_grade = $2 limit 1`, [x.cls, x.grade])
+  if (!c2) [c2] = await q(`insert into class_groups (name, year_grade, department_id, academic_year) values ($1, $2, $3, $4) returning id`, [x.cls, x.grade, dept.id, '2026-2027'])
+  for (let i = 0; i < FIRST2.length; i++) {
+    const id = String(x.first + i), email = `${id}@${DOMAIN}`
+    const u = await ensureUser(email)
+    const last = LAST2[(i * 5 + x.gradeNum) % LAST2.length]
+    await db.query(
+      `insert into profiles (id, full_name, first_name, last_name, role, student_id, grade_level, is_active, must_change_password)
+       values ($1,$2,$3,$4,'student',$5,$6,true,false)
+       on conflict (id) do update set full_name = excluded.full_name, student_id = excluded.student_id, grade_level = excluded.grade_level, is_active = true, must_change_password = false`,
+      [u.id, `${FIRST2[i]} ${last}`, FIRST2[i], last, id, x.gradeNum])
+    await db.query(`insert into enrollments (student_id, class_group_id) select $1,$2 where not exists (select 1 from enrollments where student_id = $1 and class_group_id = $2)`, [u.id, c2.id])
+  }
+  console.log(`  ${FIRST2.length} ${x.grade} students ready in class ${x.cls}`)
 }
 console.log(`  ${STUDENTS.length} students ready (sign-in: <student id>@${DOMAIN}; the test student is 54321).`)
 

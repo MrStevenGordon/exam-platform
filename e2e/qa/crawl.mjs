@@ -30,7 +30,7 @@ const want = (process.argv[2] || 'student,teacher,supervisor,principal,school_ad
 const modes = (process.argv[3] || 'desktop').split(',')
 const VIEW = { desktop: { width: 1280, height: 800 }, mobile: { width: 390, height: 844 } }
 const NOISE = /rpc\/cancel_teacher_absence|favicon|Download the React DevTools|\[Fast Refresh\]|HMR|webpack-hmr|_next\/static|sentry|\/monitoring|chat-widget|Failed to load resource: net::ERR_ABORTED/i
-const BAD_TEXT = /Application error|Unhandled Runtime Error|This page could not be found|Something went wrong|Internal Server Error|Cannot read properties|is not a function/i
+const BAD_TEXT = /isn.t switched on|not switched on for your school|You are offline|Application error|Unhandled Runtime Error|This page could not be found|Something went wrong|Internal Server Error|Cannot read properties|is not a function/i
 
 const browser = await chromium.launch({ executablePath: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' })
 const findings = []; const visited = []
