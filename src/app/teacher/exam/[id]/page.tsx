@@ -91,7 +91,7 @@ export default function ExamEditorPage() {
 
     const { data: examData, error: examError } = await supabase
       .from('draft_exams')
-      .select('id, title, subject, instructions, status, exam_kind, direct_published, access_password, target_grade, supervisor_notes')
+      .select('id, title, subject, instructions, status, exam_kind, direct_published, target_grade, supervisor_notes')
       .eq('id', examId)
       .single()
 
@@ -100,7 +100,9 @@ export default function ExamEditorPage() {
       setLoading(false)
       return
     }
-    setExam(examData)
+    // The password lives in a staff-only place; only people allowed to see it get it back.
+    const { data: pw } = await supabase.rpc('exam_access_password', { p_kind: 'draft', p_exam: examId })
+    setExam({ ...examData, access_password: (pw as string | null) ?? null })
 
     const { data: questionData, error: questionError } = await supabase
       .from('questions')

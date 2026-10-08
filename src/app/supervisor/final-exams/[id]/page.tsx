@@ -71,10 +71,11 @@ export default function SupervisorExamPublishPage() {
     try {
       const { data: examData } = await supabase
         .from('draft_exams')
-        .select('id, title, subject, exam_kind, term, target_grade, status, instructions, duration_minutes, access_password, questions_per_page, department_id, calculator_enabled, published_final_exam_id')
+        .select('id, title, subject, exam_kind, term, target_grade, status, instructions, duration_minutes, questions_per_page, department_id, calculator_enabled, published_final_exam_id')
         .eq('id', examId)
         .single()
-      setExam(examData)
+      const { data: pw } = await supabase.rpc('exam_access_password', { p_kind: 'draft', p_exam: examId })
+      setExam(examData ? { ...examData, access_password: (pw as string | null) ?? null } : examData)
 
       const { data: qData } = await supabase
         .from('questions')

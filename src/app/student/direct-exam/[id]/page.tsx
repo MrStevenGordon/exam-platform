@@ -13,7 +13,6 @@ type DirectExam = {
   instructions: string
   exam_kind: string
   duration_minutes: number
-  access_password: string | null
   available_from: string | null
   available_until: string | null
 }
@@ -30,6 +29,7 @@ export default function DirectExamFrontPage() {
   const [existingSession, setExistingSession] = useState<{ id: string; status: string; password_verified: boolean } | null>(null)
   const [passwordInput, setPasswordInput] = useState('')
   const [passwordError, setPasswordError] = useState('')
+  const [verifying, setVerifying] = useState(false)
   const [unlocked, setUnlocked] = useState(false)
 
   useEffect(() => {
@@ -58,7 +58,7 @@ export default function DirectExamFrontPage() {
 
     const { data: examData, error: examError } = await supabase
       .from('draft_exams')
-      .select('id, title, subject, instructions, exam_kind, duration_minutes, access_password, available_from, available_until')
+      .select('id, title, subject, instructions, exam_kind, duration_minutes, available_from, available_until')
       .eq('id', examId)
       .single()
 
@@ -92,11 +92,19 @@ export default function DirectExamFrontPage() {
     setLoading(false)
   }
 
-  function handleVerifyPassword() {
-    if (!exam) return
-    if (passwordInput.trim().toUpperCase() === (exam.access_password || '').toUpperCase()) {
+  async function handleVerifyPassword() {
+    if (!exam || verifying) return
+    setVerifying(true)
+    setPasswordError('')
+    // The password is checked on the server; it is never sent to this page.
+    const { data, error } = await supabase.rpc('verify_exam_password', { p_kind: 'draft', p_exam: examId, p_password: passwordInput })
+    setVerifying(false)
+    if (error) {
+      setPasswordError('Something went wrong checking the password. Please try again.')
+    } else if (data === 'ok') {
       setUnlocked(true)
-      setPasswordError('')
+    } else if (data === 'locked') {
+      setPasswordError('Too many wrong tries. Wait 10 minutes, or ask your teacher.')
     } else {
       setPasswordError('Incorrect password. Check with your teacher.')
     }
@@ -223,7 +231,7 @@ export default function DirectExamFrontPage() {
               style={{ fontSize: 18, fontFamily: 'monospace', letterSpacing: 2, textTransform: 'uppercase', width: 160 }}
               maxLength={6}
             />
-            <button onClick={handleVerifyPassword} className="btn btn-primary">Unlock</button>
+            <button onClick={handleVerifyPassword} disabled={verifying} className="btn btn-primary">{verifying ? 'Checking…' : 'Unlock'}</button>
           </div>
           {passwordError && <p className="banner banner-danger" style={{ marginTop: 10 }}>{passwordError}</p>}
         </div>

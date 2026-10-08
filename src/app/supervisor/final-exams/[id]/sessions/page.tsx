@@ -56,12 +56,13 @@ export default function ExamSessionsPage() {
 
     const { data: examData } = await supabase
       .from('final_exams')
-      .select('title, access_password')
+      .select('title')
       .eq('id', finalExamId)
       .single()
 
     setExamTitle(examData?.title || '')
-    setAccessPassword(examData?.access_password || '')
+    const { data: pw } = await supabase.rpc('exam_access_password', { p_kind: 'final', p_exam: finalExamId })
+    setAccessPassword((pw as string | null) || '')
 
     const { data, error } = await supabase
       .from('exam_sessions')
