@@ -31,6 +31,7 @@ function NewExamForm() {
   const mode = searchParams.get('kind') === 'task' ? 'task' : searchParams.get('kind') === 'test' ? 'test' : 'all'
   const options = mode === 'task' ? TASK_OPTIONS : mode === 'test' ? TEST_OPTIONS : [...TEST_OPTIONS, ...TASK_OPTIONS]
   const pageTitle = mode === 'task' ? 'New task' : mode === 'test' ? 'New test' : 'New exam'
+  const noun = mode === 'task' ? 'task' : mode === 'test' ? 'test' : 'exam'
   const submitLabel = mode === 'task' ? 'Create task' : mode === 'test' ? 'Create test' : 'Create exam'
   const returnPath = mode === 'task' ? '/teacher/tasks' : mode === 'test' ? '/teacher/tests' : '/teacher/tasks'
 
@@ -92,7 +93,7 @@ function NewExamForm() {
       <div className="card" style={{ marginTop: 20 }}>
         <form onSubmit={handleSubmit}>
           <div style={{ marginBottom: 16 }}>
-            <label htmlFor="new-exam-type-1" style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)' }}>Exam type</label>
+            <label htmlFor="new-exam-type-1" style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)' }}>{noun.charAt(0).toUpperCase() + noun.slice(1)} type</label>
             <select id="new-exam-type-1"
               value={examKind}
               onChange={(e) => setExamKind(e.target.value)}
@@ -116,7 +117,7 @@ function NewExamForm() {
             <textarea id="new-instructions-shown-to-studen-4" value={instructions} onChange={(e) => setInstructions(e.target.value)} rows={4} style={{ width: '100%', marginTop: 6 }} />
           </div>
           <div style={{ marginBottom: 16 }}>
-            <label htmlFor="new-year-group-which-grade-is-th-5" style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)' }}>Year group (which grade is this exam for?)</label>
+            <label htmlFor="new-year-group-which-grade-is-th-5" style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)' }}>Year group (which grade is this {noun} for?)</label>
             <select id="new-year-group-which-grade-is-th-5"
               value={targetGrade}
               onChange={(e) => setTargetGrade(e.target.value ? parseInt(e.target.value) : '')}
@@ -154,7 +155,7 @@ function NewExamForm() {
             <label htmlFor="calc-enabled" style={{ cursor: 'pointer', fontSize: 14 }}>
               <span style={{ fontWeight: 600, color: 'var(--accent-dark)' }}>Enable scientific calculator</span>
               <span style={{ display: 'block', fontSize: 12, color: 'var(--text-secondary)', marginTop: 2 }}>
-                Students will have access to a built-in calculator during this exam
+                Students will have access to a built-in calculator during this {noun}
               </span>
             </label>
           </div>

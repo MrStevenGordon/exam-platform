@@ -1,5 +1,6 @@
 'use client'
 
+import { examNoun } from '@/lib/examWording'
 import { useEffect, useState, useRef, useCallback } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
@@ -811,7 +812,7 @@ export default function TakeDirectExamPage() {
         {isLastPage ? (
           !confirmingSubmit ? (
             <button onClick={() => setConfirmingSubmit(true)} disabled={submitting} className="btn btn-primary">
-              Submit exam
+              Submit {examNoun(exam?.exam_kind)}
             </button>
           ) : (
             <div style={{ textAlign: 'right' }}>

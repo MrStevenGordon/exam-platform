@@ -168,7 +168,7 @@ export default function SelfMockPage() {
   if (errorMsg) return <div className="page-container"><p className="banner banner-danger">{errorMsg}</p></div>
 
   return (
-    <div className="page-container" style={{ maxWidth: 640 }}>
+    <div className="page-container sentence-case" style={{ maxWidth: 640 }}>
       <Link href="/student/self-mock" style={{ color: 'var(--text-secondary)', fontSize: 14 }}>&larr; Generate another</Link>
 
       <h1 className="portal-page-title" style={{ marginTop: 16 }}>{subject}: Practice mock</h1>
