@@ -46,6 +46,8 @@ export default function SupervisorExamReviewPage() {
   const [loading, setLoading] = useState(true)
   const [errorMsg, setErrorMsg] = useState('')
   const [actioning, setActioning] = useState(false)
+  const [actionLabel, setActionLabel] = useState('')
+  const [actionError, setActionError] = useState('')
   const [backHref, setBackHref] = useState('/supervisor')
   const [backLabel, setBackLabel] = useState('Back to submissions')
 
@@ -123,36 +125,38 @@ export default function SupervisorExamReviewPage() {
     setComments({ ...comments, [questionId]: value })
   }
 
-  async function saveComments() {
-    const updates = Object.entries(comments).map(([questionId, comment]) =>
-      supabase
-        .from('questions')
-        .update({ supervisor_comment: comment.trim() === '' ? null : comment })
-        .eq('id', questionId)
-    )
-    await Promise.all(updates)
+  // One call saves every comment on the page. Returns an error message, or '' when saved.
+  async function saveComments(): Promise<string> {
+    const payload: Record<string, string> = {}
+    Object.entries(comments).forEach(([questionId, comment]) => { payload[questionId] = comment })
+    const { error } = await supabase.rpc('save_exam_review_comments', { p_exam: examId, p_comments: payload })
+    return error ? (error.message || 'Your comments could not be saved. Please try again.') : ''
   }
 
   async function handleApprove() {
     setActioning(true)
-    setErrorMsg('')
+    setActionError('')
+    setActionLabel('Saving your comments…')
 
-    await saveComments()
+    const saveError = await saveComments()
+    if (saveError) { setActionError(saveError); setActioning(false); setActionLabel(''); return }
 
+    setActionLabel('Approving…')
     const { data: { session } } = await supabase.auth.getSession()
     const res = await fetch('/api/review-exam', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ examId, action: 'approve', accessToken: session?.access_token }),
     })
-    const result = await res.json()
+    const result = await res.json().catch(() => ({ error: 'Something went wrong. Please try again.' }))
 
     if (result.error) {
-      setErrorMsg(result.error)
+      setActionError(result.error)
     } else {
       loadData()
     }
     setActioning(false)
+    setActionLabel('')
   }
 
   async function handleSendFeedback() {
@@ -166,24 +170,28 @@ export default function SupervisorExamReviewPage() {
     }
 
     setActioning(true)
-    setErrorMsg('')
+    setActionError('')
+    setActionLabel('Saving your comments…')
 
-    await saveComments()
+    const saveError = await saveComments()
+    if (saveError) { setActionError(saveError); setActioning(false); setActionLabel(''); return }
 
+    setActionLabel('Sending feedback…')
     const { data: { session } } = await supabase.auth.getSession()
     const res = await fetch('/api/review-exam', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ examId, action: 'request-changes', accessToken: session?.access_token }),
     })
-    const result = await res.json()
+    const result = await res.json().catch(() => ({ error: 'Something went wrong. Please try again.' }))
 
     if (result.error) {
-      setErrorMsg(result.error)
+      setActionError(result.error)
     } else {
       loadData()
     }
     setActioning(false)
+    setActionLabel('')
   }
 
   if (loading) return <div className="page-container">Loading…</div>
@@ -315,13 +323,17 @@ export default function SupervisorExamReviewPage() {
       </div>
 
       {canDecide && (
-        <div style={{ marginTop: 16, display: 'flex', gap: 12 }}>
-          <button onClick={handleApprove} disabled={actioning} className="btn btn-primary">
-            Approve
-          </button>
-          <button onClick={handleSendFeedback} disabled={actioning} className="btn btn-secondary">
-            Send feedback
-          </button>
+        <div style={{ marginTop: 16 }}>
+          {actionError && <p className="banner banner-danger" style={{ marginBottom: 12 }}>{actionError}</p>}
+          <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+            <button onClick={handleApprove} disabled={actioning} className="btn btn-primary">
+              Approve
+            </button>
+            <button onClick={handleSendFeedback} disabled={actioning} className="btn btn-secondary">
+              Send feedback
+            </button>
+            {actionLabel && <span style={{ color: 'var(--text-secondary)' }} role="status">{actionLabel}</span>}
+          </div>
         </div>
       )}
 
