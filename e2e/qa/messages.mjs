@@ -1,0 +1,12 @@
+import { b, log, session } from './lib.mjs'
+const t = await session('teacher', 'testing.teacher@mhs.smartassess')
+await t.page.goto('http://localhost:3000/teacher/messages', { waitUntil: 'domcontentloaded', timeout: 180000 }); await t.page.waitForSelector('text=Staff', { timeout: 120000 }); await t.page.waitForTimeout(3000); await t.skip()
+await t.page.getByText('Staff', { exact: true }).first().click(); await t.page.waitForTimeout(2500)
+const msg = 'QA hello ' + Date.now().toString().slice(-5)
+await t.page.locator('main input:not([type=checkbox]), main textarea').last().fill(msg); await t.page.getByRole('button', { name: 'Send' }).click(); await t.page.waitForTimeout(4000)
+log('teacher sees own message:', (await t.text()).includes(msg)); await t.ctx.close()
+const h = await session('supervisor', 'testing.hod@mhs.smartassess')
+await h.page.goto('http://localhost:3000/supervisor/messages', { waitUntil: 'domcontentloaded', timeout: 180000 }); await h.page.waitForSelector('text=Messages', { timeout: 120000 }); await h.page.waitForTimeout(5000); await h.skip()
+log('HOD sidebar badge / list:', (await h.text()).slice(0, 260).replace(/\n/g, ' / '))
+await h.page.getByText('Staff', { exact: true }).first().click().catch(() => {}); await h.page.waitForTimeout(3000)
+log('HOD sees the message:', (await h.text()).includes(msg)); log('errors:', [...t.errs, ...h.errs].join(' ; ') || 'none'); await b.close()
