@@ -1,6 +1,6 @@
 # Competitor slide: claims checked against public documentation (October 2026)
 
-Used on the "Strong tools. Different jobs." slide. Each claim below was checked against the vendor's own help pages or documentation where possible. Anything that could not be verified was left off the slide.
+Background for the "Why not just use Google Classroom?" slide and its speaker notes (the earlier multi-tool comparison table was replaced on 2026-10-08 by the "Good tools. One connected journey." and Google Classroom slides). Each claim below was checked against the vendor's own help pages or documentation where possible. Anything that could not be verified was left off the slide.
 
 | Slide claim | What the sources say | Source |
 |---|---|---|

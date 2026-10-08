@@ -1,5 +1,5 @@
 // Smart Assess Ja, Manchester High School: strategy deck v2 (design E1: ruled paper, index tabs, copper/gold/teal on deep-brown ink).
-// 31 slides for a 30 minute slot (the three newest Smart Learning slides are class feedback, student support and videos; videos is optional), with speaker notes and timings. Editable PowerPoint (native text, shapes, tables and charts).
+// 32 slides for a 30 minute slot (the three newest Smart Learning slides are class feedback, student support and videos; videos is optional), with speaker notes and timings. Editable PowerPoint (native text, shapes, tables and charts).
 // Run: NODE_PATH=<folder with pptxgenjs> node build_deck_v2.js   (needs paper.png, shot-lesson.png, shot-builder.png in ./assets-v2)
 const path = require('path')
 const pptxgen = require('pptxgenjs')
@@ -419,24 +419,36 @@ intro('PLAY', INK, 'FFFFFF', 3, 'Smart Play', 'Make practice fun.',
     text(s, items.map((t) => ({ text: t, options: { bullet: { code: '25A0' }, breakLine: true } })), x + 0.2, 3.3, 2.9, 3.0, { size: 12.5, ls: 1.25 })
   })
 }
-// ---------- 19. competitors ----------
+// ---------- 19. good tools, one journey ----------
 {
-  const s = base('WHY US', note(1.5, 'Be fair to the other tools: they are strong at their own jobs. Each has its own way of locking down an exam: Google needs school-managed Chromebooks, Microsoft the Windows Take a Test app, Moodle uses Safe Exam Browser, Canvas uses a third-party browser. All four auto-mark objective questions, and Moodle and Canvas report on each question, quiz by quiz. Kahoot and Quizizz are built for live games and practice. Our point is not that others cannot do one of these things; it is how many tools and handoffs a school needs. Sources are in Competitor-claims-verified.md.'))
-  label(s, 'The landscape')
-  title(s, 'Strong tools. Different jobs.', { size: 40 })
-  const H = (t, fill, fg) => ({ text: t.toUpperCase(), options: { bold: true, color: fg, fill: { color: fill }, fontFace: MONO, fontSize: 10.5 } })
-  const C = (t, o = {}) => ({ text: t, options: { fontFace: BODY, fontSize: 12.5, color: o.color || INK, bold: !!o.bold, fill: { color: o.fill || 'FFFFFF' }, valign: 'middle' } })
-  const rows = [
-    [H('What a school needs', INK, 'FFFFFF'), H('How the common tools handle it', INK, 'FFFFFF'), H('Smart Assess Ja', COPPER, INK)],
-    [C('Secure exams', { bold: true }), C('Each has its own lock-down. Google needs managed Chromebooks, Microsoft the Windows Take a Test app, Moodle Safe Exam Browser, Canvas a third-party browser.'), C('Built in, plus a lock-down desktop app for Windows and Mac', { bold: true, fill: TINT })],
-    [C('Marking', { bold: true }), C('Objective questions auto-mark in all four. Google Classroom imports the grades from Forms.'), C('Auto-marks, plus essay marking points and AI-suggested marks a teacher always edits', { bold: true, fill: TINT })],
-    [C('Question-level insight', { bold: true }), C('Moodle and Canvas report on each question, quiz by quiz.'), C('Missed questions, the common wrong answer, who needs support, and results by topic', { bold: true, fill: TINT })],
-    [C('Practice games', { bold: true }), C('Kahoot and Quizizz are built for live games and practice.'), C('Smart Play, coming soon, shares the school\'s topic list', { bold: true, fill: TINT })],
-    [C('One system', { bold: true }), C('Schools often combine several of these.'), C('One login, one topic list, plus attendance, timetable and cover', { bold: true, fill: TINT })],
-  ]
-  s.addTable(rows, { x: 1.55, y: 1.75, w: 10.4, colW: [1.9, 4.6, 3.9], border: { type: 'solid', pt: 1.5, color: INK }, margin: [0.06, 0.1, 0.06, 0.1], rowH: [0.38, 0.95, 0.75, 0.7, 0.62, 0.62] })
-  bar(s, 'The question is not "can another tool do one of these things?" It is "how many tools and handoffs does the school need?"', 6.2, 12.5)
-  foot(s, 'Google Classroom, Microsoft Teams, Moodle, Canvas, Kahoot and Quizizz: from public documentation, October 2026. Every school sets them up differently.')
+  const s = base('WHY US', note(1, 'Be fair to the other tools: they are good at what they do. Our point is not that they cannot do a job; it is that the jobs are connected here. Assess, learn and practise around the same students, classes and curriculum topics. The goal is to reduce the work teachers do between those activities: one login, one set of people, one topic list.'))
+  label(s, 'The difference')
+  title(s, 'Good tools. One connected journey.', { size: 40 })
+  text(s, 'Other platforms are good at what they do.', 1.55, 2.0, 10.4, 0.5, { size: 22, bold: true })
+  text(s, 'Smart Assess Ja is designed to connect assessment, learning and practice around the same students, classes and curriculum topics.', 1.55, 2.65, 10.2, 1.0, { size: 18, color: GREY })
+  const tiles = [['ASSESS', COPPER, INK], ['LEARN', TEAL, 'FFFFFF'], ['PRACTISE', GOLD, INK]]
+  tiles.forEach(([t, f, fg], i) => {
+    const x = 1.55 + i * 3.55
+    s.addShape(SH.rect, { x, y: 4.0, w: 3.3, h: 1.25, fill: { color: f }, line: { color: INK, width: 2 } })
+    text(s, t, x, 4.0, 3.3, 1.25, { font: HEAD, size: 32, color: fg, align: 'center', valign: 'middle' })
+    if (i < 2) s.addShape(SH.rightArrow, { x: x + 3.33, y: 4.45, w: 0.19, h: 0.35, fill: { color: INK }, line: { type: 'none' } })
+  })
+  bar(s, 'The goal: reduce the work teachers do between those activities.', 5.75, 16)
+}
+// ---------- 19b. why not google classroom ----------
+{
+  const s = base('WHY US', note(1, 'The question teachers may ask: why not just use Google Classroom? Be fair. It is useful for managing classwork, sharing materials and organising assignments. Where a locked exam is needed, Google Classroom needs school-managed Chromebooks; Forms auto-marks and the grades can be imported into Classroom. Smart Assess Ja goes further into the assessment process: create, administer, mark, understand results and support learning. The difference is the connected workflow, not just a longer feature list. Sources are in Competitor-claims-verified.md.'))
+  label(s, 'The question teachers may ask')
+  title(s, 'Why not just use Google Classroom?', { size: 40 })
+  box(s, 1.55, 2.0, 5.1, 2.7, { fill: 'F3E9DC' })
+  text(s, 'GOOGLE CLASSROOM', 1.9, 2.3, 4.5, 0.6, { font: HEAD, size: 26 })
+  text(s, 'Useful for managing classwork, sharing materials and organising assignments.', 1.9, 3.1, 4.4, 1.4, { size: 17, color: GREY })
+  box(s, 6.85, 2.0, 5.1, 2.7, { fill: TINT })
+  s.addShape(SH.rect, { x: 6.85, y: 2.0, w: 0.14, h: 2.7, fill: { color: COPPER }, line: { type: 'none' } })
+  text(s, 'SMART ASSESS JA', 7.3, 2.3, 4.5, 0.6, { font: HEAD, size: 26 })
+  text(s, 'Designed to go further into the assessment process: create, administer, mark, understand results and support learning.', 7.3, 3.1, 4.4, 1.5, { size: 17, bold: true })
+  bar(s, 'The difference is the connected workflow, not just a longer feature list.', 5.2, 16)
+  foot(s, 'Google Classroom: public documentation, October 2026. Every school sets it up differently.')
 }
 // ---------- 20. is not ----------
 {
