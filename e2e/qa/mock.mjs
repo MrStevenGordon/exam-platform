@@ -1,0 +1,11 @@
+import { b, log, session, admin } from './lib.mjs'
+const s = await session('student', '54328@mhs.smartassess')
+const txt = async () => (await s.text()).slice(0, 600).replace(/\n/g, ' / ')
+await s.page.goto('http://localhost:3000/student/self-mock', { waitUntil: 'domcontentloaded' }); await s.page.waitForTimeout(7000); await s.skip()
+log('form fields:', JSON.stringify(await s.page.evaluate(() => [...document.querySelectorAll('main select, main input')].map((e) => `${e.tagName}:${e.type || ''}:${e.value}:${[...(e.options || [])].map((o) => o.text).join('/')}`))))
+await s.page.getByRole('button', { name: /Generate Mock Exam/i }).click(); await s.page.waitForTimeout(9000)
+log('after Generate -> url:', new URL(s.page.url()).pathname, '\n  ', await txt())
+log('errors so far:', s.errs.join(' ; ') || 'none')
+const radios = await s.page.locator('input[type=radio]').count(); log('radio options on page:', radios)
+await s.page.screenshot({ path: 'out/mock-1.png', fullPage: true })
+await admin.from('profiles').update({ active_login_token: null }).eq('student_id', '54328'); await b.close()

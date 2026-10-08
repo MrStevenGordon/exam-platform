@@ -47,6 +47,8 @@ try {
   check('the right password (lower case typed) unlocks', (await s.page.getByRole('button', { name: /Begin/ }).count()) > 0)
   await s.page.getByRole('button', { name: /Begin/ }).first().click(); await s.page.waitForURL((u) => /\/take/.test(u.pathname), { timeout: 90000 }).catch(() => {}); await s.page.waitForTimeout(5000)
   check('the student reaches the questions', /\/take/.test(s.page.url()) && /PW97 question/.test(await s.text()), new URL(s.page.url()).pathname)
+  const opts = await s.page.evaluate(() => [...document.querySelectorAll('label')].filter((l) => l.querySelector('input[type=radio]')).slice(0, 4).map((l) => `${l.textContent.trim()}|${getComputedStyle(l).textTransform}|shown:${l.innerText.trim()}`))
+  log('option labels (source|style|shown):', opts.join('  ,  '))
   log('page errors:', s.errs.filter((e) => !/401|404/.test(e)).join(' ; ') || 'none')
   log(ok ? 'ALL PASS' : 'SOME FAILED')
 } finally {
