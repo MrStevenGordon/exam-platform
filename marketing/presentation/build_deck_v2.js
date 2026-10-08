@@ -425,7 +425,7 @@ intro('PLAY', INK, 'FFFFFF', 3, 'Smart Play', 'Make practice fun.',
   label(s, 'The difference')
   title(s, 'Good tools. One connected journey.', { size: 40 })
   text(s, 'Other platforms are good at what they do.', 1.55, 2.0, 10.4, 0.5, { size: 22, bold: true })
-  text(s, 'Smart Assess Ja is designed to connect assessment, learning and practice around the same students, classes and curriculum topics.', 1.55, 2.65, 10.2, 1.0, { size: 18, color: GREY })
+  text(s, 'Smart Assess JA is designed to connect assessment, learning and practice around the same students, classes and curriculum topics.', 1.55, 2.65, 10.2, 1.0, { size: 18, color: GREY })
   const tiles = [['ASSESS', COPPER, INK], ['LEARN', TEAL, 'FFFFFF'], ['PRACTISE', GOLD, INK]]
   tiles.forEach(([t, f, fg], i) => {
     const x = 1.55 + i * 3.55
@@ -442,13 +442,12 @@ intro('PLAY', INK, 'FFFFFF', 3, 'Smart Play', 'Make practice fun.',
   title(s, 'Why not just use Google Classroom?', { size: 40 })
   box(s, 1.55, 2.0, 5.1, 2.7, { fill: 'F3E9DC' })
   text(s, 'GOOGLE CLASSROOM', 1.9, 2.3, 4.5, 0.6, { font: HEAD, size: 26 })
-  text(s, 'Useful for managing classwork, sharing materials and organising assignments.', 1.9, 3.1, 4.4, 1.4, { size: 17, color: GREY })
+  text(s, 'Useful for managing classwork, sharing materials and organizing assignments.', 1.9, 3.1, 4.4, 1.4, { size: 17, color: GREY })
   box(s, 6.85, 2.0, 5.1, 2.7, { fill: TINT })
   s.addShape(SH.rect, { x: 6.85, y: 2.0, w: 0.14, h: 2.7, fill: { color: COPPER }, line: { type: 'none' } })
   text(s, 'SMART ASSESS JA', 7.3, 2.3, 4.5, 0.6, { font: HEAD, size: 26 })
   text(s, 'Designed to go further into the assessment process: create, administer, mark, understand results and support learning.', 7.3, 3.1, 4.4, 1.5, { size: 17, bold: true })
   bar(s, 'The difference is the connected workflow, not just a longer feature list.', 5.2, 16)
-  foot(s, 'Google Classroom: public documentation, October 2026. Every school sets it up differently.')
 }
 // ---------- 20. is not ----------
 {
