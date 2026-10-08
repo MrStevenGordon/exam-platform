@@ -1,5 +1,5 @@
 // Smart Assess Ja, Manchester High School: strategy deck v2 (design E1: ruled paper, index tabs, copper/gold/teal on deep-brown ink).
-// 32 slides for a 30 minute slot (the three newest Smart Learning slides are class feedback, student support and videos; videos is optional), with speaker notes and timings. Editable PowerPoint (native text, shapes, tables and charts).
+// 33 slides for a 30 minute slot (the three newest Smart Learning slides are class feedback, student support and videos; videos is optional), with speaker notes and timings. Editable PowerPoint (native text, shapes, tables and charts).
 // Run: NODE_PATH=<folder with pptxgenjs> node build_deck_v2.js   (needs paper.png, shot-lesson.png, shot-builder.png in ./assets-v2)
 const path = require('path')
 const pptxgen = require('pptxgenjs')
@@ -419,35 +419,91 @@ intro('PLAY', INK, 'FFFFFF', 3, 'Smart Play', 'Make practice fun.',
     text(s, items.map((t) => ({ text: t, options: { bullet: { code: '25A0' }, breakLine: true } })), x + 0.2, 3.3, 2.9, 3.0, { size: 12.5, ls: 1.25 })
   })
 }
-// ---------- 19. good tools, one journey ----------
+// ---------- 19. one connected system, not a stack of tools (design supplied by the presenter; wording is theirs, unchanged) ----------
 {
-  const s = base('WHY US', note(1, 'Be fair to the other tools: they are good at what they do. Our point is not that they cannot do a job; it is that the jobs are connected here. Assess, learn and practise around the same students, classes and curriculum topics. The goal is to reduce the work teachers do between those activities: one login, one set of people, one topic list.'))
-  label(s, 'The difference')
-  title(s, 'Good tools. One connected journey.', { size: 40 })
-  text(s, 'Other platforms are good at what they do.', 1.55, 2.0, 10.4, 0.5, { size: 22, bold: true })
-  text(s, 'Smart Assess JA is designed to connect assessment, learning and practice around the same students, classes and curriculum topics.', 1.55, 2.65, 10.2, 1.0, { size: 18, color: GREY })
-  const tiles = [['ASSESS', COPPER, INK], ['LEARN', TEAL, 'FFFFFF'], ['PRACTISE', GOLD, INK]]
-  tiles.forEach(([t, f, fg], i) => {
-    const x = 1.55 + i * 3.55
-    s.addShape(SH.rect, { x, y: 4.0, w: 3.3, h: 1.25, fill: { color: f }, line: { color: INK, width: 2 } })
-    text(s, t, x, 4.0, 3.3, 1.25, { font: HEAD, size: 32, color: fg, align: 'center', valign: 'middle' })
-    if (i < 2) s.addShape(SH.rightArrow, { x: x + 3.33, y: 4.45, w: 0.19, h: 0.35, fill: { color: INK }, line: { type: 'none' } })
+  const s = base('WHY US', note(1.5, 'Say it as written. Many schools use different tools for different jobs. Smart Assess Ja brings assessment, learning and practice together in one platform, with one login, one set of people and one topic list. Walk down the two columns together: separate tools and one login for everything; different security and built in security; fragmented results and meaningful results; built for other contexts and made for Jamaica. The other tools do their own jobs well. We connect the jobs.'))
+  // y values below are the final positions on the slide; anything from 1.9in down is entered 0.2in higher because base() lowers it again
+  const at = (y) => (y >= 1.9 ? Math.round((y - 0.2) * 1000) / 1000 : y)
+  const X0 = 1.2, W = 11.0
+  s.addText([{ text: 'THE ', options: { color: INK } }, { text: 'DIFFERENCE', options: { color: COPPER } }], { x: X0, y: 0.4, w: 10, h: 0.3, fontFace: MONO, fontSize: 11.5, bold: true, charSpacing: 3, margin: 0 })
+  s.addText([{ text: 'ONE CONNECTED SYSTEM,', options: { color: INK, breakLine: true } }, { text: 'NOT A STACK OF TOOLS.', options: { color: COPPER } }], { x: X0, y: 0.72, w: W, h: 1.35, fontFace: HEAD, fontSize: 46, margin: 0, valign: 'top', lineSpacingMultiple: 0.92 })
+  text(s, 'Many schools use different tools for different jobs. Smart Assess Ja brings assessment, learning and practice together in one platform, with one login, one set of people and one topic list.', X0, at(2.15), W, 0.6, { size: 13.5, color: GREY })
+  const panels = [
+    { x: X0, head: 'Most schools today', sub: 'Different tools. Different logins. Different data.', headFill: 'EDE5DC', headFg: INK, subFg: GREY, border: INK, tile: 'l', items: [['Separate tools', 'Quizzes, lessons and games are often in different platforms, each with its own login and setup.'], ['Different security', 'Each tool has its own lock-down, for example managed Chromebooks, Windows Take a Test app or Safe Exam Browser.'], ['Fragmented results', 'Some tools report on each question, others only give a quiz score.'], ['Built for other contexts', 'General tools, designed differently by each company.']] },
+    { x: X0 + 5.6, head: 'Smart Assess Ja', sub: 'One platform. One login. One connected view.', headFill: COPPER, headFg: 'FFFFFF', subFg: 'FFFFFF', border: COPPER, tile: 'r', items: [['One login for everything', 'Assess, learn and practice share one login, one set of people and one topic list.'], ['Built in security', 'Includes a lock-down desktop app for Windows and Mac, with integrity flags and protected exam settings.'], ['Meaningful results', 'Missed questions, common wrong answers, who needs support and results by topic, linked to lessons and practice.'], ['Made for Jamaica', 'Lesson plans in the Ministry’s 5E format, and data handled in line with Jamaica’s Data Protection Act.']] },
+  ]
+  const PY = 2.85, PH = 3.6, HH = 0.78, PW = 5.4
+  panels.forEach((p) => {
+    s.addShape(SH.rect, { x: p.x, y: at(PY), w: PW, h: PH, fill: { color: 'FFFFFF' }, line: { color: p.border, width: 2 } })
+    s.addShape(SH.rect, { x: p.x, y: at(PY), w: PW, h: HH, fill: { color: p.headFill }, line: { color: p.border, width: 2 } })
+    text(s, p.head.toUpperCase(), p.x + 0.25, at(PY + 0.06), PW - 0.4, 0.4, { font: HEAD, size: 21, color: p.headFg, valign: 'middle' })
+    text(s, p.sub, p.x + 0.25, at(PY + 0.44), PW - 0.4, 0.3, { size: 11, color: p.subFg, valign: 'middle' })
+    const rowH = (PH - HH) / 4
+    p.items.forEach(([h, b], i) => {
+      const y = PY + HH + i * rowH
+      if (i > 0) s.addShape(SH.line, { x: p.x + 0.2, y: at(y), w: PW - 0.4, h: 0, line: { color: 'E5DDD0', width: 1 } })
+      s.addImage({ path: A(`compare/${p.tile}${i + 1}.png`), x: p.x + 0.2, y: at(y + (rowH - 0.54) / 2), w: 0.54, h: 0.54 })
+      text(s, h, p.x + 0.9, at(y + 0.07), PW - 1.05, 0.24, { size: 12.5, bold: true })
+      text(s, b, p.x + 0.9, at(y + 0.3), PW - 1.05, rowH - 0.32, { size: 9.8, color: GREY })
+    })
   })
-  bar(s, 'The goal: reduce the work teachers do between those activities.', 5.75, 16)
+  s.addShape(SH.rect, { x: X0, y: at(6.58), w: W, h: 0.66, fill: { color: INK }, line: { type: 'none' } })
+  s.addText([{ text: 'The other tools do their own jobs well.', options: { color: 'FFFFFF', breakLine: true } }, { text: 'We connect the jobs.', options: { color: GOLD } }], { x: X0 + 0.3, y: at(6.58), w: W - 0.5, h: 0.66, fontFace: BODY, fontSize: 15, bold: true, margin: 0, valign: 'middle' })
 }
-// ---------- 19b. why not google classroom ----------
+// ---------- 19b. strong tools, different jobs (design supplied by the presenter; wording and every mark in the table are theirs, unchanged) ----------
 {
-  const s = base('WHY US', note(1, 'The question teachers may ask: why not just use Google Classroom? Be fair. It is useful for managing classwork, sharing materials and organising assignments. Where a locked exam is needed, Google Classroom needs school-managed Chromebooks; Forms auto-marks and the grades can be imported into Classroom. Smart Assess Ja goes further into the assessment process: create, administer, mark, understand results and support learning. The difference is the connected workflow, not just a longer feature list. Sources are in Competitor-claims-verified.md.'))
-  label(s, 'The question teachers may ask')
-  title(s, 'Why not just use Google Classroom?', { size: 40 })
-  box(s, 1.55, 2.0, 5.1, 2.7, { fill: 'F3E9DC' })
-  text(s, 'GOOGLE CLASSROOM', 1.9, 2.3, 4.5, 0.6, { font: HEAD, size: 26 })
-  text(s, 'Useful for managing classwork, sharing materials and organizing assignments.', 1.9, 3.1, 4.4, 1.4, { size: 17, color: GREY })
-  box(s, 6.85, 2.0, 5.1, 2.7, { fill: TINT })
-  s.addShape(SH.rect, { x: 6.85, y: 2.0, w: 0.14, h: 2.7, fill: { color: COPPER }, line: { type: 'none' } })
-  text(s, 'SMART ASSESS JA', 7.3, 2.3, 4.5, 0.6, { font: HEAD, size: 26 })
-  text(s, 'Designed to go further into the assessment process: create, administer, mark, understand results and support learning.', 7.3, 3.1, 4.4, 1.5, { size: 17, bold: true })
-  bar(s, 'The difference is the connected workflow, not just a longer feature list.', 5.2, 16)
+  const s = base('WHY US', note(2, 'Walk down the table one section at a time: assessment, learning, practice and engagement, school-wide. Each platform has strengths. Smart Assess Ja is different because it brings assessment, learning and practice together in one school platform. The question is not "can another tool do one of these things?" It is "how many tools and handoffs does the school need?" Other tools are excellent in their areas. Smart Assess Ja is designed to connect the whole learning process.'))
+  const at = (y) => (y >= 1.9 ? Math.round((y - 0.2) * 1000) / 1000 : y)
+  const X0 = 1.25, TW = 11.1
+  s.addText([{ text: 'THE ', options: { color: INK } }, { text: 'LANDSCAPE', options: { color: COPPER } }], { x: X0, y: 0.32, w: 10, h: 0.3, fontFace: MONO, fontSize: 11.5, bold: true, charSpacing: 3, margin: 0 })
+  s.addText([{ text: 'STRONG TOOLS. ', options: { color: INK } }, { text: 'DIFFERENT JOBS.', options: { color: COPPER } }], { x: X0, y: 0.58, w: TW, h: 0.7, fontFace: HEAD, fontSize: 38, margin: 0, valign: 'middle' })
+  text(s, 'Each platform has strengths. Smart Assess Ja is different because it brings assessment, learning and practice together in one school platform.', X0, 1.3, TW, 0.45, { size: 11.5, color: GREY })
+  const Y = 1.8, LABW = 3.4, COLW = (TW - LABW) / 7
+  const HEAD_H = 0.54, SEC_H = 0.16, ROW_H = 0.175
+  const names = ['Google Classroom', 'Microsoft Teams', 'Moodle', 'Canvas', 'Kahoot!', 'Quizizz', 'Smart Assess Ja']
+  const hc = (t, o = {}) => ({ text: t, options: { fontFace: BODY, fontSize: 6.8, bold: true, color: o.fg || INK, fill: { color: o.fill || 'FFFBF6' }, align: o.align || 'center', valign: 'bottom', margin: [0, 0.02, 0.03, 0.02] } })
+  const sec = (t, fill) => [{ text: t, options: { colspan: 8, fontFace: MONO, fontSize: 6.8, bold: true, charSpacing: 2, color: INK, fill: { color: fill }, valign: 'middle', margin: [0, 0.08, 0, 0.08] } }]
+  const mark = (v, last) => {
+    const fill = last ? 'FFEAD8' : 'FFFFFF'
+    const base = { fontFace: BODY, align: 'center', valign: 'middle', fill: { color: fill }, margin: [0, 0.02, 0, 0.02], border: [{ type: 'none' }, { type: 'none' }, { type: 'solid', pt: 0.5, color: 'E5DDD0' }, { type: 'none' }] }
+    if (v === 'y') return { text: '✔', options: { ...base, fontSize: 8.5, bold: true, color: INK } }
+    if (v === 'l') return { text: 'Limited', options: { ...base, fontSize: 6.8, color: MUTED } }
+    return { text: '–', options: { ...base, fontSize: 8, color: MUTED } }
+  }
+  const row = (label, marks) => [{ text: label, options: { fontFace: BODY, fontSize: 7.4, color: INK, fill: { color: 'FFFFFF' }, valign: 'middle', margin: [0, 0.08, 0, 0.08], border: [{ type: 'none' }, { type: 'none' }, { type: 'solid', pt: 0.5, color: 'E5DDD0' }, { type: 'none' }] } }, ...marks.split('').map((m, i) => mark(m, i === 6))]
+  const rows = [
+    [{ text: 'FEATURE / JOB', options: { fontFace: MONO, fontSize: 6.8, bold: true, charSpacing: 2, color: INK, fill: { color: 'FFFBF6' }, valign: 'middle', margin: [0, 0.08, 0, 0.08] } }, ...names.map((n, i) => hc(n, i === 6 ? { fill: COPPER, fg: 'FFFFFF' } : {}))],
+    sec('ASSESSMENT', 'FDC598'),
+    row('Create and deliver exams', 'nnyynny'), row('Question bank', 'nnyylly'), row('Different question types (MC, short answer, essay, etc.)', 'yyyylly'), row('Automatic marking (objective questions)', 'yyyyyyy'), row('Exam security and lock-down', 'nnyynny'), row('Integrity flags for essays', 'nnnnnny'),
+    sec('LEARNING', '98C4C3'),
+    row('Lesson planning (5E format)', 'nnllnny'), row('Structured lessons', 'yyyynny'), row('Catch-up learning for absent students', 'nnllnny'), row('AI-assisted lesson creation', 'llllnny'), row('Shared lesson library', 'llyynny'), row('Student progress by topic', 'llyylly'),
+    sec('PRACTICE AND ENGAGEMENT', 'F2CF72'),
+    row('Live games and quizzes', 'llllyyy'), row('Topic Mastery and Math Duels', 'nnnnnny'), row('XP, badges, streaks, leaderboards', 'nnnlyyy'),
+    sec('SCHOOL-WIDE', 'C3BAAF'),
+    row('One login and one topic list', 'nnnnnny'), row('Built for Jamaican schools', 'nnnnnny'), row('Attendance, timetable, staff tools (in the same platform)', 'nnllnny'),
+  ]
+  const rowH = rows.map((r, i) => (i === 0 ? HEAD_H : r.length === 1 ? SEC_H : ROW_H))
+  s.addTable(rows, { x: X0, y: Y, w: TW, colW: [LABW, ...Array(7).fill(COLW)], rowH, border: { type: 'none' } })
+  // logos sit over the header cells
+  const logos = [['google', 0.27, 0.27], ['teams', 0.29, 0.27], ['moodle', 0.31, 0.26], ['canvas', 0.27, 0.27], ['kahoot', 0.52, 0.245], ['quizizz', 0.26, 0.26], ['sa', 0.26, 0.27]]
+  logos.forEach(([f, w, h], i) => s.addImage({ path: A(`compare/${f}.png`), x: X0 + LABW + i * COLW + (COLW - w) / 2, y: at(Y + 0.2) + 0.0 - 0.0, w, h }))
+  const barY = Y + HEAD_H + 4 * SEC_H + 18 * ROW_H + 0.12
+  s.addShape(SH.rect, { x: X0, y: at(Math.max(barY, 6.45)), w: TW, h: 0.62, fill: { color: INK }, line: { type: 'none' } })
+  s.addText([{ text: 'The question is not "can another tool do one of these things?"', options: { color: 'FFFFFF', breakLine: true } }, { text: 'It is "how many tools and handoffs does the school need?"', options: { color: GOLD } }], { x: X0 + 0.25, y: at(Math.max(barY, 6.45)), w: 7.3, h: 0.62, fontFace: BODY, fontSize: 12, bold: true, margin: 0, valign: 'middle' })
+  s.addShape(SH.line, { x: X0 + 7.7, y: at(Math.max(barY, 6.45)) + 0.1, w: 0, h: 0.42, line: { color: GREY, width: 1 } })
+  s.addText('Other tools are excellent in their areas. Smart Assess Ja is designed to connect the whole learning process.', { x: X0 + 7.9, y: at(Math.max(barY, 6.45)), w: 3.05, h: 0.62, fontFace: BODY, fontSize: 8.5, color: 'E8DFD2', margin: 0, valign: 'middle' })
+}
+// ---------- 19c. context (two paragraphs supplied by the presenter, word for word) ----------
+{
+  const P1 = 'Other platforms are good at what they do. Smart Assess JA is designed to connect assessment, learning and practice around the same students, classes and curriculum topics, while reducing the work teachers do between those activities.'
+  const P2 = 'Google Classroom is useful for managing classwork. Smart Assess is designed to go further into the assessment process, from creating and administering examinations to marking, understanding results and supporting learning through connected products.'
+  const s = base('WHY US', note(1.5, 'Say these two paragraphs as written.\n\n' + P1 + '\n\n' + P2))
+  label(s, 'The difference in words')
+  ;[[P1, COPPER, 1.45], [P2, TEAL, 3.95]].forEach(([p, accent, y]) => {
+    box(s, 1.55, y, 10.4, 2.2, { fill: 'FFFFFF' })
+    s.addShape(SH.rect, { x: 1.55, y, w: 0.18, h: 2.2, fill: { color: accent }, line: { type: 'none' } })
+    text(s, p, 2.05, y, 9.7, 2.2, { size: 21, valign: 'middle', color: INK })
+  })
 }
 // ---------- 20. is not ----------
 {
