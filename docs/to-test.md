@@ -77,6 +77,7 @@ Tick a box when you have tested it on the live site. Each item points to its sec
 - [ ] **7k Student results by topic / My Topics** (migration 083; needs teachers to tag topics on questions first)
 
 ## Earlier items still open
+- [ ] **Small fixes (B-002, B-012, B-016; once pushed)**: pages should feel a little quicker to open (especially on a phone); a lesson a student has finished says "Was due ..." not "Overdue"; School admin > Timetable & Report Cards has a term for the current school year, and a student report card for it shows grades, a teacher comment and attendance
 - [ ] **Password Reveal (098, once applied and pushed)**: publish a test, the exam page shows dots and a **Reveal password** button (not the password); Reveal shows it and names you under it; Hide hides it; for a test that opens in 3 hours the teacher sees "You can reveal it from ..." while the HOD can still reveal; students and other teachers see nothing
 - [ ] **QA fixes 095 to 097 (live on Manchester, code pushed 2026-10-07)**: (1) teacher publishes a test, the password shows on the exam page; (2) a student in that class types a wrong password (refused), then the right one in any letter case (unlocks, questions load); (3) HOD opens a submitted exam, writes a comment, **Send feedback** (saves in a few seconds, exam returns to Draft) and **Approve** (exam becomes Approved); (4) a final exam's password shows on the HOD sessions page; (5) sign in as student, teacher and admin still works
 - [ ] **7h Exam insight** (migration 080)

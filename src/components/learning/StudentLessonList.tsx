@@ -55,7 +55,7 @@ export default function StudentLessonList() {
 
   const card = (r: StudentLessonRow) => {
     const state = lessonState(r)
-    const due = dueLabel(r.due_date, today)
+    const due = dueLabel(r.due_date, today, !!r.completed_at)
     const notSaved = fromCache && !savedIds.has(r.lesson_id)   // offline, and this lesson was never opened here
     const body = (
       <div className={`card ${r.closed && !r.completed_at ? '' : 'card-clickable'}`} style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', alignItems: 'center', opacity: (r.closed && !r.completed_at) || notSaved ? 0.6 : 1 }}>

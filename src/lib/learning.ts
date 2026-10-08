@@ -130,14 +130,16 @@ export const STATE_INFO: Record<LessonState, { label: string; badge: string }> =
 }
 
 // "Due Fri 26 Sept", "Due today", "Overdue by 2 days" (dates are plain school dates, compared without time zones).
-export function dueLabel(due: string | null, today: string): { text: string; overdue: boolean } | null {
+// A finished lesson is never "overdue": it says when it was due instead ("Was due Mon 8 Sep").
+export function dueLabel(due: string | null, today: string, finished = false): { text: string; overdue: boolean } | null {
   if (!due) return null
   const d = Date.parse(`${due}T12:00:00Z`)
   const t = Date.parse(`${today}T12:00:00Z`)
   const days = Math.round((d - t) / 86400000)
   if (days === 0) return { text: 'Due today', overdue: false }
-  if (days < 0) return { text: `Overdue by ${-days} day${days === -1 ? '' : 's'}`, overdue: true }
   const nice = new Intl.DateTimeFormat('en-JM', { timeZone: 'UTC', weekday: 'short', day: 'numeric', month: 'short' }).format(new Date(d))
+  if (days < 0 && finished) return { text: `Was due ${nice}`, overdue: false }
+  if (days < 0) return { text: `Overdue by ${-days} day${days === -1 ? '' : 's'}`, overdue: true }
   return { text: `Due ${nice}`, overdue: false }
 }
 

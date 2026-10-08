@@ -117,7 +117,7 @@ export default function StudentLessonView({ lessonId }: { lessonId: string }) {
   const current = lesson.steps[step]
   const info = STEP_INFO[current.key]
   const isDone = lesson.steps_done.includes(current.key)
-  const due = dueLabel(lesson.due_date, today)
+  const due = dueLabel(lesson.due_date, today, !!lesson.completed_at)
   const terms = lesson.key_terms.split(/\r?\n/).map((t) => t.trim()).filter(Boolean)
 
   return (

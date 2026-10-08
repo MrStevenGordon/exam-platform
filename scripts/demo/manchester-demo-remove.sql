@@ -72,5 +72,8 @@ do $$ begin
     delete from support_cases where pg_temp.is_demo(id);
   end if;
 end $$;
+
+-- the demo report-card term (its comments and attendance go with it)
+delete from academic_terms where pg_temp.is_demo(id);
 commit;
 select 'Demo data removed' as result;
