@@ -77,6 +77,7 @@ Tick a box when you have tested it on the live site. Each item points to its sec
 - [ ] **7k Student results by topic / My Topics** (migration 083; needs teachers to tag topics on questions first)
 
 ## Earlier items still open
+- [ ] **QA fixes 095 to 097 (live on Manchester, code pushed 2026-10-07)**: (1) teacher publishes a test, the password shows on the exam page; (2) a student in that class types a wrong password (refused), then the right one in any letter case (unlocks, questions load); (3) HOD opens a submitted exam, writes a comment, **Send feedback** (saves in a few seconds, exam returns to Draft) and **Approve** (exam becomes Approved); (4) a final exam's password shows on the HOD sessions page; (5) sign in as student, teacher and admin still works
 - [ ] **7h Exam insight** (migration 080)
 - [ ] **7i Marking points for essays** (migration 081) and **7j AI essay marking** (you ran QA 7j already; tick it off here only if fully done)
 - [ ] **7g Library** (live, catalog empty; test once books are loaded)
