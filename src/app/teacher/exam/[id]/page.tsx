@@ -6,6 +6,7 @@ import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { compareClassNames, CLASS_GRADES } from '@/lib/classNames'
+import ExamPasswordReveal from '@/components/ExamPasswordReveal'
 
 type DraftExam = {
   id: string
@@ -15,7 +16,6 @@ type DraftExam = {
   status: string
   exam_kind: string
   direct_published: boolean
-  access_password: string | null
   target_grade: number | null
   supervisor_notes: string | null
 }
@@ -100,9 +100,7 @@ export default function ExamEditorPage() {
       setLoading(false)
       return
     }
-    // The password lives in a staff-only place; only people allowed to see it get it back.
-    const { data: pw } = await supabase.rpc('exam_access_password', { p_kind: 'draft', p_exam: examId })
-    setExam({ ...examData, access_password: (pw as string | null) ?? null })
+    setExam(examData)
 
     const { data: questionData, error: questionError } = await supabase
       .from('questions')
@@ -331,11 +329,7 @@ export default function ExamEditorPage() {
         <div style={{ marginTop: 16 }}>
           <div className="banner banner-success">
             <p style={{ margin: 0 }}>This exam is published and visible to students in the selected class(es).</p>
-            {exam.access_password && (
-              <p style={{ marginTop: 8, marginBottom: 0, fontSize: 18, fontWeight: 700 }}>
-                Exam password: <span style={{ fontFamily: 'monospace', background: 'white', padding: '2px 10px', borderRadius: 6 }}>{exam.access_password}</span>
-              </p>
-            )}
+            <ExamPasswordReveal kind="draft" examId={examId} />
           </div>
           <div style={{ marginTop: 12 }}>
             <Link href={`/teacher/exam/${examId}/sessions`}>

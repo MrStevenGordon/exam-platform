@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
+import ExamPasswordReveal from '@/components/ExamPasswordReveal'
 
 type DraftExam = {
   id: string
@@ -15,7 +16,6 @@ type DraftExam = {
   status: string
   instructions: string | null
   duration_minutes: number | null
-  access_password: string | null
   published_final_exam_id: string | null
   questions_per_page: number
   department_id: string | null
@@ -74,8 +74,7 @@ export default function SupervisorExamPublishPage() {
         .select('id, title, subject, exam_kind, term, target_grade, status, instructions, duration_minutes, questions_per_page, department_id, calculator_enabled, published_final_exam_id')
         .eq('id', examId)
         .single()
-      const { data: pw } = await supabase.rpc('exam_access_password', { p_kind: 'draft', p_exam: examId })
-      setExam(examData ? { ...examData, access_password: (pw as string | null) ?? null } : examData)
+      setExam(examData)
 
       const { data: qData } = await supabase
         .from('questions')
@@ -156,11 +155,7 @@ export default function SupervisorExamPublishPage() {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
             <div>
               This exam has been published to students.
-              {exam.access_password && (
-                <div style={{ marginTop: 8 }}>
-                  Exam password: <span style={{ fontFamily: 'monospace', background: 'white', padding: '2px 10px', borderRadius: 6 }}>{exam.access_password}</span>
-                </div>
-              )}
+              <ExamPasswordReveal kind="draft" examId={examId} />
             </div>
             {exam.published_final_exam_id && (
               <Link href={`/supervisor/final-exams/${exam.published_final_exam_id}/sessions`}>

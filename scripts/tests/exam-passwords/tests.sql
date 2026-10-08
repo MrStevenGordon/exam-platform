@@ -1,3 +1,4 @@
+-- NOTE: these check the state after migration 097 only; after 098 the direct reader exam_access_password is gone (see ../exam-password-reveal/tests.sql).
 -- Tests for migration 097. Throwaway database only; needs the demo fixture. Every line should say PASS.
 create temp table results (n serial, name text, ok boolean);
 create or replace function pg_temp.u(n int) returns uuid language sql immutable as $$ select ('00000000-0000-0000-0000-' || lpad(n::text, 12, '0'))::uuid $$;

@@ -5,6 +5,7 @@ import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import EmptyState from '@/components/EmptyState'
+import ExamPasswordReveal from '@/components/ExamPasswordReveal'
 
 type Session = {
   id: string
@@ -26,7 +27,6 @@ export default function ExamSessionsPage() {
   const finalExamId = params.id as string
 
   const [examTitle, setExamTitle] = useState('')
-  const [accessPassword, setAccessPassword] = useState('')
   const [sessions, setSessions] = useState<Session[]>([])
   const [loading, setLoading] = useState(true)
   const [errorMsg, setErrorMsg] = useState('')
@@ -61,8 +61,6 @@ export default function ExamSessionsPage() {
       .single()
 
     setExamTitle(examData?.title || '')
-    const { data: pw } = await supabase.rpc('exam_access_password', { p_kind: 'final', p_exam: finalExamId })
-    setAccessPassword((pw as string | null) || '')
 
     const { data, error } = await supabase
       .from('exam_sessions')
@@ -139,11 +137,9 @@ export default function ExamSessionsPage() {
           </div>
       </div>
 
-      {accessPassword && (
-        <div className="banner" style={{ marginTop: 16, fontSize: 14 }}>
-          <strong>Access password for students:</strong> <span style={{ fontFamily: 'monospace', fontSize: 16, letterSpacing: 1 }}>{accessPassword}</span>
-        </div>
-      )}
+      <div style={{ marginTop: 16, fontSize: 14 }}>
+        <ExamPasswordReveal kind="final" examId={finalExamId} label="Access password for students" />
+      </div>
 
       {ungradedCount > 0 && (
         <div className="banner banner-warning" style={{ marginTop: 16 }}>
