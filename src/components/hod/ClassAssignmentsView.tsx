@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { departmentTeachers, sortClassGroups } from '@/lib/timetableFormPure'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { compareClassNames, CLASS_GRADES } from '@/lib/classNames'
@@ -49,31 +50,27 @@ export default function ClassAssignmentsView() {
 
     let teacherData: Teacher[] = []
     if (departmentId) {
-      const { data: subjectTeachers } = await supabase
-        .from('teacher_subjects')
-        .select('teacher_id, profiles(id, full_name)')
-        .eq('department_id', departmentId)
-
-      const seen = new Set<string>()
-      ;(subjectTeachers || []).forEach((row: any) => {
-        if (row.profiles && !seen.has(row.profiles.id)) {
-          seen.add(row.profiles.id)
-          teacherData.push({ id: row.profiles.id, full_name: row.profiles.full_name })
-        }
-      })
-      teacherData.sort((a, b) => a.full_name.localeCompare(b.full_name))
+      const [{ data: subjectTeachers }, { data: deptStaff }] = await Promise.all([
+        supabase.from('teacher_subjects').select('teacher_id, profiles(id, full_name)').eq('department_id', departmentId),
+        supabase.from('profiles').select('id, full_name').in('role', ['teacher', 'supervisor']).eq('department_id', departmentId),
+      ])
+      // Teachers tied to the department by a subject record OR by their profile, so someone without a subject record still appears.
+      teacherData = departmentTeachers(
+        (subjectTeachers || []).map((row: any) => {
+          const prof = Array.isArray(row.profiles) ? row.profiles[0] : row.profiles
+          return { teacher_id: row.teacher_id, profile: prof ? { id: prof.id, full_name: prof.full_name } : null }
+        }),
+        (deptStaff || []).map((t: any) => ({ id: t.id, full_name: t.full_name })),
+      )
     } else {
       const { data } = await supabase.from('profiles').select('id, full_name').eq('role', 'teacher').order('full_name', { ascending: true })
       teacherData = data || []
     }
 
-    const { data: cgData } = await supabase
-      .from('class_groups')
-      .select('id, name, year_grade')
-      .order('year_grade', { ascending: true })
-      .order('name', { ascending: true })
+    const { data: cgRaw } = await supabase.from('class_groups').select('id, name, year_grade')
+    const cgData = sortClassGroups((cgRaw || []) as Array<{ id: string; name: string; year_grade: string }>)
 
-    setClassGroups(cgData || [])
+    setClassGroups(cgData)
 
     const classGroupIds = (cgData || []).map((c) => c.id)
     const assignmentMap: Record<string, string> = {}

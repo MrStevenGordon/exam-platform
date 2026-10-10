@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase'
 import { loadBlocks, loadSections } from '@/lib/schoolDay'
 import { findClashes, range12, sectionTimes, toMinutes, type BlockRow, type SectionLike } from '@/lib/schoolDayPure'
 import { gradeFromText } from '@/lib/topics'
+import { createSummary, DURATION_OPTIONS, departmentTeachers, groupClassGroups, studentsToOffer, teacherGroups } from '@/lib/timetableFormPure'
 
 const DAYS = [
   { value: 1, label: 'Monday' },
@@ -41,6 +42,8 @@ export default function TimetableBuilder() {
   const [departments, setDepartments] = useState<Department[]>([])
   const [subjectsByDept, setSubjectsByDept] = useState<Record<string, string[]>>({})
   const [teachersByDept, setTeachersByDept] = useState<Record<string, Teacher[]>>({})
+  const [subjectTeachers, setSubjectTeachers] = useState<Record<string, Set<string>>>({})
+  const [allStaff, setAllStaff] = useState<Teacher[]>([])
   const [classGroups, setClassGroups] = useState<ClassGroup[]>([])
   const [sections, setSections] = useState<Section[]>([])
   const [enrollmentCounts, setEnrollmentCounts] = useState<Record<string, number>>({})
@@ -56,13 +59,14 @@ export default function TimetableBuilder() {
   const [secSubject, setSecSubject] = useState('')
   const [secTeacher, setSecTeacher] = useState('')
   const [secClassGroup, setSecClassGroup] = useState('')
-  const [secDay, setSecDay] = useState(1)
+  const [secDays, setSecDays] = useState<number[]>([1])
   const [secPeriod, setSecPeriod] = useState('')
   const [secSpan, setSecSpan] = useState(1)
   const [secRoom, setSecRoom] = useState('')
 
   const [expandedSection, setExpandedSection] = useState<string | null>(null)
-  const [addStudentId, setAddStudentId] = useState('')
+  const [addStudentIds, setAddStudentIds] = useState<string[]>([])
+  const [studentFilter, setStudentFilter] = useState('')
 
   const academicYear = currentAcademicYear()
 
@@ -79,14 +83,15 @@ export default function TimetableBuilder() {
 
   async function loadDataInner() {
     const { data: { user } } = await supabase.auth.getUser()
-    const [{ data: myProfile }, { data: periodData }, { data: deptData }, { data: subjectData }, { data: teacherSubData }, { data: cgData }, { data: studentData }] = await Promise.all([
+    const [{ data: myProfile }, { data: periodData }, { data: deptData }, { data: subjectData }, { data: teacherSubData }, { data: cgData }, { data: studentData }, { data: staffData }] = await Promise.all([
       user ? supabase.from('profiles').select('role, department_id').eq('id', user.id).single() : Promise.resolve({ data: null }),
       supabase.from('timetable_periods').select('id, name, start_time, end_time, order_index, academic_year').eq('academic_year', academicYear).order('order_index'),
       supabase.from('departments').select('id, name').order('name'),
       supabase.from('department_subjects').select('department_id, subject'),
-      supabase.from('teacher_subjects').select('teacher_id, department_id, profiles(id, full_name)'),
-      supabase.from('class_groups').select('id, name, year_grade').order('year_grade').order('name'),
+      supabase.from('teacher_subjects').select('teacher_id, department_id, subject, profiles(id, full_name)'),
+      supabase.from('class_groups').select('id, name, year_grade'),
       supabase.from('profiles').select('id, full_name').eq('role', 'student').order('full_name'),
+      supabase.from('profiles').select('id, full_name, department_id').in('role', ['teacher', 'supervisor']).order('full_name'),
     ])
 
     const sectionData = await loadSections<Section>('id, department_id, subject, teacher_id, class_group_id, day_of_week, period_id, room, academic_year', academicYear)
@@ -108,17 +113,25 @@ export default function TimetableBuilder() {
     })
     setSubjectsByDept(subjMap)
 
-    const teachMap: Record<string, Teacher[]> = {}
+    // A teacher is offered for a department when a subject record ties them to it OR their profile sits in it,
+    // so a teacher who has no subject record yet still shows up.
+    const subjectRows: Record<string, Array<{ teacher_id: string; profile: Teacher | null }>> = {}
+    const teaches: Record<string, Set<string>> = {}
     ;(teacherSubData || []).forEach((row: any) => {
-      if (!row.profiles) return
-      if (!teachMap[row.department_id]) teachMap[row.department_id] = []
-      if (!teachMap[row.department_id].some((t) => t.id === row.profiles.id)) {
-        teachMap[row.department_id].push({ id: row.profiles.id, full_name: row.profiles.full_name })
-      }
+      const prof = Array.isArray(row.profiles) ? row.profiles[0] : row.profiles
+      ;(subjectRows[row.department_id] ||= []).push({ teacher_id: row.teacher_id, profile: prof ? { id: prof.id, full_name: prof.full_name } : null })
+      ;(teaches[`${row.department_id}|${row.subject}`] ||= new Set()).add(row.teacher_id)
     })
+    const staff = ((staffData || []) as Array<{ id: string; full_name: string; department_id: string | null }>)
+    const teachMap: Record<string, Teacher[]> = {}
+    for (const d of deptData || []) {
+      teachMap[d.id] = departmentTeachers(subjectRows[d.id] || [], staff.filter((t) => t.department_id === d.id).map((t) => ({ id: t.id, full_name: t.full_name })))
+    }
     setTeachersByDept(teachMap)
+    setSubjectTeachers(teaches)
+    setAllStaff(staff.map((t) => ({ id: t.id, full_name: t.full_name })))
 
-    setClassGroups(cgData || [])
+    setClassGroups((cgData || []) as ClassGroup[])
     setSections(sectionData)
 
     const sectionIds = sectionData.map((s) => s.id)
@@ -142,50 +155,60 @@ export default function TimetableBuilder() {
   }
 
   async function handleCreateSection() {
-    if (!secDept || !secSubject || !secTeacher || !secPeriod) return
+    if (!secDept || !secSubject || !secTeacher || !secPeriod || secDays.length === 0) return
     setSaving(true)
     setErrorMsg('')
 
-    const { data: inserted, error } = await supabase.from('timetable_sections').insert({
-      department_id: secDept,
-      subject: secSubject,
-      teacher_id: secTeacher,
-      class_group_id: secClassGroup || null,
-      day_of_week: secDay,
-      period_id: secPeriod,
-      room: secRoom.trim() || null,
-      academic_year: academicYear,
-      ...(schoolDayReady && secSpan > 1 ? { span: secSpan } : {}),
-    }).select('id').single()
-
-    if (error) {
-      setErrorMsg(
-        error.code === '23505'
-          ? 'That teacher or class is already scheduled for this day and period.'
-          : error.code === '23514' && /enough periods/i.test(error.message)
-            ? 'There are not enough periods left in the day for a lesson that long.'
-            : error.message
-      )
-      setSaving(false)
-      return
+    const created: string[] = []
+    const failed: Array<{ day: string; reason: string }> = []
+    for (const day of [...secDays].sort((x, y) => x - y)) {
+      const { data: inserted, error } = await supabase.from('timetable_sections').insert({
+        department_id: secDept,
+        subject: secSubject,
+        teacher_id: secTeacher,
+        class_group_id: secClassGroup || null,
+        day_of_week: day,
+        period_id: secPeriod,
+        room: secRoom.trim() || null,
+        academic_year: academicYear,
+        ...(schoolDayReady && secSpan > 1 ? { span: secSpan } : {}),
+      }).select('id').single()
+      if (error || !inserted) {
+        const dayName = DAYS.find((d) => d.value === day)?.label || `Day ${day}`
+        failed.push({
+          day: dayName,
+          reason: !error ? 'Could not be saved.'
+            : error.code === '23505' ? 'That teacher or class is already scheduled for this period.'
+            : error.code === '23514' && /enough periods/i.test(error.message) ? 'There are not enough periods left in the day for a lesson that long.'
+            : error.message,
+        })
+      } else {
+        created.push(inserted.id)
+      }
     }
 
     // Grade 7-9 style: whole class_group moves together, so auto-enroll
     // everyone currently in it. Grade 10-11 style (no class_group) starts
     // with an empty roster the admin builds by hand below.
-    if (secClassGroup && inserted) {
+    if (secClassGroup && created.length > 0) {
       const { data: enrolled } = await supabase.from('enrollments').select('student_id').eq('class_group_id', secClassGroup)
       if (enrolled && enrolled.length > 0) {
         await supabase.from('section_enrollments').insert(
-          enrolled.map((e) => ({ section_id: inserted.id, student_id: e.student_id }))
+          created.flatMap((id) => enrolled.map((e) => ({ section_id: id, student_id: e.student_id })))
         )
       }
     }
 
-    setSecSubject(''); setSecTeacher(''); setSecClassGroup(''); setSecPeriod(''); setSecRoom(''); setSecSpan(1)
+    const summary = createSummary(created.length, failed)
+    if (created.length === 0) {
+      setErrorMsg(summary.text)
+      setSaving(false)
+      return
+    }
+    // Keep the form's teacher, subject and class; clear only what differs per section so the next day or class is quick to add.
+    setSecPeriod(''); setSecRoom(''); setSecSpan(1)
     setShowSectionForm(false); setSaving(false)
-    setSuccessMsg('Section created.')
-    setTimeout(() => setSuccessMsg(''), 3000)
+    if (summary.ok) { setSuccessMsg(summary.text); setTimeout(() => setSuccessMsg(''), 3000) } else setErrorMsg(summary.text)
     loadData()
   }
 
@@ -195,11 +218,11 @@ export default function TimetableBuilder() {
     loadData()
   }
 
-  async function handleAddStudent(sectionId: string) {
-    if (!addStudentId) return
-    const { error } = await supabase.from('section_enrollments').insert({ section_id: sectionId, student_id: addStudentId })
+  async function handleAddStudents(sectionId: string) {
+    if (addStudentIds.length === 0) return
+    const { error } = await supabase.from('section_enrollments').insert(addStudentIds.map((student_id) => ({ section_id: sectionId, student_id })))
     if (error) { setErrorMsg(error.message); return }
-    setAddStudentId('')
+    setAddStudentIds([]); setStudentFilter('')
     loadData()
   }
 
@@ -216,7 +239,7 @@ export default function TimetableBuilder() {
       const found = list.find((t) => t.id === id)
       if (found) return found.full_name
     }
-    return 'Unknown teacher'
+    return allStaff.find((t) => t.id === id)?.full_name || 'Unknown teacher'
   }
   const classGroupName = (id: string | null) => id ? (classGroups.find((c) => c.id === id)?.name || 'Unknown class') : null
   const departmentName = (id: string) => departments.find((d) => d.id === id)?.name || 'Unknown department'
@@ -225,7 +248,12 @@ export default function TimetableBuilder() {
   const gradeOfSection = (sec: SectionLike) => gradeFromText(classGroups.find((c) => c.id === sec.class_group_id)?.year_grade)
   const clashBySection: Record<string, string[]> = {}
   for (const c of findClashes(sections, periods, blocks.filter((b) => b.days), gradeOfSection)) (clashBySection[c.sectionId] ||= []).push(c.title)
-  const formClashes = secPeriod && secDay ? findClashes([{ id: 'new', day_of_week: secDay, period_id: secPeriod, span: secSpan, class_group_id: secClassGroup || null }], periods, blocks.filter((b) => b.days), gradeOfSection) : []
+  const formClashes = secPeriod && secDays.length > 0
+    ? findClashes(secDays.map((day) => ({ id: `new-${day}`, day_of_week: day, period_id: secPeriod, span: secSpan, class_group_id: secClassGroup || null })), periods, blocks.filter((b) => b.days), gradeOfSection)
+    : []
+  const deptTeacherList = teachersByDept[secDept] || []
+  const teacherLists = teacherGroups(deptTeacherList, subjectTeachers[`${secDept}|${secSubject}`], secSubject, departmentName(secDept), allStaff)
+  const toggleDay = (d: number) => setSecDays((cur) => (cur.includes(d) ? cur.filter((x) => x !== d) : [...cur, d]))
   const lengthText = (s: Section) => {
     const t = sectionTimes(s, periods)
     return (s.span ?? 1) > 1 && t ? ` · ${s.span} periods (${range12(t.start, t.end)})` : ''
@@ -290,21 +318,37 @@ export default function TimetableBuilder() {
               <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Teacher</label>
               <select value={secTeacher} onChange={(e) => setSecTeacher(e.target.value)} style={{ width: '100%', marginTop: 4 }} disabled={!secDept}>
                 <option value="">Select teacher…</option>
-                {(teachersByDept[secDept] || []).map((t) => <option key={t.id} value={t.id}>{t.full_name}</option>)}
+                {teacherLists.map((g) => (
+                  <optgroup key={g.label} label={g.label}>
+                    {g.items.map((t) => <option key={t.id} value={t.id}>{t.full_name}</option>)}
+                  </optgroup>
+                ))}
               </select>
+              {secDept && deptTeacherList.length === 0 && (
+                <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: '4px 0 0' }}>No staff are recorded in this department yet, so other teachers are listed.</p>
+              )}
             </div>
             <div>
               <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Class group (leave blank for individual subject enrolment, e.g. grade 10–11)</label>
               <select value={secClassGroup} onChange={(e) => setSecClassGroup(e.target.value)} style={{ width: '100%', marginTop: 4 }}>
                 <option value="">No fixed class group</option>
-                {classGroups.map((c) => <option key={c.id} value={c.id}>{c.name} ({c.year_grade})</option>)}
+                {groupClassGroups(classGroups).map((g) => (
+                  <optgroup key={g.label} label={g.label}>
+                    {g.items.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                  </optgroup>
+                ))}
               </select>
             </div>
             <div>
-              <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Day</label>
-              <select value={secDay} onChange={(e) => setSecDay(Number(e.target.value))} style={{ width: '100%', marginTop: 4 }}>
-                {DAYS.map((d) => <option key={d.value} value={d.value}>{d.label}</option>)}
-              </select>
+              <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Days (pick one or more)</label>
+              <div role="group" aria-label="Days" style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 6 }}>
+                {DAYS.map((d) => (
+                  <label key={d.value} className="sentence-case" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, padding: '6px 10px', border: '1px solid var(--border)', borderRadius: 8, cursor: 'pointer', background: secDays.includes(d.value) ? 'var(--page-bg)' : 'transparent', textTransform: 'none', fontWeight: secDays.includes(d.value) ? 700 : 400, color: 'var(--text-primary)' }}>
+                    <input type="checkbox" checked={secDays.includes(d.value)} onChange={() => toggleDay(d.value)} />
+                    {d.label.slice(0, 3)}
+                  </label>
+                ))}
+              </div>
             </div>
             <div>
               <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Period</label>
@@ -315,9 +359,9 @@ export default function TimetableBuilder() {
             </div>
             {schoolDayReady && (
               <div>
-                <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Lasts</label>
-                <select value={secSpan} onChange={(e) => setSecSpan(Number(e.target.value))} style={{ width: '100%', marginTop: 4 }} aria-label="How many periods the class lasts">
-                  <option value={1}>1 period</option><option value={2}>2 periods (double)</option><option value={3}>3 periods</option>
+                <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Duration</label>
+                <select value={secSpan} onChange={(e) => setSecSpan(Number(e.target.value))} style={{ width: '100%', marginTop: 4 }} aria-label="Duration in periods">
+                  {DURATION_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
                 </select>
               </div>
             )}
@@ -332,8 +376,8 @@ export default function TimetableBuilder() {
             </p>
           )}
           <div style={{ display: 'flex', gap: 8 }}>
-            <button onClick={handleCreateSection} disabled={saving || !secDept || !secSubject || !secTeacher || !secPeriod} className="btn btn-primary">
-              {saving ? 'Creating…' : 'Create section'}
+            <button onClick={handleCreateSection} disabled={saving || !secDept || !secSubject || !secTeacher || !secPeriod || secDays.length === 0} className="btn btn-primary sentence-case">
+              {saving ? 'Creating…' : secDays.length > 1 ? `Create ${secDays.length} sections` : 'Create section'}
             </button>
             <button onClick={() => setShowSectionForm(false)} className="btn btn-ghost">Cancel</button>
           </div>
@@ -353,7 +397,7 @@ export default function TimetableBuilder() {
                 return (
                   <div key={s.id} className="card" style={{ padding: 0, overflow: 'hidden', marginBottom: 8 }}>
                     <div
-                      onClick={() => setExpandedSection(expandedSection === s.id ? null : s.id)}
+                      onClick={() => { setExpandedSection(expandedSection === s.id ? null : s.id); setAddStudentIds([]); setStudentFilter('') }}
                       style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 16px', cursor: 'pointer' }}
                     >
                       <div>
@@ -380,15 +424,37 @@ export default function TimetableBuilder() {
                             ))}
                           </div>
                         )}
-                        <div style={{ display: 'flex', gap: 8 }}>
-                          <select value={addStudentId} onChange={(e) => setAddStudentId(e.target.value)} style={{ flex: 1, maxWidth: 280 }}>
-                            <option value="">Add a student…</option>
-                            {allStudents.filter((st) => !roster.includes(st.id)).map((st) => (
-                              <option key={st.id} value={st.id}>{st.full_name}</option>
-                            ))}
-                          </select>
-                          <button onClick={() => handleAddStudent(s.id)} disabled={!addStudentId} className="btn btn-secondary">Add</button>
-                        </div>
+                        {(() => {
+                          const offer = studentsToOffer(allStudents, roster, studentFilter)
+                          const allShown = offer.items.length > 0 && offer.items.every((st) => addStudentIds.includes(st.id))
+                          return (
+                            <div>
+                              <input value={studentFilter} onChange={(e) => setStudentFilter(e.target.value)} placeholder="Find students by name" aria-label="Find students by name" style={{ width: '100%', maxWidth: 320 }} />
+                              <div style={{ maxHeight: 220, overflowY: 'auto', border: '1px solid var(--border)', borderRadius: 8, marginTop: 8, padding: '4px 10px', background: 'var(--card-bg, transparent)' }}>
+                                {offer.items.length === 0 ? (
+                                  <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '8px 0' }}>{studentFilter ? 'No students match.' : 'Everyone is already on this roster.'}</p>
+                                ) : (
+                                  <>
+                                    <label className="sentence-case" style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, padding: '6px 0', fontWeight: 700, textTransform: 'none' }}>
+                                      <input type="checkbox" checked={allShown} onChange={() => setAddStudentIds((cur) => allShown ? cur.filter((id) => !offer.items.some((st) => st.id === id)) : [...new Set([...cur, ...offer.items.map((st) => st.id)])])} />
+                                      Select all shown ({offer.items.length})
+                                    </label>
+                                    {offer.items.map((st) => (
+                                      <label key={st.id} className="sentence-case" style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, padding: '5px 0', textTransform: 'none', fontWeight: 400 }}>
+                                        <input type="checkbox" checked={addStudentIds.includes(st.id)} onChange={() => setAddStudentIds((cur) => cur.includes(st.id) ? cur.filter((id) => id !== st.id) : [...cur, st.id])} />
+                                        {st.full_name}
+                                      </label>
+                                    ))}
+                                    {offer.more > 0 && <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: '6px 0' }}>{offer.more} more. Type a name to narrow the list.</p>}
+                                  </>
+                                )}
+                              </div>
+                              <button onClick={() => handleAddStudents(s.id)} disabled={addStudentIds.length === 0} className="btn btn-secondary sentence-case" style={{ marginTop: 8 }}>
+                                {addStudentIds.length > 1 ? `Add ${addStudentIds.length} students` : 'Add student'}
+                              </button>
+                            </div>
+                          )
+                        })()}
                         <button onClick={() => handleDeleteSection(s.id)} className="btn btn-ghost" style={{ fontSize: 11, color: 'var(--danger)', marginTop: 14 }}>
                           Delete section
                         </button>

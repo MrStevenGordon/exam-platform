@@ -1,0 +1,20 @@
+// HOD timetable form: teacher list fills, classes run Grade 7 to 12, "Duration", several days, several students.
+import { session, admin, b, log } from './lib.mjs'
+const s = await session('supervisor', 'testing.hod@mhs.smartassess')
+const p = s.page
+await p.goto('http://localhost:3000/supervisor/timetable', { waitUntil: 'domcontentloaded', timeout: 180000 })
+await p.waitForSelector('text=New section', { timeout: 120000 }); await p.waitForTimeout(1500); await s.skip()
+await p.click('text=+ New section')
+const sel = p.locator('select')
+await sel.nth(0).selectOption({ index: 1 })
+await p.waitForTimeout(500)
+const opts = async (i) => sel.nth(i).locator('option, optgroup').evaluateAll((els) => els.map((e) => (e.tagName === 'OPTGROUP' ? `[${e.label}]` : e.textContent.trim())))
+log('subjects:', await opts(1))
+await sel.nth(1).selectOption({ index: 1 })
+log('teachers:', await opts(2))
+log('classes:', await opts(3))
+log('labels:', await p.locator('label').allInnerTexts())
+log('days boxes:', await p.locator('[role=group][aria-label=Days] input').count())
+await p.screenshot({ path: '/tmp/tt-form.png', fullPage: true })
+log('errs:', s.errs)
+await b.close()

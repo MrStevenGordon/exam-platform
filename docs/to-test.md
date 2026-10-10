@@ -98,3 +98,10 @@ Tick a box when you have tested it on the live site. Each item points to its sec
 ## Done
 - [x] AI essay marking live on Manchester (082 applied, QA 7j passed)
 - [x] AI reliability fix (check:ai passed on the Vercel key)
+
+## Timetable form fixes (HOD, 2026-10-10)
+- HOD: Timetable > New section. Teacher list shows department staff (people who teach the chosen subject first), even those with no subject record.
+- Class group list runs Grade 7 to Grade 12, grouped by grade.
+- The last field is now "Duration". Days are tick boxes: tick several and "Create N sections" makes one lesson per day.
+- Expand a section: find students by typing, tick several (or "Select all shown"), then "Add N students".
+- HOD: Class assignments teacher list also fills for teachers with no subject record, and classes are in grade order.

@@ -1,0 +1,31 @@
+// Creates one lesson on two days as HOD, adds two students at once, then removes it all.
+import { session, admin, b, log } from './lib.mjs'
+const s = await session('supervisor', 'testing.hod@mhs.smartassess')
+const p = s.page
+await p.goto('http://localhost:3000/supervisor/timetable', { waitUntil: 'domcontentloaded', timeout: 180000 })
+await p.waitForSelector('text=New section', { timeout: 120000 }); await p.waitForTimeout(1500); await s.skip()
+await p.click('text=+ New section')
+const sel = p.locator('select')
+await sel.nth(0).selectOption({ index: 1 }); await p.waitForTimeout(400)
+await sel.nth(1).selectOption({ label: 'Mathematics' })
+await sel.nth(2).selectOption({ label: 'Testing Teacher' })
+const pn = await sel.nth(4).locator('option').count(); await sel.nth(4).selectOption({ index: pn - 1 })
+await p.getByLabel('Mon').check({ force: true }).catch(() => {})
+await p.locator('[role=group][aria-label=Days] input').nth(2).check()   // Wed too
+log('button:', await p.getByRole('button', { name: /Create/ }).innerText())
+await p.getByRole('button', { name: /Create \d+ sections|Create section/ }).click()
+await p.waitForTimeout(3500)
+log('banner:', (await p.locator('.banner').allInnerTexts()))
+const { data: made } = await admin.from('timetable_sections').select('id, day_of_week, period_id').eq('subject', 'Mathematics').order('created_at', { ascending: false }).limit(2)
+log('made:', made?.map((m) => m.day_of_week))
+await p.locator('text=Mathematics ·').first().click(); await p.waitForTimeout(500)
+await p.getByPlaceholder('Find students by name').first().fill('')
+const boxes = p.locator('input[type=checkbox]:visible')
+log('checkboxes visible:', await boxes.count())
+await p.getByText(/Select all shown/).first().locator('input').check()
+log('add button:', await p.getByRole('button', { name: /^Add \d+ students?$|^Add student$/ }).first().innerText())
+await p.screenshot({ path: '/tmp/tt-roster.png', fullPage: true })
+// clean up everything this run made
+if (made?.length) await admin.from('timetable_sections').delete().in('id', made.map((m) => m.id))
+log('errs:', s.errs)
+await b.close()
