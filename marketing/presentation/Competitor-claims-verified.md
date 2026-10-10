@@ -32,11 +32,6 @@ Background for the "Why not just use Google Classroom?" slide and its speaker no
 Features change. If this deck is used more than a few months after October 2026, re-check each row, especially Canvas and Microsoft.
 
 ## Page 27 "Strong tools. Different jobs." (comparison table supplied by the presenter, 2026-10-08)
-The table, its ticks, dashes and "Limited" marks are the presenter's own and are shown as supplied. They have NOT been checked against vendor documentation. Where they differ from what was checked above, the checked facts are:
+The table was supplied by the presenter. On 2026-10-10 it was checked against vendor documentation and **22 competitor marks were corrected** (exam security and lock-down, create and deliver exams, integrity flags, lesson planning, structured lessons, AI-assisted lesson creation, shared lesson library, progress by topic, XP and badges, attendance). The evidence, sources and the list of corrections are in `Comparison-table-check-2026-10-10.md`.
 
-| Table row | Table says | What the checked sources say |
-|---|---|---|
-| Exam security and lock-down | Google Classroom: dash; Microsoft Teams: dash | Google has a locked mode, but only on school-managed Chromebooks; Microsoft Forms has "Take a Test" in the Windows app. Page 26 itself says each tool has its own lock-down. |
-| Create and deliver exams | Google Classroom: dash; Microsoft Teams: dash | Google Forms quizzes and Microsoft Forms quizzes can be created and delivered (both auto-grade). |
-
-Every other competitor mark (Question bank, question types, lesson planning, catch-up learning, AI-assisted lesson creation, shared lesson library, progress by topic, games, XP, school-wide rows) is unverified. Before presenting to people who use these tools, check the rows they will know best.
+Still **not verified** (documentation silent or not researched; marks left exactly as supplied): "Catch-up learning for absent students" for all six tools; question bank for Google, Microsoft and Quizizz; structured lessons for Google, Microsoft and Canvas; lesson planning for Moodle, Canvas and Quizizz; live games for Google, Microsoft, Moodle and Canvas; badges for Google, Microsoft and Canvas. A tick or "Limited" means offered, but some features need paid plans.

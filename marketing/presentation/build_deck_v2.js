@@ -474,13 +474,13 @@ intro('PLAY', INK, 'FFFFFF', 3, 'Smart Play', 'Make practice fun.',
   const rows = [
     [{ text: 'FEATURE / JOB', options: { fontFace: MONO, fontSize: 6.8, bold: true, charSpacing: 2, color: INK, fill: { color: 'FFFBF6' }, valign: 'middle', margin: [0, 0.08, 0, 0.08] } }, ...names.map((n, i) => hc(n, i === 6 ? { fill: COPPER, fg: 'FFFFFF' } : {}))],
     sec('ASSESSMENT', 'FDC598'),
-    row('Create and deliver exams', 'nnyynny'), row('Question bank', 'nnyylly'), row('Different question types (MC, short answer, essay, etc.)', 'yyyylly'), row('Automatic marking (objective questions)', 'yyyyyyy'), row('Exam security and lock-down', 'nnyynny'), row('Integrity flags for essays', 'nnnnnny'),
+    row('Create and deliver exams', 'yyyynny'), row('Question bank', 'nnyylly'), row('Different question types (MC, short answer, essay, etc.)', 'yyyylyy'), row('Automatic marking (objective questions)', 'yyyyyyy'), row('Exam security and lock-down', 'yyyynly'), row('Integrity flags for essays', 'lnllnny'),
     sec('LEARNING', '98C4C3'),
-    row('Lesson planning (5E format)', 'nnllnny'), row('Structured lessons', 'yyyynny'), row('Catch-up learning for absent students', 'nnllnny'), row('AI-assisted lesson creation', 'llllnny'), row('Shared lesson library', 'llyynny'), row('Student progress by topic', 'llyylly'),
+    row('Lesson planning (5E format)', 'llllnny'), row('Structured lessons', 'yyyylyy'), row('Catch-up learning for absent students', 'nnllnny'), row('AI-assisted lesson creation', 'yylllly'), row('Shared lesson library', 'llyylyy'), row('Student progress by topic', 'ylyylly'),
     sec('PRACTICE AND ENGAGEMENT', 'F2CF72'),
-    row('Live games and quizzes', 'llllyyy'), row('Topic Mastery and Math Duels', 'nnnnnny'), row('XP, badges, streaks, leaderboards', 'nnnlyyy'),
+    row('Live games and quizzes', 'llllyyy'), row('Topic Mastery and Math Duels', 'nnnnnny'), row('XP, badges, streaks, leaderboards', 'nnllyyy'),
     sec('SCHOOL-WIDE', 'C3BAAF'),
-    row('One login and one topic list', 'nnnnnny'), row('Built for Jamaican schools', 'nnnnnny'), row('Attendance, timetable, staff tools (in the same platform)', 'nnllnny'),
+    row('One login and one topic list', 'nnnnnny'), row('Built for Jamaican schools', 'nnnnnny'), row('Attendance, timetable, staff tools (in the same platform)', 'nlllnny'),
   ]
   const rowH = rows.map((r, i) => (i === 0 ? HEAD_H : r.length === 1 ? SEC_H : ROW_H))
   s.addTable(rows, { x: X0, y: Y, w: TW, colW: [LABW, ...Array(7).fill(COLW)], rowH, border: { type: 'none' } })
