@@ -13,6 +13,8 @@ import LessonCatchupTab from '@/components/learning/LessonCatchupTab'
 import { isChecksAvailable } from '@/lib/learningChecks'
 import { isCatchupAvailable } from '@/lib/learningCatchup'
 import LessonTutorTab from '@/components/learning/LessonTutorTab'
+import LessonGuideTab from '@/components/learning/LessonGuideTab'
+import { isGuidesAvailable } from '@/lib/lessonGuideClient'
 import { isTutorAvailable } from '@/lib/tutorClient'
 import type { LessonRow } from '@/lib/learning'
 import { useRouter, usePathname } from 'next/navigation'
@@ -30,6 +32,9 @@ export default function LessonEditor({ lessonId }: { lessonId: string }) {
   // Catch-up needs migration 062.
   const [catchupOn, setCatchupOn] = useState(false)
   useEffect(() => { isCatchupAvailable().then(setCatchupOn) }, [])
+  // Study guides need migration 100.
+  const [guidesOn, setGuidesOn] = useState(false)
+  useEffect(() => { isGuidesAvailable().then(setGuidesOn) }, [])
   // The tutor tab appears only when the school has the AI tutor on and migration 064 is applied.
   const [tutorOn, setTutorOn] = useState(false)
   useEffect(() => { isTutorAvailable().then(setTutorOn) }, [])
@@ -71,6 +76,7 @@ export default function LessonEditor({ lessonId }: { lessonId: string }) {
         tabs={[
           { key: 'build', label: 'Build', render: () => <LessonBuildTab lesson={lesson} onSaved={refresh} onGoAssign={() => goTab('assign')} /> },
           ...(checksOn ? [{ key: 'checks', label: 'Checks', render: () => <LessonChecksTab lesson={lesson} /> }] : []),
+          ...(guidesOn ? [{ key: 'guide', label: 'Study guide', render: () => <LessonGuideTab lesson={lesson} /> }] : []),
           { key: 'assign', label: 'Assign', render: () => <LessonAssignTab lesson={lesson} onGoBuild={() => goTab('build')} /> },
           ...(catchupOn ? [{ key: 'catchup', label: 'Catch-up', render: () => <LessonCatchupTab lesson={lesson} onGoAssign={() => goTab('assign')} /> }] : []),
           ...(tutorOn ? [{ key: 'tutor', label: 'Tutor', render: () => <LessonTutorTab lesson={lesson} /> }] : []),

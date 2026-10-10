@@ -14,6 +14,7 @@ import { useOnline } from '@/lib/offline/useOnline'
 import StudentLessonCheck from '@/components/learning/StudentLessonCheck'
 import PlayTopicLink from '@/components/learning/PlayTopicLink'
 import StudentTutor from '@/components/learning/StudentTutor'
+import StudentLessonGuide from '@/components/learning/StudentLessonGuide'
 import { catchupMessage, loadStudentCatchup, type StudentCatchup } from '@/lib/learningCatchup'
 
 type LessonForStudent = {
@@ -233,6 +234,7 @@ export default function StudentLessonView({ lessonId }: { lessonId: string }) {
           </div>
         )}
       </div>
+      {online && !fromCache && <StudentLessonGuide lessonId={lessonId} title={lesson.title} subject={lesson.subject} finished={!!lesson.completed_at} />}
       <StudentLessonCheck lessonId={lessonId} stepsDone={lesson.steps_done.length} stepsTotal={STEP_KEYS.length} topic={lesson.topic ?? null} />
       <StudentTutor lessonId={lessonId} />
       <PlayTopicLink topic={lesson.topic ?? null} />
