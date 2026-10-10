@@ -35,7 +35,7 @@ export type GuideInput = {
 }
 
 // Anything a teacher wrote is data to work from, never instructions: it is fenced in tags and the model is told so.
-export function buildGuidePrompt(i: GuideInput): string {
+function lessonHeader(i: GuideInput): string {
   const stepBlocks = STEP_KEYS.map((k) => {
     const s = i.steps.find((x) => x.key === k)
     return `<step key="${k}">\n${(s?.text ?? '').trim()}\n</step>`
@@ -54,20 +54,47 @@ Lesson title: ${i.title}
 ${i.topic ? `Topic: ${i.topic}\n` : ''}${i.keyTerms?.trim() ? `Key formulae and vocabulary already listed:\n${i.keyTerms.trim()}\n` : ''}</lesson_context>
 
 The lesson:
-${stepBlocks}
+${stepBlocks}`
+}
 
-Make a study guide from THIS lesson only. Rules:
+const COMMON_RULES = `Rules:
 - Use only what the lesson says. Do not add facts, methods, formulae or examples that are not in the lesson. If the lesson is thin, make fewer items rather than inventing.
-- Write for the student ("you"), in clear, friendly standard English with short sentences.
+- Write for the student ("you"), in clear, friendly standard English with short sentences. Keep every item brief.
 - Plain text only: no markdown, no # headings, no ** or __, no backticks, no tables. Write formulae in plain text, for example I = P × R × T.
 - Do not write any web address and do not mention videos, websites or links.
+- Do not think out loud or explain your work. Reply with the JSON object and nothing else.`
+
+// The guide is made in two smaller requests that run side by side: the points, can-do list and cards; and the practice questions. Each
+// is short enough to finish quickly, and if one fails the teacher still gets the other.
+export function buildGuidePrompts(i: GuideInput): { main: string; questions: string } {
+  const head = lessonHeader(i)
+  const main = `${head}
+
+Make the first half of a study guide from THIS lesson only.
+${COMMON_RULES}
 - "key_points": 4 to 6 short statements of the most important ideas, each under 200 characters.
 - "can_do": 3 to 5 lines that start with "I can", saying what a student should be able to do after the lesson.
-- "cards": 10 to 16 flashcards. The front is a question or a term; the back is the short answer or definition. One idea per card. Prefer the lesson's own key terms and definitions and the steps of its worked examples. "step" is the lesson step the card comes from.
-- "questions": 9 multiple choice questions, 3 at each level. Support: recall a fact, term or step. Core: use the method on a familiar problem. Stretch: reason, compare, or apply to a new situation. Each has 4 options with exactly one correct answer (correct_index is the position, starting at 0), plausible wrong answers that a student might really choose, and a one or two sentence explanation that teaches why the answer is right. The question must not give the answer away.
+- "cards": 10 to 16 flashcards. The front is a question or a term; the back is the short answer or definition, under 200 characters. One idea per card. Prefer the lesson's own key terms and definitions and the steps of its worked examples. "step" is the lesson step the card comes from.
 
-Respond ONLY with valid JSON in exactly this format, no other text:
-{"key_points": ["..."], "can_do": ["I can ..."], "cards": [{"front": "...", "back": "...", "step": "explain"}], "questions": [{"level": "support", "prompt": "...", "options": ["...", "...", "...", "..."], "correct_index": 0, "explanation": "...", "step": "explain"}]}`
+Respond ONLY with valid JSON in exactly this format:
+{"key_points": ["..."], "can_do": ["I can ..."], "cards": [{"front": "...", "back": "...", "step": "explain"}]}`
+  const questions = `${head}
+
+Make the practice questions for a study guide from THIS lesson only.
+${COMMON_RULES}
+- "questions": 9 multiple choice questions, 3 at each level. Support: recall a fact, term or step. Core: use the method on a familiar problem. Stretch: reason, compare, or apply to a new situation. Each has 4 short options with exactly one correct answer (correct_index is the position, starting at 0), plausible wrong answers that a student might really choose, and a one or two sentence explanation that teaches why the answer is right. The question must not give the answer away.
+
+Respond ONLY with valid JSON in exactly this format:
+{"questions": [{"level": "support", "prompt": "...", "options": ["...", "...", "...", "..."], "correct_index": 0, "explanation": "...", "step": "explain"}]}`
+  return { main, questions }
+}
+
+// The whole guide in one request (kept for the try-it script and the tests).
+export function buildGuidePrompt(i: GuideInput): string {
+  const { main, questions } = buildGuidePrompts(i)
+  const q = questions.slice(questions.indexOf('- "questions":'), questions.indexOf('Respond ONLY'))
+  return main.replace('Respond ONLY with valid JSON in exactly this format:\n{"key_points"', `${q}\nRespond ONLY with valid JSON in exactly this format, with all four lists:\n{"key_points"`)
+    .replace('"step": "explain"}]}', '"step": "explain"}], "questions": [{"level": "support", "prompt": "...", "options": ["...", "...", "...", "..."], "correct_index": 0, "explanation": "...", "step": "explain"}]}')
 }
 
 const isStep = (v: unknown): v is StepKey => typeof v === 'string' && (STEP_KEYS as readonly string[]).includes(v)
@@ -101,15 +128,13 @@ export function lessonSourceText(i: GuideInput): string {
   return [i.title, i.topic ?? '', i.keyTerms ?? '', ...i.steps.map((s) => s.text)].join('\n')
 }
 
-export type GuideParse = { ok: true; draft: GuideDraft } | { ok: false; reason: 'empty' | 'truncated' | 'invalid' | 'too_thin' }
+export type GuideParse = { ok: true; draft: GuideDraft; notes: string[] } | { ok: false; reason: 'empty' | 'truncated' | 'invalid' | 'too_thin' }
+export type AiText = { text: string; stopReason?: string }
+type Obj = { key_points?: unknown; can_do?: unknown; cards?: unknown; questions?: unknown }
 
-// Reads the model's reply. Items that are malformed are left out and counted; a reply with too little left to be a guide is refused.
-export function parseGuide(reply: string, source: string, opts: { stopReason?: string } = {}): GuideParse {
-  const json = parseAiJson(reply, opts)
-  if (!json.ok) return { ok: false, reason: json.reason }
-  const obj = json.value as { key_points?: unknown; can_do?: unknown; cards?: unknown; questions?: unknown } | null
-  if (!obj || typeof obj !== 'object' || Array.isArray(obj)) return { ok: false, reason: 'invalid' }
-
+// Cleans a reply that has already been read as an object. Items that are malformed are left out and counted; a result with too little
+// left to be a guide is refused.
+function normalizeGuide(obj: Obj, source: string): GuideParse {
   const counter = { removed: 0 }
   let dropped = 0
   const seen = new Set<string>()
@@ -168,12 +193,43 @@ export function parseGuide(reply: string, source: string, opts: { stopReason?: s
 
   // Too little to be worth showing a teacher.
   if (cards.length + keyPoints.length + questions.length < 3 || (cards.length === 0 && questions.length === 0)) return { ok: false, reason: 'too_thin' }
-  return { ok: true, draft: { keyPoints, canDo, cards, questions, removedLinks: counter.removed, dropped } }
+  return { ok: true, draft: { keyPoints, canDo, cards, questions, removedLinks: counter.removed, dropped }, notes: [] }
+}
+
+const asObject = (v: unknown): Obj | null => (v && typeof v === 'object' && !Array.isArray(v) ? (v as Obj) : null)
+
+// Reads one reply that holds the whole guide.
+export function parseGuide(reply: string, source: string, opts: { stopReason?: string } = {}): GuideParse {
+  const json = parseAiJson(reply, opts)
+  if (!json.ok) return { ok: false, reason: json.reason }
+  const obj = asObject(json.value)
+  if (!obj) return { ok: false, reason: 'invalid' }
+  return normalizeGuide(obj, source)
+}
+
+// Reads the two replies. The first (points, can-do list, cards) is needed; if the second (questions) could not be read the guide is
+// still delivered, with a note, so one slow or cut-off half does not lose the other.
+export function parseGuideParts(main: AiText, questions: AiText | null, source: string): GuideParse {
+  const a = parseAiJson(main.text, { stopReason: main.stopReason })
+  const objA = a.ok ? asObject(a.value) : null
+  if (!objA) return { ok: false, reason: a.ok ? 'invalid' : a.reason }
+  const merged: Obj = { key_points: objA.key_points, can_do: objA.can_do, cards: objA.cards }
+  const notes: string[] = []
+  if (questions) {
+    const b = parseAiJson(questions.text, { stopReason: questions.stopReason })
+    const objB = b.ok ? asObject(b.value) : null
+    if (objB) merged.questions = objB.questions
+    else notes.push('The practice questions could not be drafted this time. Press "Make a new draft" to try them again; the rest of the guide is ready to read.')
+  } else {
+    notes.push('The practice questions could not be drafted this time. Press "Make a new draft" to try them again; the rest of the guide is ready to read.')
+  }
+  const out = normalizeGuide(merged, source)
+  return out.ok ? { ...out, notes } : out
 }
 
 // What to tell the teacher when the guide could not be made.
 export function guideFailureMessage(reason: 'empty' | 'truncated' | 'invalid' | 'too_thin'): string {
-  if (reason === 'truncated') return 'The lesson is long and the AI ran out of room. Try again, or shorten the longest step.'
+  if (reason === 'truncated') return 'The AI could not finish the guide this time. Please try again.'
   if (reason === 'too_thin') return 'There is not enough in this lesson to make a good guide yet. Add more to the steps and try again.'
   return 'The AI returned something unexpected. Please try again.'
 }

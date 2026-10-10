@@ -89,3 +89,26 @@ test('the request shape is strict: extra fields and missing steps are refused', 
   assert.equal(lessonGuideSchema.safeParse(body({ steps: body().steps.slice(0, 4) })).success, false)
   assert.equal(lessonGuideSchema.safeParse(body({ grade: 3 })).success, false)
 })
+
+test('the two halves are asked for side by side, in two separate requests', async () => {
+  const prompts = []
+  const { d } = deps({ callAi: async (prompt) => { prompts.push(prompt); return { ok: true, text: goodReply } } })
+  const r = await handleLessonGuide(body(), d)
+  assert.equal(r.status, 200); assert.equal(prompts.length, 2)
+  assert.ok(prompts.some((p) => /"key_points"/.test(p) && !/"questions": \[/.test(p))); assert.ok(prompts.some((p) => /Make the practice questions/.test(p)))
+})
+
+test('if the questions request fails the guide still arrives, with a note, and the use is counted once', async () => {
+  let n = 0
+  const x = deps({ callAi: async () => { n++; return n === 1 ? { ok: true, text: goodReply } : { ok: false, message: 'The AI took too long to answer. Please try again.', httpStatus: 503 } } })
+  const r = await handleLessonGuide(body(), x.d)
+  assert.equal(r.status, 200); assert.ok(r.json.cards.length >= 1); assert.equal(r.json.notes.length, r.json.questions.length === 0 ? 1 : 0)
+  assert.equal(x.calls.recorded, 1)
+})
+
+test('if the main request fails nothing is delivered or counted', async () => {
+  let n = 0
+  const x = deps({ callAi: async () => { n++; return n === 1 ? { ok: false, message: 'busy', httpStatus: 503 } : { ok: true, text: goodReply } } })
+  const r = await handleLessonGuide(body(), x.d)
+  assert.equal(r.status, 503); assert.equal(x.calls.recorded, 0)
+})

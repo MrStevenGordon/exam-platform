@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import { STEP_KEYS } from '@/lib/learning'
 import {
-  GUIDE_KEY_TERMS_MAX, GUIDE_STEP_MAX, GUIDE_TOTAL_INPUT_MAX, buildGuidePrompt, guideFailureMessage, lessonSourceText, parseGuide,
+  GUIDE_KEY_TERMS_MAX, GUIDE_STEP_MAX, GUIDE_TOTAL_INPUT_MAX, buildGuidePrompts, guideFailureMessage, lessonSourceText, parseGuideParts,
 } from '@/lib/lessonGuide'
 
 export const LESSON_GUIDE_MONTHLY_LIMIT = 60
@@ -62,13 +62,20 @@ export async function handleLessonGuide(body: LessonGuideBody, deps: GuideDeps):
   }
 
   const input = { subject: body.subject, grade: body.grade, title: body.title, topic: body.topic, keyTerms: body.keyTerms, steps: body.steps }
-  const reply = await deps.callAi(buildGuidePrompt(input), 5000)
-  if (!reply.ok) {
-    deps.log('AI study guide request failed', { status: reply.httpStatus, message: reply.message })
-    return { status: reply.httpStatus >= 500 ? 503 : 502, json: { error: reply.message } }
+  // Two shorter requests side by side: points, can-do list and cards; and the practice questions.
+  const prompts = buildGuidePrompts(input)
+  const [main, questions] = await Promise.all([deps.callAi(prompts.main, 3500), deps.callAi(prompts.questions, 3500)])
+  if (!main.ok) {
+    deps.log('AI study guide request failed', { status: main.httpStatus, message: main.message })
+    return { status: main.httpStatus >= 500 ? 503 : 502, json: { error: main.message } }
   }
+  if (!questions.ok) deps.log('AI study guide questions request failed', { status: questions.httpStatus, message: questions.message })
 
-  const parsed = parseGuide(reply.text, lessonSourceText(input), { stopReason: reply.stopReason })
+  const parsed = parseGuideParts(
+    { text: main.text, stopReason: main.stopReason },
+    questions.ok ? { text: questions.text, stopReason: questions.stopReason } : null,
+    lessonSourceText(input),
+  )
   if (!parsed.ok) {
     deps.log('AI study guide reply could not be used', { reason: parsed.reason })
     return { status: 502, json: { error: guideFailureMessage(parsed.reason) } }
@@ -79,7 +86,7 @@ export async function handleLessonGuide(body: LessonGuideBody, deps: GuideDeps):
   return {
     status: 200,
     json: {
-      keyPoints: d.keyPoints, canDo: d.canDo, cards: d.cards, questions: d.questions, removedLinks: d.removedLinks, dropped: d.dropped,
+      keyPoints: d.keyPoints, canDo: d.canDo, cards: d.cards, questions: d.questions, removedLinks: d.removedLinks, dropped: d.dropped, notes: parsed.notes,
       usage: { used: used + 1, limit: LESSON_GUIDE_MONTHLY_LIMIT, remaining: LESSON_GUIDE_MONTHLY_LIMIT - used - 1 },
     },
   }

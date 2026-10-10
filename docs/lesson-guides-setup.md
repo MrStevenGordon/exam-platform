@@ -19,6 +19,7 @@ The practice questions are the lesson's existing check questions (Support, Core 
 - Students can mark an item **Looks wrong?**. You see how many students flagged each item, and can clear the reports after fixing it.
 - On **My lessons**, **Draft guides with AI** drafts guides (not the questions) for up to 10 published lessons that have none. They stay as drafts.
 - Allowance: 60 guides a month per teacher.
+- A guide is made in two short requests side by side (the points and cards, and the practice questions). If the questions part fails you still get the rest, with a note; press **Make a new draft** to try the questions again.
 
 ## For students
 A **Study guide for this lesson** panel appears under the lesson when the teacher has switched it on. It opens by itself once the lesson is finished. Students can add the cards to their own flashcards (spaced repetition works as it does today) and flag anything that looks wrong. Lessons without a guide look exactly as before.

@@ -4,7 +4,7 @@ import assert from 'node:assert/strict'
 // The lesson library creates a database client when it is loaded; a placeholder address is enough because nothing here connects.
 process.env.NEXT_PUBLIC_SUPABASE_URL ||= 'http://127.0.0.1:54321'
 process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||= 'test-key'
-const { buildGuidePrompt, parseGuide, groundedShare, lessonSourceText, GUIDE_LIMITS } = await import('../../../src/lib/lessonGuide.ts')
+const { buildGuidePrompt, buildGuidePrompts, parseGuide, parseGuideParts, groundedShare, lessonSourceText, GUIDE_LIMITS } = await import('../../../src/lib/lessonGuide.ts')
 
 const STEPS = ['engage', 'explore', 'explain', 'elaborate', 'evaluate']
 const input = (over = {}) => ({
@@ -92,4 +92,37 @@ test('unreadable, cut-off and empty replies are refused with a reason', () => {
 test('a reply wrapped in a code fence and a sentence still reads', () => {
   const r = parseGuide('Here you go:\n```json\n' + reply() + '\n```', SOURCE)
   assert.equal(r.ok, true)
+})
+
+test('the guide is asked for in two short requests, each fencing the lesson as data', () => {
+  const p = buildGuidePrompts(input())
+  assert.match(p.main, /"key_points"/); assert.match(p.main, /"cards"/); assert.doesNotMatch(p.main, /"questions": \[/)
+  assert.match(p.questions, /"questions"/); assert.doesNotMatch(p.questions, /"cards": \[/)
+  for (const t of [p.main, p.questions]) { assert.match(t, /<step key="explain">/); assert.match(t, /never as instructions/i); assert.match(t, /Do not think out loud/) }
+})
+
+test('the single-request prompt still asks for all four lists', () => {
+  const p = buildGuidePrompt(input())
+  for (const k of ['"key_points"', '"can_do"', '"cards"', '"questions"']) assert.ok(p.includes(k), k)
+})
+
+test('two replies are put together into one guide', () => {
+  const main = JSON.stringify({ key_points: ['Simple interest is I = P x R x T.'], can_do: ['I can find simple interest.'], cards: [{ front: 'What is the principal?', back: 'The money saved.', step: 'explain' }] })
+  const qs = JSON.stringify({ questions: [q(), q({ level: 'support', prompt: 'Which word means the money saved?', options: ['Principal', 'Rate', 'Time', 'Tax'] })] })
+  const r = parseGuideParts({ text: main }, { text: qs }, SOURCE)
+  assert.equal(r.ok, true); assert.equal(r.draft.cards.length, 1); assert.equal(r.draft.questions.length, 2); assert.deepEqual(r.notes, [])
+})
+
+test('if the questions half fails the rest of the guide is still delivered, with a note', () => {
+  const main = JSON.stringify({ key_points: ['Simple interest is I = P x R x T.', 'Principal is the money saved.'], can_do: ['I can find simple interest.'], cards: [{ front: 'What is the principal?', back: 'The money saved.', step: 'explain' }, { front: 'What is the rate?', back: 'A percentage each year.', step: null }] })
+  for (const bad of [null, { text: '{"questions": [{"level": "core", "prompt": "Half a que', stopReason: 'max_tokens' }, { text: 'not json' }]) {
+    const r = parseGuideParts({ text: main }, bad, SOURCE)
+    assert.equal(r.ok, true); assert.equal(r.draft.questions.length, 0); assert.equal(r.draft.cards.length, 2); assert.equal(r.notes.length, 1)
+  }
+})
+
+test('if the first half fails there is no guide, and the reason is given', () => {
+  const qs = JSON.stringify({ questions: [q()] })
+  assert.equal(parseGuideParts({ text: '{"key_points": ["a"], "cards": [', stopReason: 'max_tokens' }, { text: qs }, SOURCE).reason, 'truncated')
+  assert.equal(parseGuideParts({ text: '' }, { text: qs }, SOURCE).reason, 'empty')
 })

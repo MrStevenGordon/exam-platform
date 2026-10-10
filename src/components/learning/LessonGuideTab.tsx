@@ -59,7 +59,9 @@ export default function LessonGuideTab({ lesson }: { lesson: LessonRow }) {
     setKeyPoints(d.keyPoints); setCanDo(d.canDo); setCards(d.cards)
     setQuestions(d.questions.map((q) => ({ ...q, ticked: !q.check })))
     setDirty(true)
-    if (d.removedLinks > 0) setNote(`${d.removedLinks} web address${d.removedLinks === 1 ? ' was' : 'es were'} taken out of the draft.`)
+    const parts = [...res.notes]
+    if (d.removedLinks > 0) parts.push(`${d.removedLinks} web address${d.removedLinks === 1 ? ' was' : 'es were'} taken out of the draft.`)
+    if (parts.length) setNote(parts.join(' '))
   }
 
   async function save(on: boolean) {

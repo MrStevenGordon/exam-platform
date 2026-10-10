@@ -38,7 +38,8 @@ export async function POST(req: NextRequest) {
         await supabaseAdmin.from('ai_polish_usage').insert({ teacher_id: userId, feature: LESSON_GUIDE_FEATURE, month_year: monthYear })
       },
       callAi: async (prompt, maxTokens) => {
-        const r = await askClaude({ label: 'lesson-study-guide', messages: [{ role: 'user', content: prompt }], maxTokens, timeoutMs: 55_000 })
+        // Two of these run side by side and the hosting allows 60 seconds in all, so each gets 40 and at most one quick retry.
+        const r = await askClaude({ label: 'lesson-study-guide', messages: [{ role: 'user', content: prompt }], maxTokens, timeoutMs: 40_000, retries: 1 })
         return r.ok ? { ok: true, text: r.text, stopReason: r.stopReason } : { ok: false, message: r.message, httpStatus: r.httpStatus }
       },
       now: () => new Date(),

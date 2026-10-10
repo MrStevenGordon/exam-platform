@@ -65,7 +65,7 @@ export async function clearReports(lessonId: string): Promise<void> {
 }
 
 export type DraftUsage = { used: number; limit: number; remaining: number }
-export type GuideDraftResult = { ok: true; draft: GuideDraft; usage: DraftUsage } | { ok: false; error: string; usage?: DraftUsage }
+export type GuideDraftResult = { ok: true; draft: GuideDraft; usage: DraftUsage; notes: string[] } | { ok: false; error: string; usage?: DraftUsage }
 
 export async function requestGuideDraft(lesson: Pick<LessonRow, 'title' | 'subject' | 'grade' | 'key_terms' | 'steps'>, topicName?: string): Promise<GuideDraftResult> {
   try {
@@ -90,6 +90,7 @@ export async function requestGuideDraft(lesson: Pick<LessonRow, 'title' | 'subje
       ok: true,
       draft: { keyPoints: data.keyPoints ?? [], canDo: data.canDo ?? [], cards: data.cards ?? [], questions: data.questions ?? [], removedLinks: data.removedLinks ?? 0, dropped: data.dropped ?? 0 },
       usage: data.usage,
+      notes: Array.isArray(data.notes) ? data.notes.filter((n: unknown) => typeof n === 'string') : [],
     }
   } catch {
     return { ok: false, error: 'Could not reach the server. Check your connection and try again.' }
