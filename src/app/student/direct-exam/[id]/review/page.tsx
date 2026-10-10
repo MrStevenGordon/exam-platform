@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { loadReview } from '@/lib/examApi'
 
+import MathText from '@/components/MathText'
 type ReviewItem = {
   id: string
   answer: string
@@ -161,7 +162,7 @@ export default function ReviewDirectExamPage() {
 
           return (
             <div key={item.id} className="card" style={{ borderLeft: `4px solid ${borderColor}` }}>
-              <p style={{ fontWeight: 700, margin: '0 0 8px' }}>{i + 1}. {item.question_text}</p>
+              <p style={{ fontWeight: 700, margin: '0 0 8px' }}>{i + 1}. <MathText text={item.question_text} /></p>
               <div style={{ margin: '4px 0', fontSize: 14 }}>
                 <strong>Your answer:</strong>
                 {!item.answer ? (
@@ -173,12 +174,12 @@ export default function ReviewDirectExamPage() {
                     ))}
                   </ol>
                 ) : (
-                  <span style={{ marginLeft: 6 }}>{item.answer}</span>
+                  <span style={{ marginLeft: 6 }}><MathText text={item.answer} /></span>
                 )}
               </div>
               {!isEssay && item.correct_answer && !isCorrect && (
                 <p style={{ margin: '4px 0', fontSize: 14, color: 'var(--success)' }}>
-                  <strong>Correct answer:</strong> {item.correct_answer}
+                  <strong>Correct answer:</strong> <MathText text={item.correct_answer} />
                 </p>
               )}
               <p style={{ margin: '8px 0 0', fontSize: 14, fontWeight: 700 }}>

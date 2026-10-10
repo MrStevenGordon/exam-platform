@@ -14,6 +14,9 @@ import {
 } from '@/lib/examOfflineStore'
 import { changedRows, markSent, type SentMap } from '@/lib/examSyncPure'
 
+import MathText from '@/components/MathText'
+import MathBoxButton from '@/components/MathBoxButton'
+import { hasMath } from '@/lib/mathText'
 function mulberry32(seed: number) {
   let a = seed
   return function () {
@@ -652,7 +655,7 @@ export default function TakeDirectExamPage() {
             <div key={q.id} className="card">
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, marginBottom: 12 }}>
                 <p style={{ fontWeight: 700, fontSize: 15, margin: 0 }}>
-                  {globalIndex + 1}. {q.question_text}
+                  {globalIndex + 1}. <MathText text={q.question_text} />
                   <span style={{ fontWeight: 400, color: 'var(--text-secondary)', fontSize: 13, marginLeft: 8 }}>({q.points} pt{q.points !== 1 ? 's' : ''})</span>
                 </p>
                 {textToSpeechEnabled && (
@@ -686,7 +689,7 @@ export default function TakeDirectExamPage() {
                   {seededShuffle(q.options, questionSeed(session.option_shuffle_seed ?? 1, q.id)).map((opt, idx) => (
                     <label key={idx} style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', padding: '8px 12px', borderRadius: 8, background: answers[q.id] === opt ? 'var(--accent-light)' : 'var(--page-bg)', border: `1px solid ${answers[q.id] === opt ? 'var(--accent)' : 'var(--border)'}` }}>
                       <input type="radio" name={q.id} checked={answers[q.id] === opt} onChange={() => updateAnswer(q.id, opt)} style={{ accentColor: 'var(--accent)' }} />
-                      {opt}
+                      <MathText text={opt} />
                     </label>
                   ))}
                 </div>
@@ -731,6 +734,7 @@ export default function TakeDirectExamPage() {
                           <div key={boxIndex} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                             <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-secondary)', minWidth: 20 }}>{boxIndex + 1}.</span>
                             <input
+                              id={`answer-${q.id}-${boxIndex}`}
                               value={currentAnswers[boxIndex] || ''}
                               onChange={(e) => {
                                 const updated = (answers[q.id] || '').split('\n')
@@ -740,12 +744,30 @@ export default function TakeDirectExamPage() {
                               style={{ flex: 1 }}
                               placeholder={`Answer ${boxIndex + 1}…`}
                             />
+                            {(calculatorEnabled || hasMath(q.question_text)) && (
+                              <MathBoxButton
+                                compact
+                                mode="plain"
+                                inputId={`answer-${q.id}-${boxIndex}`}
+                                value={currentAnswers[boxIndex] || ''}
+                                onChange={(val) => {
+                                  const updated = (answers[q.id] || '').split('\n')
+                                  updated[boxIndex] = val
+                                  updateAnswer(q.id, updated.join('\n'))
+                                }}
+                              />
+                            )}
                           </div>
                         )
                       })}
                     </div>
                   ) : (
-                    <input value={answers[q.id] || ''} onChange={(e) => updateAnswer(q.id, e.target.value)} style={{ width: '100%' }} placeholder="Your answer…" />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <input id={`answer-${q.id}`} value={answers[q.id] || ''} onChange={(e) => updateAnswer(q.id, e.target.value)} style={{ flex: 1 }} placeholder="Your answer…" />
+                      {(calculatorEnabled || hasMath(q.question_text)) && (
+                        <MathBoxButton compact mode="plain" inputId={`answer-${q.id}`} value={answers[q.id] || ''} onChange={(val) => updateAnswer(q.id, val)} />
+                      )}
+                    </div>
                   )}
                 </div>
               )}

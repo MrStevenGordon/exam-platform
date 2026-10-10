@@ -8,6 +8,7 @@ import { supabase } from '@/lib/supabase'
 import { compareClassNames, CLASS_GRADES } from '@/lib/classNames'
 import ExamPasswordReveal from '@/components/ExamPasswordReveal'
 
+import MathText from '@/components/MathText'
 type DraftExam = {
   id: string
   title: string
@@ -549,7 +550,7 @@ export default function ExamEditorPage() {
                       )}
                     </div>
                   </div>
-                  <p style={{ margin: '8px 0 0' }}>{q.question_text}</p>
+                  <p style={{ margin: '8px 0 0' }}><MathText text={q.question_text} /></p>
                   {q.supervisor_comment && (
                     <div className="banner banner-warning" style={{ marginTop: 8, fontSize: 14 }}>
                       <strong>HOD feedback:</strong> {q.supervisor_comment}
@@ -575,7 +576,7 @@ export default function ExamEditorPage() {
                     </span>
                     <span style={{ fontSize: 12, color: '#888' }}>{q.points} pt{q.points !== 1 ? 's' : ''}</span>
                   </div>
-                  <p style={{ margin: '8px 0 0' }}>{q.question_text}</p>
+                  <p style={{ margin: '8px 0 0' }}><MathText text={q.question_text} /></p>
                 </div>
               )
             }
@@ -597,7 +598,7 @@ export default function ExamEditorPage() {
                 )}
               </div>
             </div>
-            <p style={{ margin: '8px 0 0' }}>{q.question_text}</p>
+            <p style={{ margin: '8px 0 0' }}><MathText text={q.question_text} /></p>
             {q.supervisor_comment && (
               <div className="banner banner-warning" style={{ marginTop: 8, fontSize: 14 }}>
                 <strong>HOD feedback:</strong> {q.supervisor_comment}

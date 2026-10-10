@@ -1,16 +1,12 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { toSpeech } from '@/lib/mathText'
 
 // Uses the browser's built-in Web Speech API rather than a cloud TTS
 // service — no API key, no cost, and exam question text never leaves the
-// student's own device. Known v1 limitation: math segments (the $...$
-// KaTeX delimiters MathRenderer uses) are stripped down to plain text
-// rather than converted to spoken math notation, so equations get read as
-// raw symbols rather than e.g. "x squared".
-function stripForSpeech(text: string): string {
-  return text.replace(/\$([^$]+)\$/g, ' $1 ').replace(/\s+/g, ' ').trim()
-}
+// student's own device. Equations are spoken in words ("x squared plus 3",
+// "1 over 2") by toSpeech in lib/mathText.
 
 const OPTION_LETTERS = ['A', 'B', 'C', 'D', 'E', 'F']
 
@@ -34,10 +30,10 @@ export default function ReadAloudButton({ questionText, options }: { questionTex
       return
     }
 
-    const parts = [stripForSpeech(questionText)]
+    const parts = [toSpeech(questionText)]
     if (options && options.length > 0) {
       options.forEach((opt, i) => {
-        parts.push(`Option ${OPTION_LETTERS[i] || i + 1}: ${stripForSpeech(opt)}`)
+        parts.push(`Option ${OPTION_LETTERS[i] || i + 1}: ${toSpeech(opt)}`)
       })
     }
 

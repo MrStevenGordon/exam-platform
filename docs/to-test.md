@@ -105,3 +105,11 @@ Tick a box when you have tested it on the live site. Each item points to its sec
 - The last field is now "Duration". Days are tick boxes: tick several and "Create N sections" makes one lesson per day.
 - Expand a section: find students by typing, tick several (or "Select all shown"), then "Add N students".
 - HOD: Class assignments teacher list also fills for teachers with no subject record, and classes are in grade order.
+
+## Math in questions (Assess, 2026-10-10)
+- Teacher: Add question, edit question and bank edit now have an "ƒx Math box" button (question text) and a small "ƒx" beside each option. Type or tap an equation, press Insert. Below the text a "Students will see" line shows it typeset.
+- Student: questions and options with equations now show properly in exams, review, results of the HOD/teacher views, grading and the question bank. Dollar amounts such as "$400 earns $48" are left exactly as they are.
+- Student: on short and fill-in answers (when the question has math, or the exam allows the calculator) a small "ƒx" button opens the math box. The answer is written as plain text, e.g. 1/2 or x^2+3x, so marking is unchanged. Teachers should write the correct answer in the same style (the correct-answer box has the same button).
+- Read aloud now says equations in words ("x squared plus 3").
+- Check on a phone: the math keyboard opens from the keyboard icon inside the box.
+- Not covered yet: Smart Play questions, lessons and flashcards still show math as plain text.

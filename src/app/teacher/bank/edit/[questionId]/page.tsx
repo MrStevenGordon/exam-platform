@@ -9,6 +9,9 @@ import { isEssayRubricAvailable } from '@/lib/essayRubric'
 import { checkRubric, cleanRubric, parseStoredRubric, rubricTotal, writtenPoints, type EssayPointDraft } from '@/lib/essayRubricPure'
 import MathToolbar from '@/components/MathToolbar'
 import MathSymbolPicker from '@/components/MathSymbolPicker'
+import { hasMath, toPlainText } from '@/lib/mathText'
+import MathText from '@/components/MathText'
+import MathBoxButton from '@/components/MathBoxButton'
 
 export default function EditBankQuestionPage() {
   const router = useRouter()
@@ -104,8 +107,14 @@ export default function EditBankQuestionPage() {
         </div>
         <div style={{ marginBottom: 14 }}>
           <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Question text</label>
+          <div style={{ marginBottom: 6 }}>
+            <MathBoxButton inputId="bank-question-text" value={questionText} onChange={setQuestionText} />
+          </div>
           <MathToolbar textareaId="bank-question-text" value={questionText} onChange={setQuestionText} />
           <textarea id="bank-question-text" value={questionText} onChange={(e) => setQuestionText(e.target.value)} rows={4} style={{ width: '100%', marginTop: 4 }} />
+          {hasMath(questionText) && (
+            <p style={{ fontSize: 13, margin: '6px 0 0', color: 'var(--text-secondary)' }}>Students will see: <span style={{ color: 'var(--text-primary)' }}><MathText text={questionText} /></span></p>
+          )}
         </div>
         <div style={{ marginBottom: 14 }}>
           <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Points</label>
@@ -120,6 +129,7 @@ export default function EditBankQuestionPage() {
                 <span style={{ fontWeight: 700, fontSize: 13, minWidth: 20 }}>{String.fromCharCode(65 + i)}.</span>
                 <input id={"bank-opt-" + i} value={opt} onChange={(e) => { const u = [...options]; u[i] = e.target.value; setOptions(u) }} style={{ flex: 1 }} />
                 <MathSymbolPicker inputId={"bank-opt-" + i} value={opt} onChange={(val) => { const u = [...options]; u[i] = val; setOptions(u) }} />
+                <MathBoxButton compact inputId={"bank-opt-" + i} value={opt} onChange={(val) => { const u = [...options]; u[i] = val; setOptions(u) }} />
               </div>
             ))}
             <div style={{ marginTop: 10 }}>

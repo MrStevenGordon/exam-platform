@@ -13,6 +13,7 @@ import { fetchUsage, isEssayAiMarkingAvailable, loadSuggestions, recordFinalMark
 import type { Suggestion } from '@/lib/essayMarkingPure'
 import { parseStoredRubric } from '@/lib/essayRubricPure'
 
+import MathText from '@/components/MathText'
 type Response = {
   id: string
   question_id: string
@@ -205,7 +206,7 @@ export default function TeacherReviewSessionPage() {
                 </span>
               </div>
 
-              <p style={{ fontWeight: 600, marginBottom: 10, fontSize: 14 }}>{q.question_text}</p>
+              <p style={{ fontWeight: 600, marginBottom: 10, fontSize: 14 }}><MathText text={q.question_text} /></p>
 
               {/* Student working */}
               {r.working && (
@@ -221,7 +222,7 @@ export default function TeacherReviewSessionPage() {
               <div style={{ marginBottom: 10 }}>
                 <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: 4 }}>Student answer</div>
                 <div style={{ padding: '8px 12px', background: 'var(--page-bg)', borderRadius: 8, border: '1px solid var(--border)', fontSize: 14 }}>
-                  {r.answer || <em style={{ color: 'var(--text-muted)' }}>No answer</em>}
+                  {r.answer ? <MathText text={r.answer} /> : <em style={{ color: 'var(--text-muted)' }}>No answer</em>}
                 </div>
               </div>
 
@@ -271,7 +272,7 @@ export default function TeacherReviewSessionPage() {
               {/* Correct answer for MCQ/TF */}
               {q.correct_answer && (
                 <div style={{ fontSize: 12, color: isCorrect ? 'var(--success)' : 'var(--danger)', fontWeight: 600, marginBottom: 8 }}>
-                  {isCorrect ? '✓ Correct' : `✗ Correct answer: ${q.correct_answer}`}
+                  {isCorrect ? '✓ Correct' : <>✗ Correct answer: <MathText text={q.correct_answer} /></>}
                 </div>
               )}
 

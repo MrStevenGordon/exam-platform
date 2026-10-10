@@ -7,6 +7,7 @@ import { supabase } from '@/lib/supabase'
 import { isEssayRubricAvailable } from '@/lib/essayRubric'
 import EmptyState from '@/components/EmptyState'
 
+import MathText from '@/components/MathText'
 type BankQuestion = {
   id: string
   question_type: string
@@ -173,7 +174,7 @@ export default function AddFromBankPage() {
               <div className="section-label" style={{ fontSize: 11 }}>
                 {q.question_type.replace('_', ' ')} · {q.points} pt{q.points !== 1 ? 's' : ''}
               </div>
-              <p style={{ margin: '4px 0 0' }}>{q.question_text}</p>
+              <p style={{ margin: '4px 0 0' }}><MathText text={q.question_text} /></p>
             </div>
           </label>
         ))}

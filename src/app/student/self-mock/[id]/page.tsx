@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { gradeAnswer } from '@/lib/grading'
 
+import MathText from '@/components/MathText'
 type Item = {
   id: string
   question_id: string
@@ -188,7 +189,7 @@ export default function SelfMockPage() {
           return (
             <div key={item.id} className="card" style={{ borderLeft: `4px solid ${borderColor}` }}>
               <p style={{ fontWeight: 700, marginBottom: 12 }}>
-                {i + 1}. {item.question_text} <span style={{ fontWeight: 400, color: 'var(--text-secondary)', fontSize: 14 }}>({item.points} pt{item.points !== 1 ? 's' : ''})</span>
+                {i + 1}. <MathText text={item.question_text} /> <span style={{ fontWeight: 400, color: 'var(--text-secondary)', fontSize: 14 }}>({item.points} pt{item.points !== 1 ? 's' : ''})</span>
               </p>
 
               {item.question_type === 'multiple_choice' && item.options && (
@@ -202,7 +203,7 @@ export default function SelfMockPage() {
                         checked={answers[item.id] === opt}
                         onChange={() => updateAnswer(item.id, opt)}
                       />
-                      {opt}
+                      <MathText text={opt} />
                     </label>
                   ))}
                 </div>
@@ -232,7 +233,7 @@ export default function SelfMockPage() {
 
               {completed && (
                 <p style={{ margin: '8px 0 0', fontSize: 14, fontWeight: 700, color: isCorrect ? 'var(--success)' : 'var(--danger)' }}>
-                  {isCorrect ? 'Correct' : `Incorrect. Correct answer: ${item.correct_answer}`}
+                  {isCorrect ? 'Correct' : <>Incorrect. Correct answer: <MathText text={item.correct_answer} /></>}
                 </p>
               )}
             </div>

@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import ExamPasswordReveal from '@/components/ExamPasswordReveal'
 
+import MathText from '@/components/MathText'
 type DraftExam = {
   id: string
   title: string
@@ -179,7 +180,7 @@ export default function SupervisorExamPublishPage() {
                 </span>
                 <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{q.points} pt{q.points !== 1 ? 's' : ''}</span>
               </div>
-              <p style={{ margin: '6px 0 0', fontSize: 14 }}>{q.question_text}</p>
+              <p style={{ margin: '6px 0 0', fontSize: 14 }}><MathText text={q.question_text} /></p>
             </div>
           ))}
         </div>

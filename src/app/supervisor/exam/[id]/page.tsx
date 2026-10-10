@@ -5,6 +5,7 @@ import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 
+import MathText from '@/components/MathText'
 type DraftExam = {
   id: string
   title: string
@@ -209,19 +210,19 @@ export default function SupervisorExamReviewPage() {
           </span>
           <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{q.points} pt{q.points !== 1 ? 's' : ''}</span>
         </div>
-        <p style={{ margin: '8px 0 0' }}>{q.question_text}</p>
+        <p style={{ margin: '8px 0 0' }}><MathText text={q.question_text} /></p>
         {q.options && (
           <ul style={{ margin: '8px 0 0', paddingLeft: 20 }}>
             {q.options.map((opt, idx) => (
               <li key={idx} style={{ color: opt === q.correct_answer ? 'var(--success)' : undefined, fontWeight: opt === q.correct_answer ? 700 : 400 }}>
-                {opt}
+                <MathText text={opt} />
               </li>
             ))}
           </ul>
         )}
         {!q.options && q.correct_answer && (
           <p style={{ margin: '8px 0 0', fontSize: 14, color: 'var(--success)' }}>
-            Correct answer: {q.correct_answer}
+            Correct answer: <MathText text={q.correct_answer} />
           </p>
         )}
 

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 
+import MathText from '@/components/MathText'
 type Question = { id: string; question_text: string; question_type: string; points: number; created_at: string; draft_exams?: { subject: string } | null }
 
 export default function TeacherBankPage() {
@@ -104,7 +105,7 @@ export default function TeacherBankPage() {
         {(search || filterSubject || filterType) && filtered.map((q) => (
           <div key={q.id} className="card">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
-              <p style={{ margin: 0, fontSize: 14, fontWeight: 600, flex: 1 }}>{q.question_text}</p>
+              <p style={{ margin: 0, fontSize: 14, fontWeight: 600, flex: 1 }}><MathText text={q.question_text} /></p>
               <span className="badge badge-default" style={{ whiteSpace: 'nowrap' }}>{typeLabels[q.question_type] || q.question_type}</span>
             </div>
             <div style={{ display: 'flex', gap: 12, marginTop: 6, alignItems: 'center' }}>

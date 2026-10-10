@@ -12,6 +12,7 @@ import { fetchUsage, isEssayAiMarkingAvailable, loadSuggestions, recordFinalMark
 import { runPool, type MarkingPoint, type Suggestion } from '@/lib/essayMarkingPure'
 import { parseStoredRubric } from '@/lib/essayRubricPure'
 
+import MathText from '@/components/MathText'
 type UngradedResponse = {
   overrideScore?: number
   // the per-point marks the teacher saved, so they can be compared with the AI's suggestion
@@ -253,9 +254,9 @@ export default function GradeEssaysPage() {
             <p className="section-label" style={{ fontSize: 11, margin: 0 }}>
               {item.exam_title} · {item.student_name}
             </p>
-            <p style={{ fontWeight: 700, margin: '8px 0' }}>{item.question_text}</p>
+            <p style={{ fontWeight: 700, margin: '8px 0' }}><MathText text={item.question_text} /></p>
             <div style={{ padding: 12, background: 'var(--page-bg)', borderRadius: 8, marginBottom: 12, border: '1px solid var(--border)' }}>
-              {item.answer || <em style={{ color: 'var(--text-secondary)' }}>No answer provided</em>}
+              {item.answer ? <MathText text={item.answer} /> : <em style={{ color: 'var(--text-secondary)' }}>No answer provided</em>}
             </div>
 
             {item.integrityFlags.length > 0 && (

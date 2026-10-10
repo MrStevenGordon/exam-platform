@@ -9,6 +9,10 @@ import { isEssayRubricAvailable } from '@/lib/essayRubric'
 import { checkRubric, cleanRubric, parseStoredRubric, rubricTotal, writtenPoints, type EssayPointDraft } from '@/lib/essayRubricPure'
 import MathToolbar from '@/components/MathToolbar'
 import MathSymbolPicker from '@/components/MathSymbolPicker'
+import { hasMath, toPlainText } from '@/lib/mathText'
+import MathText from '@/components/MathText'
+import { Fragment } from 'react'
+import MathBoxButton from '@/components/MathBoxButton'
 
 export default function EditQuestionPage() {
   const router = useRouter()
@@ -119,8 +123,14 @@ export default function EditQuestionPage() {
 
         <div style={{ marginBottom: 14 }}>
           <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Question text</label>
+          <div style={{ marginBottom: 6 }}>
+            <MathBoxButton inputId="edit-question-text" value={questionText} onChange={setQuestionText} />
+          </div>
           <MathToolbar textareaId="edit-question-text" value={questionText} onChange={setQuestionText} />
           <textarea id="edit-question-text" value={questionText} onChange={(e) => setQuestionText(e.target.value)} rows={4} style={{ width: '100%', borderRadius: '0 0 8px 8px', marginTop: 0 }} />
+          {hasMath(questionText) && (
+            <p style={{ fontSize: 13, margin: '6px 0 0', color: 'var(--text-secondary)' }}>Students will see: <span style={{ color: 'var(--text-primary)' }}><MathText text={questionText} /></span></p>
+          )}
         </div>
 
         <div style={{ marginBottom: 14 }}>
@@ -133,18 +143,22 @@ export default function EditQuestionPage() {
           <div style={{ marginBottom: 14 }}>
             <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Options</label>
             {options.map((opt, i) => (
-              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 6 }}>
+              <Fragment key={i}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 6 }}>
                 <span style={{ fontWeight: 700, fontSize: 13, minWidth: 20 }}>{String.fromCharCode(65 + i)}.</span>
                 <input id={`edit-option-${i}`} value={opt} onChange={(e) => { const updated = [...options]; updated[i] = e.target.value; setOptions(updated) }} style={{ flex: 1 }} placeholder={`Option ${String.fromCharCode(65 + i)}`} />
                 <MathSymbolPicker inputId={`edit-option-${i}`} value={opt} onChange={(val) => { const updated = [...options]; updated[i] = val; setOptions(updated) }} />
+                <MathBoxButton compact inputId={`edit-option-${i}`} value={opt} onChange={(val) => { const updated = [...options]; updated[i] = val; setOptions(updated) }} />
               </div>
+              {hasMath(opt) && <div style={{ marginLeft: 30, fontSize: 13, color: 'var(--text-secondary)' }}>Shows as: <span style={{ color: 'var(--text-primary)' }}><MathText text={opt} /></span></div>}
+              </Fragment>
             ))}
             <div style={{ marginTop: 10 }}>
               <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Correct answer</label>
               <select value={correctAnswer} onChange={(e) => setCorrectAnswer(e.target.value)} style={{ width: '100%', marginTop: 4 }}>
                 <option value="">Select correct answer…</option>
                 {options.filter(Boolean).map((opt, i) => (
-                  <option key={i} value={opt}>{String.fromCharCode(65 + i)}. {opt}</option>
+                  <option key={i} value={opt}>{String.fromCharCode(65 + i)}. {toPlainText(opt)}</option>
                 ))}
               </select>
             </div>

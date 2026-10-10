@@ -10,6 +10,7 @@ import {
 } from '@/lib/examOfflineStore'
 import { changedRows, markSent, type SentMap } from '@/lib/examSyncPure'
 
+import MathText from '@/components/MathText'
 function mulberry32(seed: number) {
   let a = seed
   return function () {
@@ -474,14 +475,14 @@ export default function TakeExamQuestionsPage() {
               <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: 6 }}>
                 Q{i + 1} · {q.points} pt{q.points !== 1 ? 's' : ''}
               </div>
-              <p style={{ fontWeight: 600, marginBottom: 10 }}>{q.question_text}</p>
+              <p style={{ fontWeight: 600, marginBottom: 10 }}><MathText text={q.question_text} /></p>
 
               {q.question_type === 'multiple_choice' && q.options && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                   {seededShuffle(q.options, questionSeed(session.option_shuffle_seed ?? 1, q.id)).map((opt, idx) => (
                     <label key={idx} style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', padding: '8px 12px', borderRadius: 8, background: answers[q.id] === opt ? 'var(--accent-light)' : 'var(--page-bg)', border: `1px solid ${answers[q.id] === opt ? 'var(--accent)' : 'var(--border)'}` }}>
                       <input type="radio" name={q.id} checked={answers[q.id] === opt} onChange={() => updateAnswer(q.id, opt)} />
-                      {opt}
+                      <MathText text={opt} />
                     </label>
                   ))}
                 </div>

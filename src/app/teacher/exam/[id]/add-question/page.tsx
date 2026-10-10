@@ -10,6 +10,10 @@ import { useRouter, useParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import MathToolbar from '@/components/MathToolbar'
 import MathSymbolPicker from '@/components/MathSymbolPicker'
+import { hasMath, toPlainText } from '@/lib/mathText'
+import MathText from '@/components/MathText'
+import { Fragment } from 'react'
+import MathBoxButton from '@/components/MathBoxButton'
 import MathRenderer from '@/components/MathRenderer'
 import EssayRubricEditor from '@/components/EssayRubricEditor'
 import { isEssayRubricAvailable } from '@/lib/essayRubric'
@@ -330,6 +334,9 @@ export default function AddQuestionPage() {
               ? 'Question (use ___ to mark the blank)'
               : 'Question'}
           </label><br />
+          <div style={{ marginBottom: 6 }}>
+            <MathBoxButton inputId="question-text" value={questionText} onChange={setQuestionText} />
+          </div>
           <MathToolbar textareaId="question-text" value={questionText} onChange={setQuestionText} />
           <textarea
             id="question-text"
@@ -340,6 +347,9 @@ export default function AddQuestionPage() {
             placeholder={questionType === 'fill_blank' ? 'The capital of France is ___.' : ''}
             style={{ width: '100%', marginTop: 6 }}
           />
+          {hasMath(questionText) && (
+            <p style={{ fontSize: 13, margin: '6px 0 0', color: 'var(--text-secondary)' }}>Students will see: <span style={{ color: 'var(--text-primary)' }}><MathText text={questionText} /></span></p>
+          )}
 
           <div style={{ marginTop: 10 }}>
             <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Media (optional)</label>
@@ -438,7 +448,8 @@ export default function AddQuestionPage() {
           <div style={{ marginBottom: 16 }}>
             <label style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)' }}>Options (select the correct one)</label>
             {options.map((opt, i) => (
-              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
+              <Fragment key={i}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
                 <input
                   type="radio"
                   checked={correctOptionIndex === i}
@@ -457,7 +468,10 @@ export default function AddQuestionPage() {
                   value={opt}
                   onChange={(val) => updateOption(i, val)}
                 />
+                <MathBoxButton compact inputId={`option-input-${i}`} value={opt} onChange={(val) => updateOption(i, val)} />
               </div>
+              {hasMath(opt) && <div style={{ marginLeft: 30, fontSize: 13, color: 'var(--text-secondary)' }}>Shows as: <span style={{ color: 'var(--text-primary)' }}><MathText text={opt} /></span></div>}
+              </Fragment>
             ))}
           </div>
         )}
@@ -507,12 +521,17 @@ export default function AddQuestionPage() {
           )}
           <div style={{ marginBottom: 16 }}>
             <label style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)' }}>Single correct answer (for exact match grading)</label><br />
-            <input
-              value={exactAnswer}
-              onChange={(e) => setExactAnswer(e.target.value)}
-              style={{ width: '100%', marginTop: 6 }}
-              placeholder="Leave blank if using marking points below"
-            />
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 6 }}>
+              <input
+                id="exact-answer"
+                value={exactAnswer}
+                onChange={(e) => setExactAnswer(e.target.value)}
+                style={{ flex: 1 }}
+                placeholder="Leave blank if using marking points below"
+              />
+              <MathBoxButton compact mode="plain" inputId="exact-answer" value={exactAnswer} onChange={setExactAnswer} />
+            </div>
+            <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: '4px 0 0' }}>Answers are matched as typed, so write it the way students should (for example 1/2 or x^2+3x).</p>
           </div>
           </div>
         )}
