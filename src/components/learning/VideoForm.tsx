@@ -38,8 +38,7 @@ export default function VideoForm({ video, knownSubjects, isManager, onDone, onC
     const r = video ? await updateVideo(video.id, f) : await addVideo(url, f)
     setBusy(false)
     if (!r.ok) { setError(r.error); return }
-    onDone(video ? (isManager || video.status !== 'approved' ? 'Saved.' : 'Saved. It will show to students again once it is approved.')
-      : isManager ? 'Added. Students can see it now.' : 'Added. Students will see it once your head of department approves it.')
+    onDone(video ? 'Saved.' : 'Added. Students can see it now.')
     if (!video) { setUrl(''); setTitle(''); setNote(''); setTopicId('') }
   }
 
@@ -89,7 +88,7 @@ export default function VideoForm({ video, knownSubjects, isManager, onDone, onC
           <select id={`gt-${id}`} value={gradeTo} onChange={(e) => setGradeTo(e.target.value)}><option value="">Any</option>{GRADES.map((g) => <option key={g} value={g}>Grade {g}</option>)}</select>
         </div>
       </div>
-      {!video && !isManager && <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: '0 0 12px' }}>Your head of department approves each video before students can see it.</p>}
+      {!video && !isManager && <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: '0 0 12px' }}>Your video goes live as soon as you add it. Your head of department can hide or remove it, and it is hidden automatically if two students report it.</p>}
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
         <button type="button" className="btn btn-primary" disabled={busy || (!video && !parsed)} onClick={save}>{busy ? 'Saving…' : video ? 'Save changes' : 'Add video'}</button>
         {onCancel && <button type="button" className="btn btn-ghost" onClick={onCancel}>Cancel</button>}

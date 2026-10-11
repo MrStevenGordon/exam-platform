@@ -1,4 +1,4 @@
--- Tests for migration 093 (videos). Throwaway database only. Needs the demo fixture (scripts/tests/demo-seed/fixture.sql) and migrations up to 093.
+-- Tests for migrations 093 and 101 (videos; a teacher's link is live at once). Throwaway database only. Needs the demo fixture (scripts/tests/demo-seed/fixture.sql) and migrations up to 101.
 -- Destructive: it clears the video tables. Every line should say PASS.
 create temp table results (n serial, name text, ok boolean);
 create or replace function pg_temp.u(n int) returns uuid language sql immutable as $$ select ('00000000-0000-0000-0000-' || lpad(n::text, 12, '0'))::uuid $$;
@@ -77,7 +77,7 @@ begin
   -- ===== adding =====
   r := pg_temp.try_as(t1, $q$select video_add('https://youtu.be/dQw4w9WgXcQ', 'Percentages made easy', 'Start here', 'Mathematics', null, 7, 9)$q$);
   perform pg_temp.chk('a teacher can add a link', r = 'ok');
-  perform pg_temp.chk('it waits for approval', (select status = 'pending' and added_by = t1 and department_id = pg_temp.u(900) and url = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ' from learning_videos));
+  perform pg_temp.chk('it is live at once, with no approval step', (select status = 'approved' and added_by = t1 and department_id = pg_temp.u(900) and url = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ' from learning_videos));
   r := pg_temp.try_as(hod, $q$select video_add('https://www.youtube.com/watch?v=aBcDeFgHiJk', 'Simple interest', null, 'Mathematics')$q$);
   perform pg_temp.chk('a head of department''s link is live at once', r = 'ok' and (select status = 'approved' from learning_videos where title = 'Simple interest'));
   r := pg_temp.try_as(pr, $q$select video_add('https://vimeo.com/123456789', 'Our school history', 'x', 'Social Studies', null, null, null)$q$);
@@ -93,11 +93,11 @@ begin
   perform pg_temp.chk('a Khan Academy link is accepted (opened in a new tab by the app)', r = 'ok' and (select provider = 'khan' and external_id ~ '^[0-9a-f]{16}$' from learning_videos where title = 'Cells'));
 
   -- ===== who sees what =====
-  perform pg_temp.chk('a Grade 9 student sees only approved videos for Grade 9 (not the Grade 7-9 one that is still pending)', pg_temp.titles_as(s9) = 'Our school history,Simple interest');
-  perform pg_temp.chk('the teacher sees what is live and their own waiting one', pg_temp.titles_as(t1) = 'Our school history,Percentages made easy,Simple interest');
-  perform pg_temp.chk('the other teacher sees what is live and their own, not Teacher 1''s waiting one', pg_temp.titles_as(tB) = 'Cells,Our school history,Simple interest' or pg_temp.titles_as(tB) = 'Cells,Our school history,Simple interest');
-  perform pg_temp.chk('the head of Mathematics sees their teacher''s waiting video and can decide on it', pg_temp.val_as(hod, $q$select (e->>'can_manage') from jsonb_array_elements(videos_list()) e where e->>'title' = 'Percentages made easy'$q$) = 'true');
-  perform pg_temp.chk('the head of Science does not see the Mathematics teacher''s waiting video', pg_temp.titles_as(hodB) not like '%Percentages%');
+  perform pg_temp.chk('a Grade 9 student sees the live videos for Grade 9, including the teachers'' ones', pg_temp.titles_as(s9) = 'Cells,Our school history,Percentages made easy,Simple interest');
+  perform pg_temp.chk('the teacher sees what is live', pg_temp.titles_as(t1) = 'Cells,Our school history,Percentages made easy,Simple interest');
+  perform pg_temp.chk('the other teacher sees the same live list', pg_temp.titles_as(tB) = 'Cells,Our school history,Percentages made easy,Simple interest');
+  perform pg_temp.chk('the head of Mathematics sees their teacher''s video and can decide on it', pg_temp.val_as(hod, $q$select (e->>'can_manage') from jsonb_array_elements(videos_list()) e where e->>'title' = 'Percentages made easy'$q$) = 'true');
+  perform pg_temp.chk('the head of Science sees the Mathematics teacher''s live video but cannot decide on it', pg_temp.titles_as(hodB) like '%Percentages%' and pg_temp.val_as(hodB, $q$select (e->>'can_manage') from jsonb_array_elements(videos_list()) e where e->>'title' = 'Percentages made easy'$q$) = 'false');
   perform pg_temp.chk('the principal sees everything, and can decide on all', pg_temp.titles_as(pr) like '%Cells%' and pg_temp.titles_as(pr) like '%Percentages%' and pg_temp.val_as(pr, $q$select count(*)::text from jsonb_array_elements(videos_list()) e where (e->>'can_manage')::boolean$q$) = '4');
   perform pg_temp.chk('a student gets no report counts or deciding rights', pg_temp.val_as(s9, $q$select count(*)::text from jsonb_array_elements(videos_list()) e where (e->>'can_manage')::boolean or (e->>'can_edit')::boolean or (e->>'reports')::int > 0$q$) = '0');
   perform pg_temp.chk('students cannot read the tables directly', pg_temp.val_as(s9, 'select count(*)::text from learning_videos') = 'ERR 42501' and pg_temp.val_as(s9, 'select count(*)::text from learning_video_reports') = 'ERR 42501');
@@ -116,11 +116,14 @@ begin
   perform pg_temp.chk('another teacher cannot edit it', pg_temp.try_as(tB, format($q$select video_update(%L, 'Hacked', null, 'Maths')$q$, a)) = '42501');
   perform pg_temp.chk('a student cannot', pg_temp.try_as(s9, format($q$select video_update(%L, 'Hacked', null, 'Maths')$q$, a)) = '42501');
   r := pg_temp.try_as(t1, format($q$select video_update(%L, 'Percentages, step by step', 'Updated', 'Mathematics', null, 8, 9)$q$, a));
-  perform pg_temp.chk('the teacher edits their approved video: it goes back for approval', r = 'ok' and (select status = 'pending' and title = 'Percentages, step by step' and grade_from = 8 from learning_videos where id = a));
-  perform pg_temp.chk('and students no longer see it', pg_temp.titles_as(s9) not like '%Percentages%');
+  perform pg_temp.chk('the teacher edits their video: it stays live', r = 'ok' and (select status = 'approved' and title = 'Percentages, step by step' and grade_from = 8 from learning_videos where id = a));
+  perform pg_temp.chk('and students still see it, under the new title', pg_temp.titles_as(s9) like '%Percentages, step by step%');
   r := pg_temp.try_as(hod, format($q$select video_update(%L, 'Percentages, step by step', 'Updated', 'Mathematics', null, 8, 9)$q$, a));
-  perform pg_temp.chk('the head edits it without sending it back (it stays pending until approved)', r = 'ok' and (select status = 'pending' from learning_videos where id = a));
-  perform pg_temp.chk('approved again', pg_temp.try_as(hod, format($q$select video_set_status(%L, 'approved')$q$, a)) = 'ok');
+  perform pg_temp.chk('the head edits it: still live', r = 'ok' and (select status = 'approved' from learning_videos where id = a));
+  r := pg_temp.try_as(hod, format($q$select video_set_status(%L, 'hidden')$q$, a));
+  perform pg_temp.chk('the head can hide it, and students no longer see it', r = 'ok' and (select status = 'hidden' from learning_videos where id = a) and pg_temp.titles_as(s9) not like '%Percentages%');
+  r := pg_temp.try_as(hod, format($q$select video_set_status(%L, 'approved')$q$, a));
+  perform pg_temp.chk('and can bring it back', r = 'ok' and (select status = 'approved' from learning_videos where id = a));
   r := pg_temp.try_as(hod, format($q$select video_update(%L, 'Percentages, step by step', 'Head edit', 'Mathematics', null, 8, 9)$q$, a));
   perform pg_temp.chk('a head''s edit of a live video keeps it live', r = 'ok' and (select status = 'approved' and note = 'Head edit' from learning_videos where id = a));
   perform pg_temp.chk('Grade 7 students no longer see a Grade 8 to 9 video', pg_temp.titles_as(s7) not like '%Percentages%' and pg_temp.titles_as(s9) like '%Percentages%');

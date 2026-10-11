@@ -13,11 +13,13 @@ Product: **Smart Learning**.
 | Person | Can |
 |---|---|
 | Student | Watch approved videos for their grade, **Report a problem**. Never sees pending, hidden or who reported |
-| Teacher | Add a link (it **waits for approval**), see and edit/remove their own, watch everything live |
-| Head of department | Add (live at once), approve or remove their department's teachers' videos, bring back reported ones |
+| Teacher | Add a link (**live at once**, from migration 101), see and edit/remove their own, watch everything live |
+| Head of department | Add (live at once), hide or remove their department's teachers' videos, bring back reported ones |
 | Principal, vice principals, school admin | Add (live at once), decide on any video |
 
-A teacher who edits a live video sends it back for approval. Editing never changes the link: remove the video and add the right one.
+Editing a video keeps it live. Editing never changes the link: remove the video and add the right one.
+
+**Migration 101** (`scripts/migrations/101_teacher_videos_live.sql`) removed the approval step: teachers' links go live when added, and any still waiting go live when it is applied. Apply it before pushing the matching code. Undo: `scripts/migrations/rollback/101_teacher_videos_live_rollback.sql`.
 
 ## Safety rules
 - Only YouTube, Vimeo and Khan Academy links are accepted (the same rules in the app and the database, tested with `scripts/tests/videos/links.json`). YouTube and Vimeo play inside the page; Khan Academy opens in a new tab.

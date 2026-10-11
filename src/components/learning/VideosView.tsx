@@ -10,8 +10,8 @@ import VideoManage from '@/components/learning/VideoManage'
 
 type Role = 'student' | 'teacher' | 'supervisor' | 'principal' | 'admin'
 
-// Videos in Smart Learning. Students watch (and can report a problem). Staff watch, add links, and manage: a head of department approves a
-// teacher's videos, and the principal team and school admin can decide on any.
+// Videos in Smart Learning. Students watch (and can report a problem). Staff watch and add links (live at once), and manage: a head of
+// department can hide or remove their teachers' videos, and the principal team and school admin can decide on any.
 export default function VideosView({ role }: { role: Role }) {
   const [tab, setTab] = useState<'watch' | 'add' | 'manage'>('watch')
   const [videos, setVideos] = useState<Video[] | null>(null)
