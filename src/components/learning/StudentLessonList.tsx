@@ -22,14 +22,21 @@ export default function StudentLessonList() {
   // With no connection the list is the copy saved on this device, and only lessons already opened can be read.
   const [fromCache, setFromCache] = useState(false)
   const [savedIds, setSavedIds] = useState<Set<string>>(new Set())
+  // Lessons whose teacher has switched a study guide on. Empty if study guides are not installed.
+  const [guideIds, setGuideIds] = useState<Set<string>>(new Set())
   const today = jamaicaDate()
 
   useEffect(() => {
     let cancelled = false
     async function load() {
       const kv = idbKv(); const uid = await currentUserId()
-      const [{ data, error: e }, missed] = await Promise.all([supabase.rpc('learning_student_lessons'), loadStudentCatchup().catch(() => ({} as Record<string, StudentCatchup>))])
+      const [{ data, error: e }, missed, guides] = await Promise.all([
+        supabase.rpc('learning_student_lessons'),
+        loadStudentCatchup().catch(() => ({} as Record<string, StudentCatchup>)),
+        supabase.rpc('learning_student_guides').then((r) => (r.error ? [] : ((r.data as Array<{ lesson_id: string }>) || []).map((g) => g.lesson_id)), () => [] as string[]),
+      ])
       if (cancelled) return
+      setGuideIds(new Set(guides))
       if (!e) {
         setRows((data as StudentLessonRow[]) || [])
         if (kv && uid) await saveLessonList(kv, uid, (data as unknown[]) || [])
@@ -75,6 +82,7 @@ export default function StudentLessonList() {
         </div>
         <div style={{ textAlign: 'right' }}>
           <span className={`badge ${STATE_INFO[state].badge}`}>{r.closed && !r.completed_at ? 'Closed' : STATE_INFO[state].label}</span>
+          {guideIds.has(r.lesson_id) && !(r.closed && !r.completed_at) && <div style={{ marginTop: 4 }}><span className="badge badge-default sentence-case">Study guide</span></div>}
           {due && <div style={{ fontSize: 12, marginTop: 4, color: due.overdue && !r.completed_at ? 'var(--danger)' : 'var(--text-secondary)', fontWeight: due.overdue && !r.completed_at ? 700 : 400 }}>{due.text}</div>}
         </div>
       </div>
@@ -91,6 +99,19 @@ export default function StudentLessonList() {
       {fromCache && <p className="banner banner-warning" style={{ fontSize: 13 }}>Showing the copy saved on this device. Lessons you have opened before can be read offline.</p>}
       {!error && rows.length === 0 && (
         <EmptyState icon="📚" title="No lessons yet" description="When a teacher gives your class a lesson, it appears here." />
+      )}
+      {!fromCache && guideIds.size > 0 && (
+        <section style={{ marginBottom: 24 }}>
+          <div className="section-label" style={{ marginBottom: 8 }}>Study guides</div>
+          <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {rows.filter((r) => guideIds.has(r.lesson_id)).map((r) => (
+              <Link key={r.lesson_id} href={`/learning/lesson/${r.lesson_id}#study-guide`} style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', color: 'inherit', textDecoration: 'none', fontSize: 14 }}>
+                <span style={{ fontWeight: 600 }}>{r.title}</span>
+                <span style={{ color: 'var(--text-secondary)' }}>{r.subject} · Open the study guide</span>
+              </Link>
+            ))}
+          </div>
+        </section>
       )}
       {open.length > 0 && (
         <section style={{ marginBottom: 24 }}>

@@ -9,7 +9,8 @@ The practice questions are the lesson's existing check questions (Support, Core 
 
 ## Setting up
 1. Run `scripts/migrations/100_lesson_study_guides.sql` on the school's database (roll back with `scripts/migrations/rollback/100_lesson_study_guides_rollback.sql`, which deletes every guide). No other setting is needed; guides use the existing AI key and the existing monthly AI allowance table.
-2. Push the code. Until the migration is installed, the tab, the badges and the student panel do not appear.
+2. Optional: run `scripts/migrations/102_student_guide_list.sql` (rollback: `rollback/102_student_guide_list_rollback.sql`) so students' lesson lists show which lessons have a guide.
+3. Push the code. Until the migration is installed, the tab, the badges and the student panel do not appear.
 
 ## For teachers
 - Open a lesson, then the **Study guide** tab. Press **Make a study guide with AI**. It takes about half a minute.
@@ -22,6 +23,8 @@ The practice questions are the lesson's existing check questions (Support, Core 
 - A guide is made in two short requests side by side (the points and cards, and the practice questions). If the questions part fails you still get the rest, with a note; press **Make a new draft** to try the questions again.
 
 ## For students
+In **My lessons**, a lesson with a guide switched on has a **Study guide** badge, and a **Study guides** list at the top opens each one directly (needs migration 102; without it the badge and list are simply absent and the guide still shows inside the lesson). The guide is never on the Assess dashboard.
+
 A **Study guide for this lesson** panel appears under the lesson when the teacher has switched it on. It opens by itself once the lesson is finished. Students can add the cards to their own flashcards (spaced repetition works as it does today) and flag anything that looks wrong. Lessons without a guide look exactly as before.
 
 ## Rules built in

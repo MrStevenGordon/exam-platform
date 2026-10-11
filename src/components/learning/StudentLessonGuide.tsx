@@ -13,10 +13,19 @@ export default function StudentLessonGuide({ lessonId, title, subject, finished 
   const [message, setMessage] = useState('')
   const [deckId, setDeckId] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  // Open when the lesson is finished, or when the student came from the "Study guides" list (the link ends in #study-guide).
+  const [open, setOpen] = useState(finished)
 
   useEffect(() => {
     let cancelled = false
-    getStudentGuide(lessonId).then((g) => { if (!cancelled) setGuide(g) }).catch(() => {})
+    getStudentGuide(lessonId).then((g) => {
+      if (cancelled) return
+      setGuide(g)
+      if (g && typeof window !== 'undefined' && window.location.hash === '#study-guide') {
+        setOpen(true)
+        setTimeout(() => document.getElementById('study-guide')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50)
+      }
+    }).catch(() => {})
     return () => { cancelled = true }
   }, [lessonId])
 
@@ -46,7 +55,7 @@ export default function StudentLessonGuide({ lessonId, title, subject, finished 
   )
 
   return (
-    <details className="card sentence-case" open={finished} style={{ marginTop: 14 }}>
+    <details id="study-guide" className="card sentence-case" open={open} onToggle={(e) => setOpen((e.currentTarget as HTMLDetailsElement).open)} style={{ marginTop: 14 }}>
       <summary style={{ cursor: 'pointer', fontWeight: 700, fontSize: 15 }}>Study guide for this lesson</summary>
       <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '8px 0 12px' }}>
         Made from this lesson to help you remember it. The best way to use it: try the practice questions just below first, then come back to the key points for what you missed.

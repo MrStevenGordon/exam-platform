@@ -121,3 +121,7 @@ Tick a box when you have tested it on the live site. Each item points to its sec
 
 ## Study guide (AI) fix, 2026-10-10
 - Teacher: lesson > Study guide > Make a study guide with AI. If it still fails, the message ends with a short reference such as (ref: cut-off). Send me that word. The unreadable reply is also kept in the ai_reply_problems table (feature learning_lesson_guide).
+
+## Study guides in the student's lesson list (migration 102)
+- Apply 102, push. Student: Smart Learning > My lessons. A lesson whose teacher has switched the guide on shows a "Study guide" badge, and a "Study guides" list at the top opens that lesson with the guide open.
+- A guide that is only a draft, or on a closed lesson, is not shown. If a student still sees nothing, check the teacher pressed "Save and switch on" (not "Save as draft") and the lesson is assigned to the student's class.

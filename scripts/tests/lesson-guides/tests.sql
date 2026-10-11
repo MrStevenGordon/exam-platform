@@ -120,6 +120,25 @@ select check_that('Another teacher cannot clear reports', (select r from clr_oth
 create temp table clr_owner as select try_sql(u(11), format('select public.learning_guide_clear_reports(%L)', u(1101))) as r;
 select check_that('The owner can clear the reports', (select r from clr_owner) = 'ok:1' and (select count(*) from learning_guide_reports where lesson_id = u(1101)) = 0);
 
+-- ============ the student's list of lessons that have a guide (migration 102) ============
+-- Guides on lessons that must NOT be listed: a draft lesson, a closed lesson; and one for another class that only that class sees.
+create temp table g102_a as select try_sql(u(11), format($q$insert into learning_lesson_guides (lesson_id, key_points, can_do, cards, status) values (%L, '["x"]', '["y"]', '[{"front":"a","back":"b","step":null}]', 'on') on conflict (lesson_id) do update set status = 'on'$q$, u(1102))) as r;
+create temp table g102_b as select try_sql(u(11), format($q$insert into learning_lesson_guides (lesson_id, key_points, can_do, cards, status) values (%L, '["x"]', '["y"]', '[{"front":"a","back":"b","step":null}]', 'on') on conflict (lesson_id) do update set status = 'on'$q$, u(1103))) as r;
+create temp table g102_c as select try_sql(u(11), format($q$insert into learning_lesson_guides (lesson_id, key_points, can_do, cards, status) values (%L, '["x"]', '["y"]', '[{"front":"a","back":"b","step":null}]', 'on') on conflict (lesson_id) do update set status = 'on'$q$, u(1104))) as r;
+create or replace function ids_as(p_uid uuid) returns text language plpgsql as $$
+declare r text;
+begin perform as_user(p_uid); select coalesce(string_agg(lesson_id::text, ',' order by lesson_id::text), '') into r from public.learning_student_guides(); reset role; return r; end $$;
+select check_that('Setting up: three more guides written', (select r from g102_a) = 'ok:1' and (select r from g102_b) = 'ok:1' and (select r from g102_c) = 'ok:1');
+select check_that('A student sees only the open lesson with a guide switched on (not the draft lesson, the closed lesson or another class''s)', ids_as(u(101)) = u(1101)::text);
+select check_that('A second student in the class sees the same', ids_as(u(102)) = u(1101)::text);
+select check_that('A student in the other class sees only that class''s lesson', ids_as(u(103)) = u(1104)::text);
+select check_that('A teacher gets an empty list', ids_as(u(11)) = '');
+update learning_lesson_guides set status = 'draft' where lesson_id = u(1101);
+select check_that('A guide that is only a draft is not listed', ids_as(u(101)) = '');
+update learning_lesson_guides set status = 'on' where lesson_id = u(1101);
+select check_that('Switching it on lists it again', ids_as(u(101)) = u(1101)::text);
+select check_that('The list needs a signed-in user', (select count(*) from (select 1) x where not has_function_privilege('anon', 'public.learning_student_guides()', 'execute')) = 1);
+
 -- ============ housekeeping ============
 delete from learning_lessons where id = u(1104);
 select check_that('Deleting a lesson deletes its guide', not exists (select 1 from learning_lesson_guides where lesson_id = u(1104)));
