@@ -12,6 +12,8 @@ type CallOpts = {
   apiKey: string
   model?: string               // defaults to AI_MODEL; a route may keep an older model until it has been tested on a newer one
   timeoutMs?: number           // per attempt; none by default
+  thinking?: 'off'             // 'off' asks the model not to think first, so every token of max_tokens goes to the answer. If the model
+                               // refuses the setting the call is repeated without it.
   retries?: number             // extra attempts after the first, for busy or dropped connections. Default 2
   sleep?: (ms: number) => Promise<void>
   fetchImpl?: typeof fetch
@@ -75,7 +77,12 @@ export async function callClaudeChat(input: { system?: string; messages: ChatMes
   const sleep = opts.sleep ?? defaultSleep
   const retries = opts.retries ?? 2
   const base = (opts.baseUrl ?? process.env.ANTHROPIC_BASE_URL ?? 'https://api.anthropic.com').replace(/\/$/, '')
-  const body = JSON.stringify({ model: opts.model ?? AI_MODEL, max_tokens: opts.maxTokens, ...(input.system ? { system: input.system } : {}), messages: input.messages })
+  let sendThinkingOff = opts.thinking === 'off'
+  const makeBody = () => JSON.stringify({
+    model: opts.model ?? AI_MODEL, max_tokens: opts.maxTokens,
+    ...(sendThinkingOff ? { thinking: { type: 'disabled' } } : {}),
+    ...(input.system ? { system: input.system } : {}), messages: input.messages,
+  })
 
   let last: Extract<AiReply, { ok: false }> = { ok: false, status: 0, message: 'No attempt was made.', kind: 'network' }
   for (let attempt = 0; attempt <= retries; attempt++) {
@@ -88,7 +95,7 @@ export async function callClaudeChat(input: { system?: string; messages: ChatMes
         res = await doFetch(`${base}/v1/messages`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'x-api-key': opts.apiKey, 'anthropic-version': '2023-06-01' },
-          body,
+          body: makeBody(),
           ...(controller ? { signal: controller.signal } : {}),
         })
       } finally {
@@ -101,6 +108,8 @@ export async function callClaudeChat(input: { system?: string; messages: ChatMes
         const retryAfter = Number(res.headers?.get?.('retry-after'))
         if (Number.isFinite(retryAfter) && retryAfter > 0) retryAfterMs = Math.min(retryAfter, 5) * 1000
         last = { ok: false, status: res.status, message, kind: classifyAiFailure(res.status, message) }
+        // The model does not accept the "no thinking" setting: ask again the ordinary way (without using up a retry).
+        if (sendThinkingOff && res.status === 400 && /thinking/i.test(message)) { sendThinkingOff = false; attempt--; continue }
       } else {
         const data = await res.json()
         const text = extractText(data)

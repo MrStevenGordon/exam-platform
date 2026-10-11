@@ -127,3 +127,19 @@ test('a long call that timed out is not retried (no time left); a short one is',
   assert.equal(shortRes.kind, 'timeout'); assert.equal(b.c, 3)
   void slow
 })
+
+test('"thinking off" is sent when asked for, and not otherwise', async () => {
+  const on = script([reply(200, okBody)])
+  await callClaude('hi', { maxTokens: 10, apiKey: 'k', fetchImpl: on, thinking: 'off' })
+  assert.deepEqual(JSON.parse(on.calls[0].init.body).thinking, { type: 'disabled' })
+  const plain = script([reply(200, okBody)])
+  await callClaude('hi', { maxTokens: 10, apiKey: 'k', fetchImpl: plain })
+  assert.equal('thinking' in JSON.parse(plain.calls[0].init.body), false)
+})
+
+test('if the model refuses "thinking off" the same request is sent again without it, and still gets its normal retries', async () => {
+  const f = script([reply(400, { error: { message: 'thinking.type: disabled is not supported for this model' } }), reply(529, { error: { message: 'Overloaded' } }), reply(200, okBody)])
+  const r = await callClaude('hi', { maxTokens: 10, apiKey: 'k', fetchImpl: f, thinking: 'off', sleep: noSleep() })
+  assert.equal(r.ok, true); assert.equal(f.calls.length, 3)
+  assert.ok(JSON.parse(f.calls[0].init.body).thinking); assert.equal('thinking' in JSON.parse(f.calls[1].init.body), false)
+})

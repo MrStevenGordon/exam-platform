@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { STEP_KEYS } from '@/lib/learning'
+import { problemRef } from '@/lib/aiProblems'
 import {
   GUIDE_KEY_TERMS_MAX, GUIDE_STEP_MAX, GUIDE_TOTAL_INPUT_MAX, buildGuidePrompts, guideFailureMessage, lessonSourceText, parseGuideParts,
 } from '@/lib/lessonGuide'
@@ -29,6 +30,8 @@ export type GuideDeps = {
   usedThisMonth: (userId: string, monthYear: string) => Promise<number>
   recordUse: (userId: string, monthYear: string) => Promise<void>
   callAi: (prompt: string, maxTokens: number) => Promise<AiAnswer>
+  // Keeps a note of a reply that could not be read, so the cause can be found afterwards (best effort).
+  recordProblem?: (p: { reason: string; stopReason?: string; text: string }) => Promise<void>
   now: () => Date
   log: (message: string, detail?: unknown) => void
 }
@@ -77,8 +80,9 @@ export async function handleLessonGuide(body: LessonGuideBody, deps: GuideDeps):
     lessonSourceText(input),
   )
   if (!parsed.ok) {
-    deps.log('AI study guide reply could not be used', { reason: parsed.reason })
-    return { status: 502, json: { error: guideFailureMessage(parsed.reason) } }
+    deps.log('AI study guide reply could not be used', { reason: parsed.reason, stopReason: main.stopReason, length: main.text.length })
+    try { await deps.recordProblem?.({ reason: parsed.reason, stopReason: main.stopReason, text: main.text }) } catch { /* never let record-keeping break the answer */ }
+    return { status: 502, json: { error: `${guideFailureMessage(parsed.reason)} (ref: ${problemRef(parsed.reason)})` } }
   }
 
   await deps.recordUse(who.userId, monthYear)

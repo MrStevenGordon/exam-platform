@@ -113,3 +113,11 @@ Tick a box when you have tested it on the live site. Each item points to its sec
 - Read aloud now says equations in words ("x squared plus 3").
 - Check on a phone: the math keyboard opens from the keyboard icon inside the box.
 - Not covered yet: Smart Play questions, lessons and flashcards still show math as plain text.
+
+## Teacher videos go live at once (Smart Learning, migration 101)
+- Apply 101 on Manchester first, then push. As a teacher: Smart Learning > Videos > Add a video. It shows for students straight away (no "waiting for approval"). Editing a live video keeps it live.
+- A head of department can still hide or remove a teacher's video (Manage tab). Two different students reporting a video hides it until a head, principal or admin brings it back.
+- Any teacher video that was waiting becomes live when 101 is applied.
+
+## Study guide (AI) fix, 2026-10-10
+- Teacher: lesson > Study guide > Make a study guide with AI. If it still fails, the message ends with a short reference such as (ref: cut-off). Send me that word. The unreadable reply is also kept in the ai_reply_problems table (feature learning_lesson_guide).

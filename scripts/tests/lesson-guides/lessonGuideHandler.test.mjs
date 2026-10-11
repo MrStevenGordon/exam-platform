@@ -112,3 +112,24 @@ test('if the main request fails nothing is delivered or counted', async () => {
   const r = await handleLessonGuide(body(), x.d)
   assert.equal(r.status, 503); assert.equal(x.calls.recorded, 0)
 })
+
+test('when the guide cannot be read the teacher gets a reference word and the cause is recorded', async () => {
+  const recorded = []
+  const { d, calls } = deps({
+    callAi: async () => ({ ok: true, text: '{"key_points": ["a"], "cards": [{"front": "x", "back"', stopReason: 'max_tokens' }),
+    recordProblem: async (p) => { recorded.push(p) },
+  })
+  const r = await handleLessonGuide(body(), d)
+  assert.equal(r.status, 502); assert.match(r.json.error, /could not finish the guide/); assert.match(r.json.error, /\(ref: cut-off\)/)
+  assert.equal(calls.recorded, 0)
+  assert.equal(recorded.length, 1); assert.equal(recorded[0].reason, 'truncated'); assert.equal(recorded[0].stopReason, 'max_tokens')
+})
+
+test('a failing record-keeper never breaks the answer', async () => {
+  const { d } = deps({
+    callAi: async () => ({ ok: true, text: 'nonsense', stopReason: 'end_turn' }),
+    recordProblem: async () => { throw new Error('db down') },
+  })
+  const r = await handleLessonGuide(body(), d)
+  assert.equal(r.status, 502); assert.match(r.json.error, /ref: unreadable/)
+})

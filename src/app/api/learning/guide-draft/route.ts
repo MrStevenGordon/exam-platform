@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { rateLimit } from '@/lib/rateLimit'
 import { validateBody } from '@/lib/validateBody'
 import { askClaude } from '@/lib/aiCall'
+import { recordAiProblem } from '@/lib/aiProblems'
 import { LESSON_GUIDE_FEATURE, handleLessonGuide, lessonGuideSchema } from '@/lib/lessonGuideHandler'
 
 // A guide is a long reply (cards and questions).
@@ -38,10 +39,11 @@ export async function POST(req: NextRequest) {
         await supabaseAdmin.from('ai_polish_usage').insert({ teacher_id: userId, feature: LESSON_GUIDE_FEATURE, month_year: monthYear })
       },
       callAi: async (prompt, maxTokens) => {
-        // Two of these run side by side and the hosting allows 60 seconds in all, so each gets 40 and at most one quick retry.
-        const r = await askClaude({ label: 'lesson-study-guide', messages: [{ role: 'user', content: prompt }], maxTokens, timeoutMs: 40_000, retries: 1 })
+        // Two of these run side by side and the hosting allows 60 seconds in all, so each gets 45 and at most one quick retry. Thinking is off: it is a fixed-shape JSON answer, and thinking would eat the token budget.
+        const r = await askClaude({ label: 'lesson-study-guide', messages: [{ role: 'user', content: prompt }], maxTokens, timeoutMs: 45_000, retries: 1, thinking: 'off' })
         return r.ok ? { ok: true, text: r.text, stopReason: r.stopReason } : { ok: false, message: r.message, httpStatus: r.httpStatus }
       },
+      recordProblem: (p) => recordAiProblem(supabaseAdmin, { feature: LESSON_GUIDE_FEATURE, ...p }),
       now: () => new Date(),
       log: (message, detail) => console.error(message, detail ?? ''),
     })
